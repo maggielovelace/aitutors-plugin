@@ -1,9 +1,19 @@
 # AI Tutors — ChatGPT & Codex plugin
 
+**English** · [简体中文](README.zh-CN.md)
+
 Install the [aitutors.me](https://aitutors.me) tutors into **ChatGPT** or **Codex**.
 
 This repository contains only the plugin manifest — the tutors themselves run at
 `https://aitutors.me/mcp`. Nothing here needs building, and there is no code to run.
+
+---
+
+## What this is
+
+[![aitutors.me KS3 Parent Intro Video](https://img.youtube.com/vi/w3I3YWmSArM/maxresdefault.jpg)](https://www.youtube.com/watch?v=w3I3YWmSArM)
+
+*Two minutes on what the tutors do and how a KS3 family uses them.*
 
 ---
 
@@ -40,6 +50,10 @@ Any MCP client that speaks OAuth can connect directly to:
 https://aitutors.me/mcp
 ```
 
+Step-by-step guides: [Claude](https://aitutors.me/install) ·
+[ChatGPT](https://aitutors.me/chatgpt) ·
+[Claude Code & Codex](https://aitutors.me/agent-setup)
+
 ---
 
 ## What you get
@@ -59,7 +73,8 @@ in to your existing account; it does not create one.
 
 ## Support
 
-[hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/chatgpt](https://aitutors.me/chatgpt)
+[hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/chatgpt](https://aitutors.me/chatgpt) ·
+[YouTube](https://www.youtube.com/@aitutorsme)
 
 ---
 
