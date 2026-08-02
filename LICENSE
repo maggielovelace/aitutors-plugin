@@ -1,0 +1,13 @@
+Copyright (c) 2026 AI Tutors (aitutors.me). All rights reserved.
+
+The files in this repository are published for one purpose: to let people
+install the AI Tutors plugin into ChatGPT, Codex, and other MCP clients.
+
+You may copy, clone, and redistribute this repository unmodified for that
+purpose. Any other use — including modifying these manifests to point at a
+different service, or reusing the AI Tutors name, logo, or descriptions — is
+not permitted without written permission.
+
+The tutors themselves are a subscription service at https://aitutors.me and
+are not covered by this notice. Use of the service is governed by the terms at
+https://aitutors.me/terms.

@@ -1,0 +1,48 @@
+{
+  "name": "aitutors",
+  "version": "1.0.0",
+  "description": "Eight Socratic tutors for UK secondary-school study, from aitutors.me.",
+  "author": {
+    "name": "AI Tutors",
+    "email": "hello@aitutors.me",
+    "url": "https://aitutors.me"
+  },
+  "homepage": "https://aitutors.me/chatgpt",
+  "repository": "https://github.com/maggielovelace/aitutors-plugin.git",
+  "keywords": [
+    "aitutors",
+    "tutoring",
+    "education",
+    "ks3",
+    "gcse",
+    "maths",
+    "english",
+    "science",
+    "history",
+    "geography",
+    "flashcards",
+    "mcp"
+  ],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AI Tutors",
+    "shortDescription": "Eight subject tutors for UK secondary-school study",
+    "longDescription": "Connects your aitutors.me subscription so the tutors can work alongside you: Mentor runs the daily check-in and hands over to the right subject tutor, and Professors Pi (maths), Quill (English), Darwin (biology), Curie (chemistry), Newton (physics), Harari (history) and Mercator (geography) take it from there. Sessions, flashcards and progress are saved to the same account as the aitutors.me parent dashboard, so work done here shows up there. Requires an active aitutors.me subscription; you sign in with your existing account when you install.",
+    "developerName": "AI Tutors",
+    "category": "Education",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://aitutors.me",
+    "privacyPolicyURL": "https://aitutors.me/privacy",
+    "termsOfServiceURL": "https://aitutors.me/terms",
+    "defaultPrompt": [
+      "Start a session with Mentor — I've got maths homework",
+      "Ask Professor Pi for a hint on this equation",
+      "Make flashcards from what I learned today",
+      "Quiz me on my biology flashcards",
+      "Show me my learning journey"
+    ],
+    "brandColor": "#001537",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  }
+}
