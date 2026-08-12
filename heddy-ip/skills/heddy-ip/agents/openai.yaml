@@ -1,0 +1,4 @@
+interface:
+  display_name: "Heddy IP & Brand Illustration"
+  short_description: "Generate identity-consistent Heddy (aitutors.me snowy-owl) brand assets: editorial scenes, explainer diagrams, cutout stickers, and social images."
+  default_prompt: "Use the heddy-ip skill. Keep the character identity locked (asymmetric eyes, amber diamond beak, belly star badge, brand palette). For content illustration, produce a shot list first, then generate one image per approved shot; for IP extension, validate the pose against the interaction model before staging, and run the QA checklist before delivering."

@@ -1,0 +1,32 @@
+{
+  "name": "heddy-ip",
+  "version": "0.2.0",
+  "description": "Generate on-model images, stickers, and reels of Heddy — the aitutors.me snowy-owl mascot — with identity governance: locked character DNA, frozen reference sheets, templated prompts, and a QA gate with a repair policy.",
+  "author": {
+    "name": "AI Tutors",
+    "email": "hello@aitutors.me",
+    "url": "https://aitutors.me"
+  },
+  "homepage": "https://aitutors.me",
+  "repository": "https://github.com/maggielovelace/aitutors-plugin.git",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "keywords": ["mascot", "brand", "illustration", "image-generation", "aitutors", "heddy"],
+  "skills": "./skills",
+  "interface": {
+    "displayName": "Heddy IP",
+    "shortDescription": "On-model brand art of the aitutors.me snowy owl",
+    "longDescription": "One snowy-owl character, identity governed. Generates editorial scenes, explainer diagrams, transparent cutout stickers, expression and pose sheets, and narrated reels — while keeping the same character identity in every asset. Ships the character DNA, the frozen crayon-storybook reference set, prompt templates, a QA checklist with repair policy, and a stdlib-only Gemini generation CLI (needs GEMINI_API_KEY).",
+    "developerName": "AI Tutors",
+    "category": "Creative",
+    "capabilities": ["Image Generation", "Image Editing", "Character Design"],
+    "websiteURL": "https://aitutors.me",
+    "defaultPrompt": [
+      "heddy-ip: shot list for this blog post — 4 illustrations",
+      "heddy-ip: make a transparent cutout of the owl waving, 1:1",
+      "heddy-ip: a 1:1 feed image — Heddy presenting a flashcard"
+    ],
+    "brandColor": "#001537",
+    "composerIcon": "../aitutors/assets/logo.png",
+    "logo": "../aitutors/assets/logo.png"
+  }
+}

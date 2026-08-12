@@ -80,3 +80,50 @@ in to your existing account; it does not create one.
 
 Claude is our primary platform — new features land there first. Everything the
 tutors do works the same on both.
+
+---
+
+## Skills — Heddy IP (brand art)
+
+This repository also ships the **`heddy-ip`** agent skill: generate on-model images,
+cutout stickers, and reels of **Heddy**, the aitutors.me snowy-owl mascot, with identity
+governance (locked character DNA, frozen reference sheets, templated prompts, a QA gate
+with a repair policy). Generation needs a `GEMINI_API_KEY`. Recipes:
+[`heddy-ip/COOKBOOK.md`](heddy-ip/COOKBOOK.md).
+
+### Claude Code
+
+```bash
+/plugin marketplace add maggielovelace/aitutors-plugin
+/plugin install heddy-ip@aitutors-me
+```
+
+### Codex CLI
+
+```bash
+codex plugin marketplace add https://github.com/maggielovelace/aitutors-plugin
+codex plugin add heddy-ip@aitutors-me
+```
+
+### Hermes Agent
+
+```bash
+git clone https://github.com/maggielovelace/aitutors-plugin /tmp/aitutors-plugin
+cp -R /tmp/aitutors-plugin/heddy-ip/skills/heddy-ip ~/.hermes/skills/creative/heddy-ip
+hermes skills list | grep heddy-ip
+```
+
+Hermes prompts for `GEMINI_API_KEY` on first load (the SKILL.md declares it via
+`required_environment_variables`).
+
+### OpenClaw / Pi / any SKILL.md agent
+
+The skill is a self-contained folder — `heddy-ip/skills/heddy-ip/` (SKILL.md +
+references + frozen reference sheets + a stdlib-only Python generation script).
+Copy it onto the agent's skills path; OpenClaw metadata (emoji, `requires.bins`)
+is in the SKILL.md frontmatter, and any agent that reads SKILL.md can use it as-is.
+
+> **Character licence note:** the Heddy character and the reference artwork are
+> aitutors.me brand IP. The skill is published so that agents working **for
+> aitutors.me** can produce brand assets — it is not a licence to use the
+> character for other products. See [LICENSE](LICENSE).

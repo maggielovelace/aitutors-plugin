@@ -1,0 +1,21 @@
+{
+  "name": "aitutors-me",
+  "owner": {
+    "name": "AI Tutors",
+    "url": "https://aitutors.me"
+  },
+  "metadata": {
+    "description": "Marketplace for aitutors.me plugins — the Heddy IP brand-art skill",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "heddy-ip",
+      "source": "./heddy-ip",
+      "description": "On-model brand art of Heddy, the aitutors.me snowy owl — identity-governed images, cutout stickers, and reels.",
+      "version": "0.2.0",
+      "category": "creative",
+      "strict": true
+    }
+  ]
+}

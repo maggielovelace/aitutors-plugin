@@ -15,6 +15,17 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Education"
+    },
+    {
+      "name": "heddy-ip",
+      "source": {
+        "source": "local",
+        "path": "./heddy-ip"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Creative"
     }
   ]
 }

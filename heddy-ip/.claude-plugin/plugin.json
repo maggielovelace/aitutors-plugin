@@ -1,0 +1,13 @@
+{
+  "name": "heddy-ip",
+  "displayName": "Heddy IP",
+  "version": "0.2.0",
+  "description": "Generate on-model images, stickers, and reels of Heddy — the aitutors.me snowy-owl mascot — with identity governance: locked character DNA, frozen reference sheets, templated prompts, and a QA gate with a repair policy. Needs GEMINI_API_KEY.",
+  "author": {
+    "name": "AI Tutors",
+    "url": "https://aitutors.me"
+  },
+  "homepage": "https://aitutors.me",
+  "repository": "https://github.com/maggielovelace/aitutors-plugin",
+  "keywords": ["mascot", "brand", "illustration", "image-generation", "heddy"]
+}
