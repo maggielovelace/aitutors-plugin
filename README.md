@@ -100,6 +100,18 @@ That consistency is the product — the skill exists to make identity drift impo
 | ![Heddy waving from a branch](heddy-ip/samples/wave-crayon.jpg) | ![Heddy under the moon](heddy-ip/samples/night-observatory.jpg) |
 | *Feed image — the crayon-storybook rendition* | *Night scene — same DNA, dark ground rules* |
 
+### Ready-made media
+
+A starter media library ships in [`heddy-ip/media/`](heddy-ip/media/): looping GIFs
+(motion-DNA animations + reel cuts), standalone SVGs of the moods and fits, the
+pilot reel and its block clips as MP4s, and the four style-direction stills. The
+full 369-file asset library lives in the team's shared Drive folder.
+
+| | | |
+|:---:|:---:|:---:|
+| ![Heddy hop](heddy-ip/media/gif/heddy-hop.gif) | ![Heddy in the snow](heddy-ip/media/gif/heddy-winter-snow.gif) | ![Heddy night reader](heddy-ip/media/gif/heddy-night-reader.gif) |
+| *hop (motion DNA)* | *winter snow* | *night reader* |
+
 ### What teams use it for
 
 - **Blog & article illustration** — feed it a post; it finds the 3–6 ideas worth a

@@ -89,6 +89,17 @@ plugin 登录的是您已有的账号，它不会帮您注册新账号。
 | ![Heddy 在树枝上挥手](heddy-ip/samples/wave-crayon.jpg) | ![月下的 Heddy](heddy-ip/samples/night-observatory.jpg) |
 | *社交配图——蜡笔绘本画风* | *夜景——同一套 DNA，深色背景规则* |
 
+### 现成的素材
+
+[`heddy-ip/media/`](heddy-ip/media/) 里带了一套起步素材库：循环 GIF（按运动 DNA
+生成的动画 + 短片剪辑）、各种状态与穿搭的独立 SVG、试播短片及其分段 MP4，
+以及四张画风方向样张。完整的 369 个文件素材库存放在团队共享的 Drive 文件夹里。
+
+| | | |
+|:---:|:---:|:---:|
+| ![Heddy 跳跃](heddy-ip/media/gif/heddy-hop.gif) | ![雪中的 Heddy](heddy-ip/media/gif/heddy-winter-snow.gif) | ![夜读的 Heddy](heddy-ip/media/gif/heddy-night-reader.gif) |
+| *跳跃（运动 DNA）* | *冬日飘雪* | *夜读* |
+
 ### 能用来做什么
 
 - **博客与文章配图**——把文章交给它：它会找出最值得配图的 3–6 个观点，先给分镜清单，
