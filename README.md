@@ -91,6 +91,41 @@ governance (locked character DNA, frozen reference sheets, templated prompts, a 
 with a repair policy). Generation needs a `GEMINI_API_KEY`. Recipes:
 [`heddy-ip/COOKBOOK.md`](heddy-ip/COOKBOOK.md).
 
+Whatever the pose, scene, or medium, it is always the same owl: asymmetric amber eyes
+(left larger), a small amber diamond beak, the spark-green star badge, the head tuft.
+That consistency is the product — the skill exists to make identity drift impossible.
+
+| | |
+|:---:|:---:|
+| ![Heddy waving from a branch](heddy-ip/samples/wave-crayon.jpg) | ![Heddy under the moon](heddy-ip/samples/night-observatory.jpg) |
+| *Feed image — the crayon-storybook rendition* | *Night scene — same DNA, dark ground rules* |
+
+### What teams use it for
+
+- **Blog & article illustration** — feed it a post; it finds the 3–6 ideas worth a
+  picture, writes a shot list, and renders one image per idea with Heddy *performing*
+  each concept (never decorating it).
+- **Social posts** — feed images (1:1 / 4:5), story and reel covers (9:16 with safe
+  zones), OG cards (16:9), X banners — sizes and platform rules are encoded in the skill.
+- **Cutout stickers** — transparent-PNG Heddy poses for compositing onto screenshots,
+  thumbnails and slides (`--cutout` chroma-keys the background to alpha).
+- **Expression & pose sheets** — the moods (rest / focus / ready), the quiet celebration
+  set, and the wardrobe items, as labelled grids:
+
+  ![Heddy expression sheet — moods and celebrations](heddy-ip/skills/heddy-ip/assets/heddy-storybook/expressions.jpg)
+
+  ![Heddy pose sheet](heddy-ip/skills/heddy-ip/assets/heddy-storybook/poses.jpg)
+
+- **Short reels** — narrated 10-second blocks (voice first, one style key per block,
+  a character-fidelity gate per clip), assembled in the edit.
+- **Identity repair** — a render with one wrong anchor (a hooked beak, equalised eyes)
+  gets a single-target edit, not a redesign.
+
+Every generation conditions on the frozen identity anchor
+([`reference.jpg`](heddy-ip/skills/heddy-ip/assets/heddy-storybook/reference.jpg)), and every
+delivery passes the QA checklist: thesis test first, then the identity anchors one by one,
+then structural integrity.
+
 ### Claude Code
 
 ```bash
