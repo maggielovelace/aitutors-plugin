@@ -71,6 +71,84 @@ Mentor 负责每天的开场问候，再把孩子交给对应科目的导师—�
 需要一份有效的 [aitutors.me](https://aitutors.me) 订阅。
 plugin 登录的是您已有的账号，它不会帮您注册新账号。
 
+---
+
+## Skills —— Heddy IP（品牌插画）
+
+本仓库还带一个 **`heddy-ip`** agent skill：生成 **Heddy**——aitutors.me 的雪鸮吉祥物——
+的品牌图片、透明贴纸和短视频，并且始终保持角色身份一致（锁定的角色 DNA、冻结的参考图、
+提示词模板，以及一套带修复规则的 QA 检查）。生成图片需要 `GEMINI_API_KEY`。
+使用手册：[`heddy-ip/COOKBOOK.md`](heddy-ip/COOKBOOK.md)（英文）。
+
+无论换什么动作、场景或画法，都是同一只猫头鹰：不对称的琥珀色眼睛（左眼更大）、
+小小的琥珀色菱形喙、绿色星徽、头顶的绒毛。这份一致性本身就是产品——
+这个 skill 存在的意义，就是让「画着画着变成另一只鸟」不可能发生。
+
+| | |
+|:---:|:---:|
+| ![Heddy 在树枝上挥手](heddy-ip/samples/wave-crayon.jpg) | ![月下的 Heddy](heddy-ip/samples/night-observatory.jpg) |
+| *社交配图——蜡笔绘本画风* | *夜景——同一套 DNA，深色背景规则* |
+
+### 能用来做什么
+
+- **博客与文章配图**——把文章交给它：它会找出最值得配图的 3–6 个观点，先给分镜清单，
+  再一张一张生成，让 Heddy「演出」每个概念，而不是站在旁边当装饰。
+- **社交媒体图片**——动态图（1:1 / 4:5）、故事和短视频封面（9:16，含安全区）、
+  OG 卡片（16:9）、X 横幅——各平台的尺寸规则都写在 skill 里。
+- **透明贴纸**——各种姿势的 Heddy 透明 PNG，可以贴到截图、封面和幻灯片上
+  （`--cutout` 会自动把背景抠成透明）。
+- **表情与姿势图鉴**——三种状态（rest / focus / ready）、安静的庆祝动作、
+  以及全部服装配件，做成带标注的网格图：
+
+  ![Heddy 表情图鉴——状态与庆祝](heddy-ip/skills/heddy-ip/assets/heddy-storybook/expressions.jpg)
+
+  ![Heddy 姿势图鉴](heddy-ip/skills/heddy-ip/assets/heddy-storybook/poses.jpg)
+
+- **短视频**——按 10 秒一段的旁白节奏生成（先配音、每段一张风格基准图、
+  每段过一遍角色一致性检查），最后在剪辑里合成。
+- **身份修复**——一张图只错了一个特征（喙画弯了、两眼画一样大），
+  就只改那一处，绝不重新设计角色。
+
+每次生成都以冻结的身份基准图
+（[`reference.jpg`](heddy-ip/skills/heddy-ip/assets/heddy-storybook/reference.jpg)）为条件；
+每次交付都要过 QA 清单：先看这张图讲没讲清那一个观点，再逐项核对身份特征，最后检查结构。
+
+### Claude Code
+
+```bash
+/plugin marketplace add maggielovelace/aitutors-plugin
+/plugin install heddy-ip@aitutors-me
+```
+
+### Codex CLI
+
+```bash
+codex plugin marketplace add https://github.com/maggielovelace/aitutors-plugin
+codex plugin add heddy-ip@aitutors-me
+```
+
+### Hermes Agent
+
+```bash
+git clone https://github.com/maggielovelace/aitutors-plugin /tmp/aitutors-plugin
+cp -R /tmp/aitutors-plugin/heddy-ip/skills/heddy-ip ~/.hermes/skills/creative/heddy-ip
+hermes skills list | grep heddy-ip
+```
+
+Hermes 第一次加载时会提示您输入 `GEMINI_API_KEY`
+（SKILL.md 通过 `required_environment_variables` 声明了它）。
+
+### OpenClaw / Pi / 任何支持 SKILL.md 的 agent
+
+skill 本身就是一个独立文件夹——`heddy-ip/skills/heddy-ip/`
+（SKILL.md + 参考文档 + 冻结的参考图 + 一个纯标准库的 Python 生成脚本）。
+拷到 agent 的 skills 目录即可；OpenClaw 的元数据（emoji、`requires.bins`）
+写在 SKILL.md 的 frontmatter 里，任何能读 SKILL.md 的 agent 都能直接用。
+
+> **角色版权说明：**Heddy 角色本身、角色 DNA 和参考图都是 aitutors.me 的品牌资产。
+> 公开这个 skill 是为了让**替 aitutors.me 工作**的 agent 能产出品牌素材——
+> 不代表授权把这个角色用在其他产品上。详见 [LICENSE](LICENSE)。
+
 ## 联系我们
 
 [hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/zh/chatgpt](https://aitutors.me/zh/chatgpt) ·
