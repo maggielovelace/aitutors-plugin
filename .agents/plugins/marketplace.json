@@ -26,6 +26,17 @@
         "installation": "AVAILABLE"
       },
       "category": "Creative"
+    },
+    {
+      "name": "flashcards",
+      "source": {
+        "source": "local",
+        "path": "./flashcards"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Education"
     }
   ]
 }

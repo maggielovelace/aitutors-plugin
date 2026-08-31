@@ -1,0 +1,32 @@
+{
+  "name": "flashcards",
+  "version": "0.1.0",
+  "description": "Turn notes, a textbook page, or a topic into flashcards in aitutors.me's own format — atomic fronts, no hint-leak, the right card kind for the material — output as JSON ready to import at aitutors.me/study/cards/new/import.",
+  "author": {
+    "name": "AI Tutors",
+    "email": "hello@aitutors.me",
+    "url": "https://aitutors.me"
+  },
+  "homepage": "https://aitutors.me",
+  "repository": "https://github.com/maggielovelace/aitutors-plugin.git",
+  "license": "MIT",
+  "keywords": ["flashcards", "spaced-repetition", "education", "revision", "aitutors", "json"],
+  "skills": "./skills",
+  "interface": {
+    "displayName": "Flashcards for aitutors.me",
+    "shortDescription": "Author flashcards in aitutors.me's own format, ready to import",
+    "longDescription": "Teaches an LLM to turn source material into flashcards that pass aitutors.me's own QA gate on the first try: atomic single-fact fronts, no hint-leak, the right card kind (basic, basic_reversed, type_in, cloze, cloze_multi) for the material. Format and QA only — no tutoring or curriculum logic. Output is one JSON block, ready to paste at aitutors.me/study/cards/new/import; no API key required.",
+    "developerName": "AI Tutors",
+    "category": "Education",
+    "capabilities": ["Content Generation", "Structured Output"],
+    "websiteURL": "https://aitutors.me",
+    "defaultPrompt": [
+      "flashcards: turn this page of notes into cards for KS3 biology",
+      "flashcards: make basic_reversed cards from this vocab list, split into batches of 8",
+      "flashcards: I have a topic, no notes — make me a set on the water cycle"
+    ],
+    "brandColor": "#001537",
+    "composerIcon": "../aitutors/assets/logo.png",
+    "logo": "../aitutors/assets/logo.png"
+  }
+}

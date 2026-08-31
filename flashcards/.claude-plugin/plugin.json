@@ -1,0 +1,13 @@
+{
+  "name": "flashcards",
+  "displayName": "Flashcards for aitutors.me",
+  "version": "0.1.0",
+  "description": "Turn notes, a textbook page, or a topic into flashcards in aitutors.me's own format — atomic fronts, no hint-leak, the right card kind for the material — output as JSON ready to import at aitutors.me/study/cards/new/import. No API key needed.",
+  "author": {
+    "name": "AI Tutors",
+    "url": "https://aitutors.me"
+  },
+  "homepage": "https://aitutors.me",
+  "repository": "https://github.com/maggielovelace/aitutors-plugin",
+  "keywords": ["flashcards", "spaced-repetition", "education", "revision", "aitutors"]
+}

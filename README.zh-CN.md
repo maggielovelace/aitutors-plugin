@@ -160,6 +160,88 @@ skill 本身就是一个独立文件夹——`heddy-ip/skills/heddy-ip/`
 > 公开这个 skill 是为了让**替 aitutors.me 工作**的 agent 能产出品牌素材——
 > 不代表授权把这个角色用在其他产品上。详见 [LICENSE](LICENSE)。
 
+---
+
+## Skills —— Flashcards（卡片创作）
+
+本仓库还带一个 **`flashcards`** agent skill：教会 LLM 把笔记、课本内容或一个主题，
+变成符合 **aitutors.me 自有格式** 的抽认卡——和 aitutors.me 的导师、以及孩子自己
+在网站上做卡片用的是同一套格式，所以生成出来的卡片能一次通过 aitutors.me 的质检。
+这个 skill 不需要 API key，不需要账号，本身也不发起任何网络请求——只生成一段 JSON，
+到此为止。
+
+和 `heddy-ip` 不一样，这个 skill **只管格式和质检**——不含任何教学逻辑、提示阶梯，
+也不带任何课程内容。它按 MIT 协议开源（见 [LICENSE](LICENSE) 里 "flashcards" 那一段），
+因为「一份抽认卡的 JSON 格式规范」本身没有什么需要保密的。
+
+### 它教 LLM 做什么
+
+- **六种卡片类型**，各有各的用途——`basic`（一问一答）、`basic_reversed`
+  （一条笔记变成两张独立排期的卡片，适合单词和名词）、`type_in`
+  （先自己打出答案再看结果，适合简短且答案固定的内容）、`cloze`
+  （填一个空）、`cloze_multi`（填多个空，每个空自动变成一张独立的卡）。
+  `image_occlusion` 只做说明，不会被这个 skill 生成——那是留给 aitutors.me
+  自己的标准图表用的。
+- **「一张卡一个知识点」规则**——和 aitutors.me 质检用的判定逻辑一致，
+  所以一个要求「说出三种细胞器」的问题，会先被拆开，而不是被直接拒绝。
+- **提示不能泄题的规则**——提示语里不能出现答案中 4 个字母以上的重复词；
+  skill 写的提示是帮你缩小范围，而不是直接告诉你答案。
+- **导入界面要求的精确 JSON 格式**，包括每批最多 8 张卡的上限，
+  以及卡片更多时该怎么办（拆成几批）。
+
+完整格式和示例：[`flashcards/skills/flashcards/references/card-format.md`](flashcards/skills/flashcards/references/card-format.md)（英文）。
+质检规则详解：[`flashcards/skills/flashcards/references/qa-checklist.md`](flashcards/skills/flashcards/references/qa-checklist.md)（英文）。
+
+### 怎么用
+
+1. 把你的材料给 agent（粘贴笔记、描述一个主题，或者给它一页课本内容），
+   让它使用 `flashcards` 这个 skill。
+2. 它会阅读材料，拆成一个个只考一个知识点的问题，给每个知识点选一种卡片类型，
+   检查每条提示有没有泄题，并把这一批控制在 8 张以内。
+3. 它会给你**一段 JSON**——agent 这边的工作到此结束。
+4. 把这段 JSON 拿到 **[aitutors.me/study/cards/new/import](https://aitutors.me/study/cards/new/import)**
+   （需要一个已开通科目的 aitutors.me 账号），粘贴进去，确认预览无误。
+   卡片会直接进入你自己的练习卡堆——没有其他任何人能看到，
+   而且在你第一次被打分之前，这些都还是可以修改的草稿。
+
+示例提示词：
+
+```text
+用 flashcards 这个 skill，把这份关于水循环的笔记做成卡片——给一个八年级的
+aitutors.me 账号用，然后把可以导入的 JSON 给我。
+```
+
+### Claude Code
+
+```bash
+/plugin marketplace add maggielovelace/aitutors-plugin
+/plugin install flashcards@aitutors-me
+```
+
+### Codex CLI
+
+```bash
+codex plugin marketplace add https://github.com/maggielovelace/aitutors-plugin
+codex plugin add flashcards@aitutors-me
+```
+
+### Hermes Agent
+
+```bash
+git clone https://github.com/maggielovelace/aitutors-plugin /tmp/aitutors-plugin
+cp -R /tmp/aitutors-plugin/flashcards/skills/flashcards ~/.hermes/skills/education/flashcards
+hermes skills list | grep flashcards
+```
+
+不需要任何环境变量——这个 skill 只生成 JSON。
+
+### OpenClaw / Pi / 任何支持 SKILL.md 的 agent
+
+skill 本身就是一个独立文件夹——`flashcards/skills/flashcards/`
+（SKILL.md + 参考文档，没有脚本，没有素材）。拷到 agent 的 skills 目录即可；
+OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
+任何能读 SKILL.md 的 agent 都能直接用。
+
 ## 联系我们
 
 [hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/zh/chatgpt](https://aitutors.me/zh/chatgpt) ·

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flashcards for aitutors.me"
+  short_description: "Turn notes or a topic into flashcards in aitutors.me's own format, ready to import."
+  default_prompt: "Use the flashcards skill. Read the source material, split it into atomic single-fact fronts, pick the right card kind for each (basic / basic_reversed / type_in / cloze / cloze_multi), check every hint against the hint-leak rule, cap the batch at 8 cards, and finish with one fenced JSON block ready to paste at aitutors.me/study/cards/new/import."

@@ -5,8 +5,8 @@
     "url": "https://aitutors.me"
   },
   "metadata": {
-    "description": "Marketplace for aitutors.me plugins — the Heddy IP brand-art skill",
-    "version": "1.0.0"
+    "description": "Marketplace for aitutors.me plugins — the Heddy IP brand-art skill and the flashcards authoring skill",
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -15,6 +15,14 @@
       "description": "On-model brand art of Heddy, the aitutors.me snowy owl — identity-governed images, cutout stickers, and reels.",
       "version": "0.2.0",
       "category": "creative",
+      "strict": true
+    },
+    {
+      "name": "flashcards",
+      "source": "./flashcards",
+      "description": "Turn notes or a topic into flashcards in aitutors.me's own format — atomic fronts, no hint-leak, the right card kind for the material — ready to import.",
+      "version": "0.1.0",
+      "category": "education",
       "strict": true
     }
   ]

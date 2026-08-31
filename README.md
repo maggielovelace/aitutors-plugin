@@ -174,3 +174,91 @@ is in the SKILL.md frontmatter, and any agent that reads SKILL.md can use it as-
 > aitutors.me brand IP. The skill is published so that agents working **for
 > aitutors.me** can produce brand assets — it is not a licence to use the
 > character for other products. See [LICENSE](LICENSE).
+
+---
+
+## Skills — Flashcards (card authoring)
+
+This repository also ships the **`flashcards`** agent skill: teach an LLM to turn
+notes, a textbook page, or a topic into flashcards in **aitutors.me's own format**
+— the same format its own tutors and its own kid-facing card composer produce, so
+what you get back is accepted by aitutors.me's QA gate on the first try. No API key,
+no account, no network call from the skill itself — it produces plain JSON and stops.
+
+Unlike `heddy-ip`, this skill is **format and QA only** — it has no tutoring logic,
+no hint-ladder, and no curriculum content of its own. It is published under MIT
+(see the "flashcards" carve-out in [LICENSE](LICENSE)) because there's nothing
+proprietary in "here is a JSON schema for a flashcard".
+
+### What it teaches
+
+- **Six card kinds**, each with a different job — `basic` (one question, one
+  answer), `basic_reversed` (one note becomes two independently-scheduled cards,
+  for names and vocab), `type_in` (typed recall, for short exact answers),
+  `cloze` (fill one blank), `cloze_multi` (fill several blanks, one card per
+  blank, automatically). `image_occlusion` is documented but never authored —
+  it's reserved for aitutors.me's own canonical diagrams.
+- **The atomic-front rule** — one fact per card, with the same conservative
+  multi-fact detector aitutors.me's own QA gate uses, so a front that asks for
+  "three organelles" gets split before it ever gets rejected.
+- **The hint-leak rule** — a hint may never repeat a word of 4+ letters that's
+  also in the answer; the skill writes hints that narrow the search instead of
+  spelling out the destination.
+- **The exact JSON wire shape** the import screen expects, including the
+  8-card-per-batch ceiling and what to do with a bigger set (split it).
+
+Full schema and worked examples: [`flashcards/skills/flashcards/references/card-format.md`](flashcards/skills/flashcards/references/card-format.md).
+QA rules restated for a model: [`flashcards/skills/flashcards/references/qa-checklist.md`](flashcards/skills/flashcards/references/qa-checklist.md).
+
+### How to use it
+
+1. Give the agent your source material (paste notes, describe a topic, or point
+   it at a textbook page) and ask it to use the `flashcards` skill.
+2. It reads the material, splits it into atomic single-fact fronts, picks a
+   card kind per fact, checks every hint against the hint-leak rule, and caps
+   the batch at 8 cards.
+3. It hands back **one fenced JSON block** — nothing else to do on the agent
+   side.
+4. Take that JSON to **[aitutors.me/study/cards/new/import](https://aitutors.me/study/cards/new/import)**
+   (requires an aitutors.me account with an active subject), paste it in, and
+   confirm the preview. The cards land straight in your own private practice
+   pile — nobody else ever sees them, and they're editable drafts until the
+   first time you're graded on one.
+
+Example prompt:
+
+```text
+Use the flashcards skill on this page of notes about the water cycle — make
+me a set for a Year 8 aitutors.me account, then give me the JSON to import.
+```
+
+### Claude Code
+
+```bash
+/plugin marketplace add maggielovelace/aitutors-plugin
+/plugin install flashcards@aitutors-me
+```
+
+### Codex CLI
+
+```bash
+codex plugin marketplace add https://github.com/maggielovelace/aitutors-plugin
+codex plugin add flashcards@aitutors-me
+```
+
+### Hermes Agent
+
+```bash
+git clone https://github.com/maggielovelace/aitutors-plugin /tmp/aitutors-plugin
+cp -R /tmp/aitutors-plugin/flashcards/skills/flashcards ~/.hermes/skills/education/flashcards
+hermes skills list | grep flashcards
+```
+
+No environment variables are required — the skill only produces JSON.
+
+### OpenClaw / Pi / any SKILL.md agent
+
+The skill is a self-contained folder — `flashcards/skills/flashcards/` (SKILL.md +
+references, no scripts, no assets). Copy it onto the agent's skills path;
+OpenClaw metadata (emoji) is in the SKILL.md frontmatter, and any agent that
+reads SKILL.md can use it as-is.

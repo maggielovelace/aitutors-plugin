@@ -17,3 +17,15 @@ design, character DNA, and reference artwork. These are brand IP of
 AI Tutors (aitutors.me). You may install and run the skill to produce
 assets for aitutors.me; reuse of the character, its DNA, or the reference
 artwork for any other product or brand is not permitted.
+
+The "flashcards" skill directory is different: it is a format/QA
+specification, not brand IP, and is licensed under the MIT License. You may
+copy, modify, and redistribute the contents of "flashcards/" for any
+purpose, under the standard MIT terms:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of the "flashcards" skill directory, to deal in it without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies, subject to including
+this permission notice in all copies or substantial portions of it. THE
+SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
