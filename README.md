@@ -71,6 +71,15 @@ parent dashboard, so work done in ChatGPT shows up there.
 An active [aitutors.me](https://aitutors.me) subscription. The plugin signs you
 in to your existing account; it does not create one.
 
+## Heddy stickers
+
+![Heddy stickers](stickers-preview.png)
+
+24 hand-drawn crayon stickers of Heddy, the aitutors.me owl — for iMessage on
+iPhone, iPad and Mac. **Heddy Stickers is coming to the App Store.** The
+transparent PNGs are in [`stickers/`](stickers/) for personal use in your own
+chats ([terms](stickers/LICENSE.md)).
+
 ## Support
 
 [hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/chatgpt](https://aitutors.me/chatgpt) ·

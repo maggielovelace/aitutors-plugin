@@ -242,6 +242,16 @@ skill 本身就是一个独立文件夹——`flashcards/skills/flashcards/`
 OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
 任何能读 SKILL.md 的 agent 都能直接用。
 
+||||||| parent of d4cd683 (feat: add Heddy sticker pack artwork and README section)
+
+## 海迪贴纸
+
+![海迪贴纸](stickers-preview.png)
+
+24 张手绘蜡笔风的海迪（aitutors.me 的猫头鹰）贴纸，适用于 iPhone、iPad 和 Mac
+的 iMessage。**Heddy Stickers 即将登陆 App Store。** 透明 PNG 见
+[`stickers/`](stickers/)，仅供个人聊天使用（[使用条款](stickers/LICENSE.md)）。
+
 ## 联系我们
 
 [hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/zh/chatgpt](https://aitutors.me/zh/chatgpt) ·
