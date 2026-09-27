@@ -77,8 +77,8 @@ def overlays(t, size, vertical=False):
         it.append((lab, DISPM(int(58 * u)), pos, 'lm' if not vertical else 'mm', INK, a))
     # shot 10 brand reveal
     b = 40.0
-    it.append(('HEDDY', DISP(int(170 * u)), (0.5, 0.12 if not vertical else 0.14), 'mm', INK, fade(t, b + 0.3, 46, 0.6, 0.1)))
-    it.append(('Your AI learning companion', TEXT(int(56 * u)), (0.5, 0.205 if not vertical else 0.19), 'mm', INK,
+    it.append(('HEDDY', DISP(int(170 * u)), (0.5, 0.095 if not vertical else 0.14), 'mm', INK, fade(t, b + 0.3, 46, 0.6, 0.1)))
+    it.append(('Your AI learning companion', TEXT(int(56 * u)), (0.5, 0.17 if not vertical else 0.19), 'mm', INK,
                fade(t, b + 1.2, 46, 0.6, 0.1)))
     it.append(('heddy.app', DISP(int(72 * u)), (0.5, 0.86 if not vertical else 0.84), 'mm', AMBER, fade(t, b + 2.1, 46, 0.6, 0.1)))
     it.append(('Think it through with Heddy.', TEXT(int(50 * u)), (0.5, 0.925 if not vertical else 0.885), 'mm', INK,

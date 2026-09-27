@@ -1,3 +1,4 @@
 # regenerable intermediates (tools/render_steps.py, tools/make_booklet.py)
 instructions/steps/
 instructions/pages/
+video/*.wav
