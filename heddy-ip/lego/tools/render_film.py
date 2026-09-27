@@ -140,6 +140,8 @@ if __name__ == '__main__':
     LAST = int(sys.argv[7]) if len(sys.argv) > 7 else 10 ** 6
 
     S.reset()
+    S.SSS = False
+    S.BEVEL_SAMPLES = 2
     objs = S.add_parts(P)
     piv = bpy.data.objects.new('pivot', None)          # model turntable for camera-free orbits
     bpy.context.scene.collection.objects.link(piv)
@@ -163,6 +165,15 @@ if __name__ == '__main__':
     cam = S.camera((0, -0.7, 0.15), (0, 0, 0.09), lens=50, fstop=4)
     sc.render.fps = FPS
     sc.cycles.samples = SAMPLES
+    sc.render.use_persistent_data = True
+    sc.cycles.max_bounces = 4
+    sc.cycles.diffuse_bounces = 2
+    sc.cycles.glossy_bounces = 2
+    sc.cycles.transmission_bounces = 0
+    sc.cycles.transparent_max_bounces = 2
+    sc.cycles.caustics_reflective = False
+    sc.cycles.caustics_refractive = False
+    sc.cycles.adaptive_threshold = 0.04
 
     def set_env(dark):
         """Dark-neutral studio for the build, warm paper for the reveal."""
@@ -214,6 +225,10 @@ if __name__ == '__main__':
         pg = textured_plane(f'page{n}', pth, PW, PH)
         pg.parent = hinge
         pg.location = (PW / 2, 0, 0)
+        back = textured_plane(f'pageb{n}', os.path.join(pages_dir, page_files[min(n * 11 + 5, len(page_files) - 1)]), PW, PH)
+        back.parent = hinge
+        back.location = (PW / 2, 0, -0.0002)
+        back.rotation_euler = (0, math.pi, 0)
         flips.append(hinge)
     book.location = (-0.26, -0.02, 0.0)
     book.rotation_euler = (0, 0, math.radians(12))
@@ -226,14 +241,16 @@ if __name__ == '__main__':
         for y in range(260, 1600, 80):
             d.line((80, y, 1120, y), fill='#D5DCE6', width=3)
         d.line((170, 0, 170, 1600), fill='#E8B9B0', width=3)
-        fnt = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 92)
-        d.text((220, 420), 'Why does', font=fnt, fill='#08203B')
-        d.text((220, 540), 'this work?', font=fnt, fill='#08203B')
+        fnt = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 150)
+        d.text((600, 560), 'Why does', font=fnt, fill='#08203B', anchor='mm')
+        d.text((600, 760), 'this work?', font=fnt, fill='#08203B', anchor='mm')
+        d.ellipse((540, 1020, 660, 1140), fill='#DC9400')
         os.makedirs(OUT, exist_ok=True)
         im.save(note_img)
     note = textured_plane('notebook', note_img, 0.09, 0.12)
-    note.location = (0.19, -0.12, 0.004)
-    note.rotation_euler = (math.radians(-2), 0, math.radians(-24))
+    # a question card standing on a little easel beside Heddy
+    note.location = (0.165, -0.03, 0.058)
+    note.rotation_euler = (math.radians(76), 0, math.radians(22))
     cover = bpy.data.objects.new('nb_cover', bpy.data.meshes.new('nb_cover'))
     bpy.data.meshes['nb_cover'].from_pydata([(-0.047, -0.062, 0), (0.047, -0.062, 0), (0.047, 0.062, 0), (-0.047, 0.062, 0),
                                              (-0.047, -0.062, 0.0035), (0.047, -0.062, 0.0035), (0.047, 0.062, 0.0035),
@@ -333,18 +350,18 @@ if __name__ == '__main__':
             pose_build(gf)
             piv.rotation_euler = (0, 0, orbit(-30, -15, t))
             cam_at(0.45, 0.14, 0.02, 85, fstop=5.6)
-            return ('s02', f // 2) if False else None
+            return ('s02', f // 2)
         if shot == 's03':
             set_env(True)
             pose_build(gf)
             piv.rotation_euler = (0, 0, orbit(-15, -80, t))
-            cam_at(0.72 - 0.04 * t, 0.26, 0.05 + 0.05 * ease(t), 50, fstop=8)
-            return None
+            cam_at(0.56 - 0.03 * t, 0.22, 0.04 + 0.05 * ease(t), 62, fstop=8)
+            return ('s03', f // 2)
         if shot == 's04':
             set_env(True)
             pose_build(gf)
             piv.rotation_euler = (0, 0, orbit(-12, 0, min(1, t * 1.6)))
-            cam_at(0.46 - 0.04 * ease(t), Z + 0.035, Z + 0.03, 90, fstop=5.6)
+            cam_at(0.66 - 0.05 * ease(t), Z + 0.035, Z + 0.025, 85, fstop=5.6)
             return None
         if shot == 's05':
             set_env(False)
@@ -377,21 +394,24 @@ if __name__ == '__main__':
             pose_build(TOTAL)
             props(False, True)
             # the real joint: turn toward the notebook, settle
-            a = 20 * ease((t - 0.25) / 0.5)
-            swivel.rotation_euler = (0, 0, math.radians(-a))
-            piv.rotation_euler = (0, 0, math.radians(8))
-            cam_at(0.66, 0.16, Z - 0.01, 50, fstop=5.6)
-            S.aim(cam, (0.06, -0.64, 0.16), (0.06, 0, Z - 0.02))
+            a = 30 * ease((t - 0.25) / 0.5)
+            swivel.rotation_euler = (0, 0, math.radians(a))
+            piv.rotation_euler = (0, 0, math.radians(-6))
+            cam.data.lens = 50
+            cam.data.dof.use_dof = True
+            cam.data.dof.aperture_fstop = 6.3
+            cam.data.dof.focus_distance = 0.7
+            S.aim(cam, (0.05, -0.72, 0.2), (0.07, 0, Z - 0.025))
             return None
         if shot == 's09':
             set_env(False)
             pose_build(TOTAL)
             props(False, True)
             # thinking: a small settle back and forth on the swivel
-            a = 20 - 5 * math.sin(math.pi * ease(t)) * (1 - 0.3 * t)
-            swivel.rotation_euler = (0, 0, math.radians(-a))
-            piv.rotation_euler = (0, 0, math.radians(8))
-            S.aim(cam, (0.14, -0.5, 0.12), (0.13, 0, 0.05))
+            a = 30 - 7 * math.sin(math.pi * ease(t))
+            swivel.rotation_euler = (0, 0, math.radians(a))
+            piv.rotation_euler = (0, 0, math.radians(-6))
+            S.aim(cam, (0.09, -0.6, 0.13), (0.075, 0, 0.07))
             cam.data.lens = 50
             cam.data.dof.use_dof = True
             cam.data.dof.aperture_fstop = 4.5
@@ -401,7 +421,7 @@ if __name__ == '__main__':
             set_env(False)
             pose_build(TOTAL)
             piv.rotation_euler = (0, 0, math.radians(-8 + 4 * t))
-            cam_at(0.78, 0.13, Z + 0.02, 50, fstop=8)
+            cam_at(1.05, 0.13, Z + 0.012, 50, fstop=8)     # room above and below for the titles
             return ('s10', int(t * 8))       # near-static hero: 8 unique frames, held
         return None
 
@@ -413,6 +433,8 @@ if __name__ == '__main__':
                 continue
             path = os.path.join(OUT, shot, f'f{f:04d}.png')
             key = setup(shot, f)
+            if key is not None and shot in ('s02', 's03') and f % 2:
+                key = setup(shot, f - 1)          # stop motion on twos: pose the even frame
             if key is not None and key in rendered:
                 import shutil
                 shutil.copy(rendered[key], path)

@@ -40,6 +40,8 @@ def load_model(path=None):
 
 # ------------------------------------------------------------------ materials
 _mats = {}
+SSS = True          # subsurface on white ABS (stills); the film switches it off for speed
+BEVEL_SAMPLES = 4
 
 
 def plastic(code):
@@ -57,7 +59,7 @@ def plastic(code):
     lum = sum(hexlin(h)[:3]) / 3
     bsdf.inputs['Roughness'].default_value = 0.22
     bsdf.inputs['IOR'].default_value = 1.54
-    if code in (15, 151):
+    if code in (15, 151) and SSS:
         bsdf.inputs['Subsurface Weight'].default_value = 0.08
         bsdf.inputs['Subsurface Radius'].default_value = (0.8, 0.8, 0.8)
         bsdf.inputs['Subsurface Scale'].default_value = 0.002
@@ -87,7 +89,7 @@ def plastic(code):
     bump.inputs['Distance'].default_value = 0.00002
     nt.links.new(ramp.outputs['Color'], bump.inputs['Height'])
     bev = nt.nodes.new('ShaderNodeBevel')
-    bev.samples = 4
+    bev.samples = BEVEL_SAMPLES
     bev.inputs['Radius'].default_value = 0.00022
     nt.links.new(bev.outputs['Normal'], bump.inputs['Normal'])
     nt.links.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
