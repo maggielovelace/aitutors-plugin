@@ -68,7 +68,11 @@ def overlays(t, size, vertical=False):
     it = []
     # shot 01
     a = fade(t, 0.7, 2.9, 0.6, 0.4)
-    it.append(('Every big idea starts with one small piece.', TEXT(int(64 * u)), (0.5, 0.86), 'mm', PAPER, a))
+    if vertical:
+        it.append(('Every big idea starts', TEXT(int(64 * u)), (0.5, 0.84), 'mm', PAPER, a))
+        it.append(('with one small piece.', TEXT(int(64 * u)), (0.5, 0.875), 'mm', PAPER, a))
+    else:
+        it.append(('Every big idea starts with one small piece.', TEXT(int(64 * u)), (0.5, 0.86), 'mm', PAPER, a))
     # shot 06 engineering labels
     base = 23.0
     for n, lab in enumerate(('Real brick geometry', 'Buildable connections', 'Designed piece by piece')):
@@ -185,8 +189,8 @@ if 'hero' in WHICH:
 
 # ------------------------------------------------------------------ social 9:16
 # (global second in, length, horizontal crop centre)
-SOCIAL = [(0.5, 2.0, 0.27), (3.2, 3.0, 0.5), (7.2, 4.0, 0.5), (13.0, 5.0, 0.5), (18.5, 3.0, 0.5), (23.0, 3.2, 0.47),
-          (31.2, 4.4, 0.55), (40.0, 5.0, 0.5)]
+SOCIAL = [(0.5, 2.0, 0.27), (3.2, 3.0, 0.5), (7.2, 4.0, 0.5), (13.0, 5.0, 0.38), (18.5, 3.0, 0.5), (23.0, 3.2, 0.47),
+          (31.4, 2.2, 0.38), (36.2, 2.4, 0.66), (40.0, 5.0, 0.5)]
 if 'social' in WHICH:
     def gen():
         for g0, ln, cx in SOCIAL:

@@ -118,11 +118,30 @@ count. Both options were measured and rejected.
    the vendored LDraw subset lacks them (98138, 60474, 87580, 25269, 27925,
    11477, 87087, 11211, 3403c01). Their underside detail is simplified.
 
-## 5. Files
+## 5. Film
+
+The three videos are rendered from the locked `model/heddy.json` (`tools/render_film.py`, then
+`tools/make_film.py`). Every part enters by travelling along its own insertion axis and clicking
+in on its landing frame. The only thing that moves on the finished model is the real
+turntable swivel.
+
+| File | Format | Content |
+|---|---|---|
+| `video/heddy-lego-hero-16x9-4k.mp4` | 45 s, 3840×2160, 24 fps | the ten-shot storyboard: brick → build → face → reveal → exploded view → booklet → turn to the question card → brand |
+| `video/heddy-lego-social-9x16.mp4` | 29.7 s, 1080×1920 | vertical re-cut, per-shot crops |
+| `video/heddy-lego-sting-16x9-4k.mp4` | 8 s, 3840×2160 | eye click → HEDDY / heddy.app |
+
+Frames were rendered at 1920×1080 with Cycles on CPU (10 samples + OpenImageDenoise), then
+Lanczos-upscaled to 4K. The 9:16 cut is cropped from the same frames, and the stop-motion shots
+run "on twos". Titles are set in Bricolage Grotesque and IBM Plex Sans (OFL, `tools/fonts/`).
+The sound is synthesised: one click per part landing, a quiet A-major-7 pad and a chime on the logo.
+
+## 6. Files
 
 ```
 model/        heddy.json (locked), heddy.ldr, heddy_steps.json, bom.csv/.md, validation.json/.md
-renders/      view-front/rear/left/right, hero-3q, hero-4k, exploded
+renders/      view-front/rear/left/right, hero-3q, hero-4k (final hero image), exploded, exploded-labelled
+video/        hero film, 9:16 social cut, sting
 instructions/ heddy-lego-instructions.pdf, pages/, steps/
 tools/        build_heddy.py → sequence.py → validate.py → make_bom.py → render_* → make_booklet.py
 ldraw/        vendored LDraw subset (CC BY 4.0, see lib/CAreadme.txt) + authored parts
