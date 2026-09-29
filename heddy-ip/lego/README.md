@@ -1,5 +1,7 @@
 # LEGO Heddy — engineered desk sculpture
 
+**English** · [中文](README.zh-CN.md)
+
 A buildable brick interpretation of Heddy, derived from the locked identity in
 [`../skills/heddy-ip/references/heddy-dna.md`](../skills/heddy-ip/references/heddy-dna.md)
 and the storybook turnaround. The workflow follows the Microduck approach:
@@ -142,10 +144,10 @@ The sound is synthesised: one click per part landing, a quiet A-major-7 pad and 
 model/        heddy.json (locked), heddy.ldr, heddy_steps.json, bom.csv/.md, validation.json/.md
 renders/      view-front/rear/left/right, hero-3q, hero-4k (final hero image), exploded, exploded-labelled
 video/        hero film, 9:16 social cut, sting
-instructions/ heddy-lego-instructions.pdf, pages/, steps/
+instructions/ heddy-lego-instructions.pdf (pages/ and steps/ are regenerated, not committed)
 tools/        build_heddy.py → sequence.py → validate.py → make_bom.py → render_* → make_booklet.py
 ldraw/        vendored LDraw subset (CC BY 4.0, see lib/CAreadme.txt) + authored parts
 ```
 
-Rebuild everything with `pip install bpy numpy pillow`, then run the tools in
-the order above.
+Rebuild everything with `pip install bpy numpy pillow imageio-ffmpeg`, then run the
+tools in the order above, then `render_film.py` and `make_film.py` for the films.

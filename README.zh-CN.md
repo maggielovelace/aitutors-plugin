@@ -242,8 +242,6 @@ skill 本身就是一个独立文件夹——`flashcards/skills/flashcards/`
 OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
 任何能读 SKILL.md 的 agent 都能直接用。
 
-||||||| parent of d4cd683 (feat: add Heddy sticker pack artwork and README section)
-
 ## 海迪贴纸
 
 ![海迪贴纸](stickers-preview.png)
@@ -251,6 +249,27 @@ OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
 24 张手绘蜡笔风的海迪（aitutors.me 的猫头鹰）贴纸，适用于 iPhone、iPad 和 Mac
 的 iMessage。**Heddy Stickers 即将登陆 App Store。** 透明 PNG 见
 [`stickers/`](stickers/)，仅供个人聊天使用（[使用条款](stickers/LICENSE.md)）。
+
+## 乐高海迪（LEGO Heddy）
+
+![乐高海迪](heddy-ip/lego/renders/hero-3q.png)
+
+把海迪做成一件真的能拼出来的乐高桌面雕塑：**1,446 块真实乐高零件**，高 217 mm，约
+1.5 kg。模型由代码从 `heddy-ip` 的产品几何直接生成，保留海迪的全部身份锚点：左大右小的
+琥珀色眼睛、菱形小嘴、一撮呆毛、绿色八角星徽章。它不是长得像乐高的 CGI：9 项工程校验全部
+通过，包括无零件穿插、无悬空零件、可按步骤拼装也可拆回、重心落在双脚之内（倾斜超过 16.7°
+才会倒）、上半身可在隐藏转盘上转动 ±20°。
+
+- **模型**：[`heddy-ip/lego/model/heddy.ldr`](heddy-ip/lego/model/heddy.ldr)（可用 Studio、LDCad、LeoCAD 打开），
+  零件清单 [`bom.csv`](heddy-ip/lego/model/bom.csv)，校验报告 [`validation.md`](heddy-ip/lego/model/validation.md)
+- **拼装说明书**：82 页 PDF，148 步 ——
+  [`heddy-lego-instructions.pdf`](heddy-ip/lego/instructions/heddy-lego-instructions.pdf)
+- **视频**：45 秒 4K 主片、29.7 秒 9:16 竖版、8 秒角色片头 ——
+  [`heddy-ip/lego/video/`](heddy-ip/lego/video/)
+- **设计说明**（角色分析、配色映射、工程取舍、已声明的偏差）：
+  [`heddy-ip/lego/README.zh-CN.md`](heddy-ip/lego/README.zh-CN.md)
+
+零件几何来自 LDraw.org 零件库（CC BY 4.0），字体为 Bricolage Grotesque 与 IBM Plex Sans（OFL）。
 
 ## 联系我们
 

@@ -18,6 +18,14 @@ AI Tutors (aitutors.me). You may install and run the skill to produce
 assets for aitutors.me; reuse of the character, its DNA, or the reference
 artwork for any other product or brand is not permitted.
 
+The "heddy-ip/lego" directory (the LEGO Heddy model, renders, instructions
+and films) is part of that brand IP and follows the same terms. It also
+bundles third-party material under its own licences: LDraw part geometry in
+"heddy-ip/lego/ldraw/lib/" (LDraw.org, CC BY 4.0, see CAreadme.txt there) and
+the fonts in "heddy-ip/lego/tools/fonts/" (SIL Open Font License, see the
+OFL files there). LEGO is a trademark of the LEGO Group, which does not
+sponsor, authorise or endorse this project.
+
 The "flashcards" skill directory is different: it is a format/QA
 specification, not brand IP, and is licensed under the MIT License. You may
 copy, modify, and redistribute the contents of "flashcards/" for any
