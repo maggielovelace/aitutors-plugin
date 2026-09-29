@@ -80,6 +80,31 @@ iPhone, iPad and Mac. **Heddy Stickers is coming to the App Store.** The
 transparent PNGs are in [`stickers/`](stickers/) for personal use in your own
 chats ([terms](stickers/LICENSE.md)).
 
+## LEGO Heddy
+
+![LEGO Heddy](heddy-ip/lego/renders/hero-3q.png)
+
+Heddy as a real, buildable LEGO desk sculpture: **1,446 genuine LEGO elements**, 217 mm
+tall, about 1.5 kg. The model is generated in code from the `heddy-ip` product geometry, so
+every identity anchor survives: the asymmetric amber eyes (left larger), the diamond beak,
+the single tuft and the spark-green star. It is engineered, not a CGI look-alike. All nine
+validation checks pass: no parts intersect or float, it builds in step order and comes apart
+again, it stands on its own feet (it tips only past 16.7°), and the upper body turns ±20° on a
+hidden turntable.
+
+- **Model:** [`heddy-ip/lego/model/heddy.ldr`](heddy-ip/lego/model/heddy.ldr) (opens in Studio,
+  LDCad or LeoCAD), parts list [`bom.csv`](heddy-ip/lego/model/bom.csv), validation report
+  [`validation.md`](heddy-ip/lego/model/validation.md)
+- **Instructions:** an 82-page, 148-step booklet —
+  [`heddy-lego-instructions.pdf`](heddy-ip/lego/instructions/heddy-lego-instructions.pdf)
+- **Films:** a 45 s 4K hero film, a 29.7 s 9:16 social cut and an 8 s mascot sting —
+  [`heddy-ip/lego/video/`](heddy-ip/lego/video/)
+- **Design notes** (character analysis, colour mapping, engineering trade-offs, declared
+  deviations): [`heddy-ip/lego/README.md`](heddy-ip/lego/README.md)
+
+Part geometry comes from the LDraw.org parts library (CC BY 4.0). Titles are set in
+Bricolage Grotesque and IBM Plex Sans (OFL).
+
 ## Support
 
 [hello@aitutors.me](mailto:hello@aitutors.me) · [aitutors.me/chatgpt](https://aitutors.me/chatgpt) ·

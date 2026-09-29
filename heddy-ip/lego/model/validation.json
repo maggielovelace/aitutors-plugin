@@ -1,0 +1,49 @@
+{
+ "parts": 1446,
+ "unique_elements": 94,
+ "unique_designs": 50,
+ "steps": 148,
+ "collisions": 0,
+ "collision_pairs": [],
+ "stud_links": 2234,
+ "floating": 0,
+ "floating_parts": [],
+ "single_component": true,
+ "order_failures": 0,
+ "order_fail": [],
+ "approach_failures": 0,
+ "approach_fail": [],
+ "disassembly_failures": 0,
+ "mass_g": 1498.6,
+ "com_ldu": [
+  -0.3,
+  264.6,
+  0.1
+ ],
+ "com_mm": [
+  -0.1,
+  105.8,
+  0.0
+ ],
+ "support_polygon_ldu": [
+  -80.0,
+  80.0,
+  -79.4,
+  79.4
+ ],
+ "stability_margin_mm": 31.7,
+ "tip_angle_deg": 16.7,
+ "head_mass_share": 0.405,
+ "upper_module_mass_g": 1418.1,
+ "size_mm": [
+  175.5,
+  217.4,
+  141.9
+ ],
+ "swivel": {
+  "-20": 0,
+  "-10": 0,
+  "10": 0,
+  "20": 0
+ }
+}

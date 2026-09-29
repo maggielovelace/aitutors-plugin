@@ -1,0 +1,2967 @@
+{
+"steps": [
+{
+"n": 1,
+"module": "feet",
+"title": "Feet",
+"sub": "main",
+"parts": [
+0,
+4
+],
+"note": null,
+"view": null
+},
+{
+"n": 2,
+"module": "feet",
+"title": "Feet",
+"sub": "main",
+"parts": [
+3,
+2,
+1,
+5,
+7,
+6
+],
+"note": null,
+"view": null
+},
+{
+"n": 3,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+34,
+35,
+33,
+37,
+36,
+38,
+32
+],
+"note": null,
+"view": null
+},
+{
+"n": 4,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+44,
+42,
+51,
+49,
+47,
+41,
+43,
+45,
+39,
+48,
+50,
+40,
+46
+],
+"note": null,
+"view": null
+},
+{
+"n": 5,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+63,
+60,
+61,
+72,
+67,
+70,
+66,
+69,
+59,
+58,
+62
+],
+"note": null,
+"view": null
+},
+{
+"n": 6,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+64,
+53,
+52,
+54,
+68,
+71,
+55,
+56,
+57,
+65
+],
+"note": null,
+"view": null
+},
+{
+"n": 7,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+87,
+85,
+83,
+81,
+90,
+92,
+79,
+73,
+74,
+75,
+78
+],
+"note": null,
+"view": null
+},
+{
+"n": 8,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+77,
+76,
+80,
+91,
+93,
+82,
+84,
+86,
+88,
+89
+],
+"note": null,
+"view": null
+},
+{
+"n": 9,
+"module": "lower-body",
+"title": "Lower body",
+"sub": "main",
+"parts": [
+101,
+97,
+99,
+103,
+95,
+105,
+96,
+98,
+100,
+104,
+102,
+94,
+106
+],
+"note": null,
+"view": null
+},
+{
+"n": 10,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "main",
+"parts": [
+31
+],
+"note": "Turntable: the upper body can turn on its feet",
+"view": null
+},
+{
+"n": 11,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+161,
+159,
+153,
+155,
+157,
+151,
+148,
+149
+],
+"note": "Build the upper module separately",
+"view": null
+},
+{
+"n": 12,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+150,
+152,
+154,
+156,
+158,
+160,
+162
+],
+"note": null,
+"view": null
+},
+{
+"n": 13,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+143,
+141,
+145,
+135,
+139,
+130,
+133,
+136,
+132
+],
+"note": "Turn the module over",
+"view": "under"
+},
+{
+"n": 14,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+137,
+134,
+131,
+138,
+140,
+142,
+147,
+144,
+146
+],
+"note": null,
+"view": "under"
+},
+{
+"n": 15,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+125,
+118,
+122,
+119,
+113,
+116,
+115,
+120,
+117
+],
+"note": null,
+"view": "under"
+},
+{
+"n": 16,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+114,
+121,
+123,
+124,
+128,
+126,
+127,
+129
+],
+"note": null,
+"view": "under"
+},
+{
+"n": 17,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "upper",
+"parts": [
+108,
+110,
+107,
+109,
+111,
+112
+],
+"note": null,
+"view": "under"
+},
+{
+"n": 18,
+"module": "core",
+"title": "Internal core & swivel",
+"sub": "attach-upper",
+"parts": [],
+"note": "Turn the module back and press it onto the turntable",
+"view": null
+},
+{
+"n": 19,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+166,
+180,
+178,
+177,
+175,
+173,
+163,
+170,
+168,
+165
+],
+"note": null,
+"view": null
+},
+{
+"n": 20,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+171,
+169,
+172,
+164,
+174,
+176,
+167,
+179,
+181,
+30
+],
+"note": null,
+"view": null
+},
+{
+"n": 21,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+208,
+195,
+193,
+203,
+205,
+191,
+201,
+189,
+182,
+199,
+184,
+187,
+197,
+186
+],
+"note": null,
+"view": null
+},
+{
+"n": 22,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+198,
+188,
+185,
+200,
+183,
+190,
+202,
+192,
+207,
+204,
+194,
+196,
+209,
+206
+],
+"note": null,
+"view": null
+},
+{
+"n": 23,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+239,
+241,
+235,
+232,
+230,
+234,
+217,
+228,
+226,
+210,
+215
+],
+"note": null,
+"view": null
+},
+{
+"n": 24,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+224,
+212,
+213,
+220,
+222,
+219,
+223,
+221,
+214,
+225,
+216
+],
+"note": null,
+"view": null
+},
+{
+"n": 25,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+211,
+227,
+229,
+218,
+237,
+231,
+233,
+236,
+242,
+240,
+238
+],
+"note": null,
+"view": null
+},
+{
+"n": 26,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+273,
+256,
+260,
+258,
+270,
+268,
+254,
+266,
+245,
+264,
+243
+],
+"note": null,
+"view": null
+},
+{
+"n": 27,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+247,
+252,
+250,
+262,
+249,
+263,
+251,
+253,
+248,
+244,
+265
+],
+"note": null,
+"view": null
+},
+{
+"n": 28,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+246,
+267,
+255,
+269,
+271,
+257,
+259,
+261,
+274,
+272
+],
+"note": null,
+"view": null
+},
+{
+"n": 29,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+275,
+276
+],
+"note": null,
+"view": null
+},
+{
+"n": 30,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+277,
+278
+],
+"note": null,
+"view": null
+},
+{
+"n": 31,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+291,
+309,
+306,
+311,
+305,
+303,
+289,
+279,
+301,
+284,
+297,
+281
+],
+"note": null,
+"view": null
+},
+{
+"n": 32,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+282,
+298,
+293,
+287,
+294,
+286,
+295,
+288,
+296,
+299,
+283,
+300
+],
+"note": null,
+"view": null
+},
+{
+"n": 33,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+285,
+302,
+280,
+290,
+304,
+308,
+313,
+307,
+310,
+292,
+312
+],
+"note": null,
+"view": null
+},
+{
+"n": 34,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+324,
+343,
+339,
+341,
+322,
+337,
+333,
+314,
+334,
+318,
+331
+],
+"note": null,
+"view": null
+},
+{
+"n": 35,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+316,
+329,
+320,
+327,
+326,
+328,
+321,
+330,
+317,
+332,
+319
+],
+"note": null,
+"view": null
+},
+{
+"n": 36,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+335,
+315,
+336,
+338,
+323,
+340,
+342,
+325,
+344
+],
+"note": null,
+"view": null
+},
+{
+"n": 37,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+8,
+376,
+355,
+373,
+357,
+372,
+370,
+369,
+367,
+365,
+364,
+348
+],
+"note": null,
+"view": null
+},
+{
+"n": 38,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+345,
+362,
+359,
+353,
+360,
+351,
+352,
+354,
+361,
+363,
+347,
+346
+],
+"note": null,
+"view": null
+},
+{
+"n": 39,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+349,
+350,
+356,
+366,
+368,
+375,
+358,
+371,
+374,
+377,
+9
+],
+"note": null,
+"view": null
+},
+{
+"n": 40,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+378,
+379
+],
+"note": null,
+"view": null
+},
+{
+"n": 41,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+380,
+381
+],
+"note": null,
+"view": null
+},
+{
+"n": 42,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+407,
+413,
+409,
+391,
+405,
+403,
+384,
+382,
+401,
+386,
+395
+],
+"note": null,
+"view": null
+},
+{
+"n": 43,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+393,
+399,
+396,
+389,
+388,
+390,
+397,
+400,
+394,
+398,
+387
+],
+"note": null,
+"view": null
+},
+{
+"n": 44,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+402,
+383,
+385,
+404,
+406,
+392,
+412,
+411,
+408,
+410
+],
+"note": null,
+"view": null
+},
+{
+"n": 45,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+437,
+439,
+435,
+421,
+433,
+414,
+419,
+416,
+431,
+417,
+429,
+424,
+427,
+426
+],
+"note": null,
+"view": null
+},
+{
+"n": 46,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+428,
+422,
+430,
+418,
+432,
+420,
+415,
+434,
+425,
+436,
+423,
+438,
+440
+],
+"note": null,
+"view": null
+},
+{
+"n": 47,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+473,
+10,
+477,
+475,
+455,
+471,
+453,
+469,
+441,
+467,
+446,
+463,
+443,
+464
+],
+"note": null,
+"view": null
+},
+{
+"n": 48,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+444,
+461,
+451,
+459,
+449,
+457,
+448,
+458,
+450,
+460,
+452,
+462,
+445,
+465
+],
+"note": null,
+"view": null
+},
+{
+"n": 49,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+447,
+466,
+468,
+442,
+470,
+454,
+472,
+456,
+474,
+476,
+478,
+12,
+11
+],
+"note": null,
+"view": null
+},
+{
+"n": 50,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+479,
+480
+],
+"note": null,
+"view": null
+},
+{
+"n": 51,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+481,
+482
+],
+"note": null,
+"view": null
+},
+{
+"n": 52,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+512,
+489,
+508,
+504,
+506,
+502,
+487,
+483,
+485,
+500,
+498
+],
+"note": null,
+"view": null
+},
+{
+"n": 53,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+494,
+492,
+495,
+491,
+496,
+493,
+497,
+499,
+501,
+486,
+484
+],
+"note": null,
+"view": null
+},
+{
+"n": 54,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+503,
+488,
+505,
+507,
+490,
+509,
+514,
+511,
+510,
+513
+],
+"note": null,
+"view": null
+},
+{
+"n": 55,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+538,
+534,
+519,
+515,
+532,
+517,
+530,
+528,
+524,
+522,
+525,
+521
+],
+"note": null,
+"view": null
+},
+{
+"n": 56,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+526,
+523,
+527,
+529,
+531,
+518,
+533,
+516,
+520,
+536,
+535,
+537
+],
+"note": null,
+"view": null
+},
+{
+"n": 57,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+14,
+567,
+13,
+570,
+564,
+566,
+560,
+562,
+558,
+539,
+556,
+543,
+541
+],
+"note": null,
+"view": null
+},
+{
+"n": 58,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+551,
+554,
+552,
+548,
+545,
+547,
+549,
+546,
+555,
+550,
+553,
+542,
+544
+],
+"note": null,
+"view": null
+},
+{
+"n": 59,
+"module": "torso",
+"title": "Torso & wings",
+"sub": "main",
+"parts": [
+557,
+540,
+559,
+563,
+561,
+569,
+565,
+571,
+568,
+16,
+15
+],
+"note": null,
+"view": null
+},
+{
+"n": 60,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+606,
+601,
+603,
+597,
+599,
+595,
+578,
+576,
+574,
+593,
+572,
+608,
+588
+],
+"note": null,
+"view": null
+},
+{
+"n": 61,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+584,
+591,
+581,
+582,
+585,
+580,
+586,
+583,
+589,
+592,
+587,
+590,
+609
+],
+"note": null,
+"view": null
+},
+{
+"n": 62,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+573,
+594,
+575,
+577,
+579,
+596,
+600,
+598,
+605,
+602,
+607,
+604
+],
+"note": null,
+"view": null
+},
+{
+"n": 63,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+632,
+630,
+618,
+615,
+613,
+610,
+611,
+619,
+628,
+626,
+621,
+624
+],
+"note": null,
+"view": null
+},
+{
+"n": 64,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+623,
+625,
+617,
+627,
+629,
+612,
+614,
+622,
+616,
+631,
+620,
+633
+],
+"note": null,
+"view": null
+},
+{
+"n": 65,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+18,
+666,
+17,
+669,
+663,
+665,
+659,
+661,
+657,
+638,
+636,
+655
+],
+"note": null,
+"view": null
+},
+{
+"n": 66,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+671,
+634,
+651,
+647,
+653,
+643,
+648,
+673,
+641,
+644,
+640,
+645
+],
+"note": null,
+"view": null
+},
+{
+"n": 67,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+642,
+674,
+649,
+646,
+654,
+650,
+652,
+635,
+672,
+656,
+637,
+639
+],
+"note": null,
+"view": null
+},
+{
+"n": 68,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+658,
+662,
+660,
+668,
+664,
+670,
+667,
+20,
+19
+],
+"note": null,
+"view": null
+},
+{
+"n": 69,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+675,
+677,
+678,
+676
+],
+"note": null,
+"view": null
+},
+{
+"n": 70,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+679,
+681,
+682,
+680
+],
+"note": null,
+"view": null
+},
+{
+"n": 71,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+713,
+708,
+710,
+704,
+706,
+702,
+685,
+683,
+689,
+698,
+696
+],
+"note": null,
+"view": null
+},
+{
+"n": 72,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+699,
+687,
+692,
+694,
+691,
+695,
+693,
+688,
+700,
+697,
+701
+],
+"note": null,
+"view": null
+},
+{
+"n": 73,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+690,
+684,
+686,
+703,
+707,
+705,
+712,
+709,
+714,
+711
+],
+"note": null,
+"view": null
+},
+{
+"n": 74,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+743,
+740,
+749,
+738,
+747,
+736,
+719,
+717,
+715,
+734,
+752,
+730,
+745
+],
+"note": null,
+"view": null
+},
+{
+"n": 75,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+728,
+731,
+724,
+722,
+725,
+721,
+726,
+723,
+727,
+732,
+729,
+746,
+733
+],
+"note": null,
+"view": null
+},
+{
+"n": 76,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+751,
+735,
+716,
+718,
+720,
+737,
+748,
+739,
+750,
+741,
+744,
+742
+],
+"note": null,
+"view": null
+},
+{
+"n": 77,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+22,
+781,
+21,
+792,
+780,
+763,
+761,
+759,
+755,
+778,
+784,
+753
+],
+"note": null,
+"view": null
+},
+{
+"n": 78,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+776,
+757,
+790,
+772,
+768,
+788,
+773,
+766,
+786,
+769,
+765,
+770
+],
+"note": null,
+"view": null
+},
+{
+"n": 79,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+787,
+767,
+774,
+771,
+789,
+775,
+791,
+758,
+777,
+754,
+785,
+779
+],
+"note": null,
+"view": null
+},
+{
+"n": 80,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+756,
+760,
+762,
+764,
+783,
+793,
+782,
+24,
+23
+],
+"note": null,
+"view": null
+},
+{
+"n": 81,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+802,
+794,
+800,
+798,
+796,
+797,
+799,
+801,
+795,
+803
+],
+"note": null,
+"view": null
+},
+{
+"n": 82,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+812,
+804,
+810,
+808,
+806,
+807,
+809,
+811,
+805,
+813
+],
+"note": null,
+"view": null
+},
+{
+"n": 83,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+841,
+825,
+838,
+836,
+843,
+848,
+816,
+823,
+814,
+846,
+834,
+821
+],
+"note": null,
+"view": null
+},
+{
+"n": 84,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+832,
+819,
+828,
+830,
+818,
+827,
+831,
+829,
+820,
+833,
+822,
+835
+],
+"note": null,
+"view": null
+},
+{
+"n": 85,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+845,
+815,
+817,
+824,
+847,
+844,
+837,
+839,
+826,
+842,
+840
+],
+"note": null,
+"view": null
+},
+{
+"n": 86,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+865,
+863,
+861,
+875,
+854,
+869,
+867,
+849,
+851,
+859,
+857,
+872,
+856,
+871
+],
+"note": null,
+"view": null
+},
+{
+"n": 87,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+852,
+873,
+858,
+860,
+850,
+868,
+870,
+855,
+874,
+862,
+864,
+853,
+866
+],
+"note": null,
+"view": null
+},
+{
+"n": 88,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+25,
+891,
+889,
+896,
+883,
+887,
+894,
+880,
+885,
+878,
+881,
+876,
+877
+],
+"note": null,
+"view": null
+},
+{
+"n": 89,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+879,
+886,
+882,
+895,
+884,
+888,
+897,
+890,
+892,
+27,
+26,
+893
+],
+"note": null,
+"view": null
+},
+{
+"n": 90,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+900,
+898,
+899,
+901
+],
+"note": null,
+"view": null
+},
+{
+"n": 91,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+904,
+902,
+903,
+905
+],
+"note": null,
+"view": null
+},
+{
+"n": 92,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+910,
+927,
+929,
+942,
+908,
+940,
+923,
+925,
+938,
+906,
+936,
+921,
+915
+],
+"note": null,
+"view": null
+},
+{
+"n": 93,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+919,
+934,
+913,
+932,
+916,
+912,
+917,
+933,
+914,
+935,
+920,
+918,
+922
+],
+"note": null,
+"view": null
+},
+{
+"n": 94,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+937,
+907,
+939,
+924,
+926,
+941,
+909,
+943,
+931,
+928,
+911,
+930
+],
+"note": null,
+"view": null
+},
+{
+"n": 95,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+963,
+965,
+952,
+960,
+950,
+958,
+948,
+967,
+946,
+956,
+944,
+954,
+955
+],
+"note": null,
+"view": null
+},
+{
+"n": 96,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+945,
+957,
+947,
+968,
+949,
+959,
+951,
+962,
+953,
+966,
+964,
+961
+],
+"note": null,
+"view": null
+},
+{
+"n": 97,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+28,
+995,
+992,
+971,
+989,
+1000,
+983,
+987,
+979,
+998,
+985,
+969
+],
+"note": null,
+"view": null
+},
+{
+"n": 98,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+980,
+974,
+977,
+996,
+973,
+978,
+997,
+975,
+976,
+981,
+970,
+986
+],
+"note": null,
+"view": null
+},
+{
+"n": 99,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+999,
+982,
+984,
+988,
+1001,
+990,
+972,
+994,
+993,
+29,
+991
+],
+"note": null,
+"view": null
+},
+{
+"n": 100,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1019,
+1031,
+1016,
+1014,
+1029,
+1006,
+1010,
+1027,
+1011,
+1025,
+1004
+],
+"note": null,
+"view": null
+},
+{
+"n": 101,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1007,
+1023,
+1021,
+1002,
+1003,
+1022,
+1024,
+1008,
+1005,
+1026,
+1012
+],
+"note": null,
+"view": null
+},
+{
+"n": 102,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1009,
+1013,
+1028,
+1030,
+1015,
+1017,
+1032,
+1020,
+1018
+],
+"note": null,
+"view": null
+},
+{
+"n": 103,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1052,
+1055,
+1053,
+1064,
+1062,
+1049,
+1037,
+1047,
+1035,
+1043,
+1060
+],
+"note": null,
+"view": null
+},
+{
+"n": 104,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1041,
+1044,
+1058,
+1033,
+1039,
+1040,
+1057,
+1034,
+1059,
+1045,
+1042
+],
+"note": null,
+"view": null
+},
+{
+"n": 105,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1061,
+1046,
+1036,
+1048,
+1038,
+1051,
+1063,
+1050,
+1065,
+1054,
+1056
+],
+"note": null,
+"view": null
+},
+{
+"n": 106,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1076,
+1087,
+1079,
+1085,
+1066,
+1074,
+1083,
+1072,
+1081,
+1069,
+1071,
+1082
+],
+"note": null,
+"view": null
+},
+{
+"n": 107,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1073,
+1067,
+1084,
+1075,
+1086,
+1078,
+1068,
+1077,
+1080,
+1088,
+1070
+],
+"note": null,
+"view": null
+},
+{
+"n": 108,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1111,
+1119,
+1108,
+1106,
+1104,
+1117,
+1093,
+1097,
+1102,
+1115,
+1100
+],
+"note": null,
+"view": null
+},
+{
+"n": 109,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1090,
+1091,
+1113,
+1094,
+1089,
+1095,
+1114,
+1092,
+1098,
+1101,
+1116
+],
+"note": null,
+"view": null
+},
+{
+"n": 110,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1096,
+1099,
+1103,
+1118,
+1105,
+1107,
+1109,
+1120,
+1112,
+1110
+],
+"note": null,
+"view": null
+},
+{
+"n": 111,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1153,
+1151,
+1134,
+1149,
+1132,
+1147,
+1146,
+1126,
+1130,
+1155,
+1143,
+1124
+],
+"note": null,
+"view": null
+},
+{
+"n": 112,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1141,
+1127,
+1139,
+1137,
+1121,
+1123,
+1138,
+1140,
+1128,
+1142,
+1125,
+1144
+],
+"note": null,
+"view": null
+},
+{
+"n": 113,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1129,
+1131,
+1145,
+1148,
+1133,
+1150,
+1135,
+1152,
+1154,
+1122,
+1136
+],
+"note": null,
+"view": null
+},
+{
+"n": 114,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1166,
+1186,
+1164,
+1176,
+1162,
+1184,
+1174,
+1172,
+1160,
+1182,
+1158
+],
+"note": null,
+"view": null
+},
+{
+"n": 115,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1170,
+1156,
+1180,
+1168,
+1169,
+1179,
+1181,
+1157,
+1171,
+1159,
+1183
+],
+"note": null,
+"view": null
+},
+{
+"n": 116,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1161,
+1173,
+1175,
+1185,
+1163,
+1165,
+1178,
+1187,
+1167,
+1177,
+1188
+],
+"note": null,
+"view": null
+},
+{
+"n": 117,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1208,
+1224,
+1193,
+1222,
+1205,
+1203,
+1220,
+1218,
+1191,
+1201,
+1216,
+1214,
+1199
+],
+"note": null,
+"view": null
+},
+{
+"n": 118,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1197,
+1212,
+1189,
+1210,
+1195,
+1196,
+1211,
+1190,
+1213,
+1198,
+1200,
+1215,
+1217
+],
+"note": null,
+"view": null
+},
+{
+"n": 119,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1192,
+1202,
+1219,
+1221,
+1204,
+1206,
+1223,
+1194,
+1225,
+1209,
+1207
+],
+"note": null,
+"view": null
+},
+{
+"n": 120,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1254,
+1233,
+1243,
+1231,
+1252,
+1241,
+1239,
+1250,
+1229,
+1248,
+1227
+],
+"note": null,
+"view": null
+},
+{
+"n": 121,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1237,
+1246,
+1226,
+1236,
+1247,
+1238,
+1228,
+1249,
+1230,
+1256,
+1240
+],
+"note": null,
+"view": null
+},
+{
+"n": 122,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1251,
+1242,
+1253,
+1232,
+1244,
+1234,
+1255,
+1235,
+1245
+],
+"note": null,
+"view": null
+},
+{
+"n": 123,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1266,
+1282,
+1268,
+1280,
+1278,
+1257,
+1264,
+1276,
+1274,
+1260,
+1262,
+1272,
+1259,
+1271
+],
+"note": null,
+"view": null
+},
+{
+"n": 124,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1273,
+1261,
+1263,
+1275,
+1277,
+1258,
+1265,
+1279,
+1281,
+1270,
+1283,
+1267,
+1269,
+1284
+],
+"note": null,
+"view": null
+},
+{
+"n": 125,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1318,
+1291,
+1315,
+1300,
+1313,
+1289,
+1311,
+1298,
+1317,
+1296,
+1309,
+1287
+],
+"note": null,
+"view": null
+},
+{
+"n": 126,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1307,
+1294,
+1305,
+1285,
+1303,
+1293,
+1304,
+1286,
+1306,
+1295,
+1308,
+1288
+],
+"note": null,
+"view": null
+},
+{
+"n": 127,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1297,
+1310,
+1299,
+1312,
+1290,
+1314,
+1302,
+1292,
+1316,
+1301
+],
+"note": null,
+"view": null
+},
+{
+"n": 128,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1324,
+1340,
+1329,
+1338,
+1322,
+1336,
+1320,
+1334,
+1327,
+1332,
+1319,
+1331,
+1333
+],
+"note": null,
+"view": null
+},
+{
+"n": 129,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1328,
+1335,
+1321,
+1337,
+1323,
+1343,
+1339,
+1330,
+1341,
+1325,
+1326,
+1342
+],
+"note": null,
+"view": null
+},
+{
+"n": 130,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1350,
+1357,
+1345,
+1355,
+1348,
+1353,
+1344,
+1352
+],
+"note": null,
+"view": null
+},
+{
+"n": 131,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1354,
+1349,
+1356,
+1346,
+1358,
+1351,
+1347,
+1359
+],
+"note": null,
+"view": null
+},
+{
+"n": 132,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1368,
+1372,
+1364,
+1365,
+1361,
+1363,
+1366,
+1367,
+1369,
+1371,
+1360,
+1362,
+1370
+],
+"note": null,
+"view": null
+},
+{
+"n": 133,
+"module": "head",
+"title": "Head structure",
+"sub": "main",
+"parts": [
+1375,
+1374,
+1376,
+1373,
+1377
+],
+"note": null,
+"view": null
+},
+{
+"n": 134,
+"module": "facial",
+"title": "Facial geometry",
+"sub": "main",
+"parts": [
+1391,
+1379,
+1380,
+1383,
+1384,
+1381,
+1382
+],
+"note": "Studs forward: the face is built sideways",
+"view": null
+},
+{
+"n": 135,
+"module": "facial",
+"title": "Facial geometry",
+"sub": "main",
+"parts": [
+1385,
+1386,
+1387,
+1388,
+1389,
+1390
+],
+"note": null,
+"view": null
+},
+{
+"n": 136,
+"module": "facial",
+"title": "Facial geometry",
+"sub": "main",
+"parts": [
+1399,
+1400,
+1392,
+1393,
+1394,
+1395,
+1396,
+1397,
+1403
+],
+"note": null,
+"view": null
+},
+{
+"n": 137,
+"module": "facial",
+"title": "Facial geometry",
+"sub": "main",
+"parts": [
+1404,
+1398,
+1401,
+1402,
+1405,
+1406,
+1407,
+1412,
+1408
+],
+"note": null,
+"view": null
+},
+{
+"n": 138,
+"module": "facial",
+"title": "Facial geometry",
+"sub": "main",
+"parts": [
+1409,
+1410,
+1411,
+1413,
+1414,
+1415,
+1417,
+1416,
+1418
+],
+"note": null,
+"view": null
+},
+{
+"n": 139,
+"module": "eyes",
+"title": "Eyes",
+"sub": "main",
+"parts": [
+1419,
+1420,
+1421,
+1422
+],
+"note": "The left (larger) eye: iris",
+"view": null
+},
+{
+"n": 140,
+"module": "eyes",
+"title": "Eyes",
+"sub": "main",
+"parts": [
+1423,
+1424,
+1425,
+1426,
+1427,
+1428
+],
+"note": null,
+"view": null
+},
+{
+"n": 141,
+"module": "eyes",
+"title": "Eyes",
+"sub": "main",
+"parts": [
+1429
+],
+"note": "One highlight, upper right",
+"view": null
+},
+{
+"n": 142,
+"module": "eyes",
+"title": "Eyes",
+"sub": "main",
+"parts": [
+1430,
+1431,
+1432
+],
+"note": "The right eye: iris",
+"view": null
+},
+{
+"n": 143,
+"module": "eyes",
+"title": "Eyes",
+"sub": "main",
+"parts": [
+1433,
+1434,
+1435,
+1436,
+1437,
+1438
+],
+"note": null,
+"view": null
+},
+{
+"n": 144,
+"module": "eyes",
+"title": "Eyes",
+"sub": "main",
+"parts": [
+1439
+],
+"note": "One highlight, upper right",
+"view": null
+},
+{
+"n": 145,
+"module": "beak",
+"title": "Beak",
+"sub": "main",
+"parts": [
+1440,
+1441
+],
+"note": "Turn the square 45 degrees on the single centre stud",
+"view": null
+},
+{
+"n": 146,
+"module": "beak",
+"title": "Beak",
+"sub": "main",
+"parts": [
+1442,
+1443
+],
+"note": null,
+"view": null
+},
+{
+"n": 147,
+"module": "details",
+"title": "Finishing details",
+"sub": "main",
+"parts": [
+1444,
+1445
+],
+"note": "Two squares, 45 degrees apart: the eight-point star",
+"view": null
+},
+{
+"n": 148,
+"module": "details",
+"title": "Finishing details",
+"sub": "main",
+"parts": [
+1378
+],
+"note": "One soft tuft",
+"view": null
+}
+],
+"modules": [
+[
+"feet",
+"Feet"
+],
+[
+"lower-body",
+"Lower body"
+],
+[
+"core",
+"Internal core & swivel"
+],
+[
+"torso",
+"Torso & wings"
+],
+[
+"head",
+"Head structure"
+],
+[
+"facial",
+"Facial geometry"
+],
+[
+"eyes",
+"Eyes"
+],
+[
+"beak",
+"Beak"
+],
+[
+"details",
+"Finishing details"
+]
+]
+}
