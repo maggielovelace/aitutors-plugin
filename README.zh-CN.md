@@ -273,6 +273,8 @@ OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
   `python3 faculty/built/tools/build.py all --render --cutout`（渲染需要带 `bpy` 的 Python 3.11）
 - **给智能体的说明**：保持整套一致的「锁定参数」（头部尺寸、相机、底座），新增角色、渲染新角度或表情的方法，
   以及所有素材都要遵守的规则（标明「AI 导师」、原创面孔、对外称「积木搭建」而不是「乐高」）
+- **可直接复制的提示词**：给 Codex、Claude Code 等智能体用——安装检查、贴纸和头像、新角度、新表情、新角色、放进网页——
+  见[给 AI 智能体的提示词](faculty/built/README.zh-CN.md#给-ai-智能体的提示词)
 
 ## 乐高海迪（LEGO Heddy）
 
