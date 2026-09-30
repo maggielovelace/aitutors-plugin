@@ -14,6 +14,7 @@ Both are kept.
 This folder is a **toolkit**, not just a set of pictures. Any agent (or person) can rebuild a
 professor, render a new angle, cut them out on a transparent background, or add a new
 character that sits in the same set.
+Agents can start from the [ready-made prompts](#prompts-for-ai-agents).
 
 ## What's here
 
@@ -127,6 +128,91 @@ table in `render_bust.py` with its LDConfig hex.
 - **Physical builds:** the `.ldr` opens in Studio. Note: unlike LEGO Heddy, these models have
   **not** been checked for stability or buildability (no connection or collision
   validation). They are made of real parts, but treat them as render models first.
+
+## Prompts for AI agents
+
+These prompts work in Codex, Claude Code, Cursor, Gemini CLI or any coding agent that can run shell
+commands and view images. Clone the repo first and open the agent in its root:
+
+```bash
+git clone https://github.com/maggielovelace/aitutors-plugin.git && cd aitutors-plugin
+```
+
+Paste one prompt below, replacing the part in `<angle brackets>`. Every prompt tells the agent to
+read this README first, keep the set lock and look at each render. Most bad results come from
+skipping those three steps.
+
+**1. Set up and check the toolkit works**
+
+```text
+Read faculty/built/README.md. Set up rendering as its "Setup" section describes (a Python 3.11
+env with bpy, numpy and pillow) and export BPY_PYTHON. Then run
+`python3 faculty/built/tools/build.py pi` and confirm `git status` shows no change to
+faculty/built/model/ (a rebuild must reproduce the committed model exactly). Finally render a quick
+draft: `$BPY_PYTHON faculty/built/tools/render_bust.py faculty/built/model/pi.json /tmp/pi-draft.png
+--size 700 --samples 24`, open the image and tell me what you see.
+```
+
+**2. Stickers or avatars for one professor**
+
+```text
+Read faculty/built/README.md. Using the existing cutout faculty/built/renders/cutout/<curie>.png
+(do not re-render), make <a 512 px square sticker with a 16 px white outline and a 256 px
+circular avatar cropped to the head>. Crop first, then downscale; never upscale. Keep the plinth
+out of the avatar. Save to <out/curie/> and show me each file.
+```
+
+**3. A new angle or a turntable**
+
+```text
+Read faculty/built/README.md and keep its set lock (do not change --cam-height, the lens or the
+model). Render faculty/built/model/<newton>.json at --rot values from <-60 to 60 in steps of 10>,
+at --size 700 --samples 24 for drafts. Look at every frame and check nothing clips or turns
+unreadable. Then render the finals at 1200 px, 64 samples, and stitch them into <a 3-second MP4
+loop with ffmpeg>. Never mirror an image to fake the other side.
+```
+
+**4. A new expression (blink, smile, surprise)**
+
+```text
+Read faculty/built/README.md, especially "Making new assets from the same models". Copy
+faculty/built/tools/prof_<darwin>.py to prof_<darwin>_<smile>.py and change ONLY the face lines to
+make <a bigger smile: mouth corners up one plate>. Keep everything in the set lock. Build it with
+`python3 faculty/built/tools/prof_<darwin>_<smile>.py faculty/built/model/<darwin>_<smile>.json`, render a draft, and show me the draft next to
+faculty/built/renders/<darwin>.png. Iterate until the only visible difference is the expression.
+Do not overwrite the original professor.
+```
+
+**5. A new character that belongs in the set**
+
+```text
+Read faculty/built/README.md in full, then read faculty/built/tools/prof_pi.py and bust.py.
+Create a new brick-built character: <Professor X, a man, teaches geography, dark skin, short grey
+hair, round glasses, green jumper, holds a globe at his chest>. Follow "Adding a new
+character": copy prof_pi.py, change only skin, hair, facial hair, glasses, mouth, clothes and the
+one held object, and keep the set lock. Draft at --size 700 --samples 24, open every render and
+fix what reads wrong (see the quality bar). Expect 4 to 8 drafts. When it is right, add the id to
+FACULTY in build.py and run `build.py <id> --render --cutout`. Show me the final next to
+faculty/built/renders/pi.png so I can check they match. The face must be original: it must not
+resemble any real person.
+```
+
+**6. Put a professor into a web page or app**
+
+```text
+Read faculty/built/README.md, especially "Rules for every asset". Add the portrait
+faculty/built/renders/cutout/<quill>.png to <the tutor card in src/components/TutorCard.tsx>.
+Show the visible label "AI tutor" next to it, use alt text "<Professor Quill, AI tutor>", and
+serve a downscaled WebP (no larger than twice the display size). Do not call it LEGO anywhere.
+```
+
+**What to check in anything an agent gives back**
+
+- It matches the set: same head size, camera height, angle and plinth as the eight.
+- It still says "AI tutor" wherever a professor appears in a product.
+- The face is original, and the gender matches the namesake (Curie and Mentor are women).
+- Public text says "brick-built", never "LEGO".
+- No teaching-method detail was added to this repository.
 
 ## Rules for every asset
 

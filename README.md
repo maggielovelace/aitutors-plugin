@@ -108,6 +108,9 @@ version 1; this is version 2, and both are kept.
 - **A guide for agents:** the "set lock" (head size, camera, plinth) that keeps new assets on-model,
   how to add a character or render a new angle or expression, and the rules every asset follows
   (labelled "AI tutor", original faces, "brick-built" never "LEGO")
+- **Copy-paste prompts** for Codex, Claude Code and other agents: set up, stickers and avatars,
+  new angles, new expressions, a new character, and adding a portrait to a page —
+  [Prompts for AI agents](faculty/built/README.md#prompts-for-ai-agents)
 
 ## LEGO Heddy
 

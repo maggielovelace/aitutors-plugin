@@ -30,6 +30,55 @@ python3 faculty/built/tools/build.py all --render --cutout
 搭建方法、「整套锁定」参数（头部尺寸、相机高度 0.11149 m、转角 −16°、底座）、新增角色的步骤和质量要求，
 详见[英文说明](README.md)。
 
+## 给 AI 智能体的提示词
+
+下面的提示词适用于 Codex、Claude Code、Cursor、Gemini CLI，或任何能运行命令、能看图片的编程智能体。
+先克隆仓库，在仓库根目录打开智能体：
+
+```bash
+git clone https://github.com/maggielovelace/aitutors-plugin.git && cd aitutors-plugin
+```
+
+复制一段提示词，把 `<尖括号>` 里的内容换成你要的。智能体读英文说明最准确，所以提示词用英文。
+每一段都要求智能体先读说明、保持「整套锁定」参数、并亲眼看每一张渲染图，大多数失败都来自跳过这三步。
+
+**1. 安装并检查工具能用**
+
+```text
+Read faculty/built/README.md. Set up rendering as its "Setup" section describes and export
+BPY_PYTHON. Run `python3 faculty/built/tools/build.py pi` and confirm `git status` shows no change
+to faculty/built/model/. Then render a quick draft of pi at --size 700 --samples 24, open it and
+tell me what you see.
+```
+
+**2. 为某位教授做贴纸或头像**
+
+```text
+Read faculty/built/README.md. Using faculty/built/renders/cutout/<curie>.png (do not re-render),
+make <a 512 px sticker with a white outline and a 256 px round avatar cropped to the head>.
+Crop first, then downscale; never upscale. Save to <out/curie/> and show me each file.
+```
+
+**3. 新增一位角色**
+
+```text
+Read faculty/built/README.md in full, then tools/prof_pi.py and tools/bust.py. Create a new
+brick-built character: <Professor X, ...>. Follow "Adding a new character" and keep the set lock.
+Draft at --size 700 --samples 24, open every render and fix what reads wrong. When it is right,
+run `build.py <id> --render --cutout` and show me the final next to renders/pi.png.
+The face must be original.
+```
+
+新角度、转台动画、新表情、放进网页或 App 的提示词，见[英文说明](README.md#prompts-for-ai-agents)。
+
+**检查智能体交回来的结果**
+
+- 和整套一致：头部大小、相机高度、角度、底座都相同。
+- 在产品里出现时仍标明「AI 导师」。
+- 脸是原创的；性别与致敬对象一致（Curie 和 Mentor 是女性）。
+- 对外称「积木搭建」，不称「乐高」。
+- 没有往仓库里加任何教学方法细节。
+
 ## 规则
 
 - 是 AI 导师，出现在产品里时都会标明「AI 导师」。
