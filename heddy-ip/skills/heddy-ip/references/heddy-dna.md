@@ -1,6 +1,6 @@
 # Heddy character DNA
 
-**Heddy** is the snowy-owl concierge of aitutors.me — she/her, front-of-house, never a tutor and never a crisis service. This file is the locked identity: every render, in every style and every register, is checked against it item by item. Source of geometric truth: `lib/concierge/heddy.ts` (the product SVG, viewBox 120 full-body). Anything not locked here does not appear.
+**Heddy** is the snowy-owl concierge of aitutors.me — she/her, front-of-house, never a teacher and never a crisis service. She may speak a few short companion lines in her own voice (a greeting, a hand-over to the professor, a cheer, a goodbye — see § Speaking); she never teaches. This file is the locked identity: every render, in every style and every register, is checked against it item by item. Source of geometric truth: `lib/concierge/heddy.ts` (the product SVG, viewBox 120 full-body). Anything not locked here does not appear.
 
 Use this file to answer one question about any image: **is this Heddy?** Each anchor below is a yes/no check a reviewer who has never seen Heddy can run.
 
@@ -18,8 +18,8 @@ Check every anchor on every render. Coordinates are the product SVG's viewBox-12
 | 4 | **Facial disc** | A subtle second ring inside the body outline framing the face (`M60 38 Q39 41 37 62 Q39 79 60 82 Q81 79 83 62 Q81 41 60 38 Z`, low opacity) — a faint double-outline effect, never a hard mask or colour change. |
 | 5 | **Eyes — asymmetric (SIGNATURE)** | Two round amber irises, **left visibly larger than right**: left radius 13.5 at (46,57), right radius 11 at (74,57) — ratio ~1.23. If the eyes are the same size, it is not Heddy. |
 | 6 | **Pupils + highlight** | Ink pupil (`#00173B`) roughly **half** the iris (6.7 / 5.6), centred; exactly ONE white highlight per eye, upper-right of the pupil ((49.5,53.2) r2.4 and (76.8,53.8) r2). No second highlight, no ring highlights. |
-| 7 | **No brows, no nose, no blush** | Nothing above the eyes; nothing between them but face; no cheek colour, ever. |
-| 8 | **Beak** | A small amber **diamond** (a rotated square, `M60 67 L54.5 72 L60 78.5 L65.5 72 Z`) below and between the eyes. Never a hooked or pointed raptor beak, never open in still assets, never holding anything. (Motion clips only: the beak may open per the Talking and Yawn specs in `motion-dna.md` §1–2 — the sole declared exception.) |
+| 7 | **No brows, no nose, no blush, no mouth** | Nothing above the eyes; nothing between them but face; no cheek colour, ever. No drawn mouth — no lips, teeth or tongue, in any medium. The beak (anchor 8) is her only articulator. |
+| 8 | **Beak** | A small amber **diamond** (a rotated square, `M60 67 L54.5 72 L60 78.5 L65.5 72 Z`) below and between the eyes. Never a hooked or pointed raptor beak, never holding anything. **Closed / at rest is the default** — in still assets and on merchandise the beak is always closed. In motion and live voice the beak may open, but ONLY as `motion-dna.md` §1–2 allow: the lower half drops and closes in time with **Heddy's own audio** (or one Yawn); it is never moved by another character's voice. Open or closed it stays the same amber diamond — it opens, it does not become a mouth. |
 | 9 | **Wings** | Two short side wings in warm off-white (`#ECEBE5`), rooted at the body's sides (`M33 54 C21 64 21 88 33 99 C42 90 42 70 42 60 Z` and mirror). Short reach — they contact things close beside the body. No feather detail, no fingers. |
 | 10 | **Feet** | Two small amber ellipses at the base ((50,106) and (70,106), rx6.5 ry4). Soft pads — never talons, claws or toes. |
 | 11 | **Belly badge** | ONE spark-green 8-point star on the belly, centred at ~(60,94), radius ~7 (`M0 -7 L1.6 -1.7 L7 0 L1.6 1.7 L0 7 L-1.6 1.7 L-7 0 L-1.6 -1.7 Z`). Always present, always exactly one, always spark green. |
@@ -40,7 +40,7 @@ Moods map to the product energy system. Each is a render-checkable eye state; th
 
 ### Celebration set (PRD-v0.33.0 — quiet joy, never fanfare)
 
-Celebrations reuse the **ready** ^^ eyes plus one small, countable extra. No confetti storms, no open-mouth cheering (she has no mouth), no motion-blur chaos.
+Celebrations reuse the **ready** ^^ eyes plus one small, countable extra. No confetti storms, no open-beak cheering (she has no mouth, and in stills the beak stays closed — anchor 8), no motion-blur chaos.
 
 | Moment | Render check |
 |---|---|
@@ -85,7 +85,7 @@ Accessories sit ON TOP of the locked anatomy — they never replace, cover or di
 Validate every pose against this BEFORE staging a scene. Derivation is conservative: no invented dexterity.
 
 - **Contact surfaces:** wing tips — carry, present, wave, point (NO fingers, NO grasp; a carried object is balanced or hugged against the body). Feet — perch, stand, and hold a **flat** card or object against a surface.
-- **Beak:** NEVER operates props. It is a marking, not a tool.
+- **Beak:** NEVER operates props. It is a marking, not a tool. It is her only articulator: in motion it opens and closes to her own voice (`motion-dna.md` §1) and is never drawn as lips, teeth or a tongue.
 - **Reach:** short — wing contacts happen close beside the body, never across the torso or at arm's length.
 - **Grip:** pressure/contact only.
 - **Locomotion:** flight, perch, small hop. No walking gaits, no running.
@@ -98,16 +98,20 @@ Any one of these fails the render outright:
 - Generic cartoon owl (loses the asymmetric eyes, the diamond beak, the badge)
 - Realistic raptor: sharp hooked beak, talon detail, fierce brow
 - **Symmetric eyes** — the single most common drift; check it first
-- Eyebrows, a nose, blush, a mouth
+- Eyebrows, a nose, blush, a drawn mouth (lips, teeth, a tongue — the beak is the only articulator, and when it opens it stays a beak)
+- An open beak in a still asset or on merchandise (closed / at rest is the default — anchor 8)
+- The beak moving to a voice that is not Heddy's own — the professor's speech never moves her beak (`motion-dna.md` §1)
 - Any colour outside the palette table
 - Duolingo-adjacent styling (green body, aggressive expressions, pressure poses)
 - Teaching props that frame her as a tutor (at a whiteboard instructing, marking work, wielding a pointer) — professors teach; Heddy welcomes
-- Crisis-adjacent scenes of any kind (see S1 in `SKILL.md` brand safety)
+- Teaching in her own voice — subject content, a hint, an answer, explaining working — in any spoken line (see § Speaking)
+- Crisis-adjacent scenes of any kind (see S1 in `SKILL.md` brand safety); she never appears on a safeguarding screen
+- A mirrored (horizontally flipped) Heddy — mirroring swaps her asymmetric eyes (anchor 5)
 - Text written on her body
 
 ## Brand semantics — what Heddy stands for
 
-Heddy means **welcome, quiet celebration, lighting the way, and companionship**. She greets, notices, celebrates with, hands over to the professors, and keeps a child company — she never instructs, never grades, never pressures, and never handles distress.
+Heddy means **welcome, quiet celebration, lighting the way, and companionship**. She greets, notices, celebrates with, hands over to the professors, and keeps a child company — she never instructs, never grades, never pressures, and never handles distress. Where a product gives her a voice, she says exactly those things and nothing more (§ Speaking).
 
 **Performing, not posing.** In every scene Heddy is load-bearing: she performs the image's one idea — carrying the card, lighting the lamp, waving the visitor in. Quick check: mentally paint her out. If the image still explains itself, she was a sticker — rebuild the scene so it cannot happen without her.
 
@@ -120,6 +124,20 @@ When requirements conflict, decide in this order:
 3. **The task's structure and semantics** — the idea the image must carry.
 4. **Style, medium and decoration** — always yields to 1–3.
 
+## Speaking — what Heddy may say (changed 2026-09-30)
+
+In a live voice session the **professor is the tutor** and carries the teaching voice; Heddy is the companion. She may speak her own short lines, in her own voice:
+
+- **Greeting and hand-over** — hello, and over to the professor.
+- **Encouragement and celebration** — a quiet "well done", the same register as the celebration set.
+- **Goodbye** — the sign-off.
+
+That is the whole list. She still **never teaches**: no subject content, no hints, no answers, never explaining working, never "at a whiteboard instructing". If a line would carry any of the lesson, it belongs to the professor. Spoken lines follow the written voice rules in `voice-and-captions.md` (one quiet sentence, no fanfare, British English).
+
+When she speaks, her **beak moves — and only then** (`motion-dna.md` §1): articulation is synchronised to Heddy's own audio, never to the professor's or anyone else's, and the beak stays the same diamond shape and colour throughout. She never speaks on a safeguarding screen, and she is never mirrored.
+
+*Before 2026-09-30 this file said "never a tutor" and `motion-dna.md` allowed only an un-synced lower-beak drop with no lip-sync. The principle is unchanged — Heddy never teaches — but she now has a voice of her own, and her beak follows it.*
+
 ## Voice
 
-Heddy's written voice (captions, on-image labels, shot lists) is specified in `voice-and-captions.md`. Remember the prompt rule: generation prompts describe her **by design, never by name** — "Heddy" lives only in human-facing copy.
+Heddy's written voice (captions, on-image labels, shot lists) is specified in `voice-and-captions.md`; her spoken lines are bounded by § Speaking above. Remember the prompt rule: generation prompts describe her **by design, never by name** — "Heddy" lives only in human-facing copy.

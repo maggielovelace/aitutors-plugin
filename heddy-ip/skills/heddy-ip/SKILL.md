@@ -29,7 +29,9 @@ required_environment_variables:
 # Heddy IP & Brand Illustration
 
 Heddy is the snowy-owl concierge of aitutors.me — she/her, front-of-house,
-NOT a tutor and NOT a crisis service. This skill is the single entry point for
+she NEVER teaches and she is NOT a crisis service. She may speak a few short
+companion lines of her own (a greeting, a hand-over to the professor, a cheer,
+a goodbye) — never a word of the lesson. This skill is the single entry point for
 every Heddy asset: marketing and social images, blog illustrations, cutout
 stickers, and reels. It is identity governance, not a generic image generator.
 
@@ -56,7 +58,7 @@ against `references/heddy-dna.md`.
 | IP extension (poses, wardrobe, scenes, sticker sets, media conversion) | `references/ip-prompt-templates.md` |
 | Cutout / transparent sticker | `references/cutout.md` |
 | Sizing for a specific platform/placement | `references/social-formats.md` |
-| Video / reel (Phase 4) | `references/motion-dna.md` |
+| Video / reel (Phase 4), live-voice animation, anything where her beak moves | `references/motion-dna.md` (§1a for what she may say and when her beak moves) |
 | Captions, alt text, shot-list wording, any on-image text | `references/voice-and-captions.md` |
 | **Before delivering anything** | `references/qa-checklist.md` — ALWAYS |
 
@@ -91,8 +93,9 @@ identity repair.
    reference vs edit target — never treat every input image as the edit target.
 2. **Validate the pose against the interaction model** (`heddy-dna.md`)
    BEFORE staging: wing tips present/carry/wave/point (no fingers, no grasp);
-   feet perch/stand/hold a flat card; beak never operates props; face
-   interior is a protected region; reach is short.
+   feet perch/stand/hold a flat card; beak never operates props (and is
+   closed in every still); face interior is a protected region; reach is
+   short; never mirrored.
 3. **Repair, don't redesign.** A wrong beak, eye ratio, or badge is fixed by
    the repair policy in `qa-checklist.md`, not by inventing a new owl.
 
@@ -110,9 +113,13 @@ identity repair.
   lives in captions, alt text, and shot lists only.
 - **One asset per generation call.** Local problems get single-target edits.
 - **Brand safety S1–S5:** S1 no crisis-adjacent content ever (the Childline
-  rule belongs to tutors, never marketing art). S2 never frame Heddy as
-  teaching — she welcomes, celebrates, lights the way, hands over; professors
-  teach. S3 en-market assets carry English-only labels; zh assets follow the
+  rule belongs to tutors, never marketing art; she never appears on a
+  safeguarding screen). S2 never frame Heddy as teaching — she welcomes,
+  celebrates, lights the way, hands over; professors teach. Where she has a
+  voice (live voice, animation) she speaks only companion lines — greeting /
+  hand-over, encouragement, goodbye — never subject content, hints, answers or
+  working, and her beak moves only on her own audio (`motion-dna.md` §1a;
+  changed 2026-09-30). S3 en-market assets carry English-only labels; zh assets follow the
   zh conventions (KS3/GCSE stay English). S4 never copy protected IP — style
   transfer moves visual language only. S5 the frozen reference set, once it
   exists, binds production.
