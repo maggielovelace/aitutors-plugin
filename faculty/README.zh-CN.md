@@ -19,6 +19,11 @@ Heddy 带你走到门口，门后就是他们。
 | <img src="cutout/mercator.png" width="72" alt="Mercator"> | **Professor Mercator** | 地理 | 一个地球仪 |
 | <img src="cutout/mentor.png" width="72" alt="Mentor"> | **Mentor** | 你的这一周 | 笔记本，挂绳眼镜 |
 
+## 两个版本
+
+- **第 1 版（本文件夹）**：图像模型以积木风格绘制。
+- **第 2 版（[`built/`](built/README.zh-CN.md)）**：同样八位，用真实 LDraw 零件在代码里搭建，和乐高海迪一样，附模型、`.ldr` 文件和任何智能体都能用来制作新素材的工具。
+
 ## 文件
 
 - `<名字>.png`：1024 × 1024，Heddy 米色底（`#F8F3EB`）

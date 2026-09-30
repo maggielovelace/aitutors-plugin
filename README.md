@@ -90,6 +90,25 @@ Newton's apple. Original characters, labelled "AI tutor" wherever they appear. P
 and as transparent cutouts are in [`faculty/`](faculty/) for personal use
 ([terms](faculty/LICENSE.md)).
 
+## The brick-built faculty, built from real bricks
+
+![The code-built faculty](faculty/built/sheet.jpg)
+
+The same eight tutors, **engineered in code from real LDraw parts**, the way LEGO Heddy was made, and
+rendered in Heddy's own studio. Each bust is 1,400–1,600 plates and tiles. The painted set above is
+version 1; this is version 2, and both are kept.
+
+[`faculty/built/`](faculty/built/README.md) is a toolkit as well as a gallery:
+
+- **Renders:** 1200 px portraits and transparent cutouts in `renders/` and `renders/cutout/`
+- **Models:** a parts list (`model/<id>.json`) and a standard LDraw file (`model/<id>.ldr`, opens in
+  Studio, LDCad or LeoCAD) for each professor
+- **Build tools:** the builder, one spec per professor and Heddy's renderer, with a single command:
+  `python3 faculty/built/tools/build.py all --render --cutout` (rendering needs Python 3.11 with `bpy`)
+- **A guide for agents:** the "set lock" (head size, camera, plinth) that keeps new assets on-model,
+  how to add a character or render a new angle or expression, and the rules every asset follows
+  (labelled "AI tutor", original faces, "brick-built" never "LEGO")
+
 ## LEGO Heddy
 
 ![LEGO Heddy](heddy-ip/lego/renders/hero-3q.png)
