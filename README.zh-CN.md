@@ -258,6 +258,22 @@ OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
 代表自己的东西：Pi 的一杯茶、Curie 的护目镜、Newton 的苹果。全部是原创角色，出现的地方都会标明
 「AI 导师」。米色底和透明背景的头像都在 [`faculty/`](faculty/)，仅限个人使用（[条款](faculty/LICENSE.md)）。
 
+## 用真实积木搭出来的教授团
+
+![代码搭建的教授团](faculty/built/sheet.jpg)
+
+同样八位导师，**用真实的 LDraw 零件在代码里搭建**，和乐高海迪同样的做法，并在海迪的摄影棚里渲染；每尊由 1,400 到 1,600 块
+板件和光面片组成。上面绘制的一套是第 1 版，这一套是第 2 版，两版都保留。
+
+[`faculty/built/`](faculty/built/README.zh-CN.md) 既是图库，也是工具：
+
+- **成品图**：`renders/` 里的 1200 px 头像和 `renders/cutout/` 里的透明抠图
+- **模型**：每位教授的零件清单（`model/<id>.json`）和标准 LDraw 文件（`model/<id>.ldr`，可用 Studio、LDCad、LeoCAD 打开）
+- **搭建工具**：搭建器、每位教授的规格和海迪的渲染器，一条命令：
+  `python3 faculty/built/tools/build.py all --render --cutout`（渲染需要带 `bpy` 的 Python 3.11）
+- **给智能体的说明**：保持整套一致的「锁定参数」（头部尺寸、相机、底座），新增角色、渲染新角度或表情的方法，
+  以及所有素材都要遵守的规则（标明「AI 导师」、原创面孔、对外称「积木搭建」而不是「乐高」）
+
 ## 乐高海迪（LEGO Heddy）
 
 ![乐高海迪](heddy-ip/lego/renders/hero-3q.png)

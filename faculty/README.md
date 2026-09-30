@@ -20,6 +20,11 @@ door; these are the tutors on the other side of it.
 | <img src="cutout/mercator.png" width="72" alt="Mercator"> | **Professor Mercator** | Geography | a globe |
 | <img src="cutout/mentor.png" width="72" alt="Mentor"> | **Mentor** | Your week | a notebook, glasses on a cord |
 
+## Two versions
+
+- **Version 1 (this folder):** painted by an image model in a brick-built style.
+- **Version 2 ([`built/`](built/README.md)):** the same eight built in code from real LDraw parts, like LEGO Heddy. It includes the models, `.ldr` files and a toolkit any agent can use to make new assets.
+
 ## Files
 
 - `<name>.png` — 1024 × 1024, on the Heddy cream (`#F8F3EB`)
