@@ -80,6 +80,16 @@ iPhone, iPad and Mac. **Heddy Stickers is coming to the App Store.** The
 transparent PNGs are in [`stickers/`](stickers/) for personal use in your own
 chats ([terms](stickers/LICENSE.md)).
 
+## The brick-built faculty
+
+![The brick-built faculty](faculty/faculty-preview.jpg)
+
+The eight AI tutors — Mentor and seven professors — as brick-built busts, so they share a world
+with LEGO Heddy. Each holds one thing that says who they are: Pi's mug of tea, Curie's goggles,
+Newton's apple. Original characters, labelled "AI tutor" wherever they appear. Portraits on cream
+and as transparent cutouts are in [`faculty/`](faculty/) for personal use
+([terms](faculty/LICENSE.md)).
+
 ## LEGO Heddy
 
 ![LEGO Heddy](heddy-ip/lego/renders/hero-3q.png)

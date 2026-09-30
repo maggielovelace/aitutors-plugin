@@ -250,6 +250,14 @@ OpenClaw 的元数据（emoji）写在 SKILL.md 的 frontmatter 里，
 的 iMessage。**Heddy Stickers 即将登陆 App Store。** 透明 PNG 见
 [`stickers/`](stickers/)，仅供个人聊天使用（[使用条款](stickers/LICENSE.md)）。
 
+## 积木教授团
+
+![积木教授团](faculty/faculty-preview.jpg)
+
+八位 AI 导师（Mentor 和七位教授）做成积木半身像，和乐高海迪生活在同一个世界里。每位手里都拿着一件
+代表自己的东西：Pi 的一杯茶、Curie 的护目镜、Newton 的苹果。全部是原创角色，出现的地方都会标明
+「AI 导师」。米色底和透明背景的头像都在 [`faculty/`](faculty/)，仅限个人使用（[条款](faculty/LICENSE.md)）。
+
 ## 乐高海迪（LEGO Heddy）
 
 ![乐高海迪](heddy-ip/lego/renders/hero-3q.png)
