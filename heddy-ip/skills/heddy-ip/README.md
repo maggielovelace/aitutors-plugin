@@ -11,7 +11,9 @@ right), a small amber diamond beak, a spark-green star badge on her belly, and
 a strict brand palette (paper cream, ink navy, spark green, amber). She is the
 front-of-house concierge — she welcomes, celebrates, and lights the way. She
 never teaches (the professors do that) and never appears in crisis-adjacent
-content. Pose, scene, wardrobe, and medium can all change; the identity cannot.
+content. In a live voice session she may say hello, hand over to the professor,
+cheer, and say goodbye in her own voice — and her beak moves only on those
+lines, never to the professor's (`references/motion-dna.md` §1a). Pose, scene, wardrobe, and medium can all change; the identity cannot.
 
 ## The pack model
 
@@ -98,6 +100,7 @@ export GEMINI_API_KEY=...   # scripts/generate.py renders via Gemini
 | Reference sheets in `assets/<pack>/` (Phase 2) | **heddy-storybook FROZEN 2026-08-12** (anchor + turnaround + expressions + poses + wardrobe, see `assets/heddy-storybook/NOTES.md`); heddy-flat pending |
 | Cutout register | Written |
 | Video / reels (Phase 4) | **Pilot reel delivered 2026-08-12** (3x8s 9:16, Veo 3.1 fast + Gemini TTS; pipeline calibrated over 4 rounds — the live lessons are in `motion-dna.md`) |
+| Speaking / beak articulation | **Rule changed 2026-09-30:** Heddy speaks her own short companion lines (greeting / hand-over, encouragement, goodbye) and her beak moves only on them, synced to her own audio. Still never teaches, never a mouth, never moved by another voice (`references/motion-dna.md` §1a, `references/heddy-dna.md` § Speaking) |
 
 Sources of truth: character geometry `lib/concierge/heddy.ts`; PRD
 `docs/prd/PRD-v0.55.0-heddy-ip-system.md`; plan

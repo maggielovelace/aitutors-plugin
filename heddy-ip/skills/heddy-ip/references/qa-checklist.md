@@ -30,8 +30,13 @@ edit on any failure per the repair policy at the end.
   fail even when everything else is perfect — this is Heddy's signature.
 - [ ] **Eye construction** — amber iris, ink pupil (~half the iris), exactly
   ONE white highlight upper-right per eye. No extra highlights, no eyelashes.
-- [ ] **No eyebrows, no nose.** Beak is a small amber DIAMOND (rotated
-  square), never a sharp hooked raptor beak.
+- [ ] **No eyebrows, no nose, no mouth.** Beak is a small amber DIAMOND (rotated
+  square), never a sharp hooked raptor beak, and **closed** in every still and
+  on merchandise. No drawn lips, teeth or tongue in any medium — the beak is
+  the only articulator (it opens only in motion, to her own voice; see §4
+  Motion / live voice).
+- [ ] **Not mirrored.** The larger iris is on HER left. A horizontally flipped
+  Heddy swaps the signature and fails.
 - [ ] **Face-interior scan at full resolution** — inspect a tight face crop
   and judge literal strokes, not intended expression. Beyond the locked
   eyes, facial-disc ring and diamond beak, **any** line, loop, notch, arc,
@@ -123,6 +128,24 @@ contact surface with visible separation, or rests in the scene.
   fragments only (the touched bit of branch, not the whole tree).
 - Reads as ONE compositing unit; pose matches the ask.
 
+### Motion / live voice (changed 2026-09-30)
+
+Run `motion-dna.md` §3 across the whole clip, then these:
+
+- **Her audio, her beak.** The beak opens and closes only while Heddy herself is
+  speaking. Scrub every stretch where another voice is heard (the professor, a
+  narrator, the child): her beak is closed and still throughout. A beak moving
+  over someone else's voice is a hard fail.
+- **Companion lines only.** What she says is a greeting / hand-over, an
+  encouragement or celebration, or a goodbye. Any subject content, hint,
+  answer or explained working in her voice is an S2 fail — the professor
+  teaches.
+- **Still a beak.** Open or closed it is the same amber diamond: lower half
+  drops, upper half fixed, no lips, teeth, tongue, smile-stretch or colour
+  change.
+- **Never on a safeguarding screen** (S1); **never mirrored** (the larger iris
+  stays on her left at every frame).
+
 ## 5. Value follows ground
 
 - On paper grounds, Heddy reads light (white body, ink structure lines) — not
@@ -139,7 +162,9 @@ contact surface with visible separation, or rests in the scene.
   tutors, never to marketing art. No distressed children, no rescue framing.
 - [ ] **S2** — Heddy never teaches. No blackboard-lecturing, no marking work,
   no teaching props framing her as a tutor. She welcomes, celebrates,
-  lights the way, hands over — professors teach.
+  lights the way, hands over — professors teach. If she speaks (live voice,
+  animation) it is a greeting / hand-over, an encouragement or a goodbye —
+  never subject content, a hint, an answer or working.
 - [ ] **S3** — en-market assets carry English-only labels; zh assets follow
   zh conventions (KS3/GCSE stay English).
 - [ ] **S4** — no protected IP copied; style transfer moves visual language
@@ -156,6 +181,10 @@ contact surface with visible separation, or rests in the scene.
 | Sharp hooked beak / talon detail / fierce brow | Re-roll; strengthen the "soft, rounded, no raptor detail" block |
 | Reads generic-cartoon-owl or Duolingo-green | Re-roll with the design description tightened; verify palette lines |
 | Heddy holding chalk / pointing at a lesson | S2 fail — restage as welcoming/celebrating/handing over |
+| Heddy's spoken line carries subject content, a hint, an answer or working | S2 fail — give the line to the professor; Heddy keeps greeting / hand-over, encouragement, goodbye |
+| Beak moving while another voice speaks | Hard fail — re-time to her own audio only; closed and still under every other voice |
+| Beak drawn as a mouth (lips, teeth, tongue, smile-stretch) or open in a still | Re-roll / re-rig: lower half drops, upper half fixed, same diamond, same amber; stills stay closed |
+| Mirrored Heddy (larger iris on her right) | Hard fail — never flip; turn her with head tilt and gaze |
 | Line through her body; wing rooted wrong or doubled; prop fused to torso | Re-roll (these resist edits); if it repeats, change the pose (§8) |
 | Wing stretched into a bar/pointer across the scene | Re-roll; restate short reach — contact close beside the body |
 | Off-palette colour or gradient | Eyedrop against the hex list; snap in post or re-roll |

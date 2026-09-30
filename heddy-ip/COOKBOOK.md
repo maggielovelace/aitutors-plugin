@@ -126,7 +126,10 @@ regenerate; don't polish a broken identity.
 
 No crisis-adjacent content (S1 — Childline messaging belongs to the tutors, never marketing
 art). No "Heddy teaches X" framing (S2 — she welcomes, celebrates, lights the way; the
-professors teach). No Chinese in en-market assets (S3). No borrowed IP, ever (S4). And no
+professors teach). Where she has a voice, her lines are a greeting / hand-over, an
+encouragement or a goodbye — never subject content, a hint, an answer or working — and her
+beak moves only on her own audio, never the professor's (`motion-dna.md` §1a, changed
+2026-09-30). No mirrored Heddy (it swaps her asymmetric eyes). No Chinese in en-market assets (S3). No borrowed IP, ever (S4). And no
 silent deviation from the frozen reference set (S5 — deviations are declared in NOTES.md or
 they are defects).
 

@@ -47,7 +47,7 @@ Contact surfaces and what they can do:
 |---|---|---|
 | Wing tips | carry, present, wave, point, nudge, light (touch a lantern) | grasp, grip, wrap around, hold anything requiring fingers |
 | Feet | perch, stand, hold a flat card pressed against a surface | carry in flight-with-cargo poses that need a claw grip; fine manipulation |
-| Beak | — (expression only) | operate, hold, peck at props |
+| Beak | — (expression only; closed in every still — it opens only in motion, to her own voice, `motion-dna.md` §1a) | operate, hold, peck at props; become a mouth |
 
 Additional constraints:
 

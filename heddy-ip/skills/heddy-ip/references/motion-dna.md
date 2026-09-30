@@ -8,10 +8,17 @@ reel pipelines that use it. Source of truth for the numbers: the production anim
 
 Character anchors (silhouette, eyes, palette, interaction model) live in `heddy-dna.md`.
 Every motion spec below inherits them: an anchor that holds at frame 1 must hold at every
-frame. **One declared exception:** anchor 8's "never open" beak is a still-image rule —
-motion clips may open the beak, but only exactly as the Talking and Yawn specs below
-allow (lower mandible drops; the diamond shape and upper half never change). This is the
-sole motion exception; `heddy-dna.md` anchor 8 cross-references it.
+frame. **One declared exception:** anchor 8's closed beak is a still-image and merchandise
+rule — in motion the beak may open, but only exactly as the Speaking and Yawn specs below
+allow (lower mandible drops and closes; the diamond shape, colour and upper half never
+change). Speaking articulation is driven by **Heddy's own audio only** — see §1a. This is
+the sole motion exception; `heddy-dna.md` anchor 8 cross-references it.
+
+**Changed 2026-09-30.** Until this date the Talking row read "no lip-sync — an owl beak,
+not a mouth": the beak dropped in a loose jitter that was not tied to any words. Heddy now
+speaks her own short companion lines in a live voice session, and her beak is synchronised
+to them. What did not change: she never teaches, the beak never becomes a mouth, and it
+never moves to anyone else's voice.
 
 ## 1. The idle life layer (always on)
 
@@ -25,11 +32,47 @@ slideshow.
 | Blink | roughly every 4–5s, ~0.17s per blink; the lids close VERTICALLY — the iris flattens to a calm lid line and reopens | irises never slide or shrink sideways; both eyes blink together |
 | Gaze drift | pupils (with their single highlight) wander slowly WITHIN the fixed irises; excursion ≤40% of iris radius | the iris circles never move — only the pupil group inside them |
 | Head tilt | gentle ±1–2° sway, slow | head tilts as ONE unit (disc + eyes + beak together) |
-| Talking (VO clips) | lower mandible drops in a jittery envelope; upper mandible fixed; never fully shut mid-line, never gaping (max ~70% open) | no lip shapes, no lip-sync — an owl beak, not a mouth |
+| Speaking (her own lines) | lower mandible opens and closes **in sync with Heddy's own audio**, stepping through a small set of beak positions (closed → part-open → open, max ~70%); upper mandible fixed; never fully shut mid-line, never gaping; closed again the moment her line ends | moves ONLY while she herself is speaking — still and closed whenever another voice (the professor, a narrator) is heard; no lip shapes, no teeth, no tongue — an owl beak opening and closing, never a mouth |
 
 Asleep (rest mood) variant: eyes are the closed downward arcs, italic serif "z" floats
 upper-right, and the ONLY motion is the slow breathe — no blink (eyes are shut), no gaze,
 no gestures. Sleep is still, not limp.
+
+### 1a. Speaking — her own lines only (changed 2026-09-30)
+
+In a live voice session the **professor is the tutor** and carries the teaching voice;
+Heddy is the companion beside the lesson. Her spoken lines are short and there are three
+kinds:
+
+| She may say | Example register |
+|---|---|
+| **Greeting / hand-over** | hello, then over to the professor |
+| **Encouragement / celebration** | a quiet "well done" — the single-bounce register, never fanfare |
+| **Goodbye** | the sign-off |
+
+Render-checkable rules:
+
+1. **Her audio, her beak.** Beak articulation is synchronised to Heddy's own audio and
+   nothing else. While the professor (or a narrator, or the child) is speaking, her beak is
+   closed and still — the idle layer continues, the beak does not. A beak moving over
+   another character's voice is a hard fail. (The one silent opening is the **Yawn**
+   gesture in §2 — rest-adjacent scenes only, never mid-session.)
+2. **She never teaches.** No subject content, no hints, no answers, never explaining
+   working, never at a whiteboard instructing. If a line would carry any of the lesson it
+   is the professor's line, not hers.
+3. **Same beak, open or closed.** The articulator is the amber diamond and only that. No
+   drawn mouth, lips, teeth or tongue; the beak does not stretch, curve into a smile, or
+   change colour when it opens.
+4. **Closed is the default.** Still images and merchandise keep the closed / at-rest beak.
+   Only live voice and animated contexts open it.
+5. **Never on a safeguarding screen.** If a safeguarding message is on screen, Heddy does
+   not speak and does not appear (brand-safety S1, unchanged).
+6. **Never mirrored.** Flipping the character swaps her asymmetric eyes (`heddy-dna.md`
+   anchor 5) — unchanged, and it matters more here because voice UIs like to flip a
+   character to face the speaker. Turn her by head tilt and gaze instead.
+
+The written-voice rules in `voice-and-captions.md` (one quiet sentence, no fanfare, British
+English) apply to spoken lines as written.
 
 ## 2. Gesture vocabulary
 
@@ -70,13 +113,17 @@ Check these per clip, mid-motion, not just on the first frame:
 2. Pupils move; irises don't. A shot where the whole eye slides is a fail.
 3. Wings rotate about the shoulder as rigid soft shapes — no elbows, no feather-fingers.
 4. The beak stays a small amber diamond; it opens by dropping the lower half, it never
-   stretches into a smile, snout, or hooked raptor bill.
+   stretches into a smile, snout, hooked raptor bill, or a mouth with lips, teeth or a
+   tongue.
 5. The face interior stays protected: nothing enters it during motion (no wing across the
    face, no props overlapping the eyes/beak).
 6. The belly badge and snow speckles stay attached to the body through every transform.
 7. Idle layer present in every held moment — a frozen Heddy mid-clip is a fail.
 8. Silhouette is preserved at motion extremes: the round body never squashes/stretches
    beyond ~±5% (no rubber-hose deformation).
+9. The beak moves only on Heddy's own audio (§1a). Scrub any stretch where another voice
+   is heard: her beak must be closed and still throughout it.
+10. She is never mirrored: the larger iris is on HER left at every frame.
 
 ## 4. Reel pipeline A — narrated blocks
 
@@ -115,7 +162,8 @@ MOTION: [ONE primary gesture from §2 + the idle layer; camera static or one slo
   move; nothing else moves fast]
 AUDIO: ambient only — room tone / soft texture. NO dialogue, NO music (music is
   added in the edit).
-NEGATIVE: no lip-sync, no mouth shapes, no captions or on-screen text, no realism,
+NEGATIVE: no lip-sync to the narration (clips are generated silent — see Mascot arc),
+  no mouth shapes (lips, teeth, tongue), no captions or on-screen text, no realism,
   no photoreal feathers, no extra colours, no symmetric eyes, no eyebrows, no
   EYELASHES (video models add lashes to large eyes under motion — verified drift),
   no confetti, no black bars or letterboxing.
@@ -147,8 +195,11 @@ anchor is left implicit.
   video models cannot do without risking lash drift — omit it from prompts; accept
   no-blink clips.
 
-**Mascot arc.** Block 1: Heddy greets by GESTURE (wave or hop — the VO carries the words;
-she never mouths them). Final block: sign-off wave. Middle blocks: Heddy cameos only when
+**Mascot arc.** Block 1: Heddy greets by GESTURE (wave or hop). Clips are generated
+silent, so the video model is never asked to lip-sync — a beak flapping against a
+narration it cannot hear is a fail. If the narration bed is Heddy's own voice and the edit
+animates her beak to it, that follows §1a exactly: driven by her audio, only over her own
+lines, closed and still under any other voice. Final block: sign-off wave. Middle blocks: Heddy cameos only when
 she earns her place in the shot (presenting, pointing, reacting) — a reel where she
 loiters in every frame reads as filler. Blocks that are pure diagram/product are allowed
 to have no owl at all.
@@ -162,8 +213,11 @@ For "make us one like this" — restaging a reference video's structure with Hed
 2. **Translate each beat through the DNA:** recast the subject's action into Heddy's
    vocabulary (§2) via the interaction model — a hand pointing becomes a wing point; a
    character running becomes a glide; a jump-cut celebration becomes one bounce + badge
-   glint. If a beat's action has no legal Heddy equivalent (grasping, typing, talking to
-   camera with lip-sync), change the STAGING of the beat, keep its job.
+   glint. If a beat's action has no legal Heddy equivalent (grasping, typing, delivering a
+   lesson to camera), change the STAGING of the beat, keep its job. A presenter's
+   to-camera greeting or sign-off CAN become Heddy's own line under §1a; a presenter
+   explaining the content cannot — that beat is restaged around the professor or a
+   diagram.
 3. **Restage, don't copy:** the reference contributes rhythm, shot grammar, and structure
    only. Zero visual assets, characters, or protected styling cross over (brand-safety
    rule S4).
@@ -178,8 +232,9 @@ mid-motion, not on the conditioning frame.
 - Run the on-model anchors (`heddy-dna.md`) at start, midpoint, and motion extreme.
 - Run §3's motion rules across the clip.
 - **Any identity anchor drifting mid-motion is a hard fail** — eyes equalising during a
-  head turn, the beak growing a hook in profile, wings sprouting fingers to gesture, a
-  fifth colour blooming in.
+  head turn, the beak growing a hook in profile, the beak turning into a mouth (lips,
+  teeth, tongue), the beak moving over a voice that is not hers, wings sprouting fingers
+  to gesture, a fifth colour blooming in.
 - **Re-roll the failing CLIP, not the whole reel.** Same style key, same prompt; if the
   same anchor fails twice, change the POSE or camera in that block (repeated topology
   failure means the pose is fighting the model — the repair policy from
