@@ -117,7 +117,8 @@ A 大七和弦铺底，以及标志出现时的一声钟音。
 ## 6. 文件
 
 ```
-model/        heddy.json（锁定）、heddy.ldr、heddy_steps.json、bom.csv/.md、validation.json/.md
+model/        heddy.json（锁定）、heddy.ldr、heddy_steps.json、bom.csv/.md、validation.json/.md、
+              heddy-factory-bom.csv + factory-handoff.md（交给工厂）
 renders/      正/背/左/右视图、hero-3q、hero-4k（最终主视觉）、爆炸图、带标注的爆炸图
 video/        主片、9:16 竖版、片头
 instructions/ heddy-lego-instructions.pdf（pages/ 和 steps/ 可重新生成，不提交）

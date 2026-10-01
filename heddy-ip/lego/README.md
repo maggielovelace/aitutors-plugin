@@ -141,7 +141,8 @@ The sound is synthesised: one click per part landing, a quiet A-major-7 pad and 
 ## 6. Files
 
 ```
-model/        heddy.json (locked), heddy.ldr, heddy_steps.json, bom.csv/.md, validation.json/.md
+model/        heddy.json (locked), heddy.ldr, heddy_steps.json, bom.csv/.md, validation.json/.md,
+              heddy-factory-bom.csv + factory-handoff.md (for manufacturing)
 renders/      view-front/rear/left/right, hero-3q, hero-4k (final hero image), exploded, exploded-labelled
 video/        hero film, 9:16 social cut, sting
 instructions/ heddy-lego-instructions.pdf (pages/ and steps/ are regenerated, not committed)
