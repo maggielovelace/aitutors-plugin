@@ -12,10 +12,22 @@ aitutors.me 的八位 AI 导师，用**真实的 LDraw 零件在代码里搭建*
 这个文件夹是一套**工具**：任何智能体（或人）都可以重新搭建某位教授、渲染新的角度、做透明背景的抠图，
 或者加入一位能放进同一套里的新角色。
 
+## 直接使用头像（不用安装）
+
+任何人或智能体都可以直接用这个文件夹里的成品头像。把下面这段贴进任何会话（Claude Code、Codex、ChatGPT、Cursor）：
+
+```text
+Use the brick-built faculty from https://github.com/maggielovelace/aitutors-plugin/tree/main/faculty/built
+(read its README first). Portraits: renders/cutout/<id>.png (transparent) or renders/<id>.png (cream).
+To make one talk or blink, swap renders/faces/<id>-{base,half,open,blink}.webp. Every portrait
+appears with the label "AI tutor"; never call them LEGO. Curie, Quill and the Mentor are women.
+```
+
 ## 里面有什么
 
 - `renders/<id>.png`：1200 × 1200，米色背景的成品图
 - `renders/cutout/<id>.png`：同一张图，透明背景（保留底座）
+- `renders/faces/<id>-<状态>.webp`：表情状态，透明背景：`base`、`half` 和 `open`（张嘴），`blink`（眨眼）。四张图除了脸部完全一样，叠在一起切换就能让教授说话、眨眼，不会闪
 - `model/<id>.json`：渲染器读取的零件清单；`model/<id>.ldr`：标准 LDraw 文件，可用 Studio、LDCad、LeoCAD 打开
 - `tools/`：搭建器 `bust.py`、每位角色的规格 `prof_<id>.py`、渲染 `render_bust.py`、一键命令 `build.py`
 
@@ -75,7 +87,7 @@ The face must be original.
 
 - 和整套一致：头部大小、相机高度、角度、底座都相同。
 - 在产品里出现时仍标明「AI 导师」。
-- 脸是原创的；性别与致敬对象一致（Curie 和 Mentor 是女性）。
+- 脸是原创的；性别正确（Curie、Quill 和 Mentor 是女性）。
 - 对外称「积木搭建」，不称「乐高」。
 - 没有往仓库里加任何教学方法细节。
 
@@ -83,7 +95,7 @@ The face must be original.
 
 - 是 AI 导师，出现在产品里时都会标明「AI 导师」。
 - 原创角色：名字向真实人物致敬，但脸不像他们，也不像任何真实的人。
-- 每位教授的性别与致敬对象一致：Curie 和 Mentor 是女性，其余六位是男性。
+- 性别固定（负责人规定）：Curie、Quill 和 Mentor 是女性，其余五位是男性。Quill 的名字来自羽毛笔，不是某个人。
 - 对外一律称「积木搭建」，不称「乐高」。
 - 这个仓库里不写任何教学方法细节。
 
