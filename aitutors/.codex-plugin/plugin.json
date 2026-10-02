@@ -28,7 +28,7 @@
     "shortDescription": "Eight UK secondary tutors",
     "longDescription": "Connects your aitutors.me subscription so the tutors can work alongside you: Mentor runs the daily check-in and hands over to the right subject tutor, and Professors Pi (maths), Quill (English), Darwin (biology), Curie (chemistry), Newton (physics), Harari (history) and Mercator (geography) take it from there. Built for Year 8 and above (ages 13+). Sessions, flashcards and progress are saved to the same account as the aitutors.me parent dashboard, so work done here shows up there. Requires an active aitutors.me subscription; you sign in with your existing account when you install.",
     "developerName": "AI Tutors",
-    "category": "Education",
+    "category": "Education & Research",
     "capabilities": ["Read", "Write"],
     "websiteURL": "https://aitutors.me",
     "supportURL": "https://aitutors.me/support",
