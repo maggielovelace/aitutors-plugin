@@ -3,7 +3,7 @@ import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bust import Bust, ell, cyl_y, save
 
-SKIN, HAIR, JUMPER, SHIRT, WHITE, BLACK, MOUTH = 78, 0, 191, 15, 15, 0, 0
+SKIN, HAIR, JUMPER, SHIRT, WHITE, BLACK, MOUTH = 78, 0, 191, 15, 15, 0, 320
 COVER, LINE, NIB = 70, 71, 14
 b = Bust(W=14, D=10, H=64)
 
@@ -27,7 +27,7 @@ HX, HY, HZ = 0, 334, 8
 b.fill(ell(HX, HY, HZ, 130, 166, 118), SKIN, 'head')
 for s in (-1, 1):
     b.fill(ell(132 * s, 340, 0, 18, 34, 22), SKIN, 'head')          # ears
-# short neat black hair: studded cap, a side-parted fringe that sweeps lower on one side
+# black hair: studded cap and a side-parted fringe that sweeps lower on one side; long at the sides and back (below)
 def fringe_low(x):
     # parting at x = -50 (viewer's left); the fringe sweeps right and dips to y~428 just right of the parting
     if x < -50:
@@ -37,6 +37,11 @@ cap = lambda x, y, z: ell(HX, HY + 16, HZ - 4, 138, 170, 126)(x, y, z) and (
     y > 452 or (y > fringe_low(x) and z > 0) or (z < -34 and y > 300) or (abs(x) > 112 and y > 360 and z < 44) or (abs(x) > 96 and y > 404 and z < 70))
 b.fill(cap, HAIR, 'hair')
 b.recolour(lambda x, y, z: y > 452 or (y > fringe_low(x) and z > 0) or (z < -34 and y > 300) or (abs(x) > 96 and y > 404 and z < 70), HAIR, tags={'head'})
+# long hair (Quill is a woman, owner 2026-10-01): it falls past the ears to the shoulders and down the back,
+# framing the face without covering it
+long_hair = lambda x, y, z: ell(HX, 300, HZ - 10, 152, 214, 134)(x, y, z) and 182 <= y <= 470 and (abs(x) > 100 or z < -30) and not (abs(x) <= 100 and z > 40)
+b.fill(long_hair, HAIR, 'hair')
+b.recolour(lambda x, y, z: abs(x) > 98 and y > 240 and z < 70, HAIR, tags={'head'})   # hair covers the ears
 
 T = {'head'}
 # the fringe stands proud of the forehead by one cell, so it reads as hair rather than paint

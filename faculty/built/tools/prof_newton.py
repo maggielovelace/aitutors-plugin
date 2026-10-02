@@ -3,7 +3,7 @@ import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bust import Bust, ell, cyl_y, save
 
-SKIN, HAIR, SUIT, SHIRT, TIE, WHITE, BLACK, MOUTH = 308, 0, 272, 15, 25, 15, 0, 0
+SKIN, HAIR, SUIT, SHIRT, TIE, WHITE, BLACK, MOUTH = 92, 0, 272, 15, 25, 15, 0, 0   # nougat skin: dark brown read as one black block beside black hair and beard (owner 2026-10-01)
 APPLE, STEM, LEAF = 4, 308, 2
 b = Bust(W=14, D=10, H=64)
 

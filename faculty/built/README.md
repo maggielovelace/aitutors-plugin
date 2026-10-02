@@ -16,18 +16,35 @@ professor, render a new angle, cut them out on a transparent background, or add 
 character that sits in the same set.
 Agents can start from the [ready-made prompts](#prompts-for-ai-agents).
 
+## Use the portraits (no setup)
+
+Any person or agent can use the finished portraits straight from this folder. Paste this into
+any session (Claude Code, Codex, ChatGPT, Cursor):
+
+```text
+Use the brick-built faculty from https://github.com/maggielovelace/aitutors-plugin/tree/main/faculty/built
+(read its README first). Portraits: renders/cutout/<id>.png (transparent) or renders/<id>.png (cream).
+To make one talk or blink, swap renders/faces/<id>-{base,half,open,blink}.webp. Every portrait
+appears with the label "AI tutor"; never call them LEGO. Curie, Quill and the Mentor are women.
+```
+
+Ids: `pi` (maths), `quill` (English), `darwin` (biology), `curie` (chemistry), `newton`
+(physics), `harari` (history), `mercator` (geography), `mentor` (your week).
+
 ## What's here
 
 | Path | What |
 |---|---|
 | `renders/<id>.png` | 1200 × 1200 portrait on the Heddy cream sweep |
 | `renders/cutout/<id>.png` | the same shot with a transparent background (plinth kept, no floor) |
+| `renders/faces/<id>-<state>.webp` | the face states, transparent: `base`, `half` and `open` (mouth), `blink` |
 | `model/<id>.json` | the parts list the renderer reads (LDraw part, colour, position, rotation) |
 | `model/<id>.ldr` | standard LDraw file. Opens in Studio, LDCad or LeoCAD, one step per plate layer |
 | `tools/bust.py` | the builder: voxel field → hollow shell → real plates and tiles → `.json` + `.ldr` |
 | `tools/prof_<id>.py` | one spec per character (face, hair, clothes, the object they hold) |
 | `tools/render_bust.py` | renders a model with Heddy's studio (`../../heddy-ip/lego/tools/scene.py`) |
 | `tools/build.py` | one command to rebuild and render one professor or all of them |
+| `tools/face_states.py` | builds a professor with the mouth half open, open, or the eyes shut |
 | `sheet.jpg` | all eight on one sheet |
 
 Ids: `pi`, `newton`, `curie`, `darwin`, `quill`, `harari`, `mercator`, `mentor`.
@@ -125,9 +142,28 @@ table in `render_bust.py` with its LDConfig hex.
   Keep the set lock.
 - **Stickers, avatars, web:** use `renders/cutout/`. For small sizes crop to the head, then
   downscale. Don't upscale.
+- **Talking and blinking:** use the face states (next section). Never fake a mouth by
+  editing pixels; the states are real renders of the same bust.
 - **Physical builds:** the `.ldr` opens in Studio. Note: unlike LEGO Heddy, these models have
   **not** been checked for stability or buildability (no connection or collision
   validation). They are made of real parts, but treat them as render models first.
+
+## Face states: talking and blinking
+
+Every professor has four renders of the same bust, from the same locked camera:
+`renders/faces/<id>-base.webp`, `-half.webp` and `-open.webp` (the mouth opening by one and
+two plates, with a tongue in `open`), and `-blink.webp` (skin over the eyes and one lash
+line). Because only the face cells change, the four images are identical outside the face, so
+you can stack them and swap which one is visible without anything else flickering.
+
+- **Talking:** while a voice plays, pick a state per frame from its loudness (quiet `base`,
+  medium `half`, loud `open`), with no single-frame flickers. This is how the introduction
+  films and Live Talk move the mouths.
+- **Blinking:** show `blink` for about 130 ms every 4 seconds or so, and never when the
+  viewer prefers reduced motion.
+- **New states:** `python3 faculty/built/tools/build.py <id> --faces` re-renders them as PNGs
+  (needs BPY_PYTHON). `tools/face_states.py` shows how they're made if you want another
+  expression.
 
 ## Prompts for AI agents
 
@@ -206,11 +242,21 @@ Show the visible label "AI tutor" next to it, use alt text "<Professor Quill, AI
 serve a downscaled WebP (no larger than twice the display size). Do not call it LEGO anywhere.
 ```
 
+**7. Animate a professor (talking or blinking)**
+
+```text
+Read faculty/built/README.md, especially "Face states". Stack
+faculty/built/renders/faces/<newton>-{base,half,open,blink}.webp exactly on top of each other.
+Blink: show blink for ~130 ms every ~4 s (skip under prefers-reduced-motion). Talking: while
+<this audio file> plays, choose base / half / open each frame from its loudness, holding each
+state for at least 2 frames. Keep the "AI tutor" label visible next to the professor.
+```
+
 **What to check in anything an agent gives back**
 
 - It matches the set: same head size, camera height, angle and plinth as the eight.
 - It still says "AI tutor" wherever a professor appears in a product.
-- The face is original, and the gender matches the namesake (Curie and Mentor are women).
+- The face is original, and the gender is right (Curie, Quill and the Mentor are women).
 - Public text says "brick-built", never "LEGO".
 - No teaching-method detail was added to this repository.
 
@@ -219,8 +265,8 @@ serve a downscaled WebP (no larger than twice the display size). Do not call it 
 - **AI tutors, labelled as such.** Wherever a portrait appears in the product it carries
   "AI tutor" ("AI 导师"). The faces are for warmth, never to suggest a person is on the other end.
 - **Original characters.** The names honour real people. No face may resemble them or anyone real.
-- **Each professor's gender matches their namesake** (owner rule): Curie and Mentor are women, the
-  other six are men.
+- **Genders are fixed** (owner rule): Curie, Quill and the Mentor are women; the other five are
+  men. Quill is named after a pen, not a person.
 - **"Brick-built", never "LEGO"** in anything public-facing. LEGO is a trademark.
 - **No teaching-method detail** in this repository. Names, subjects and objects only.
 
