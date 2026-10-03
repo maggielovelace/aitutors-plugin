@@ -1,9 +1,6 @@
 {
   "mcpServers": {
     "aitutors": {
-      "http_headers": {
-        "x-aitutors-surface": "plugin"
-      },
       "oauth_resource": "https://aitutors.me/mcp",
       "url": "https://aitutors.me/mcp"
     }

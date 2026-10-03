@@ -24,12 +24,15 @@
   ],
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "AI Tutors for Secondary school",
-    "shortDescription": "Eight UK secondary tutors",
-    "longDescription": "Connects your aitutors.me subscription so the tutors can work alongside you: Mentor runs the daily check-in and hands over to the right subject tutor, and Professors Pi (maths), Quill (English), Darwin (biology), Curie (chemistry), Newton (physics), Harari (history) and Mercator (geography) take it from there. Built for Year 8 and above (ages 13+). Sessions, flashcards and progress are saved to the same account as the aitutors.me parent dashboard, so work done here shows up there. Requires an active aitutors.me subscription; you sign in with your existing account when you install.",
+    "displayName": "Heddy: AI Tutors & Flashcards",
+    "shortDescription": "For UK secondary schools",
+    "longDescription": "Connects to your existing aitutors.me account so the tutors can work alongside you: Mentor runs the daily check-in and hands over to the right subject tutor, and Professors Pi (maths), Quill (English), Darwin (biology), Curie (chemistry), Newton (physics), Harari (history) and Mercator (geography) take it from there. Built for Year 8 and above (ages 13+). Sessions, flashcards and progress are saved to the same account as the aitutors.me parent dashboard, so work done here shows up there. You sign in with your existing aitutors.me account when you install.",
     "developerName": "AI Tutors",
     "category": "Education & Research",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://aitutors.me",
     "supportURL": "https://aitutors.me/support",
     "privacyPolicyURL": "https://aitutors.me/privacy",
@@ -37,9 +40,7 @@
     "defaultPrompt": [
       "Start a session with Mentor — I've got maths homework",
       "Ask Professor Pi for a hint on this equation",
-      "Make flashcards from what I learned today",
-      "Quiz me on my biology flashcards",
-      "Show me my learning journey"
+      "Make flashcards from what I learned today"
     ],
     "brandColor": "#001537",
     "composerIcon": "./assets/logo.png",
@@ -97,7 +98,8 @@
           ]
         },
         "commerce": false,
-        "commerce_description": "This plugin does not sell products or process payments. It gates tutoring access by the parent's existing aitutors.me subscription, managed entirely outside ChatGPT at aitutors.me."
+        "commerce_description": "This plugin does not sell products or process payments. It gates tutoring access by the parent's existing aitutors.me subscription, managed entirely outside ChatGPT at aitutors.me.",
+        "demo_recording_url": "https://www.youtube.com/shorts/9ODuENRnJPM"
       },
       "publication": {
         "release_notes": "Initial submission: Mentor plus seven subject professors (maths, English, biology, chemistry, physics, history, geography), flashcards, and the KS3 learning journey map."
