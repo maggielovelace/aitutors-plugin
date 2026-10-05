@@ -114,12 +114,15 @@ Flame Yellowish Orange 是目前生产的琥珀色，本模型用到的每种零
 IBM Plex Sans（OFL，见 `tools/fonts/`）。声音是合成的：每个零件落位一声轻响、一段安静的
 A 大七和弦铺底，以及标志出现时的一声钟音。
 
+另有一段 10 秒的舞蹈，Heddy 领着八位积木 AI 导师一起跳：见 [`dance/`](dance/README.zh-CN.md)。
+
 ## 6. 文件
 
 ```
 model/        heddy.json（锁定）、heddy.ldr、heddy_steps.json、bom.csv/.md、validation.json/.md
 renders/      正/背/左/右视图、hero-3q、hero-4k（最终主视觉）、爆炸图、带标注的爆炸图
 video/        主片、9:16 竖版、片头
+dance/        10 秒舞蹈：Heddy 独舞，以及领着 AI 导师一起跳
 instructions/ heddy-lego-instructions.pdf（pages/ 和 steps/ 可重新生成，不提交）
 tools/        build_heddy.py → sequence.py → validate.py → make_bom.py → render_* → make_booklet.py
 ldraw/        LDraw 零件库子集（CC BY 4.0，见 lib/CAreadme.txt）+ 自建零件
