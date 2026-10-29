@@ -14,6 +14,7 @@
 // within 0.4 s = the whole visible tab). Every one is a user gesture, which is
 // what lets activeTab allow captureVisibleTab and the box-mode script.
 (function (root) {
+  var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
   var DOUBLE_CLICK_MS = 250;
   var DOUBLE_PRESS_MS = 400;
   var COMMAND = 'snap-picture';
@@ -281,6 +282,10 @@
           // Only this box mode's pictures: a late Esc can't empty a newer one.
           if (!tab) return Promise.resolve({ ok: true });
           return dropTab(tab.id, function (c) { return c.id !== message.id; }).then(function () { return { ok: true }; });
+        case 'heddy-ui:undo-card':
+          // The "Card made" toast's Undo, from the page it showed on.
+          if (!tab || !P.cardIdsOf(message.cardIds)) return Promise.resolve({ ok: false });
+          return deps.sender.undoCards(message.cardIds, { tabId: tab.id, windowId: tab.windowId });
         case 'heddy-ui:tool':
           // From the page tray (its tab), or the popup (which names the tab).
           if (tab) return wordsTool(tab, message);

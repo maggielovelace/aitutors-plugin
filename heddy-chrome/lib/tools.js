@@ -114,6 +114,14 @@
     return out;
   }
 
+  /** heddy:undo for cards: {v:1, cid, cardIds} with 1–10 UUIDs. */
+  function buildCardUndo(input) {
+    if (!P.isCaptureId(input.cid)) throw new Error('bad cid');
+    var ids = P.cardIdsOf(input.cardIds);
+    if (!ids) throw new Error('bad cardIds');
+    return { type: 'heddy:undo', v: P.PROTOCOL_VERSION, cid: input.cid, cardIds: ids };
+  }
+
   /** The /capture page for 'jot' or a tool. */
   function pageFor(kind) {
     if (!Object.prototype.hasOwnProperty.call(PAGES, kind)) throw new Error('bad kind');
@@ -137,6 +145,19 @@
           meta: { tabId: w.tabId, title: cleanText(input && input.title, MAX_TITLE) },
         });
       },
+      /** Undo on the "Card made" toast: heddy:undo {cardIds} in a window
+       *  that does not take focus (the owner's ruling, 2026-10-29). */
+      undoCards: function (cardIds, where) {
+        var w = where || {};
+        return deps.openCapture({
+          page: 'card',
+          kind: 'card_undo',
+          windowId: w.windowId,
+          focused: false,
+          build: function (cid) { return buildCardUndo({ cid: cid, cardIds: cardIds }); },
+          meta: { tabId: w.tabId },
+        });
+      },
       /** heddy:tool → /capture/room or /capture/card. */
       tool: function (input, where) {
         var w = where || {};
@@ -144,7 +165,8 @@
         try { page = pageFor(input && input.tool); } catch (e) { return Promise.resolve({ ok: false }); }
         return deps.openCapture({
           page: page,
-          kind: 'tool',
+          // 'card' or 'room': heddy:result means something different for each.
+          kind: page,
           windowId: w.windowId,
           build: function (cid) { return buildTool(Object.assign({}, input, { cid: cid })); },
           meta: { tabId: w.tabId, title: cleanText(input && input.title, MAX_TITLE) },
@@ -182,6 +204,7 @@
     isPng: isPng,
     buildBox: buildBox,
     buildTool: buildTool,
+    buildCardUndo: buildCardUndo,
     pageFor: pageFor,
     createSender: createSender,
     sendTool: sendTool,

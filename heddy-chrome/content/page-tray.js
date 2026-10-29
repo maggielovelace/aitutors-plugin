@@ -45,6 +45,7 @@
     document: document,
     marks: M,
     onOpen: function (href) { send({ type: 'heddy-ui:open', href: href }); },
+    onUndoCards: function (cardIds) { send({ type: 'heddy-ui:undo-card', cardIds: cardIds }); },
     onUndo: function (jotId, jotterId) { send({ type: 'heddy-ui:undo', jotId: jotId, jotterId: jotterId }); },
   });
 

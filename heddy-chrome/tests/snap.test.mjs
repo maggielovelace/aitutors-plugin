@@ -514,3 +514,15 @@ test('the popup’s Explain names its tab: address and title from that tab', asy
   assert.equal(s.calls.tools[0].input.url, s.tab.url);
   assert.deepEqual(s.calls.tools[0].where, { tabId: 7, windowId: 3 });
 });
+
+test('the card toast’s Undo: heddy-ui:undo-card from the page → undoCards on that tab; bad ids open nothing', async () => {
+  const s = setup();
+  const calls = [];
+  s.snap = S.createSnap({ chrome: s.chrome, crop: K, tools: T, sender: { undoCards: async (cardIds, where) => { calls.push({ cardIds, where }); return { ok: true }; } } });
+  const ids = ['a1000000-0000-4000-8000-000000000001'];
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: ids }, s.fromPage), { ok: true });
+  assert.deepEqual(calls, [{ cardIds: ids, where: { tabId: 7, windowId: 3 } }]);
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: ['x'] }, s.fromPage), { ok: false });
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: ids }, { id: 'heddy' }), { ok: false }, 'only from a page');
+  assert.equal(calls.length, 1);
+});

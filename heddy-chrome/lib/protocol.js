@@ -228,6 +228,13 @@
   }
 
   /** One message from a page, or null when it is not one Heddy answers. */
+  /** 1–10 card ids (UUIDs), lowercased, or null for anything else. */
+  var MAX_CARD_IDS = 10;
+  function cardIdsOf(x) {
+    if (!Array.isArray(x) || x.length < 1 || x.length > MAX_CARD_IDS || !x.every(isCaptureId)) return null;
+    return x.map(function (id) { return id.toLowerCase(); });
+  }
+
   function parseExternal(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
     if (data.v !== PROTOCOL_VERSION || !isCaptureId(data.cid)) return null;
@@ -248,6 +255,8 @@
         t: isSeconds(data.t) ? Math.floor(data.t) : null,
         jotId: isCaptureId(data.jotId) ? data.jotId.toLowerCase() : null,
         jotterId: isCaptureId(data.jotterId) ? data.jotterId.toLowerCase() : null,
+        // Make a card (Phase 3): the cards Keep card made, for the toast's Undo.
+        cardIds: cardIdsOf(data.cardIds),
       };
     }
     return null;
@@ -286,6 +295,8 @@
     buildPage: buildPage,
     pageUrl: pageUrl,
     contextOf: contextOf,
+    cardIdsOf: cardIdsOf,
+    MAX_CARD_IDS: MAX_CARD_IDS,
     utf8Bytes: utf8Bytes,
     cutMarkdown: cutMarkdown,
     CONTEXT_SIDE: CONTEXT_SIDE,

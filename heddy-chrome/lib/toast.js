@@ -71,6 +71,19 @@
           ms: NOTE_MS,
         };
       }
+      case 'card':
+        // Make a card (owner, 2026-10-29): Undo deletes the cards it made.
+        return {
+          wide: true,
+          title: tr('toastCardMade'),
+          undo: P.cardIdsOf(msg.cardIds) ? { label: tr('toastUndo'), cardIds: P.cardIdsOf(msg.cardIds) } : null,
+          open: typeof msg.href === 'string' ? { label: tr('toastOpenInJotter'), href: msg.href, quiet: true } : null,
+          ms: NOTE_MS,
+        };
+      case 'card_undone':
+        return { title: tr('toastCardDeleted'), ms: DONE_MS };
+      case 'card_undo_failed':
+        return { title: tr('toastCardUndoFailed'), ms: NOTE_MS };
       case 'undone':
         return { title: tr('toastJotDeleted'), ms: DONE_MS };
       case 'undo_failed':
@@ -101,6 +114,7 @@
 
   /**
    * deps: { document, marks (HeddyMarks), onOpen(href), onUndo(jotId, jotterId|null),
+   *         onUndoCards(cardIds) (Make a card's Undo),
    *         setTimeout, clearTimeout }
    */
   function createToaster(deps) {
@@ -154,7 +168,10 @@
       if (m.undo || m.open) {
         var o = doc.createElement('span');
         o.className = 'o';
-        if (m.undo) {
+        if (m.undo && m.undo.cardIds) {
+          var cardIds = m.undo.cardIds;
+          o.appendChild(action('', m.undo.label, function () { hide(); if (deps.onUndoCards) deps.onUndoCards(cardIds); }));
+        } else if (m.undo) {
           var jotId = m.undo.jotId;
           var jotterId = m.undo.jotterId || null;
           o.appendChild(action('', m.undo.label, function () { hide(); deps.onUndo(jotId, jotterId); }));

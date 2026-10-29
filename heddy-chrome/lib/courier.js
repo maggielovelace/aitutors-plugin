@@ -122,6 +122,9 @@
      *  that is not listed here, its window explains itself and stays open. */
     function deliverResult(result, meta, origin) {
       var kind = meta.kind || 'clip';
+      if (kind === 'card_undo') {
+        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'card_undone' : 'card_undo_failed' });
+      }
       if (kind === 'undo') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'undone' : 'undo_failed' });
       }
@@ -164,8 +167,23 @@
             return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
           });
       }
-      // A tool's window (Explain, Ask Heddy: the room; Make a card) stays open
-      // and is the answer itself: nothing on the page.
+      // Tool windows (lib/tools.js; owner, 2026-10-29). Make a card closes
+      // after Keep card: "Card made", Undo (its cards), Open in Jotter. The
+      // room (Explain, Ask Heddy) stays open and says nothing on the page,
+      // unless "Jot it with this" saved a jot: then the Jotted toast.
+      if (kind === 'card' || kind === 'room') {
+        var toast = null;
+        if (kind === 'card' && result.cardIds) {
+          toast = { type: 'heddy-ui:toast', kind: 'card', cardIds: result.cardIds, href: C.jotterById(origin, result.jotterId) };
+        } else if (kind === 'room' && result.jotId) {
+          toast = { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) };
+        }
+        if (!toast) return Promise.resolve();
+        return Promise.resolve()
+          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
+          .catch(function () {})
+          .then(function () { return tellTab(meta.tabId, toast); });
+      }
       if (kind === 'page') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
       }

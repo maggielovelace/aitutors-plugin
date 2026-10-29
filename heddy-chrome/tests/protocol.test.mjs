@@ -112,9 +112,9 @@ test('parseExternal answers only v1 heddy:ready / heddy:result with a UUID cid',
   assert.equal(P.parseExternal([{ type: 'heddy:ready', v: 1, cid: CID }]), null);
   assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID }), null, 'ok is required');
   const r = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, topicId: 'map-scales', topic: 'Maths · Map scales' });
-  assert.deepEqual(r, { kind: 'result', cid: CID, ok: true, error: null, topicId: 'map-scales', topic: 'Maths · Map scales', momentId: null, lang: null, quote: null, t: null, jotId: null, jotterId: null });
+  assert.deepEqual(r, { kind: 'result', cid: CID, ok: true, error: null, topicId: 'map-scales', topic: 'Maths · Map scales', momentId: null, lang: null, quote: null, t: null, jotId: null, jotterId: null, cardIds: null });
   const hostile = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: '<img src=x onerror=alert(1)>', topicId: '../../admin', topic: 'x'.repeat(500) });
-  assert.deepEqual(hostile, { kind: 'result', cid: CID, ok: false, error: null, topicId: null, topic: null, momentId: null, lang: null, quote: null, t: null, jotId: null, jotterId: null });
+  assert.deepEqual(hostile, { kind: 'result', cid: CID, ok: false, error: null, topicId: null, topic: null, momentId: null, lang: null, quote: null, t: null, jotId: null, jotterId: null, cardIds: null });
 });
 
 test('momentId must be a UUID and lang one of the site’s two locales', () => {

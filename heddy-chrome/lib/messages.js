@@ -320,6 +320,15 @@
       },
       "copyFailed": {
         "message": "Couldn't copy the picture."
+      },
+      "toastCardMade": {
+        "message": "Card made"
+      },
+      "toastCardDeleted": {
+        "message": "Card deleted."
+      },
+      "toastCardUndoFailed": {
+        "message": "Couldn't undo that card."
       }
     },
     "zh_CN": {
@@ -641,6 +650,15 @@
       },
       "copyFailed": {
         "message": "没能复制这张图片。"
+      },
+      "toastCardMade": {
+        "message": "卡片做好了"
+      },
+      "toastCardDeleted": {
+        "message": "卡片已删除。"
+      },
+      "toastCardUndoFailed": {
+        "message": "没能撤销这张卡片。"
       }
     }
   };

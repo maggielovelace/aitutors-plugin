@@ -122,5 +122,8 @@
   "menuWholeScreen": { "message": "Snap the whole screen instead" },
   "menuCopyPicture": { "message": "Copy picture" },
   "menuCopied": { "message": "Copied" },
-  "copyFailed": { "message": "Couldn't copy the picture." }
+  "copyFailed": { "message": "Couldn't copy the picture." },
+  "toastCardMade": { "message": "Card made" },
+  "toastCardDeleted": { "message": "Card deleted." },
+  "toastCardUndoFailed": { "message": "Couldn't undo that card." }
 }
