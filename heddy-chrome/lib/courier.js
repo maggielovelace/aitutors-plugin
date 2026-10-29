@@ -227,11 +227,13 @@
       return t.then(function (x) { return gesture('command', x); });
     }
 
-    /** The one context-menu item, in Heddy's language (D36). */
+    /** Heddy's "Jot it with Heddy" item, in Heddy's language (D36). Only this
+     *  id is replaced, never removeAll: Phase 3 adds its own items. */
     function installMenus(lang) {
       var title = I.t(lang, 'menuJotIt');
       return Promise.resolve()
-        .then(function () { return chrome.contextMenus.removeAll(); })
+        .then(function () { return chrome.contextMenus.remove(MENU_ID); })
+        .catch(function () {})
         .then(function () { return chrome.contextMenus.create({ id: MENU_ID, title: title, contexts: ['selection'] }); })
         .catch(function () {});
     }

@@ -44,6 +44,7 @@ function setup({ tabReply = { ok: true } } = {}) {
     scripting: { executeScript: async (o) => { calls.injected.push(o); } },
     contextMenus: {
       removeAll: async () => { calls.menus.push('removeAll'); },
+      remove: async (id) => { calls.menus.push(`remove:${id}`); if (calls.menus.filter((x) => typeof x === 'object').length === 0) throw new Error('Cannot find menu item'); },
       create: (o) => { calls.menus.push(o); },
     },
   };
@@ -179,7 +180,8 @@ test('a page Heddy may not script (chrome://, the Web Store) fails quietly', asy
 test('the menu item is on selections only, in Heddy’s language', async () => {
   const s = setup();
   await s.courier.installMenus('zh_CN');
-  assert.deepEqual(s.calls.menus, ['removeAll', { id: MENU_ID, title: '用 Heddy 写批注', contexts: ['selection'] }]);
+  assert.deepEqual(s.calls.menus, [`remove:${MENU_ID}`, { id: MENU_ID, title: '用 Heddy 写批注', contexts: ['selection'] }], 'a first install: nothing to remove, still created');
+  assert.ok(!s.calls.menus.includes('removeAll'), 'never removes Phase 3’s items');
   await s.courier.installMenus('en');
   assert.equal(s.calls.menus.at(-1).title, 'Jot it with Heddy');
 });
