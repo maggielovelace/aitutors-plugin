@@ -53,15 +53,16 @@ const CID = '0f8fad5b-d9cb-469f-a165-70867728950e';
 const JOT = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
 const wire = (m) => JSON.parse(JSON.stringify(m));
 
-test('heddy:moment: the video and the second; join only when there was one', () => {
+test('heddy:moment: the video and the second; tEnd only when given, never before t', () => {
   const m = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168.9 });
   assert.deepEqual(m, { type: 'heddy:moment', v: 1, cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168 });
   assert.equal(siteParse(wire(m)).ok, true);
-  const j = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168, join: 2 });
-  assert.equal(j.join, 2);
-  assert.equal(siteParse(wire(j)).ok, true, 'the site ignores join until it reads it');
-  assert.equal(P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 1, join: 99 }).join, 10);
-  for (const bad of [{ t: -1 }, { t: NaN }, { t: MAX_T + 1 }, { youtubeId: 'short' }, { cid: 'x' }, { join: -1 }]) {
+  assert.equal('tEnd' in m, false);
+  const j = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168.2, tEnd: 172.9 });
+  assert.deepEqual([j.t, j.tEnd], [168, 172]);
+  assert.equal(siteParse(wire(j)).ok, true);
+  assert.equal(P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 5, tEnd: 5 }).tEnd, 5, 'equal to t is fine');
+  for (const bad of [{ t: -1 }, { t: NaN }, { t: MAX_T + 1 }, { youtubeId: 'short' }, { cid: 'x' }, { tEnd: 0 }, { tEnd: NaN }, { tEnd: MAX_T + 1 }, { tEnd: '9' }]) {
     assert.throws(() => P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 1, ...bad }), JSON.stringify(bad));
   }
 });

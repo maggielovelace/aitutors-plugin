@@ -160,7 +160,7 @@
         kind: 'moment',
         windowId: input.windowId,
         focused: false,
-        build: function (cid) { return P.buildMoment({ cid: cid, youtubeId: input.youtubeId, t: input.t, join: input.join }); },
+        build: function (cid) { return P.buildMoment({ cid: cid, youtubeId: input.youtubeId, t: input.t, tEnd: input.tEnd }); },
         meta: { tabId: input.tabId, youtubeId: input.youtubeId, startSec: Math.floor(input.t), title: input.title },
       });
     }
@@ -284,7 +284,7 @@
           return moment({
             youtubeId: message.youtubeId,
             t: message.t,
-            join: typeof message.join === 'number' ? message.join : 0,
+            tEnd: typeof message.tEnd === 'number' ? message.tEnd : null,
             title: typeof message.title === 'string' ? message.title.slice(0, 200) : null,
             tabId: tab.id,
             windowId: tab.windowId,

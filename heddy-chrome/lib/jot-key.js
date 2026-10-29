@@ -7,13 +7,14 @@
 //     textbox (YouTube's search box and comment box among them);
 //   - createJHold: a J is held for 2.5 s; another J inside that window joins
 //     the line before (the window restarts from the newest press), and when it
-//     closes Heddy sends ONE heddy:moment, at the FIRST press's time, with the
-//     number of joins. The desk holds its post the same way and posts once.
+//     closes Heddy sends ONE heddy:moment: `t` the FIRST press's player time,
+//     and `tEnd` the LAST press's (only when there was more than one press),
+//     so the site maps the time range to transcript lines. The desk holds its
+//     post the same way and posts once.
 //
 // Pure: the clock and the timers are injected, so the join is a unit test.
 (function (root) {
   var JOIN_MS = 2500;
-  var MAX_JOIN = 10;
 
   // The desk's TYPING_SELECTOR, minus its own quiz options (.vq-opt).
   var TYPING_SELECTOR = 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]';
@@ -43,11 +44,11 @@
   }
 
   /**
-   * deps: { now(), setTimer(fn, ms), clearTimer(h), send({ t, join }) }.
+   * deps: { now(), setTimer(fn, ms), clearTimer(h), send({ t, tEnd?, video }) }.
    * press(t, video) takes the player's second at the key press. Returns the hold.
    */
   function createJHold(deps) {
-    var pending = null; // { t, join, at, timer, video }
+    var pending = null; // { t, tEnd, at, timer, video }
 
     function sameVideo(a, b) {
       return (a && a.youtubeId) === (b && b.youtubeId);
@@ -57,7 +58,9 @@
       var p = pending;
       if (!p) return;
       pending = null;
-      deps.send({ t: p.t, join: p.join, video: p.video });
+      var out = { t: p.t, video: p.video };
+      if (p.tEnd !== null) out.tEnd = p.tEnd;
+      deps.send(out);
     }
 
     /** `video` is what the J belongs to (the id and title read at the press),
@@ -66,7 +69,8 @@
     function press(t, video) {
       var at = deps.now();
       if (pending && at - pending.at < JOIN_MS && sameVideo(pending.video, video)) {
-        pending.join = Math.min(MAX_JOIN, pending.join + 1);
+        // Never before the first press (the child may have scrubbed back).
+        pending.tEnd = Math.max(pending.t, t);
         pending.at = at;
         deps.clearTimer(pending.timer);
         pending.timer = deps.setTimer(fire, JOIN_MS);
@@ -77,7 +81,7 @@
         deps.clearTimer(pending.timer);
         fire();
       }
-      pending = { t: t, join: 0, at: at, timer: null, video: video };
+      pending = { t: t, tEnd: null, at: at, timer: null, video: video };
       pending.timer = deps.setTimer(fire, JOIN_MS);
       return 'held';
     }
@@ -92,7 +96,7 @@
     return { press: press, flush: flush, waiting: function () { return !!pending; } };
   }
 
-  var api = { JOIN_MS: JOIN_MS, MAX_JOIN: MAX_JOIN, TYPING_SELECTOR: TYPING_SELECTOR, isJotKey: isJotKey, createJHold: createJHold };
+  var api = { JOIN_MS: JOIN_MS, TYPING_SELECTOR: TYPING_SELECTOR, isJotKey: isJotKey, createJHold: createJHold };
   root.HeddyJotKey = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

@@ -62,11 +62,11 @@ async function claim(s) {
 
 test('J opens /capture/jot in a window that does not take focus, with heddy:moment', async () => {
   const s = setup();
-  const r = await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, join: 1, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
+  const r = await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
   assert.deepEqual(r, { ok: true, cid: CID });
   assert.equal(s.calls.windows[0].url, `${PROD}/capture/jot?cid=${CID}`);
   assert.equal(s.calls.windows[0].focused, false);
-  assert.deepEqual(await claim(s), { type: 'heddy:moment', v: 1, cid: CID, youtubeId: VIDEO, t: 168, join: 1 });
+  assert.deepEqual(await claim(s), { type: 'heddy:moment', v: 1, cid: CID, youtubeId: VIDEO, t: 168, tEnd: 171 });
 });
 
 test('J’s saved result: the tick, then "Note saved" with the quote, Undo’s jot id and Open in Jotter', async () => {

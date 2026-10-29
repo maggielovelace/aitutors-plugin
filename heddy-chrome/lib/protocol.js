@@ -5,15 +5,16 @@
 //
 //   page  → Heddy  {type:'heddy:ready',  v:1, cid}
 //   Heddy → page   {type:'heddy:add',    v:1, cid, youtubeId, startSec, then}   (the reply, once)
-//   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, join?}        J on YouTube
+//   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, tEnd?}        J on YouTube
 //   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId}                       Undo on the toast
 //   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
 //   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown}        Clip this page
 //   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?}
 //
-// `join` on heddy:moment is the number of extra J presses inside the desk's
-// 2.5 s window (PRD-v0.97.0 D11): the site joins that many lines before the
-// line at t. The site's parser drops a field it does not know, so an older
+// `tEnd` on heddy:moment is the player time of the LAST J in a chain of
+// presses each within 2.5 s of the one before (PRD-v0.97.0 D11); `t` is the
+// FIRST. Sent only for more than one press, never less than t; the site maps
+// the range to transcript lines. The site's parser drops a field it does not know, so an older
 // site saves the one line. Everything a page sends is untrusted data.
 (function (root) {
   var PROTOCOL_VERSION = 1;
@@ -40,7 +41,6 @@
   // Clip this page (D20, Must 6): at most 200 KB of UTF-8, as the site counts it
   // (lib/jotters/storage.ts MAX_PAGE_BYTES).
   var MAX_PAGE_BYTES = 200 * 1024;
-  var MAX_JOIN = 10;
 
   function isCaptureId(x) {
     return typeof x === 'string' && UUID.test(x);
@@ -90,16 +90,16 @@
     };
   }
 
-  /** heddy:moment: J on a watch page. `join` (extra presses within 2.5 s) is
-   *  sent only when there was one. */
+  /** heddy:moment: J on a watch page. `tEnd` (the last press of a chain) is
+   *  sent only when the caller gives one; it may not be before `t`. */
   function buildMoment(input) {
     if (!isCaptureId(input.cid)) throw new Error('bad cid');
     if (!isYoutubeId(input.youtubeId)) throw new Error('bad youtubeId');
     if (!isSeconds(input.t)) throw new Error('bad t');
-    var join = input.join == null ? 0 : input.join;
-    if (typeof join !== 'number' || !isFinite(join) || join < 0) throw new Error('bad join');
+    var tEnd = input.tEnd == null ? null : input.tEnd;
+    if (tEnd !== null && (!isSeconds(tEnd) || tEnd < input.t)) throw new Error('bad tEnd');
     var out = { type: 'heddy:moment', v: PROTOCOL_VERSION, cid: input.cid, youtubeId: input.youtubeId, t: Math.floor(input.t) };
-    if (Math.floor(join) > 0) out.join = Math.min(MAX_JOIN, Math.floor(join));
+    if (tEnd !== null) out.tEnd = Math.floor(tEnd);
     return out;
   }
 
@@ -242,7 +242,6 @@
     utf8Bytes: utf8Bytes,
     CONTEXT_SIDE: CONTEXT_SIDE,
     MAX_PAGE_BYTES: MAX_PAGE_BYTES,
-    MAX_JOIN: MAX_JOIN,
     parseExternal: parseExternal,
     topicForToast: topicForToast,
     clockOf: clockOf,

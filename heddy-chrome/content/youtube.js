@@ -140,7 +140,7 @@
     setTimer: function (fn, ms) { return setTimeout(fn, ms); },
     clearTimer: function (h) { clearTimeout(h); },
     send: function (j) {
-      send({ type: 'heddy-ui:moment', youtubeId: j.video.youtubeId, title: j.video.title, t: j.t, join: j.join });
+      send({ type: 'heddy-ui:moment', youtubeId: j.video.youtubeId, title: j.video.title, t: j.t, tEnd: j.tEnd });
     },
   });
 

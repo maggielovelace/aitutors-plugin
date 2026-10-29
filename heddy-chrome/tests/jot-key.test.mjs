@@ -68,7 +68,7 @@ test('one J is held 2.5 s, then sent once at its own time', () => {
   c.tick(2499);
   assert.equal(c.sent.length, 0);
   c.tick(1);
-  assert.deepEqual(c.sent, [{ t: 168.4, join: 0, video: V }]);
+  assert.deepEqual(c.sent, [{ t: 168.4, video: V }], 'one press: no tEnd');
 });
 
 test('a second J inside 2.5 s joins the line before; the window restarts from it', () => {
@@ -79,7 +79,7 @@ test('a second J inside 2.5 s joins the line before; the window restarts from it
   c.tick(2000);
   assert.equal(c.hold.press(172, V), 'joined', '2 s after the SECOND press still joins');
   c.tick(2500);
-  assert.deepEqual(c.sent, [{ t: 168, join: 2, video: V }], 'one moment, at the first press, two lines joined');
+  assert.deepEqual(c.sent, [{ t: 168, tEnd: 172, video: V }], 'one moment: the first press to the last');
 });
 
 test('a J at 2.5 s or later is its own jot', () => {
@@ -88,7 +88,7 @@ test('a J at 2.5 s or later is its own jot', () => {
   c.tick(2500);
   c.hold.press(20, V);
   c.tick(2500);
-  assert.deepEqual(c.sent.map((s) => [s.t, s.join]), [[10, 0], [20, 0]]);
+  assert.deepEqual(c.sent, [{ t: 10, video: V }, { t: 20, video: V }]);
 });
 
 test('the join window is open below 2.5 s and shut at 2.5 s exactly', () => {
@@ -101,12 +101,13 @@ test('the join window is open below 2.5 s and shut at 2.5 s exactly', () => {
   assert.equal(hold.press(3, V), 'held');
 });
 
-test('joins stop at ten', () => {
+test('tEnd is never before the first press, even if the child scrubbed back', () => {
   const c = clocked();
-  for (let i = 0; i < 15; i++) { c.hold.press(5, V); c.tick(100); }
+  c.hold.press(100, V);
+  c.tick(500);
+  c.hold.press(40, V);
   c.tick(2500);
-  assert.equal(c.sent[0].join, K.MAX_JOIN);
-  assert.equal(K.MAX_JOIN, 10);
+  assert.deepEqual(c.sent, [{ t: 100, tEnd: 100, video: V }]);
 });
 
 test('a J on another video never joins, and a waiting J goes under its own video', () => {
@@ -114,9 +115,9 @@ test('a J on another video never joins, and a waiting J goes under its own video
   c.hold.press(10, V);
   c.tick(500);
   assert.equal(c.hold.press(3, W), 'held');
-  assert.deepEqual(c.sent, [{ t: 10, join: 0, video: V }]);
+  assert.deepEqual(c.sent, [{ t: 10, video: V }]);
   c.hold.flush();
-  assert.deepEqual(c.sent[1], { t: 3, join: 0, video: W });
+  assert.deepEqual(c.sent[1], { t: 3, video: W });
   c.tick(5000);
   assert.equal(c.sent.length, 2, 'flushed, never sent twice');
 });
