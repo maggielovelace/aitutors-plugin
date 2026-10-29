@@ -62,6 +62,15 @@ test('heddy:moment: the video and the second; tEnd only when given, never before
   assert.deepEqual([j.t, j.tEnd], [168, 172]);
   assert.equal(siteParse(wire(j)).ok, true);
   assert.equal(P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 5, tEnd: 5 }).tEnd, 5, 'equal to t is fine');
+  assert.equal(P.MAX_SPAN, 120);
+  const wide = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 10.7, tEnd: 400 });
+  assert.equal(wide.tEnd, 130, 'clamped to t + 120, not refused');
+  assert.equal(P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 10.2, tEnd: 130.9 }).tEnd, 130);
+  // The site's rule: t ≤ tEnd ≤ t + 120 on what it receives.
+  for (const [t, tEnd] of [[0, 0.5], [3.9, 4.1], [100, 50000], [MAX_T - 1, MAX_T]]) {
+    const m2 = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t, tEnd });
+    assert.ok(m2.t <= m2.tEnd && m2.tEnd <= m2.t + 120 && m2.tEnd <= MAX_T, `${t}..${tEnd}`);
+  }
   for (const bad of [{ t: -1 }, { t: NaN }, { t: MAX_T + 1 }, { youtubeId: 'short' }, { cid: 'x' }, { tEnd: 0 }, { tEnd: NaN }, { tEnd: MAX_T + 1 }, { tEnd: '9' }]) {
     assert.throws(() => P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 1, ...bad }), JSON.stringify(bad));
   }

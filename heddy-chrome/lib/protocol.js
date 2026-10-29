@@ -13,8 +13,9 @@
 //
 // `tEnd` on heddy:moment is the player time of the LAST J in a chain of
 // presses each within 2.5 s of the one before (PRD-v0.97.0 D11); `t` is the
-// FIRST. Sent only for more than one press, never less than t; the site maps
-// the range to transcript lines. The site's parser drops a field it does not know, so an older
+// FIRST. Sent only for more than one press, never less than t and at most
+// 120 s after it (the site refuses a wider range); the site joins every line
+// from the one at t through the one at tEnd. The site's parser drops a field it does not know, so an older
 // site saves the one line. Everything a page sends is untrusted data.
 (function (root) {
   var PROTOCOL_VERSION = 1;
@@ -41,6 +42,8 @@
   // Clip this page (D20, Must 6): at most 200 KB of UTF-8, as the site counts it
   // (lib/jotters/storage.ts MAX_PAGE_BYTES).
   var MAX_PAGE_BYTES = 200 * 1024;
+  // heddy:moment's tEnd may be at most this many seconds after t (site rule).
+  var MAX_SPAN = 120;
 
   function isCaptureId(x) {
     return typeof x === 'string' && UUID.test(x);
@@ -91,7 +94,8 @@
   }
 
   /** heddy:moment: J on a watch page. `tEnd` (the last press of a chain) is
-   *  sent only when the caller gives one; it may not be before `t`. */
+   *  sent only when the caller gives one; it may not be before `t`, and a
+   *  range wider than 120 s is clamped to t + 120 rather than lose the jot. */
   function buildMoment(input) {
     if (!isCaptureId(input.cid)) throw new Error('bad cid');
     if (!isYoutubeId(input.youtubeId)) throw new Error('bad youtubeId');
@@ -99,7 +103,7 @@
     var tEnd = input.tEnd == null ? null : input.tEnd;
     if (tEnd !== null && (!isSeconds(tEnd) || tEnd < input.t)) throw new Error('bad tEnd');
     var out = { type: 'heddy:moment', v: PROTOCOL_VERSION, cid: input.cid, youtubeId: input.youtubeId, t: Math.floor(input.t) };
-    if (tEnd !== null) out.tEnd = Math.floor(tEnd);
+    if (tEnd !== null) out.tEnd = Math.min(Math.floor(tEnd), out.t + MAX_SPAN);
     return out;
   }
 
@@ -278,6 +282,7 @@
     cutMarkdown: cutMarkdown,
     CONTEXT_SIDE: CONTEXT_SIDE,
     MAX_PAGE_BYTES: MAX_PAGE_BYTES,
+    MAX_SPAN: MAX_SPAN,
     parseExternal: parseExternal,
     topicForToast: topicForToast,
     clockOf: clockOf,
