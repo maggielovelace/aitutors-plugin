@@ -25,7 +25,8 @@
   var TOAST_MS = 4000;
   var CHECK_MS = 1500;
 
-  var tr = I.translator('en');
+  var lang = 'en';
+  var tr = I.translator(lang);
   var bar = null; // { host, watch, add }
   var toast = null; // { host, timer }
   var lastId = null;
@@ -165,7 +166,8 @@
   function onToast(msg) {
     if (msg.kind === 'cant_keep') return showToast(tr('toastCantKeep'), null, null);
     var parts = [];
-    if (typeof msg.topic === 'string' && msg.topic) parts.push(msg.topic);
+    var topic = P.topicForToast(msg.topic, msg.topicLang, lang);
+    if (topic) parts.push(topic);
     if (typeof msg.startSec === 'number') parts.push(tr('toastFrom', P.clockOf(msg.startSec)));
     showToast(tr('toastInMyClips'), parts.join(' · '), typeof msg.href === 'string' ? msg.href : null);
   }
@@ -181,7 +183,8 @@
     ensureBar();
   }
 
-  function setLang(lang) {
+  function setLang(next) {
+    lang = next;
     tr = I.translator(lang);
     labelBar();
   }

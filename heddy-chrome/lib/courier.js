@@ -100,7 +100,7 @@
       if (result.ok) {
         setIcon(meta.tabId, 'saved');
         later(function () { restIcon(meta.tabId); }, SAVED_MS);
-        var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, startSec: meta.startSec, href: C.clipsUrl(origin, result.topicId, meta.youtubeId) };
+        var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
         var steps = [tellTab(meta.tabId, toast)];
         if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
         return Promise.all(steps);

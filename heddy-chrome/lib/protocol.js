@@ -19,6 +19,8 @@
   var TOPIC_ID = /^[A-Za-z0-9_-]{1,120}$/;
   var MAX_LABEL = 120;
   var ERROR = /^[a-z_]{1,40}$/;
+  // The site's locale on a result, and the Heddy language each one matches.
+  var SITE_LANGS = { 'en-GB': 'en', 'zh-Hans': 'zh_CN' };
 
   function isCaptureId(x) {
     return typeof x === 'string' && UUID.test(x);
@@ -89,9 +91,20 @@
         error: typeof data.error === 'string' && ERROR.test(data.error) ? data.error : null,
         topicId: typeof data.topicId === 'string' && TOPIC_ID.test(data.topicId) ? data.topicId : null,
         topic: label(data.topic),
+        momentId: isCaptureId(data.momentId) ? data.momentId.toLowerCase() : null,
+        lang: typeof data.lang === 'string' && Object.prototype.hasOwnProperty.call(SITE_LANGS, data.lang) ? data.lang : null,
       };
     }
     return null;
+  }
+
+  /** The topic label for a toast in Heddy's language, or null. The label is in
+   *  the site's language; a toast never mixes two, so when the site says its
+   *  language and it is not Heddy's, the label is left off. */
+  function topicForToast(topic, siteLang, heddyLang) {
+    if (typeof topic !== 'string' || !topic) return null;
+    if (siteLang && SITE_LANGS[siteLang] !== heddyLang) return null;
+    return topic;
   }
 
   /** m:ss (or h:mm:ss), as the site prints a time. */
@@ -113,6 +126,7 @@
     startSecFor: startSecFor,
     buildAdd: buildAdd,
     parseExternal: parseExternal,
+    topicForToast: topicForToast,
     clockOf: clockOf,
   };
   root.HeddyProtocol = api;

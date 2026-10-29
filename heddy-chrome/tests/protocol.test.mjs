@@ -112,9 +112,32 @@ test('parseExternal answers only v1 heddy:ready / heddy:result with a UUID cid',
   assert.equal(P.parseExternal([{ type: 'heddy:ready', v: 1, cid: CID }]), null);
   assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID }), null, 'ok is required');
   const r = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, topicId: 'map-scales', topic: 'Maths · Map scales' });
-  assert.deepEqual(r, { kind: 'result', cid: CID, ok: true, error: null, topicId: 'map-scales', topic: 'Maths · Map scales' });
+  assert.deepEqual(r, { kind: 'result', cid: CID, ok: true, error: null, topicId: 'map-scales', topic: 'Maths · Map scales', momentId: null, lang: null });
   const hostile = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: '<img src=x onerror=alert(1)>', topicId: '../../admin', topic: 'x'.repeat(500) });
-  assert.deepEqual(hostile, { kind: 'result', cid: CID, ok: false, error: null, topicId: null, topic: null });
+  assert.deepEqual(hostile, { kind: 'result', cid: CID, ok: false, error: null, topicId: null, topic: null, momentId: null, lang: null });
+});
+
+test('momentId must be a UUID and lang one of the site’s two locales', () => {
+  const MOMENT = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
+  const ok = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, momentId: MOMENT.toUpperCase(), lang: 'zh-Hans' });
+  assert.equal(ok.momentId, MOMENT);
+  assert.equal(ok.lang, 'zh-Hans');
+  assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, lang: 'en-GB' }).lang, 'en-GB');
+  for (const momentId of ['../../admin', MOMENT + 'x', MOMENT.replace(/-/g, ''), 42, null]) {
+    assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, momentId }).momentId, null, String(momentId));
+  }
+  for (const lang of [['en-GB'], { toString: () => 'zh-Hans' }, 'en', 'zh_CN', 'zh-hans', 'EN-GB', 'fr', '', 1, 'toString', '__proto__']) {
+    assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, lang }).lang, null, String(lang));
+  }
+});
+
+test('a toast never mixes languages: the topic shows only in Heddy’s own language', () => {
+  assert.equal(P.topicForToast('Maths · Map scales', 'en-GB', 'en'), 'Maths · Map scales');
+  assert.equal(P.topicForToast('数学 · 比例尺', 'zh-Hans', 'zh_CN'), '数学 · 比例尺');
+  assert.equal(P.topicForToast('数学 · 比例尺', 'zh-Hans', 'en'), null);
+  assert.equal(P.topicForToast('Maths · Map scales', 'en-GB', 'zh_CN'), null);
+  assert.equal(P.topicForToast('Maths · Map scales', null, 'zh_CN'), 'Maths · Map scales', 'no lang said: shown as before');
+  assert.equal(P.topicForToast(null, 'en-GB', 'en'), null);
 });
 
 test('clockOf prints times as the site does', () => {
@@ -125,4 +148,12 @@ test('clockOf prints times as the site does', () => {
 
 test('the protocol file names the site files it mirrors', () => {
   assert.match(read('lib/protocol.js'), /lib\/capture\/protocol\.ts/);
+});
+
+test('the YouTube toast applies the language rule to the topic it shows', () => {
+  // No DOM in these tests, so pin the wiring at the source: the toast's topic
+  // goes through topicForToast with the site's lang and Heddy's own.
+  const src = read('content/youtube.js');
+  assert.match(src, /P\.topicForToast\(msg\.topic, msg\.topicLang, lang\)/);
+  assert.doesNotMatch(src, /parts\.push\(msg\.topic\)/);
 });

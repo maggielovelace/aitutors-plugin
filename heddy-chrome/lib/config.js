@@ -34,9 +34,12 @@
     return origin + '/capture/' + page + '?cid=' + encodeURIComponent(cid);
   }
 
-  /** The toast's Open: the clip when the site said which topic it went to,
-   *  else My Clips. */
-  function clipsUrl(origin, topicId, youtubeId) {
+  /** The toast's Open, best first: the child's own clip in Classroom
+   *  (momentId), the library clip (topicId), else My Clips. */
+  function clipsUrl(origin, where) {
+    var w = where || {};
+    if (w.momentId) return origin + '/study/clips/m/' + encodeURIComponent(w.momentId);
+    var topicId = w.topicId, youtubeId = w.youtubeId;
     if (topicId && youtubeId) {
       return origin + '/study/clips/' + encodeURIComponent(topicId) + '?v=' + encodeURIComponent(youtubeId);
     }

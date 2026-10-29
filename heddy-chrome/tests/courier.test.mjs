@@ -107,7 +107,7 @@ test('heddy:result ok: tick for 2 s, the toast with Open, and a pause for Watch 
   await new Promise((r) => setImmediate(r));
   assert.deepEqual(s.calls.icons.at(-1).path[16], 'icons/toolbar-ready-16.png', 'back to the watch-page dot');
   const msgs = s.calls.tabMessages.map((x) => x.m);
-  assert.deepEqual(msgs[0], { type: 'heddy-ui:toast', kind: 'clip', topic: 'Maths · Map scales', startSec: 112, href: `${PROD}/study/clips/map-scales?v=${VIDEO}` });
+  assert.deepEqual(msgs[0], { type: 'heddy-ui:toast', kind: 'clip', topic: 'Maths · Map scales', topicLang: null, startSec: 112, href: `${PROD}/study/clips/map-scales?v=${VIDEO}` });
   assert.deepEqual(msgs[1], { type: 'heddy-ui:pause' });
   assert.ok(s.calls.tabMessages.every((x) => x.tabId === 7));
   assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'one result per cid');
@@ -121,6 +121,27 @@ test('Add to My Clips does not pause; without a topic, Open goes to My Clips', a
   const msgs = s.calls.tabMessages.map((x) => x.m);
   assert.equal(msgs.length, 1);
   assert.equal(msgs[0].href, `${PROD}/study/clips`);
+});
+
+test('Open goes to the child’s own clip first, then the library clip, then My Clips', async () => {
+  const MOMENT = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
+  async function hrefFor(extra) {
+    const s = setup();
+    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+    await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
+    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, ...extra }, page());
+    return s.calls.tabMessages[0].m;
+  }
+  assert.equal((await hrefFor({ momentId: MOMENT, topicId: 'map-scales' })).href, `${PROD}/study/clips/m/${MOMENT}`);
+  assert.equal((await hrefFor({ topicId: 'map-scales' })).href, `${PROD}/study/clips/map-scales?v=${VIDEO}`);
+  assert.equal((await hrefFor({ momentId: 'not-a-uuid', topicId: 'map-scales' })).href, `${PROD}/study/clips/map-scales?v=${VIDEO}`);
+  assert.equal((await hrefFor({})).href, `${PROD}/study/clips`);
+  assert.equal((await hrefFor({ topic: 'Maths · Map scales', lang: 'en-GB' })).topicLang, 'en-GB');
+});
+
+test('Open accepts the child’s own clip page', async () => {
+  const s = setup();
+  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: `${PROD}/study/clips/m/6ba7b810-9dad-41d1-80b4-00c04fd430c8` }, fromYouTube), { ok: true });
 });
 
 test('cant_keep becomes the family-settings toast; other refusals stay in the window', async () => {
