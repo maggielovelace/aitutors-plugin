@@ -182,6 +182,7 @@
   var drag = null; // {mode, x0, y0, start, corner}
   var busy = false;
   var pageKey = '';
+  var collection = ''; // the background's id for this box mode's pictures
   var checkTimer = null, noteTimer = null, scanTimer = null;
 
   function send(message) {
@@ -584,7 +585,7 @@
     busy = true;
     host.classList.add('away');
     return frames(2)
-      .then(function () { return send({ type: 'heddy-box:grab', rect: v, vw: vw(), vh: vh(), context: ctx }); })
+      .then(function () { return send({ type: 'heddy-box:grab', id: collection, rect: v, vw: vw(), vh: vh(), context: ctx }); })
       .then(function (reply) {
         busy = false;
         if (host) host.classList.remove('away');
@@ -612,7 +613,7 @@
       if (!reply.ok) { draw(); if (reply.error !== 'page_changed') note(tr('boxFailed')); return null; }
       busy = true;
       draw();
-      return send({ type: 'heddy-box:send', action: act }).then(function (sent) {
+      return send({ type: 'heddy-box:send', id: collection, action: act }).then(function (sent) {
         busy = false;
         if (sent && sent.ok) return close(false);
         // The kept pictures went with the failed send; start again cleanly.
@@ -637,7 +638,7 @@
     kept = [];
     current = null;
     currentEl = null;
-    send({ type: 'heddy-box:cancel' });
+    send({ type: 'heddy-box:cancel', id: collection });
     draw();
     if (had) note(tr('boxDropped'));
   }
@@ -668,7 +669,7 @@
 
   /** Leave box mode. cancel: Esc, keeping nothing. */
   function close(cancel) {
-    if (cancel) send({ type: 'heddy-box:cancel' });
+    if (cancel) send({ type: 'heddy-box:cancel', id: collection });
     if (host) host.remove();
     host = shadow = els = null;
     kept = [];
@@ -705,6 +706,7 @@
       lang = l;
       tr = I.translator(lang);
       pageKey = samePageKey(location.href);
+      collection = (opts && opts.id) || '';
       build();
       window.addEventListener('keydown', onKey, true);
       window.addEventListener('scroll', rescan, true);
@@ -721,7 +723,7 @@
 
   chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (!message || message.type !== 'heddy-box:start' || sender.id !== chrome.runtime.id || sender.tab) return false;
-    open({ srcUrl: typeof message.srcUrl === 'string' ? message.srcUrl : '' }).then(
+    open({ srcUrl: typeof message.srcUrl === 'string' ? message.srcUrl : '', id: typeof message.id === 'string' ? message.id : '' }).then(
       function () { sendResponse({ ok: true }); },
       function () { sendResponse({ ok: false }); }
     );

@@ -132,12 +132,25 @@ const PAGE = 'https://www.ordnancesurvey.co.uk/blog/map-scales';
 const PNG = K.base64FromBytes(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13]));
 const SHOT = 'data:image/png;base64,' + PNG;
 
-function setup() {
+const ID = 'c0ffee00-0000-4000-8000-000000000001';
+
+/** chrome.storage.session, as a plain object that outlives a "worker". */
+function fakeSession(data = {}) {
+  return {
+    data,
+    get: async (k) => (k === null ? { ...data } : { [k]: data[k] }),
+    set: async (o) => { Object.assign(data, JSON.parse(JSON.stringify(o))); },
+    remove: async (keys) => { for (const k of [].concat(keys)) delete data[k]; },
+  };
+}
+
+function setup(session = fakeSession()) {
   const c = clock();
   const calls = { captures: [], injected: [], tabMessages: [], boxes: [], tools: [], menus: [] };
   const tab = { id: 7, windowId: 3, url: PAGE + '#top', title: 'Understanding map scales' };
   const chrome = {
     runtime: { id: 'heddy' },
+    storage: { session },
     tabs: {
       get: async (id) => ({ ...tab, id }),
       captureVisibleTab: async (windowId, o) => { calls.captures.push({ windowId, o }); return SHOT; },
@@ -159,13 +172,13 @@ function setup() {
     ...K,
     cropShot: async (shot, rects, vw, vh) => rects.map((r) => ({ png: PNG, box: K.webBox(r, vw, vh) })),
   };
-  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear });
+  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID });
   const fromPage = { id: 'heddy', frameId: 0, tab };
-  return { snap, calls, tab, fromPage, clock: c, chrome };
+  return { snap, calls, tab, fromPage, clock: c, chrome, session };
 }
 
 const grab = (s, rect = { x: 200, y: 166, w: 270, h: 136 }, extra = {}) =>
-  s.snap.internal({ type: 'heddy-box:grab', rect, vw: 1280, vh: 800, context: 'Scales are written three ways.', ...extra }, s.fromPage);
+  s.snap.internal({ type: 'heddy-box:grab', id: ID, rect, vw: 1280, vh: 800, context: 'Scales are written three ways.', ...extra }, s.fromPage);
 
 test('a kept box is cut from captureVisibleTab of the tab’s window, as PNG', async () => {
   const s = setup();
@@ -177,7 +190,7 @@ test('Jot it sends heddy:box with every kept picture, from the tab’s own addre
   const s = setup();
   await grab(s);
   await grab(s, { x: 500, y: 100, w: 200, h: 100 });
-  const r = await s.snap.internal({ type: 'heddy-box:send', action: 'jot' }, s.fromPage);
+  const r = await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'jot' }, s.fromPage);
   assert.deepEqual(r, { ok: true });
   assert.equal(s.calls.boxes.length, 1);
   const { input, where } = s.calls.boxes[0];
@@ -185,7 +198,7 @@ test('Jot it sends heddy:box with every kept picture, from the tab’s own addre
   assert.equal(input.url, PAGE, 'the tab’s address, without #');
   assert.equal(input.context, 'Scales are written three ways.', 'the cover’s caption');
   assert.deepEqual(where, { tabId: 7, windowId: 3 });
-  assert.equal(s.snap.kept(7), 0, 'sent, so forgotten');
+  assert.equal(await s.snap.kept(7, ID), 0, 'sent, so forgotten');
 });
 
 test('at most 4 pictures for one jot', async () => {
@@ -201,7 +214,7 @@ test('same page only: a different address drops what was kept', async () => {
   await grab(s);
   s.tab.url = 'https://www.ordnancesurvey.co.uk/blog/other';
   assert.deepEqual(await grab(s), { ok: false, error: 'page_changed' });
-  assert.equal(s.snap.kept(7), 0);
+  assert.equal(await s.snap.kept(7, ID), 0);
   // a #fragment change is the same page
   const t = setup();
   await grab(t);
@@ -212,8 +225,8 @@ test('same page only: a different address drops what was kept', async () => {
 test('a navigation while collecting drops the pictures, and the new page gets one line', async () => {
   const s = setup();
   await grab(s);
-  s.snap.tabUpdated(7, { url: 'https://www.ordnancesurvey.co.uk/blog/other' });
-  assert.equal(s.snap.kept(7), 0);
+  await s.snap.tabUpdated(7, { url: 'https://www.ordnancesurvey.co.uk/blog/other' });
+  assert.equal(await s.snap.kept(7, ID), 0);
   await s.snap.tabUpdated(7, { status: 'complete' });
   const line = s.calls.injected.find((o) => o.func && o.func.name === 'showDroppedLine');
   assert.ok(line, 'the notice is injected');
@@ -229,13 +242,13 @@ test('Explain and Make a card refuse two pictures; Ask takes them', async () => 
     const s = setup();
     await grab(s);
     await grab(s);
-    assert.deepEqual(await s.snap.internal({ type: 'heddy-box:send', action }, s.fromPage), { ok: false });
+    assert.deepEqual(await s.snap.internal({ type: 'heddy-box:send', id: ID, action }, s.fromPage), { ok: false });
     assert.equal(s.calls.tools.length, 0);
   }
   const s = setup();
   await grab(s);
   await grab(s);
-  await s.snap.internal({ type: 'heddy-box:send', action: 'ask' }, s.fromPage);
+  await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'ask' }, s.fromPage);
   assert.equal(s.calls.tools[0].input.tool, 'ask');
   assert.equal(s.calls.tools[0].input.images.length, 2);
   assert.equal(s.calls.tools[0].input.quote, '');
@@ -244,7 +257,7 @@ test('Explain and Make a card refuse two pictures; Ask takes them', async () => 
 test('Explain on one picture sends heddy:tool with it', async () => {
   const s = setup();
   await grab(s);
-  await s.snap.internal({ type: 'heddy-box:send', action: 'explain' }, s.fromPage);
+  await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'explain' }, s.fromPage);
   assert.equal(s.calls.tools[0].input.tool, 'explain');
   assert.equal(s.calls.tools[0].input.images.length, 1);
 });
@@ -258,8 +271,8 @@ test('a box under 24 × 24 takes no screenshot', async () => {
 test('Esc keeps none', async () => {
   const s = setup();
   await grab(s);
-  await s.snap.internal({ type: 'heddy-box:cancel' }, s.fromPage);
-  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:send', action: 'jot' }, s.fromPage), { ok: false });
+  await s.snap.internal({ type: 'heddy-box:cancel', id: ID }, s.fromPage);
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'jot' }, s.fromPage), { ok: false });
 });
 
 test('a frame, another extension or a page cannot drive box mode', async () => {
@@ -306,15 +319,13 @@ test('Ctrl Shift K: once → box mode after 0.4 s; twice within 0.4 s → the wh
 test('right-click an image: box mode with the box on that image; inside a frame, no box', async () => {
   const s = setup();
   s.snap.menuClicked({ menuItemId: S.MENU_ID, srcUrl: 'https://x.example/map.png', frameId: 0 }, s.tab);
-  await new Promise((r) => setImmediate(r));
-  await new Promise((r) => setImmediate(r));
-  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start', srcUrl: 'https://x.example/map.png' });
+  for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r));
+  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start', srcUrl: 'https://x.example/map.png', id: ID });
 
   const t = setup();
   t.snap.menuClicked({ menuItemId: S.MENU_ID, srcUrl: 'https://x.example/map.png', frameId: 5 }, t.tab);
-  await new Promise((r) => setImmediate(r));
-  await new Promise((r) => setImmediate(r));
-  assert.deepEqual(t.calls.tabMessages[0].m, { type: 'heddy-box:start' });
+  for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r));
+  assert.deepEqual(t.calls.tabMessages[0].m, { type: 'heddy-box:start', id: ID });
   assert.equal(t.snap.menuClicked({ menuItemId: 'someone-else' }, t.tab), false);
 });
 
@@ -343,4 +354,80 @@ test('the tooltip shows the shortcut Chrome has, or none', () => {
   assert.equal(S.shortcutLabel([{ name: 'snap-picture', shortcut: '⇧⌘K' }]), '⇧⌘K');
   assert.equal(S.shortcutLabel([{ name: 'snap-picture', shortcut: '' }]), null);
   assert.equal(S.shortcutLabel([]), null);
+});
+
+// ─── surviving a service-worker restart ──────────────────────────────────────
+
+const boxKeys = (session) => Object.keys(session.data).filter((k) => k.startsWith(S.BOX_PREFIX));
+
+test('kept pictures live in storage.session under the tab and the collection id', async () => {
+  const s = setup();
+  await grab(s);
+  assert.deepEqual(boxKeys(s.session), [`${S.BOX_PREFIX}7:${ID}`]);
+  assert.equal(s.session.data[`${S.BOX_PREFIX}7:${ID}`].images.length, 1);
+});
+
+test('a worker restart mid-collection loses nothing: the next one carries on and sends all', async () => {
+  const session = fakeSession();
+  const before = setup(session);
+  await grab(before);
+  await grab(before, { x: 500, y: 100, w: 200, h: 100 });
+  // The worker stops: a new snap with an empty memory, the same storage.session.
+  const after = setup(session);
+  assert.equal(await after.snap.kept(7, ID), 2);
+  assert.deepEqual(await grab(after), { ok: true, n: 3 });
+  await after.snap.internal({ type: 'heddy-box:send', id: ID, action: 'jot' }, after.fromPage);
+  assert.equal(after.calls.boxes[0].input.images.length, 3);
+  assert.equal(after.calls.boxes[0].input.context, 'Scales are written three ways.');
+  assert.deepEqual(boxKeys(session), [], 'cleared on send');
+});
+
+test('the 4-picture cap holds across a restart', async () => {
+  const session = fakeSession();
+  const before = setup(session);
+  for (let i = 0; i < 4; i++) await grab(before);
+  const after = setup(session);
+  assert.deepEqual(await grab(after), { ok: false, error: 'full' });
+});
+
+test('cleared on Esc, on a navigation away and on closing the tab, after a restart too', async () => {
+  for (const end of ['esc', 'navigate', 'close']) {
+    const session = fakeSession();
+    await grab(setup(session));
+    const after = setup(session);
+    if (end === 'esc') await after.snap.internal({ type: 'heddy-box:cancel', id: ID }, after.fromPage);
+    if (end === 'navigate') await after.snap.tabUpdated(7, { url: 'https://elsewhere.example/' });
+    if (end === 'close') await after.snap.tabGone(7);
+    assert.deepEqual(boxKeys(session), [], end);
+  }
+});
+
+test('a #fragment change is no navigation: the pictures stay', async () => {
+  const s = setup();
+  await grab(s);
+  await s.snap.tabUpdated(7, { url: PAGE + '#further' });
+  assert.equal(boxKeys(s.session).length, 1);
+});
+
+test('another box mode’s id reads nothing, and a late Esc from an old box mode keeps the new one', async () => {
+  const s = setup();
+  await grab(s);
+  assert.equal(await s.snap.kept(7, 'c0ffee00-0000-4000-8000-0000000000ff'), 0);
+  await s.snap.internal({ type: 'heddy-box:cancel', id: 'c0ffee00-0000-4000-8000-0000000000ff' }, s.fromPage);
+  assert.equal(await s.snap.kept(7, ID), 1);
+  assert.deepEqual(await grab(s, undefined, { id: 'not an id' }), { ok: false, error: 'page' });
+});
+
+test('box mode is started with its collection id', async () => {
+  const s = setup();
+  await s.snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 7 }, { id: 'heddy' });
+  assert.equal(s.calls.tabMessages[0].m.id, ID);
+});
+
+test('a stored record that does not match its key is ignored', async () => {
+  const key = `${S.BOX_PREFIX}7:${ID}`;
+  for (const bad of [{ id: 'someone-else-0001', tabId: 7, images: [{}] }, { id: ID, tabId: 8, images: [{}] }, { id: ID, tabId: 7, images: 'x' }]) {
+    const s = setup(fakeSession({ [key]: { url: PAGE, ...bad } }));
+    assert.equal(await s.snap.kept(7, ID), 0, JSON.stringify(bad));
+  }
 });

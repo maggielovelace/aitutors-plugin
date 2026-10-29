@@ -22,6 +22,9 @@
   var BOX_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'content/box-mode.js'];
   // captureVisibleTab allows two calls a second; one retry after this.
   var CAPTURE_RETRY_MS = 600;
+  // chrome.storage.session keys of kept pictures: heddyBox:<tabId>:<collection id>.
+  var BOX_PREFIX = 'heddyBox:';
+  var COLLECTION_ID = /^[a-z0-9-]{8,64}$/;
   // The crop-corners glyph (Jotters' Select area; the owner's ruling 29 Oct).
   var SNAP_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 2.5 V17 H21.5 M2.5 7 H17 V21.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -81,12 +84,70 @@
     var K = deps.crop;
     var T = deps.tools;
     var later = deps.later || setTimeout;
-    // tabId → { url, title, images: [{png, box}], context }: the pictures kept
-    // for one jot. One page only (D33): a different address drops them.
-    var sessions = {};
+    // The pictures kept for one jot: { id, tabId, url, title, images:
+    // [{png, box}], context }, one collection per box mode, under
+    // heddyBox:<tabId>:<collection id> in chrome.storage.session, so a
+    // service-worker restart mid-collection loses nothing (four 1 MB PNGs as
+    // base64 fit its 10 MB). `cache` mirrors it. One page only (D33): a
+    // different address drops them; so do sending, Esc and closing the tab.
+    var session = chrome.storage && chrome.storage.session;
+    var cache = {};
     var pressGate = {};
     // Tabs whose kept pictures were dropped by a navigation, until it loads.
     var droppedOn = {};
+
+    function keyOf(tabId, id) {
+      return BOX_PREFIX + tabId + ':' + id;
+    }
+
+    function newId() {
+      return String(deps.randomUUID ? deps.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).toLowerCase();
+    }
+
+    /** The collection, from the cache or (after a restart) from storage. */
+    function load(tabId, id) {
+      if (!COLLECTION_ID.test(String(id))) return Promise.resolve(null);
+      var k = keyOf(tabId, id);
+      if (Object.prototype.hasOwnProperty.call(cache, k)) return Promise.resolve(cache[k]);
+      return Promise.resolve()
+        .then(function () { return session.get(k); })
+        .then(function (got) {
+          var c = got && got[k];
+          c = c && c.id === id && c.tabId === tabId && Array.isArray(c.images) ? c : null;
+          cache[k] = c;
+          return c;
+        }, function () { return null; });
+    }
+
+    function save(c) {
+      var k = keyOf(c.tabId, c.id);
+      cache[k] = c;
+      var o = {};
+      o[k] = c;
+      return Promise.resolve().then(function () { return session.set(o); }).catch(function () {});
+    }
+
+    /** Forget every collection of a tab. Resolves to the ones forgotten. */
+    function dropTab(tabId, keep) {
+      var prefix = BOX_PREFIX + tabId + ':';
+      var dropped = [];
+      Object.keys(cache).forEach(function (k) {
+        if (k.indexOf(prefix) !== 0 || (keep && cache[k] && keep(cache[k]))) return;
+        if (cache[k]) dropped.push(cache[k]);
+        delete cache[k];
+      });
+      return Promise.resolve()
+        .then(function () { return session.get(null); })
+        .then(function (all) {
+          var keys = Object.keys(all || {}).filter(function (k) { return k.indexOf(prefix) === 0 && !(keep && keep(all[k])); });
+          keys.forEach(function (k) {
+            if (all[k] && !dropped.some(function (d) { return d.id === all[k].id; })) dropped.push(all[k]);
+          });
+          return keys.length ? session.remove(keys) : null;
+        })
+        .catch(function () {})
+        .then(function () { return dropped; });
+    }
 
     function pageUrl(href) {
       return T.cleanUrl(href);
@@ -111,10 +172,11 @@
      *  child right-clicked. */
     function start(tab, opts) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
-      delete sessions[tab.id];
-      return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: BOX_FILES })
+      var id = newId();
+      return dropTab(tab.id)
+        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: BOX_FILES }); })
         .then(function () {
-          return chrome.tabs.sendMessage(tab.id, Object.assign({ type: 'heddy-box:start' }, opts || {}));
+          return chrome.tabs.sendMessage(tab.id, Object.assign({ type: 'heddy-box:start' }, opts || {}, { id: id }));
         })
         .then(function () { return { ok: true }; }, function () { return { ok: false }; });
     }
@@ -122,8 +184,8 @@
     /** The whole visible tab, straight to the Jot it window. */
     function whole(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
-      delete sessions[tab.id];
-      return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readViewport })
+      return dropTab(tab.id)
+        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readViewport }); })
         .then(function (res) {
           var v = res && res[0] && res[0].result;
           if (!v) throw new Error('no viewport');
@@ -138,32 +200,35 @@
     /** heddy-box:grab: keep one more box for this jot (or the only one). */
     function grab(tab, m) {
       var url = pageUrl(tab.url);
-      if (!url) return Promise.resolve({ ok: false, error: 'page' });
-      var s = sessions[tab.id];
-      if (s && s.url !== url) {
-        // The page changed while collecting: drop everything (D33).
-        delete sessions[tab.id];
-        return Promise.resolve({ ok: false, error: 'page_changed' });
-      }
-      if (s && s.images.length >= K.MAX_IMAGES) return Promise.resolve({ ok: false, error: 'full' });
-      return cropOne(tab, m.rect, m.vw, m.vh).then(
-        function (img) {
-          var cur = sessions[tab.id] || (sessions[tab.id] = { url: url, title: tab.title, images: [], context: '' });
-          if (cur.url !== url) return { ok: false, error: 'page_changed' };
-          cur.images.push(img);
-          // The cover's caption is the jot's context.
-          if (cur.images.length === 1) cur.context = T.cleanText(m.context, T.MAX_CONTEXT);
-          return { ok: true, n: cur.images.length };
-        },
-        function (e) { return { ok: false, error: e && (e.message === 'too_big' || e.message === 'too_small') ? e.message : 'capture' }; }
-      );
+      if (!url || !COLLECTION_ID.test(String(m.id))) return Promise.resolve({ ok: false, error: 'page' });
+      return load(tab.id, m.id).then(function (s) {
+        if (s && s.url !== url) {
+          // The page changed while collecting: drop everything (D33).
+          return dropTab(tab.id).then(function () { return { ok: false, error: 'page_changed' }; });
+        }
+        if (s && s.images.length >= K.MAX_IMAGES) return { ok: false, error: 'full' };
+        return cropOne(tab, m.rect, m.vw, m.vh).then(
+          function (img) {
+            var cur = s || { id: m.id, tabId: tab.id, url: url, title: tab.title, images: [], context: '' };
+            cur.images.push(img);
+            // The cover's caption is the jot's context.
+            if (cur.images.length === 1) cur.context = T.cleanText(m.context, T.MAX_CONTEXT);
+            return save(cur).then(function () { return { ok: true, n: cur.images.length }; });
+          },
+          function (e) { return { ok: false, error: e && (e.message === 'too_big' || e.message === 'too_small') ? e.message : 'capture' }; }
+        );
+      });
     }
 
     /** heddy-box:send: Jot it, Explain, Make a card or Ask Heddy on the
      *  pictures kept. Explain and Make a card take one picture (D33). */
-    function send(tab, action) {
-      var s = sessions[tab.id];
-      delete sessions[tab.id];
+    function send(tab, action, id) {
+      return load(tab.id, id).then(function (s) {
+        return dropTab(tab.id).then(function () { return sendCollection(tab, action, s); });
+      });
+    }
+
+    function sendCollection(tab, action, s) {
       if (!s || !s.images.length) return Promise.resolve({ ok: false });
       if (pageUrl(tab.url) !== s.url) return Promise.resolve({ ok: false, error: 'page_changed' });
       var where = { tabId: tab.id, windowId: tab.windowId };
@@ -201,13 +266,14 @@
           return grab(tab, message);
         case 'heddy-box:send':
           if (!tab || sender.frameId) return Promise.resolve({ ok: false });
-          return send(tab, message.action);
+          return send(tab, message.action, message.id);
         case 'heddy-box:whole':
           if (!tab || sender.frameId) return Promise.resolve({ ok: false });
           return whole(tab);
         case 'heddy-box:cancel':
-          if (tab) delete sessions[tab.id];
-          return Promise.resolve({ ok: true });
+          // Only this box mode's pictures: a late Esc can't empty a newer one.
+          if (!tab) return Promise.resolve({ ok: true });
+          return dropTab(tab.id, function (c) { return c.id !== message.id; }).then(function () { return { ok: true }; });
         case 'heddy-ui:tool':
           if (!tab) return Promise.resolve({ ok: false });
           return wordsTool(tab, message);
@@ -253,8 +319,8 @@
 
     /** A tab that navigated or closed loses what it was collecting. */
     function tabGone(tabId) {
-      delete sessions[tabId];
       delete droppedOn[tabId];
+      return dropTab(tabId);
     }
 
     /** The page navigated away while collecting: the kept pictures are
@@ -263,11 +329,17 @@
      *  running, and box mode says it itself. The line is best effort:
      *  activeTab may not reach the new page. */
     function tabUpdated(tabId, change) {
-      var s = sessions[tabId];
-      if (s && change && change.url && pageUrl(change.url) !== s.url) {
-        delete sessions[tabId];
-        if (s.images.length) droppedOn[tabId] = true;
+      var first = Promise.resolve();
+      if (change && change.url) {
+        var to = pageUrl(change.url);
+        first = dropTab(tabId, function (c) { return c.url === to; }).then(function (gone) {
+          if (gone.some(function (c) { return c.images && c.images.length; })) droppedOn[tabId] = true;
+        });
       }
+      return first.then(function () { return afterLoad(tabId, change); });
+    }
+
+    function afterLoad(tabId, change) {
       if (droppedOn[tabId] && change && change.status === 'complete') {
         delete droppedOn[tabId];
         return Promise.resolve(deps.droppedText ? deps.droppedText() : '')
@@ -290,7 +362,8 @@
       installMenu: installMenu,
       tabGone: tabGone,
       tabUpdated: tabUpdated,
-      kept: function (tabId) { return sessions[tabId] ? sessions[tabId].images.length : 0; },
+      /** How many pictures a collection holds (resolves). */
+      kept: function (tabId, id) { return load(tabId, id).then(function (c) { return c ? c.images.length : 0; }); },
     };
   }
 
@@ -362,6 +435,7 @@
     DOUBLE_PRESS_MS: DOUBLE_PRESS_MS,
     COMMAND: COMMAND,
     MENU_ID: MENU_ID,
+    BOX_PREFIX: BOX_PREFIX,
     BOX_FILES: BOX_FILES,
     SNAP_ICON: SNAP_ICON,
     createGate: createGate,
