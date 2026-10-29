@@ -123,7 +123,7 @@
     document: document,
     marks: M,
     onOpen: function (href) { send({ type: 'heddy-ui:open', href: href }); },
-    onUndo: function (jotId) { send({ type: 'heddy-ui:undo', jotId: jotId }); },
+    onUndo: function (jotId, jotterId) { send({ type: 'heddy-ui:undo', jotId: jotId, jotterId: jotterId }); },
   });
 
   function onToast(msg) {

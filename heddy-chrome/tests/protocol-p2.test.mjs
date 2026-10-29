@@ -30,6 +30,8 @@ function siteParse(m) {
       return { ok: true };
     case 'heddy:undo':
       if (typeof m.jotId !== 'string' || !UUID.test(m.jotId)) return bad;
+      // The site's jotterId rule (h3-pics, 2026-10-29): optional, a UUID.
+      if (m.jotterId !== undefined && (typeof m.jotterId !== 'string' || !UUID.test(m.jotterId))) return bad;
       return { ok: true };
     case 'heddy:page': {
       const title = text('title');
@@ -81,6 +83,11 @@ test('heddy:undo carries a jot id and nothing else', () => {
   assert.deepEqual(u, { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT });
   assert.equal(siteParse(wire(u)).ok, true);
   assert.throws(() => P.buildUndo({ cid: CID, jotId: '../x' }));
+  const web = P.buildUndo({ cid: CID, jotId: JOT, jotterId: '1B4E28BA-2FA1-41D2-883F-0016D3CCA427' });
+  assert.deepEqual(web, { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT, jotterId: '1b4e28ba-2fa1-41d2-883f-0016d3cca427' });
+  assert.equal(siteParse(wire(web)).ok, true);
+  assert.equal('jotterId' in P.buildUndo({ cid: CID, jotId: JOT, jotterId: null }), false, 'H jots send jotId alone');
+  for (const jotterId of ['../admin', 'x', 42, '']) assert.throws(() => P.buildUndo({ cid: CID, jotId: JOT, jotterId }), String(jotterId));
 });
 
 test('heddy:jot: the quote, ≤ 300 characters each side, the title, the URL without #', () => {

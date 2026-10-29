@@ -51,11 +51,13 @@
         };
       }
       case 'jotted':
+        // A web jot's Undo needs its Jotter too (heddy:undo jotterId); without
+        // one the site could not find it, so there is no Undo to offer.
         return {
           wide: true,
           title: tr('toastJotted'),
           quote: typeof msg.quote === 'string' && msg.quote ? tr('toastQuote', msg.quote) : null,
-          undo: typeof msg.jotId === 'string' && P.isCaptureId(msg.jotId) ? { label: tr('toastUndo'), jotId: msg.jotId } : null,
+          undo: P.isCaptureId(msg.jotId) && P.isCaptureId(msg.jotterId) ? { label: tr('toastUndo'), jotId: msg.jotId, jotterId: msg.jotterId } : null,
           open: typeof msg.href === 'string' ? { label: tr('toastOpenInJotter'), href: msg.href, quiet: true } : null,
           ms: NOTE_MS,
         };
@@ -98,7 +100,7 @@
     '.o button:focus-visible{outline:2px solid #1f6a40;outline-offset:2px;border-radius:4px}';
 
   /**
-   * deps: { document, marks (HeddyMarks), onOpen(href), onUndo(jotId),
+   * deps: { document, marks (HeddyMarks), onOpen(href), onUndo(jotId, jotterId|null),
    *         setTimeout, clearTimeout }
    */
   function createToaster(deps) {
@@ -154,7 +156,8 @@
         o.className = 'o';
         if (m.undo) {
           var jotId = m.undo.jotId;
-          o.appendChild(action('', m.undo.label, function () { hide(); deps.onUndo(jotId); }));
+          var jotterId = m.undo.jotterId || null;
+          o.appendChild(action('', m.undo.label, function () { hide(); deps.onUndo(jotId, jotterId); }));
         }
         if (m.open) {
           var href = m.open.href;

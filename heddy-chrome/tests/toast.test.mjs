@@ -70,13 +70,17 @@ test('the toast sets page and result text only as textContent', () => {
 });
 
 test('Jotted: the quote, Undo and Open in Jotter, 5 s', () => {
-  const m = T.model({ kind: 'jotted', quote: 'On a 1:50 000 map', jotId: JOT, href: 'https://aitutors.me/study/jotters/x' }, 'en', en);
+  const JOTTER = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
+  const m = T.model({ kind: 'jotted', quote: 'On a 1:50 000 map', jotId: JOT, jotterId: JOTTER, href: 'https://aitutors.me/study/jotters/x' }, 'en', en);
   assert.equal(m.title, 'Jotted');
   assert.equal(m.quote, '“On a 1:50 000 map”');
-  assert.deepEqual(m.undo, { label: 'Undo', jotId: JOT });
+  assert.deepEqual(m.undo, { label: 'Undo', jotId: JOT, jotterId: JOTTER }, 'a web jot’s Undo names its Jotter');
   assert.equal(m.open.label, 'Open in Jotter');
   assert.equal(m.ms, 5000);
-  assert.equal(T.model({ kind: 'jotted', jotId: 'nope' }, 'en', en).undo, null);
+  assert.equal(T.model({ kind: 'jotted', jotId: 'nope', jotterId: JOTTER }, 'en', en).undo, null);
+  assert.equal(T.model({ kind: 'jotted', jotId: JOT }, 'en', en).undo, null, 'no Jotter, no Undo');
+  assert.equal(T.model({ kind: 'jotted', jotId: JOT, jotterId: '../x' }, 'en', en).undo, null);
+  assert.equal(T.model({ kind: 'note', jotId: JOT, jotterId: JOTTER, t: 1 }, 'en', en).undo.jotterId, undefined, 'an H jot’s Undo is jotId alone');
 });
 
 test('Clipped · title, Open in Jotter, no Undo; the cut line only when the page was cut', () => {
@@ -95,5 +99,32 @@ test('the page tray shows the toasts after Jot it and Clip this page, except whe
   const src = read('content/page-tray.js');
   assert.match(src, /msg\.type === 'heddy-ui:toast'/);
   assert.match(src, /if \(globalThis\.__heddyYouTube\) return undefined;/);
-  assert.match(src, /onUndo: function \(jotId\) \{ send\(\{ type: 'heddy-ui:undo', jotId: jotId \}\); \}/);
+  assert.match(src, /onUndo: function \(jotId, jotterId\) \{ send\(\{ type: 'heddy-ui:undo', jotId: jotId, jotterId: jotterId \}\); \}/);
+  assert.match(read('content/youtube.js'), /onUndo: function \(jotId, jotterId\) \{ send\(\{ type: 'heddy-ui:undo', jotId: jotId, jotterId: jotterId \}\); \}/);
+});
+
+test('tapping Undo hides the toast and hands back the jot id and its Jotter', () => {
+  // A small stand-in for the DOM: enough for createToaster's constant shell.
+  function node(tag) {
+    const n = { tag, children: [], listeners: {}, className: '', textContent: '', removed: false,
+      classList: { add() {} }, appendChild(c) { this.children.push(c); return c; },
+      addEventListener(type, fn) { this.listeners[type] = fn; }, remove() { this.removed = true; } };
+    return n;
+  }
+  const box = node('div');
+  const t = node('span');
+  const b = node('b');
+  t.querySelector = () => b;
+  const host = node('heddy-toast');
+  host.attachShadow = () => ({ set innerHTML(_) {}, querySelector: (s) => (s === '.toast' ? box : s === '.t' ? t : null) });
+  const doc = { createElement: (tag) => (tag === 'heddy-toast' ? host : node(tag)), documentElement: node('html') };
+  const undos = [];
+  const toaster = T.createToaster({ document: doc, marks: { sprite: () => '', use: () => '' }, onOpen() {}, onUndo: (...a) => undos.push(a), setTimeout: () => 1, clearTimeout() {} });
+  const JOTTER = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
+  toaster.show(T.model({ kind: 'jotted', quote: 'q', jotId: JOT, jotterId: JOTTER }, 'en', en));
+  const actions = box.children.find((c) => c.className === 'o');
+  const undo = actions.children.find((c) => c.textContent === 'Undo');
+  undo.listeners.click();
+  assert.deepEqual(undos, [[JOT, JOTTER]]);
+  assert.equal(host.removed, true, 'the toast goes when Undo is tapped');
 });

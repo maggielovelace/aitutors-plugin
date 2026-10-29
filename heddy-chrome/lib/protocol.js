@@ -6,7 +6,7 @@
 //   page  → Heddy  {type:'heddy:ready',  v:1, cid}
 //   Heddy → page   {type:'heddy:add',    v:1, cid, youtubeId, startSec, then}   (the reply, once)
 //   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, tEnd?}        J on YouTube
-//   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId}                       Undo on the toast
+//   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId, jotterId?}            Undo on the toast
 //   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
 //   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Clip this page
 //   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?}
@@ -107,11 +107,19 @@
     return out;
   }
 
-  /** heddy:undo: delete the note a J just saved. */
+  /** heddy:undo: delete a jot Heddy just saved. A web jot (Jot it on a page,
+   *  a picture jot) also names its Jotter, `jotterId`, from that save's
+   *  heddy:result, so the site deletes it from the Jotter and not from the
+   *  clips; an H jot on a video sends `jotId` alone. */
   function buildUndo(input) {
     if (!isCaptureId(input.cid)) throw new Error('bad cid');
     if (!isCaptureId(input.jotId)) throw new Error('bad jotId');
-    return { type: 'heddy:undo', v: PROTOCOL_VERSION, cid: input.cid, jotId: input.jotId.toLowerCase() };
+    var out = { type: 'heddy:undo', v: PROTOCOL_VERSION, cid: input.cid, jotId: input.jotId.toLowerCase() };
+    if (input.jotterId != null) {
+      if (!isCaptureId(input.jotterId)) throw new Error('bad jotterId');
+      out.jotterId = input.jotterId.toLowerCase();
+    }
+    return out;
   }
 
   /** A page address as Heddy sends it: http(s), without the #fragment. Null otherwise. */

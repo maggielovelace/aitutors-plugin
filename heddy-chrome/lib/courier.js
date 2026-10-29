@@ -150,7 +150,7 @@
       // The Jot it and Clip this page windows close about 1 s after an ok
       // result (owner, 2026-10-29), so the page shows what was kept.
       if (kind === 'jot') {
-        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, href: C.jotterById(origin, result.jotterId) });
+        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
       }
       if (kind === 'page') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
@@ -181,7 +181,7 @@
         kind: 'undo',
         windowId: input.windowId,
         focused: false,
-        build: function (cid) { return P.buildUndo({ cid: cid, jotId: input.jotId }); },
+        build: function (cid) { return P.buildUndo({ cid: cid, jotId: input.jotId, jotterId: input.jotterId }); },
         meta: { tabId: input.tabId },
       });
     }
@@ -307,7 +307,7 @@
         }
         case 'heddy-ui:undo':
           // buildUndo refuses anything but a jot id, so a bad one opens nothing.
-          return undo({ jotId: message.jotId, tabId: tab ? tab.id : null, windowId: tab ? tab.windowId : message.windowId });
+          return undo({ jotId: message.jotId, jotterId: message.jotterId == null ? null : message.jotterId, tabId: tab ? tab.id : null, windowId: tab ? tab.windowId : message.windowId });
         case 'heddy-ui:jot':
         case 'heddy-ui:page': {
           // From a page, only that page's own address; the popup names its tab.

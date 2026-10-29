@@ -203,7 +203,7 @@ test('Jot it saved: the window closes on the site’s side, the page shows "Jott
   await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
   await claim(s);
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId: JOT, jotterId: JOTTER, quote: 'On a 1:50 000 map' }, page());
-  assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'jotted', quote: 'On a 1:50 000 map', jotId: JOT, href: `${PROD}/study/jotters/${JOTTER}` } }]);
+  assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'jotted', quote: 'On a 1:50 000 map', jotId: JOT, jotterId: JOTTER, href: `${PROD}/study/jotters/${JOTTER}` } }]);
 });
 
 test('Open in Jotter without a valid jotterId goes to the Jotters shelf', async () => {
@@ -232,4 +232,16 @@ test('a refused Jot it or Clip this page stays in its window: no toast', async (
   await claim(s);
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'too_long' }, page());
   assert.equal(s.calls.tabMessages.length, 0);
+});
+
+test('Undo of a web jot names its Jotter; Undo of an H jot sends jotId alone; a bad jotterId opens nothing', async () => {
+  const web = setup();
+  await web.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: JOTTER }, fromArticle);
+  assert.deepEqual(await claim(web), { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT, jotterId: JOTTER });
+  const h = setup();
+  await h.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: null }, fromYouTube);
+  assert.deepEqual(await claim(h), { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT });
+  const bad = setup();
+  assert.deepEqual(await bad.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: '../admin' }, fromArticle), { ok: false });
+  assert.equal(bad.calls.windows.length, 0);
 });
