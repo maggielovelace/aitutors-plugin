@@ -153,14 +153,15 @@
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
       }
       // A picture jot (lib/tools.js): the same toast as Jot it, with no quote
-      // (a picture has none). Box mode is no tray, so the toaster is put in
+      // (a picture has none). Its Undo names the Jotter, which deletes the
+      // jot with its crops through the Jotters route. Box mode is no tray, so the toaster is put in
       // the tab first (it ignores a second injection).
       if (kind === 'box') {
         return Promise.resolve()
           .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
           .catch(function () {})
           .then(function () {
-            return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', jotId: result.jotId, href: C.jotterById(origin, result.jotterId) });
+            return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
           });
       }
       // A tool's window (Explain, Ask Heddy: the room; Make a card) stays open

@@ -179,6 +179,12 @@ test('a picture jot’s result: the Jotted toast (no quote, Undo, Open in Jotter
   assert.equal(m.kind, 'jotted');
   assert.equal(m.jotId, jotId);
   assert.equal(m.quote, undefined, 'a picture has no quote');
+  assert.equal(m.jotterId, '7a2b0000-0000-4000-8000-0000000000ee', 'Undo needs the Jotter');
+  // The toast model gives it an Undo that sends {jotId, jotterId}.
+  globalThis.HeddyMarks = load('./lib/marks.js');
+  const Toast = load('./lib/toast.js');
+  const model = Toast.model(m, 'en', (k) => k);
+  assert.deepEqual(model.undo && { jotId: model.undo.jotId, jotterId: model.undo.jotterId }, { jotId, jotterId: '7a2b0000-0000-4000-8000-0000000000ee' });
   assert.match(m.href, /\/study\/jotters\/7a2b0000-0000-4000-8000-0000000000ee$/);
 });
 
