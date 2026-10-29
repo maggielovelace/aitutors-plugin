@@ -1,0 +1,40 @@
+{
+  "extName": { "message": "Heddy for Chrome" },
+  "extDescription": { "message": "Keep what you find. Send a YouTube video to My Clips, or watch it with Heddy. Works with aitutors.me." },
+  "actionTitle": { "message": "Heddy" },
+
+  "watchWithHeddy": { "message": "Watch with Heddy" },
+  "addToMyClips": { "message": "Add to My Clips" },
+  "wholeVideo": { "message": "Whole video" },
+  "fromTime": {
+    "message": "From $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "1:52" } }
+  },
+  "thisVideo": { "message": "This YouTube video" },
+
+  "footerLock": { "message": "Reads a page only when you ask it to." },
+  "settings": { "message": "Settings" },
+  "ctxFirstTime": { "message": "first time" },
+  "firstTimeLead": { "message": "Heddy brings what you find to your professors on aitutors.me." },
+  "firstTimeYouTube": { "message": "Add a YouTube video, or watch it with Heddy" },
+  "openSite": { "message": "Open aitutors.me" },
+  "otherPageLine": { "message": "For now, Heddy works on YouTube videos. Open one to keep it in My Clips, or to watch it with Heddy." },
+  "sitePageLine": { "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube video pages." },
+  "captureFailed": { "message": "Heddy couldn't open aitutors.me. Try again." },
+
+  "toastInMyClips": { "message": "In My Clips" },
+  "toastFrom": {
+    "message": "from $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "1:52" } }
+  },
+  "toastOpen": { "message": "Open" },
+  "toastCantKeep": { "message": "Your family's settings don't allow keeping this video." },
+
+  "optionsTitle": { "message": "Heddy settings" },
+  "optionsLanguage": { "message": "Language" },
+  "optionsLanguageHint": { "message": "For Heddy's buttons, popup and messages. The windows on aitutors.me follow the language you chose there." },
+  "optionsDevHeading": { "message": "For developers" },
+  "optionsDevToggle": { "message": "Send captures to http://localhost:3000 instead of aitutors.me" },
+  "optionsDevHint": { "message": "Only for building aitutors.me on your own computer. Leave this off." },
+  "optionsSaved": { "message": "Saved" }
+}

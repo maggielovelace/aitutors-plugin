@@ -1,0 +1,55 @@
+/* The toolbar popup: Round 1 proposal A's palette (the artifact's .A tokens)
+   at round 2 · R2 · 03's measures. 360 wide; one filled 40 px primary;
+   the secondary outlined at 40 px; the footer is R3b · 05's: the lock line,
+   then the settings cog at the right end (Snap a picture joins it in Phase 3). */
+:root {
+  --pb: #fdfcf8; --pi: #14253f; --pd: #002147; --pm: #5d6878; --ph: #e2dccf;
+  --pr: #f6f1e7; --pbtn: #002147; --pbi: #ffffff; --pacc: #2f8a57; --prad: 10px;
+  --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+html, body { margin: 0; background: var(--pb); }
+body { width: 360px; font: 500 14px/1.45 var(--sans); color: var(--pi); -webkit-font-smoothing: antialiased; }
+:lang(zh-CN) body, body:lang(zh-CN) { --sans: "Manrope", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif; }
+svg { display: block; flex: none; }
+button { font: inherit; }
+
+.pop { display: flex; flex-direction: column; background: var(--pb); color: var(--pi); }
+.ph { display: flex; align-items: center; gap: 9px; padding: 14px 16px 10px; }
+.ph b { font: 700 14px var(--sans); color: var(--pd); white-space: nowrap; }
+.ph .ctx { margin-left: auto; font: 600 11px var(--mono); color: var(--pm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pbd { display: flex; flex-direction: column; gap: 12px; padding: 6px 16px 14px; }
+.pf { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-top: 1px solid var(--ph); font: 600 11.5px var(--sans); color: var(--pm); }
+.pf[hidden] { display: none; }
+.pfi { margin-left: auto; display: flex; align-items: center; gap: 18px; color: #46526b; }
+.pfb { all: unset; width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: inherit; cursor: pointer; }
+.pfb:hover { background: var(--pr); box-shadow: inset 0 0 0 1px var(--ph); color: var(--pd); }
+.pfb:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+
+.lead { margin: 0; font: 500 13px/1.45 var(--sans); color: var(--pm); }
+.lead.big { font-size: 14px; color: var(--pd); }
+.here { margin: 0; font: 500 13.5px/1.5 var(--sans); color: var(--pd); }
+.three { display: grid; gap: 9px; margin: 2px 0; }
+.three span { display: flex; gap: 10px; align-items: flex-start; font: 600 13px/1.4 var(--sans); color: var(--pd); }
+.three svg { color: var(--pacc); margin-top: 1px; }
+
+.vid { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: center; }
+.vid .th { width: 96px; height: 54px; border-radius: 8px; overflow: hidden; display: grid; place-items: center; background: var(--pr); box-shadow: inset 0 0 0 1px var(--ph); color: var(--pm); }
+.vid b { display: block; font: 700 13px/1.3 var(--sans); color: var(--pd); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.vid span.sub { font: 500 12px var(--sans); color: var(--pm); }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; border-radius: 10px; background: var(--pr); border: 1px solid var(--ph); }
+.seg button { all: unset; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font: 700 13px var(--sans); color: var(--pm); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pb); color: var(--pd); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.seg button:disabled { cursor: default; opacity: .5; }
+.seg button:focus-visible { outline: 2px solid var(--pd); outline-offset: -2px; }
+
+.btn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: var(--prad); padding: 0 16px; font: 700 14px var(--sans); background: var(--pbtn); color: var(--pbi); white-space: nowrap; cursor: pointer; }
+.btn.wide { width: 100%; }
+.btn.ghost { background: transparent; color: var(--pd); border: 1px solid var(--ph); }
+.btn:hover { filter: brightness(1.12); }
+.btn.ghost:hover { background: var(--pr); filter: none; }
+.btn:focus-visible { outline: 2px solid var(--pacc); outline-offset: 2px; }
+.btn[aria-busy="true"] { opacity: .7; cursor: progress; }
+.err { margin: 0; font: 600 12.5px/1.4 var(--sans); color: #a33a1c; }
