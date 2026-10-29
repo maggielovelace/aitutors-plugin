@@ -120,5 +120,8 @@
   "trayAsk": { "message": "Ask Heddy" },
   "trayMore": { "message": "More" },
   "trayOnePicture": { "message": "Explain and Make a card take one picture" },
-  "menuWholeScreen": { "message": "Snap the whole screen instead" }
+  "menuWholeScreen": { "message": "Snap the whole screen instead" },
+  "menuCopyPicture": { "message": "Copy picture" },
+  "menuCopied": { "message": "Copied" },
+  "copyFailed": { "message": "Couldn't copy the picture." }
 }

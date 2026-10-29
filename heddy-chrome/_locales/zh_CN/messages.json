@@ -120,5 +120,8 @@
   "trayAsk": { "message": "问 Heddy" },
   "trayMore": { "message": "更多" },
   "trayOnePicture": { "message": "讲解和做成卡片只用一张图" },
-  "menuWholeScreen": { "message": "改成截整个屏幕" }
+  "menuWholeScreen": { "message": "改成截整个屏幕" },
+  "menuCopyPicture": { "message": "复制图片" },
+  "menuCopied": { "message": "已复制" },
+  "copyFailed": { "message": "没能复制这张图片。" }
 }

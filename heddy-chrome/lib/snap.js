@@ -267,6 +267,13 @@
         case 'heddy-box:send':
           if (!tab || sender.frameId) return Promise.resolve({ ok: false });
           return send(tab, message.action, message.id);
+        case 'heddy-box:crop':
+          // Copy picture (› menu): the crop only, kept nowhere.
+          if (!tab || sender.frameId) return Promise.resolve({ ok: false });
+          return cropOne(tab, message.rect, message.vw, message.vh).then(
+            function (img) { return { ok: true, png: img.png }; },
+            function () { return { ok: false }; }
+          );
         case 'heddy-box:whole':
           if (!tab || sender.frameId) return Promise.resolve({ ok: false });
           return whole(tab);

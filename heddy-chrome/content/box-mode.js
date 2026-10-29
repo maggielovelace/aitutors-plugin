@@ -101,6 +101,45 @@
     return i < 0 ? String(href || '') : String(href).slice(0, i);
   }
 
+  /** The › menu's rows (owner, 2026-10-29): the whole screen instead, and
+   *  Copy picture, which needs a box to copy. */
+  function menuRows(kept, current) {
+    return [
+      { act: 'whole', label: 'menuWholeScreen' },
+      { act: 'copy', label: 'menuCopyPicture', disabled: !current && !kept },
+    ];
+  }
+
+  /** What Copy picture copies: the box being drawn, else the latest kept. */
+  function copyTarget(kept, current) {
+    return current || (kept && kept.length ? kept[kept.length - 1] : null);
+  }
+
+  /** Base64 PNG → Blob, without fetch(). */
+  function pngBlob(b64, BlobCtor) {
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new (BlobCtor || Blob)([bytes], { type: 'image/png' });
+  }
+
+  /** Write a PNG to the clipboard. `png` is a Promise of the Blob, handed to
+   *  ClipboardItem at once so the click's user activation still counts while
+   *  the crop is cut. Resolves true, or false when the page has no clipboard
+   *  API or the write is refused; never throws. */
+  function copyPng(clipboard, ClipboardItemCtor, png) {
+    try {
+      if (!clipboard || typeof clipboard.write !== 'function' || typeof ClipboardItemCtor !== 'function') {
+        Promise.resolve(png).catch(function () {});
+        return Promise.resolve(false);
+      }
+      var item = new ClipboardItemCtor({ 'image/png': png });
+      return Promise.resolve(clipboard.write([item])).then(function () { return true; }, function () { return false; });
+    } catch (e) {
+      return Promise.resolve(false);
+    }
+  }
+
   var pure = {
     MIN_BOX: MIN_BOX,
     MIN_PICTURE: MIN_PICTURE,
@@ -113,6 +152,11 @@
     isPicture: isPicture,
     lastSentence: lastSentence,
     samePageKey: samePageKey,
+    menuRows: menuRows,
+    copyTarget: copyTarget,
+    pngBlob: pngBlob,
+    copyPng: copyPng,
+    COPIED_MS: 1500,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = pure;
   if (typeof document === 'undefined' || !root.chrome || !root.chrome.runtime) return;
@@ -172,6 +216,7 @@
     '.menu{position:absolute;display:grid;min-width:220px;padding:5px;background:#fff;border:1px solid #d6d9de;border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.2)}' +
     '.menu button{all:unset;display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:5px;font:500 13px ' + SANS + ';color:#202124;cursor:pointer}' +
     '.menu button:hover,.menu button:focus-visible{background:#e8f0fe}' +
+    '.menu button[aria-disabled="true"]{color:#9aa0a6;cursor:default;background:transparent}' +
     '[hidden]{display:none!important}';
 
   var host = null, shadow = null, els = null;
@@ -318,7 +363,7 @@
       '<button type="button" data-act="ask"><span class="hf">' + M.use('h-eyes', 16) + '</span><span></span></button>' +
       '<i></i><button type="button" class="more" data-act="more" aria-haspopup="menu" aria-expanded="false">' + icon('chev') + '</button>' +
       '</div>' +
-      '<div class="menu" role="menu" hidden><button type="button" role="menuitem" data-act="whole"></button></div>';
+      '<div class="menu" role="menu" hidden><button type="button" role="menuitem" data-act="whole"></button><button type="button" role="menuitem" data-act="copy"></button></div>';
     var q = function (s) { return shadow.querySelector(s); };
     els = {
       layer: q('.layer'), dim: q('.dim'), outs: q('.outs'), keeps: q('.keeps'),
@@ -346,7 +391,7 @@
     b.card.querySelector('span').textContent = tr('trayCard');
     b.ask.querySelector('span:last-child').textContent = tr('trayAsk');
     b.more.setAttribute('aria-label', tr('trayMore'));
-    b.whole.textContent = tr('menuWholeScreen');
+    menuRows(0, null).forEach(function (row) { b[row.act].textContent = tr(row.label); });
   }
 
   /** A pill made of text and one key, e.g. "Drag over a picture · [Esc] to stop". */
@@ -438,6 +483,8 @@
       if (top < 8) top = Math.max(8, h - th - 56);
       els.tray.style.left = left + 'px';
       els.tray.style.top = top + 'px';
+      var copyRow = menuRows(kept.length, current)[1];
+      b.copy.setAttribute('aria-disabled', String(!!copyRow.disabled));
       if (!els.menu.hidden) {
         els.menu.style.left = Math.max(8, Math.min(w - 230, left + tw - 220)) + 'px';
         els.menu.style.top = (top + th + 6 + 44 > h ? top - 50 : top + th + 6) + 'px';
@@ -570,14 +617,53 @@
       b.setAttribute('aria-expanded', String(open));
       return draw();
     }
-    closeMenu();
+    if (act !== 'copy') closeMenu();
     if (act === 'add') return addCurrent();
     if (act === 'whole') return wholeScreen();
+    if (act === 'copy') return copyPicture();
     return useTool(act);
   }
 
   /** Cut the current box from a screenshot, with this overlay hidden so the
    *  dim and the outlines are not in the picture. */
+  /** › Copy picture: the same crop the tools would send (same caps), cut
+   *  with this overlay hidden, written to the clipboard from this click. */
+  function copyPicture() {
+    var target = copyTarget(kept, current);
+    var v = target && clampView(toView(target));
+    var btn = els.btn.copy;
+    if (!v || !bigEnough(v) || btn.getAttribute('aria-disabled') === 'true') return failCopy();
+    busy = true;
+    host.classList.add('away');
+    var png = frames(2)
+      .then(function () { return send({ type: 'heddy-box:crop', rect: v, vw: vw(), vh: vh() }); })
+      .then(function (reply) {
+        busy = false;
+        if (host) host.classList.remove('away');
+        if (!reply || !reply.ok || typeof reply.png !== 'string') throw new Error('no crop');
+        return pngBlob(reply.png);
+      });
+    copyPng(navigator.clipboard, root.ClipboardItem, png).then(function (ok) {
+      busy = false;
+      if (!host) return;
+      host.classList.remove('away');
+      if (!ok) return failCopy();
+      btn.textContent = tr('menuCopied');
+      setTimeout(function () {
+        if (!els) return;
+        btn.textContent = tr('menuCopyPicture');
+        closeMenu();
+        draw();
+      }, pure.COPIED_MS);
+    });
+  }
+
+  function failCopy() {
+    closeMenu();
+    draw();
+    note(tr('copyFailed'));
+  }
+
   function grabCurrent() {
     var v = clampView(toView(current));
     if (!bigEnough(v)) return Promise.resolve({ ok: false, error: 'too_small' });

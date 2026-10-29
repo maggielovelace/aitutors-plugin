@@ -311,6 +311,15 @@
       },
       "menuWholeScreen": {
         "message": "Snap the whole screen instead"
+      },
+      "menuCopyPicture": {
+        "message": "Copy picture"
+      },
+      "menuCopied": {
+        "message": "Copied"
+      },
+      "copyFailed": {
+        "message": "Couldn't copy the picture."
       }
     },
     "zh_CN": {
@@ -623,6 +632,15 @@
       },
       "menuWholeScreen": {
         "message": "改成截整个屏幕"
+      },
+      "menuCopyPicture": {
+        "message": "复制图片"
+      },
+      "menuCopied": {
+        "message": "已复制"
+      },
+      "copyFailed": {
+        "message": "没能复制这张图片。"
       }
     }
   };

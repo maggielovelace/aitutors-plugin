@@ -431,3 +431,77 @@ test('a stored record that does not match its key is ignored', async () => {
     assert.equal(await s.snap.kept(7, ID), 0, JSON.stringify(bad));
   }
 });
+
+// ─── › Copy picture (owner ruling, 2026-10-29) ──────────────────────────────
+
+test('the › menu holds exactly two rows: the whole screen instead, then Copy picture', () => {
+  assert.deepEqual(B.menuRows(1, null).map((r) => r.act), ['whole', 'copy']);
+  assert.deepEqual(B.menuRows(1, null).map((r) => r.label), ['menuWholeScreen', 'menuCopyPicture']);
+  assert.equal(B.menuRows(0, { x: 0, y: 0, w: 30, h: 30 })[1].disabled, false);
+  assert.equal(B.menuRows(0, null)[1].disabled, true, 'nothing to copy');
+});
+
+test('Copy picture copies the current box, else the latest kept one', () => {
+  const a = { x: 1, y: 1, w: 30, h: 30 }, b = { x: 2, y: 2, w: 30, h: 30 }, c = { x: 3, y: 3, w: 30, h: 30 };
+  assert.equal(B.copyTarget([a, b], c), c);
+  assert.equal(B.copyTarget([a, b], null), b);
+  assert.equal(B.copyTarget([], null), null);
+});
+
+class FakeItem { constructor(data) { this.data = data; this.types = Object.keys(data); } }
+
+test('copyPng writes one image/png item, handing over the crop as a promise', async () => {
+  const written = [];
+  const png = Promise.resolve('blob');
+  const ok = await B.copyPng({ write: async (items) => { written.push(...items); } }, FakeItem, png);
+  assert.equal(ok, true);
+  assert.equal(written.length, 1);
+  assert.deepEqual(written[0].types, ['image/png']);
+  assert.equal(written[0].data['image/png'], png, 'the promise itself, so the click’s activation still counts');
+});
+
+test('copyPng fails quietly: permission refused, no clipboard API, or no crop', async () => {
+  const refused = { write: async () => { throw Object.assign(new Error('denied'), { name: 'NotAllowedError' }); } };
+  assert.equal(await B.copyPng(refused, FakeItem, Promise.resolve('blob')), false);
+  assert.equal(await B.copyPng(undefined, FakeItem, Promise.resolve('blob')), false, 'an http page has no navigator.clipboard');
+  assert.equal(await B.copyPng({ write: async () => {} }, undefined, Promise.resolve('blob')), false, 'no ClipboardItem');
+  const noCrop = Promise.reject(new Error('no crop'));
+  assert.equal(await B.copyPng({ write: (items) => items[0].data['image/png'] }, FakeItem, noCrop), false);
+  const throwsAtOnce = { write: () => { throw new Error('sync'); } };
+  assert.equal(await B.copyPng(throwsAtOnce, FakeItem, Promise.resolve('blob')), false);
+});
+
+test('pngBlob decodes base64 to an image/png Blob without fetch', async () => {
+  const blob = B.pngBlob(PNG, Blob);
+  assert.equal(blob.type, 'image/png');
+  assert.deepEqual([...new Uint8Array(await blob.arrayBuffer())].slice(0, 8), [137, 80, 78, 71, 13, 10, 26, 10]);
+});
+
+test('heddy-box:crop returns the same crop the tools send, and keeps nothing', async () => {
+  const s = setup();
+  const r = await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 200, y: 166, w: 270, h: 136 }, vw: 1280, vh: 800 }, s.fromPage);
+  assert.deepEqual(r, { ok: true, png: PNG });
+  assert.equal(await s.snap.kept(7, ID), 0);
+  assert.deepEqual(boxKeys(s.session), []);
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 0, y: 0, w: 10, h: 10 }, vw: 1280, vh: 800 }, s.fromPage), { ok: false }, 'under 24 × 24');
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 0, y: 0, w: 99, h: 99 }, vw: 1280, vh: 800 }, { ...s.fromPage, frameId: 3 }), { ok: false });
+});
+
+test('no clipboardWrite permission: a write on the click needs none', async () => {
+  const { manifest } = await import('./helpers.mjs');
+  assert.ok(!manifest().permissions.includes('clipboardWrite'));
+  assert.ok(!manifest().permissions.includes('clipboardRead'));
+});
+
+test('without a clipboard API the pending crop is still handled (no unhandled rejection)', async () => {
+  const unhandled = [];
+  const on = (e) => unhandled.push(e);
+  process.on('unhandledRejection', on);
+  try {
+    assert.equal(await B.copyPng(undefined, FakeItem, Promise.reject(new Error('no crop'))), false);
+    await new Promise((r) => setTimeout(r, 20));
+  } finally {
+    process.off('unhandledRejection', on);
+  }
+  assert.deepEqual(unhandled, []);
+});
