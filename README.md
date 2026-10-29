@@ -71,6 +71,17 @@ parent dashboard, so work done in ChatGPT shows up there.
 An active [aitutors.me](https://aitutors.me) subscription. The plugin signs you
 in to your existing account; it does not create one.
 
+## Heddy for Chrome
+
+*Keep what you find.* A small Chrome extension that puts **Watch with Heddy**
+and **Add to My Clips** on every YouTube video page. It keeps no account or key
+and makes no network call of its own: each tap opens a window on aitutors.me,
+which saves the video to the child's own account. It lives in
+[`heddy-chrome/`](heddy-chrome/), with its own README, privacy notice
+([PRIVACY.md](heddy-chrome/PRIVACY.md)), tests and MIT licence. ChatGPT and
+Codex read only the plugin manifest, so the folder does not touch the plugin
+install.
+
 ## Heddy stickers
 
 ![Heddy stickers](stickers-preview.png)
