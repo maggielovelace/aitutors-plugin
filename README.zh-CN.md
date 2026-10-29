@@ -71,6 +71,15 @@ Mentor 负责每天的开场问候，再把孩子交给对应科目的导师—�
 需要一份有效的 [aitutors.me](https://aitutors.me) 订阅。
 plugin 登录的是您已有的账号，它不会帮您注册新账号。
 
+## Heddy for Chrome
+
+**收下你找到的东西。** 一个小小的 Chrome 扩展程序，在每个 YouTube 视频页上加
+**和 Heddy 一起看** 和 **放进「我的短片」** 两个按钮。它不保存账号或密钥，自己
+也不发任何网络请求：每次点按钮，都会在 aitutors.me 上打开一个窗口，把视频存进
+孩子自己的账号。代码在 [`heddy-chrome/`](heddy-chrome/) 文件夹里，有自己的
+说明（[README.zh-CN.md](heddy-chrome/README.zh-CN.md)）、隐私说明、测试和 MIT
+许可。ChatGPT 和 Codex 只读取 plugin 清单，所以这个文件夹不影响 plugin 安装。
+
 ---
 
 ## Skills —— Heddy IP（品牌插画）

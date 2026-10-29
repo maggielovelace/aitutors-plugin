@@ -1,0 +1,129 @@
+{
+  "extName": { "message": "Heddy for Chrome" },
+  "extDescription": { "message": "收下你找到的东西。把 YouTube 视频放进「我的短片」，或和 Heddy 一起看。配合 aitutors.me 使用。" },
+  "actionTitle": { "message": "Heddy" },
+
+  "watchWithHeddy": { "message": "和 Heddy 一起看" },
+  "addToMyClips": { "message": "放进「我的短片」" },
+  "wholeVideo": { "message": "整个视频" },
+  "fromTime": {
+    "message": "从 $TIME$ 开始",
+    "placeholders": { "time": { "content": "$1", "example": "1:52" } }
+  },
+  "thisVideo": { "message": "这个 YouTube 视频" },
+
+  "footerLock": { "message": "只有你让它读，它才会读页面。" },
+  "settings": { "message": "设置" },
+  "ctxFirstTime": { "message": "第一次" },
+  "firstTimeLead": { "message": "Heddy 把你找到的东西带给 aitutors.me 上的教授们。" },
+  "firstTimeYouTube": { "message": "放进一个 YouTube 视频，或和 Heddy 一起看" },
+  "openSite": { "message": "打开 aitutors.me" },
+  "sitePageLine": { "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。" },
+  "captureFailed": { "message": "Heddy 没能打开 aitutors.me，再试一次。" },
+
+  "commandJot": { "message": "批注你选中的文字" },
+  "menuJotIt": { "message": "用 Heddy 写批注" },
+  "trayLabel": { "message": "Heddy：怎么处理这段文字" },
+  "trayJotIt": { "message": "写批注" },
+  "trayMore": { "message": "更多" },
+  "menuCopy": { "message": "复制" },
+  "menuParagraph": { "message": "选中整段" },
+  "menuClipPage": { "message": "剪下整页" },
+  "imageLabel": { "message": "图片" },
+
+  "jHint": { "message": "批注正在说的这一句" },
+
+  "popupJotIt": { "message": "写批注" },
+  "clipWholePageInstead": { "message": "改为剪下整页" },
+  "clipThisPage": { "message": "剪下这一页" },
+  "selectSomeWords": { "message": "选中一些文字" },
+  "selectSomeWordsFor": { "message": "用来写批注" },
+  "jotLineSpoken": { "message": "批注正在说的这一句" },
+  "jotLineSpokenSub": { "message": "新视频？会先收下它。" },
+  "firstTimePage": { "message": "批注一句话，或剪下一页，作为批注本的来源" },
+  "cantReadPage": { "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。" },
+  "pageEmpty": { "message": "这一页没有可以剪下的文字。" },
+
+  "toastNoteSaved": {
+    "message": "已记下 · $TIME$ — $TITLE$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" }, "title": { "content": "$2", "example": "Map scales" } }
+  },
+  "toastNoteSavedAt": {
+    "message": "已记下 · $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" } }
+  },
+  "toastQuote": {
+    "message": "「$QUOTE$」",
+    "placeholders": { "quote": { "content": "$1", "example": "On a 1:50 000 map, 2 cm represents 1 km." } }
+  },
+  "toastUndo": { "message": "撤销" },
+  "toastOpenInJotter": { "message": "在批注本中打开" },
+  "toastJotDeleted": { "message": "随记已删除。" },
+  "toastUndoFailed": { "message": "没能撤销这条批注。" },
+  "toastJotted": { "message": "批注已保存" },
+  "toastClipped": {
+    "message": "已剪下 · $TITLE$",
+    "placeholders": { "title": { "content": "$1", "example": "Understanding map scales" } }
+  },
+  "toastClippedNoTitle": { "message": "已剪下" },
+  "toastPageCut": { "message": "Heddy 只保留了这一页的前一部分。" },
+  "setShortcut": { "message": "设置快捷键" },
+
+  "toastInMyClips": { "message": "已放进「我的短片」" },
+  "toastFrom": {
+    "message": "从 $TIME$ 开始",
+    "placeholders": { "time": { "content": "$1", "example": "1:52" } }
+  },
+  "toastOpen": { "message": "打开" },
+  "toastCantKeep": { "message": "你家里的设置不允许收下这个视频。" },
+
+  "optionsTitle": { "message": "Heddy 设置" },
+  "optionsLanguage": { "message": "语言" },
+  "optionsLanguageHint": { "message": "用于 Heddy 的按钮、弹出框和提示。aitutors.me 上的窗口跟随你在网站上选的语言。" },
+  "optionsDevHeading": { "message": "开发者选项" },
+  "optionsDevToggle": { "message": "把内容发到 http://localhost:3000，而不是 aitutors.me" },
+  "optionsDevHint": { "message": "只在你自己的电脑上开发 aitutors.me 时使用。请保持关闭。" },
+  "optionsSaved": { "message": "已保存" },
+
+  "snapPicture": { "message": "截一张图" },
+  "snapTipClick": { "message": "单击：框选一块" },
+  "snapTipDouble": { "message": "双击：整个屏幕" },
+  "snapTipKey": {
+    "message": "$KEY$ · 按两下截整个屏幕",
+    "placeholders": { "key": { "content": "$1", "example": "Ctrl Shift K" } }
+  },
+  "cmdSnap": { "message": "截一张图（按两下截整个屏幕）" },
+  "menuJotPicture": { "message": "用 Heddy 批注这张图" },
+  "boxHintBefore": { "message": "在图片上拖出一个框 · 按" },
+  "boxHintAfter": { "message": "退出" },
+  "boxCollecting": { "message": "正在收进同一条批注 ·" },
+  "boxKept": {
+    "message": "已留 $N$ 张",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "boxEscNone": { "message": "· 按 Esc 一张都不留" },
+  "boxWholePicture": { "message": "整张图 · 单击留下" },
+  "boxKeptLabel": {
+    "message": "$N$ · 已留",
+    "placeholders": { "n": { "content": "$1", "example": "1" } }
+  },
+  "boxDropped": { "message": "页面变了，已留的图片都没有保存。" },
+  "boxFailed": { "message": "Heddy 没能截下这张图，再试一次。" },
+  "trayJot": { "message": "写下批注" },
+  "trayJotN": {
+    "message": "写下批注 · $N$",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "trayAdd": { "message": "加进这条批注" },
+  "trayExplain": { "message": "讲解" },
+  "trayCard": { "message": "做成卡片" },
+  "trayAsk": { "message": "问 Heddy" },
+  "trayOnePicture": { "message": "讲解和做成卡片只用一张图" },
+  "menuWholeScreen": { "message": "改成截整个屏幕" },
+  "menuCopyPicture": { "message": "复制图片" },
+  "menuCopied": { "message": "已复制" },
+  "copyFailed": { "message": "没能复制这张图片。" },
+  "toastCardMade": { "message": "卡片做好了" },
+  "toastCardDeleted": { "message": "卡片已删除。" },
+  "toastCardUndoFailed": { "message": "没能撤销这张卡片。" }
+}

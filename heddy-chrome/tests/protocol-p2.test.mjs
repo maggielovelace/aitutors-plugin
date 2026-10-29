@@ -1,0 +1,176 @@
+// Phase 2's messages (D18, D20): heddy:moment, heddy:undo, heddy:jot and
+// heddy:page, each checked against the site's own validator. The branches of
+// parseHeddyMessage in aitutors.me's lib/capture/protocol.ts (origin/main) are
+// ported below line for line, so this fails if Heddy builds what it refuses.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { load } from './helpers.mjs';
+
+const P = load('./lib/protocol.js');
+
+// ── copied from lib/capture/protocol.ts (aitutors.me, origin/main) ──
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_URL = 2048;
+const MAX_FIELD = 20_000;
+const MAX_MARKDOWN = 1_000_000;
+const MAX_T = 24 * 60 * 60;
+const str = (x, max) => typeof x === 'string' && x.length <= max;
+const httpUrl = (x) => str(x, MAX_URL) && /^https?:\/\//i.test(x);
+const seconds = (x) => typeof x === 'number' && Number.isFinite(x) && x >= 0 && x <= MAX_T;
+function siteParse(m) {
+  if (!m || typeof m !== 'object' || Array.isArray(m)) return { ok: false, reason: 'not_heddy' };
+  if (m.v !== 1) return { ok: false, reason: 'version' };
+  const bad = { ok: false, reason: 'bad' };
+  if (typeof m.cid !== 'string' || !UUID.test(m.cid)) return bad;
+  const text = (k) => (m[k] === undefined || m[k] === null ? '' : m[k]);
+  switch (m.type) {
+    case 'heddy:moment':
+      if (typeof m.youtubeId !== 'string' || !YOUTUBE_ID.test(m.youtubeId) || !seconds(m.t)) return bad;
+      return { ok: true };
+    case 'heddy:undo':
+      if (typeof m.jotId !== 'string' || !UUID.test(m.jotId)) return bad;
+      // The site's jotterId rule (h3-pics, 2026-10-29): optional, a UUID.
+      if (m.jotterId !== undefined && (typeof m.jotterId !== 'string' || !UUID.test(m.jotterId))) return bad;
+      return { ok: true };
+    case 'heddy:page': {
+      const title = text('title');
+      if (!httpUrl(m.url) || !str(title, MAX_FIELD) || !str(m.markdown, MAX_MARKDOWN) || !m.markdown.trim()) return bad;
+      return { ok: true };
+    }
+    case 'heddy:jot': {
+      const title = text('title');
+      const quote = text('quote');
+      const context = text('context');
+      if (!httpUrl(m.url) || !str(title, MAX_FIELD) || !str(quote, MAX_FIELD) || !str(context, MAX_FIELD) || !quote.trim()) return bad;
+      return { ok: true };
+    }
+    default:
+      return { ok: false, reason: 'not_heddy' };
+  }
+}
+// ── end of copy ──
+
+const CID = '0f8fad5b-d9cb-469f-a165-70867728950e';
+const JOT = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
+const wire = (m) => JSON.parse(JSON.stringify(m));
+
+test('heddy:moment: the video and the second; tEnd only when given, never before t', () => {
+  const m = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168.9 });
+  assert.deepEqual(m, { type: 'heddy:moment', v: 1, cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168 });
+  assert.equal(siteParse(wire(m)).ok, true);
+  assert.equal('tEnd' in m, false);
+  const j = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 168.2, tEnd: 172.9 });
+  assert.deepEqual([j.t, j.tEnd], [168, 172]);
+  assert.equal(siteParse(wire(j)).ok, true);
+  assert.equal(P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 5, tEnd: 5 }).tEnd, 5, 'equal to t is fine');
+  assert.equal(P.MAX_SPAN, 120);
+  const wide = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 10.7, tEnd: 400 });
+  assert.equal(wide.tEnd, 130, 'clamped to t + 120, not refused');
+  assert.equal(P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 10.2, tEnd: 130.9 }).tEnd, 130);
+  // The site's rule: t ≤ tEnd ≤ t + 120 on what it receives.
+  for (const [t, tEnd] of [[0, 0.5], [3.9, 4.1], [100, 50000], [MAX_T - 1, MAX_T]]) {
+    const m2 = P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t, tEnd });
+    assert.ok(m2.t <= m2.tEnd && m2.tEnd <= m2.t + 120 && m2.tEnd <= MAX_T, `${t}..${tEnd}`);
+  }
+  for (const bad of [{ t: -1 }, { t: NaN }, { t: MAX_T + 1 }, { youtubeId: 'short' }, { cid: 'x' }, { tEnd: 0 }, { tEnd: NaN }, { tEnd: MAX_T + 1 }, { tEnd: '9' }]) {
+    assert.throws(() => P.buildMoment({ cid: CID, youtubeId: 'Fq2aPn3x_-A', t: 1, ...bad }), JSON.stringify(bad));
+  }
+});
+
+test('heddy:undo carries a jot id and nothing else', () => {
+  const u = P.buildUndo({ cid: CID, jotId: JOT.toUpperCase() });
+  assert.deepEqual(u, { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT });
+  assert.equal(siteParse(wire(u)).ok, true);
+  assert.throws(() => P.buildUndo({ cid: CID, jotId: '../x' }));
+  const web = P.buildUndo({ cid: CID, jotId: JOT, jotterId: '1B4E28BA-2FA1-41D2-883F-0016D3CCA427' });
+  assert.deepEqual(web, { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT, jotterId: '1b4e28ba-2fa1-41d2-883f-0016d3cca427' });
+  assert.equal(siteParse(wire(web)).ok, true);
+  assert.equal('jotterId' in P.buildUndo({ cid: CID, jotId: JOT, jotterId: null }), false, 'H jots send jotId alone');
+  for (const jotterId of ['../admin', 'x', 42, '']) assert.throws(() => P.buildUndo({ cid: CID, jotId: JOT, jotterId }), String(jotterId));
+});
+
+test('heddy:jot: the quote, ≤ 300 characters each side, the title, the URL without #', () => {
+  const j = P.buildJot({
+    cid: CID,
+    url: 'https://www.ordnancesurvey.co.uk/map-scales?x=1#section-2',
+    title: '  Understanding\nmap scales ',
+    quote: 'On a 1:50 000 map, 2 cm represents 1 km on the ground.',
+    before: 'x'.repeat(500) + ' The scale is printed in the margin. ',
+    after: ' Grid squares on Landranger maps are 1 km across' + 'y'.repeat(500),
+  });
+  assert.equal(j.url, 'https://www.ordnancesurvey.co.uk/map-scales?x=1');
+  assert.equal(j.title, 'Understanding map scales');
+  const [before, after] = j.context.split(' … ');
+  assert.ok(before.length <= 300 && after.length <= 300, `${before.length} / ${after.length}`);
+  assert.ok(before.endsWith('The scale is printed in the margin.'), 'cut on the side away from the quote');
+  assert.ok(after.startsWith('Grid squares on Landranger maps'));
+  assert.equal(siteParse(wire(j)).ok, true);
+});
+
+test('heddy:jot keeps the child’s line breaks, drops control characters, caps the quote', () => {
+  const j = P.buildJot({ cid: CID, url: 'https://a.example/', title: '', quote: 'one\ntwo\u0007 ', before: '', after: '' });
+  assert.equal(j.quote, 'one\ntwo');
+  assert.equal(j.context, '');
+  assert.equal(P.buildJot({ cid: CID, url: 'https://a.example/', quote: 'q'.repeat(30000) }).quote.length, MAX_FIELD);
+  assert.equal(P.buildJot({ cid: CID, url: 'https://a.example/', quote: 'q', before: 'only before' }).context, 'only before');
+});
+
+test('heddy:jot refuses what the site would refuse: no words, not http(s), too long an address', () => {
+  for (const bad of [
+    { quote: '   ' },
+    { url: 'chrome://extensions' },
+    { url: 'javascript:alert(1)' },
+    { url: 'file:///Users/x' },
+    { url: 'https://a.example/' + 'p'.repeat(3000) },
+    { cid: 'x' },
+  ]) {
+    assert.throws(() => P.buildJot({ cid: CID, url: 'https://a.example/', quote: 'q', ...bad }), JSON.stringify(bad).slice(0, 60));
+  }
+});
+
+test('heddy:page: up to 200 KB of UTF-8 goes whole, without `cut`', () => {
+  assert.equal(P.MAX_PAGE_BYTES, 200 * 1024);
+  const ok = P.buildPage({ cid: CID, url: 'https://a.example/p#top', title: 'P', markdown: 'a'.repeat(P.MAX_PAGE_BYTES) });
+  assert.equal(ok.url, 'https://a.example/p');
+  assert.equal('cut' in ok, false);
+  assert.equal(siteParse(wire(ok)).ok, true);
+  assert.throws(() => P.buildPage({ cid: CID, url: 'https://a.example/', markdown: ' \n ' }), /empty/);
+});
+
+test('heddy:page: past 200 KB it keeps the first part, cut at a paragraph, and says cut: true', () => {
+  const para = 'p'.repeat(1000);
+  const md = Array.from({ length: 300 }, (_, i) => `${i} ${para}`).join('\n\n');
+  const p = P.buildPage({ cid: CID, url: 'https://a.example/', markdown: md });
+  assert.equal(p.cut, true);
+  assert.ok(P.utf8Bytes(p.markdown) <= P.MAX_PAGE_BYTES);
+  assert.ok(md.startsWith(p.markdown), 'the FIRST part');
+  assert.ok(md.slice(p.markdown.length).startsWith('\n\n'), 'cut at a paragraph boundary');
+  assert.ok(P.utf8Bytes(p.markdown) > P.MAX_PAGE_BYTES - 1100, 'as much as fits');
+  assert.equal(siteParse(wire(p)).ok, true);
+});
+
+test('cutting counts bytes, not characters, and never splits a character', () => {
+  // 70 000 Chinese characters are 210 000 bytes: cut, though fewer characters than the cap.
+  const zh = P.cutMarkdown('比'.repeat(70000));
+  assert.equal(zh.cut, true);
+  assert.equal(P.utf8Bytes(zh.markdown), Math.floor(P.MAX_PAGE_BYTES / 3) * 3);
+  const emoji = P.cutMarkdown('😀'.repeat(10), 9);
+  assert.deepEqual(emoji, { markdown: '😀😀', cut: true }, 'no half surrogate pair');
+  assert.deepEqual(P.cutMarkdown('short'), { markdown: 'short', cut: false });
+});
+
+test('utf8Bytes counts as TextEncoder does', () => {
+  const enc = new TextEncoder();
+  for (const s of ['', 'abc', 'é', '比例尺', '😀', 'a😀b', '\ud800']) assert.equal(P.utf8Bytes(s), enc.encode(s).length, JSON.stringify(s));
+});
+
+test('a result’s quote, time and jot id are read; anything else in them is dropped', () => {
+  const r = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, quote: ' On a map\u0000 ', t: 168.7, jotId: JOT.toUpperCase() });
+  assert.equal(r.quote, 'On a map');
+  assert.equal(r.t, 168);
+  assert.equal(r.jotId, JOT);
+  const h = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, quote: 42, t: -5, jotId: '../../x', jotterId: '../../admin' });
+  assert.deepEqual([h.quote, h.t, h.jotId, h.jotterId], [null, null, null, null]);
+  assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: JOT.toUpperCase() }).jotterId, JOT);
+});
