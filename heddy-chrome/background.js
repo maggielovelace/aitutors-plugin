@@ -2,16 +2,15 @@
 // file only loads the bundled scripts and connects Chrome's events to it.
 importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js');
 
-var cidStore = HeddyCidStore.createCidStore();
 var courier = HeddyCourier.createCourier({
   chrome: chrome,
-  store: cidStore,
+  store: HeddyCidStore.createCidStore(),
   randomUUID: function () { return crypto.randomUUID(); },
 });
 
-// Snap a picture and the three tools (lib/snap.js, lib/tools.js). They hold
-// their payloads in the same store, so the courier answers their windows'
-// heddy:ready and heddy:result like any other.
+// Snap a picture and the three tools (lib/snap.js, lib/tools.js). They open
+// their windows through the courier, which answers heddy:ready and
+// heddy:result for them like any other kind.
 var snap = HeddySnap.createSnap({
   chrome: chrome,
   crop: HeddyCrop,
@@ -20,13 +19,7 @@ var snap = HeddySnap.createSnap({
   droppedText: function () {
     return HeddyI18n.currentLang(chrome).then(function (lang) { return HeddyI18n.t(lang, 'boxDropped'); });
   },
-  sender: HeddyTools.createSender({
-    chrome: chrome,
-    store: cidStore,
-    ready: courier.ready,
-    sessionKey: HeddyCourier.SESSION_KEY,
-    randomUUID: function () { return crypto.randomUUID(); },
-  }),
+  sender: HeddyTools.createSender({ openCapture: courier.openCapture }),
 });
 
 // The /capture window asks for its payload (heddy:ready) and reports

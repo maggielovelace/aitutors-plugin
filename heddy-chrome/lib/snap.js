@@ -282,8 +282,9 @@
           if (!tab) return Promise.resolve({ ok: true });
           return dropTab(tab.id, function (c) { return c.id !== message.id; }).then(function () { return { ok: true }; });
         case 'heddy-ui:tool':
-          if (!tab) return Promise.resolve({ ok: false });
-          return wordsTool(tab, message);
+          // From the page tray (its tab), or the popup (which names the tab).
+          if (tab) return wordsTool(tab, message);
+          return chrome.tabs.get(message.tabId).then(function (t) { return wordsTool(t, message); }, function () { return { ok: false }; });
         default:
           return undefined;
       }

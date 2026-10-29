@@ -50,7 +50,7 @@
   }
 
   function drawChrome() {
-    $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog', 'h-quill', 'h-page']) + M.use('h-eyes', 22);
+    $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog', 'h-quill', 'h-page', 'h-explain', 'h-cardt']) + M.use('h-eyes', 22);
     $('lock').innerHTML = M.use('h-lock', 14);
     $('lockLine').textContent = tr('footerLock');
     var cog = $('settings');
@@ -161,6 +161,7 @@
         .catch(function () { jot.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
     });
     body.appendChild(jot);
+    body.appendChild(toolRow(tab, sel, err));
     var clip = el('button', 'lk');
     clip.type = 'button';
     clip.insertAdjacentHTML('beforeend', M.use('h-page', 16));
@@ -169,6 +170,38 @@
     body.appendChild(clip);
     body.appendChild(err);
     $('foot').hidden = false;
+  }
+
+  /** Explain · Make a card · Ask Heddy under Jot it (R3b · 05 "Words
+   *  selected", round 2c): outlined, never filled; Jot it stays the one
+   *  primary. The free-rounds line is printed only inside the aitutors.me
+   *  windows (owner, 2026-10-29), so not here. */
+  function toolRow(tab, sel, err) {
+    var row = el('div', 'tools');
+    HeddyTrayTools.TOOLS.filter(function (t) { return !t.primary; }).forEach(function (t) {
+      var b = el('button', 'tool');
+      b.type = 'button';
+      if (t.badge) {
+        var hf = el('span', 'hf');
+        hf.insertAdjacentHTML('beforeend', M.use(t.popupMark, 18));
+        b.appendChild(hf);
+      } else {
+        b.insertAdjacentHTML('beforeend', M.use(t.popupMark, 15));
+      }
+      b.appendChild(el('span', null, tr(t.label)));
+      b.addEventListener('click', function () {
+        b.setAttribute('aria-busy', 'true');
+        var c = P.contextOf(sel.before, sel.after);
+        chrome.runtime.sendMessage({ type: 'heddy-ui:tool', tool: t.id, quote: sel.quote, context: c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after, tabId: tab.id })
+          .then(function (reply) {
+            if (reply && reply.ok) return window.close();
+            throw new Error('no window');
+          })
+          .catch(function () { b.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
+      });
+      row.appendChild(b);
+    });
+    return row;
   }
 
   function renderNothingSelected(body, tab) {

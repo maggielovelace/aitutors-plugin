@@ -14,6 +14,12 @@
 (function (root) {
   var TOOLS = Object.freeze([
     Object.freeze({ id: 'jot', label: 'trayJotIt', mark: 'h-pen', primary: true }),
+    // Phase 3 (D15, D20 tool): outlined, each opens its window on aitutors.me
+    // through lib/tools.js sendTool. Ask Heddy wears the eyes mark (D34) on
+    // a white disc, as the desk's tray does. popupMark is the popup's glyph.
+    Object.freeze({ id: 'explain', label: 'trayExplain', mark: 'h-search', popupMark: 'h-explain', primary: false }),
+    Object.freeze({ id: 'card', label: 'trayCard', mark: 'h-star', popupMark: 'h-cardt', primary: false }),
+    Object.freeze({ id: 'ask', label: 'trayAsk', mark: 'h-eyes', popupMark: 'h-eyes', badge: true, primary: false }),
   ]);
 
   // The › menu (artifact R3 · Fix 4): Copy · Select the whole paragraph · a rule ·

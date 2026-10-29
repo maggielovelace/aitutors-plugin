@@ -341,6 +341,7 @@ test('the words tray’s Explain takes the address and title from the tab, not t
   assert.equal(s.calls.tools[0].input.url, s.tab.url);
   assert.equal(s.calls.tools[0].input.title, s.tab.title);
   assert.equal(s.calls.tools[0].input.quote, '2 cm is 1 km');
+  assert.deepEqual(s.calls.tools[0].where, { tabId: 7, windowId: 3 }, 'the sending tab, not a named one');
 });
 
 test('the snap icon is the crop-corners glyph at 20 px, stroke 2.6, round caps and joins', () => {
@@ -504,4 +505,12 @@ test('without a clipboard API the pending crop is still handled (no unhandled re
     process.off('unhandledRejection', on);
   }
   assert.deepEqual(unhandled, []);
+});
+
+test('the popup’s Explain names its tab: address and title from that tab', async () => {
+  const s = setup();
+  await s.snap.internal({ type: 'heddy-ui:tool', tool: 'card', tabId: 7, quote: 'q', context: 'c' }, { id: 'heddy' });
+  assert.equal(s.calls.tools[0].input.tool, 'card');
+  assert.equal(s.calls.tools[0].input.url, s.tab.url);
+  assert.deepEqual(s.calls.tools[0].where, { tabId: 7, windowId: 3 });
 });

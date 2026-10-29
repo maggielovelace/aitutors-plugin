@@ -82,6 +82,13 @@ button { font: inherit; }
 .row .r { margin-left: auto; }
 .kbd { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 6px; border: 1px solid var(--ph); background: var(--pb); font: 600 11px var(--mono); color: var(--pm); white-space: nowrap; }
 .kbd:empty { display: none; }
+/* Explain · Make a card · Ask Heddy (R3b · 05 .r2sec): outlined, 36 px. */
+.tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.tool { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: var(--prad); border: 1px solid var(--ph); color: var(--pd); font: 700 12.5px var(--sans); white-space: nowrap; cursor: pointer; }
+.tool:hover { background: var(--pr); }
+.tool:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.tool[aria-busy="true"] { opacity: .7; cursor: progress; }
+.tool .hf { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
 .lk { all: unset; align-self: flex-start; display: flex; align-items: center; gap: 6px; font: 700 12.5px var(--sans); color: var(--pm); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .lk:hover { color: var(--pd); }
 .lk:focus-visible { outline: 2px solid var(--pd); outline-offset: 2px; border-radius: 4px; }

@@ -21,7 +21,7 @@
   // a full load of a watch URL). Same list as the manifest's content_scripts.
   var CONTENT_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
   // What a gesture injects into any page for Jot it and Clip this page (Phase 2).
-  var PAGE_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'content/extract.js', 'content/page-tray.js'];
+  var PAGE_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js'];
   var MENU_ID = 'heddy-jot';
   // manifest.json "commands": jot the selected words. No default key (owner,
   // 2026-10-29); the child binds one at chrome://extensions/shortcuts.
@@ -152,6 +152,19 @@
       if (kind === 'jot') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
       }
+      // A picture jot (lib/tools.js): the same toast as Jot it, with no quote
+      // (a picture has none). Box mode is no tray, so the toaster is put in
+      // the tab first (it ignores a second injection).
+      if (kind === 'box') {
+        return Promise.resolve()
+          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
+          .catch(function () {})
+          .then(function () {
+            return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', jotId: result.jotId, href: C.jotterById(origin, result.jotterId) });
+          });
+      }
+      // A tool's window (Explain, Ask Heddy: the room; Make a card) stays open
+      // and is the answer itself: nothing on the page.
       if (kind === 'page') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
       }
@@ -344,7 +357,7 @@
         .then(function () { return setIcon(tabId, 'ready'); });
     }
 
-    return { ready: ready, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus };
+    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus };
   }
 
   var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };

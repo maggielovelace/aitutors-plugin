@@ -118,7 +118,6 @@
   "trayExplain": { "message": "Explain" },
   "trayCard": { "message": "Make a card" },
   "trayAsk": { "message": "Ask Heddy" },
-  "trayMore": { "message": "More" },
   "trayOnePicture": { "message": "Explain and Make a card take one picture" },
   "menuWholeScreen": { "message": "Snap the whole screen instead" },
   "menuCopyPicture": { "message": "Copy picture" },

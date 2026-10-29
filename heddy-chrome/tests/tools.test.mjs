@@ -9,7 +9,7 @@ globalThis.HeddyConfig = load('./lib/config.js');
 globalThis.HeddyCrop = load('./lib/crop.js');
 const T = load('./lib/tools.js');
 const K = globalThis.HeddyCrop;
-const { createCourier, SESSION_KEY } = load('./lib/courier.js');
+const { createCourier, PAGE_FILES } = load('./lib/courier.js');
 const { createCidStore } = load('./lib/cid-store.js');
 
 const CID = '0f8fad5b-d9cb-469f-a165-70867728950e';
@@ -104,7 +104,7 @@ test('windows: jot → /capture/jot, explain and ask → /capture/room, card →
 });
 
 function fakeChrome() {
-  const calls = { windows: [], tabMessages: [] };
+  const calls = { windows: [], tabMessages: [], injected: [] };
   const session = {};
   const chrome = {
     runtime: { id: 'heddy' },
@@ -119,6 +119,7 @@ function fakeChrome() {
     },
     action: { setIcon: async () => {} },
     tabs: { get: async (id) => ({ id, url: URL_ }), sendMessage: async (tabId, m) => { calls.tabMessages.push({ tabId, m }); } },
+    scripting: { executeScript: async (o) => { calls.injected.push(o); } },
   };
   return { chrome, calls, session };
 }
@@ -126,10 +127,9 @@ function fakeChrome() {
 function setup() {
   const f = fakeChrome();
   const store = createCidStore();
-  const results = [];
-  const courier = createCourier({ chrome: f.chrome, store, randomUUID: () => CID, setTimeout: () => {}, onPictureResult: (r, meta) => results.push({ r, meta }) });
-  const sender = T.createSender({ chrome: f.chrome, store, ready: courier.ready, sessionKey: SESSION_KEY, randomUUID: () => CID.toUpperCase() });
-  return { ...f, courier, sender, results };
+  const courier = createCourier({ chrome: f.chrome, store, randomUUID: () => CID, setTimeout: () => {} });
+  const sender = T.createSender({ openCapture: courier.openCapture });
+  return { ...f, courier, sender };
 }
 
 const windowSender = (page) => ({ origin: 'https://aitutors.me', url: `https://aitutors.me/capture/${page}?cid=${CID}`, tab: { id: 900, windowId: 42 } });
@@ -141,7 +141,7 @@ test('a box opens /capture/jot focused, and the courier hands the window heddy:b
   assert.equal(s.calls.windows.length, 1);
   assert.equal(s.calls.windows[0].url, `https://aitutors.me/capture/jot?cid=${CID}`);
   assert.equal(s.calls.windows[0].focused, true);
-  assert.ok(s.session[SESSION_KEY].held[CID], 'held in the courier’s store, mirrored to storage.session');
+  assert.ok(s.session.heddyCids.held[CID], 'held in the courier’s store, mirrored to storage.session');
   const payload = await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('jot'));
   assert.equal(payload.type, 'heddy:box');
   assert.equal(payload.images.length, 2);
@@ -161,18 +161,41 @@ test('a payload the builder refuses opens no window and holds nothing', async ()
   const r = await s.sender.tool({ tool: 'explain', url: URL_, title: 't', images: [IMG, IMG] }, { tabId: 7, windowId: 1 });
   assert.deepEqual(r, { ok: false });
   assert.equal(s.calls.windows.length, 0);
-  assert.equal(Object.keys(s.session[SESSION_KEY].held).length, 0);
+  assert.equal(Object.keys((s.session.heddyCids || { held: {} }).held).length, 0);
 });
 
-test('a picture’s heddy:result is not a clip: no clip toast on the tab', async () => {
+test('a picture jot’s result: the Jotted toast (no quote, Undo, Open in Jotter), with the toaster put in the tab', async () => {
   const s = setup();
   await s.sender.box({ url: URL_, title: 't', images: [IMG], context: '' }, { tabId: 7, windowId: 1 });
   await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('jot'));
-  const r = await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, windowSender('jot'));
+  const jotId = '6f1c2a3b-0000-4000-8000-00000000abcd';
+  const r = await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId, jotterId: '7a2b0000-0000-4000-8000-0000000000ee' }, windowSender('jot'));
   assert.deepEqual(r, { ok: true });
+  assert.deepEqual(s.calls.injected.map((o) => o.files), [PAGE_FILES]);
+  assert.equal(s.calls.tabMessages.length, 1);
+  const { tabId, m } = s.calls.tabMessages[0];
+  assert.equal(tabId, 7);
+  assert.equal(m.type, 'heddy-ui:toast');
+  assert.equal(m.kind, 'jotted');
+  assert.equal(m.jotId, jotId);
+  assert.equal(m.quote, undefined, 'a picture has no quote');
+  assert.match(m.href, /\/study\/jotters\/7a2b0000-0000-4000-8000-0000000000ee$/);
+});
+
+test('a tool’s result puts nothing on the page (its window is the answer)', async () => {
+  const s = setup();
+  await s.sender.tool({ tool: 'explain', url: URL_, title: 't', quote: 'q', context: '' }, { tabId: 7, windowId: 1 });
+  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('room'));
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, windowSender('room'));
   assert.equal(s.calls.tabMessages.length, 0);
-  assert.equal(s.results.length, 1);
-  assert.equal(s.results[0].meta.then, 'box');
+  assert.equal(s.calls.injected.length, 0);
+});
+
+test('on words, the context keeps 300 each side of the quote', () => {
+  const ctx = 'b'.repeat(300) + ' … ' + 'a'.repeat(300);
+  const m = T.buildTool({ cid: CID, tool: 'explain', url: URL_, title: 't', quote: 'q', context: ctx });
+  assert.equal(m.context, ctx);
+  assert.equal(T.buildTool({ cid: CID, tool: 'explain', url: URL_, title: 't', quote: 'q', context: ctx + 'zzz' }).context.length, 603);
 });
 
 test('sendTool asks the background with the words, and reports ok', async () => {

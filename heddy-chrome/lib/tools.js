@@ -24,6 +24,9 @@
   var MAX_TITLE = 300;
   var MAX_CONTEXT = 300;
   var MAX_QUOTE = 20000;
+  // On words, context is the words before, ' … ', the words after, each
+  // at most 300 (D20, as Jot it sends it).
+  var MAX_WORDS_CONTEXT = 300 + 3 + 300;
   var TOOLS = ['explain', 'card', 'ask'];
   // Where each payload goes (D20, D32; R2 · 05b's table).
   var PAGES = { jot: 'jot', explain: 'room', ask: 'room', card: 'card' };
@@ -103,6 +106,7 @@
     if (input.images !== undefined && input.images !== null) {
       out.images = cleanImages(input.images, MAX_PICTURES[input.tool]);
     } else {
+      out.context = cleanText(input.context, MAX_WORDS_CONTEXT);
       var quote = cleanText(input.quote, MAX_QUOTE);
       if (!quote) throw new Error('bad quote');
       out.quote = quote;
@@ -116,66 +120,35 @@
     return PAGES[kind];
   }
 
-  /** The background's half: hold a payload for its window (lib/cid-store.js,
-   *  the same store the courier answers heddy:ready from), then open the
-   *  window, focused, where the courier opens its own.
-   *  deps: {chrome, store, randomUUID, ready, sessionKey} */
+  /** The background's half: the courier's openCapture holds the payload in
+   *  the cid store (it answers the window's heddy:ready) and opens the
+   *  window, focused. kind 'box' or 'tool' tells heddy:result what it was.
+   *  deps: {openCapture} */
   function createSender(deps) {
-    var chrome = deps.chrome;
-    var store = deps.store;
-
-    function persist() {
-      return Promise.resolve()
-        .then(function () { var o = {}; o[deps.sessionKey] = store.toJSON(); return chrome.storage.session.set(o); })
-        .catch(function () {});
-    }
-
-    function devMode() {
-      return chrome.storage.local.get(C.DEV_KEY).then(
-        function (got) { return !!got && got[C.DEV_KEY] === true; },
-        function () { return false; }
-      );
-    }
-
-    /** kind: 'box' or 'tool'. build(cid) returns the payload (and may throw).
-     *  where: {tabId, windowId}. Resolves to {ok, cid?}. */
-    function hold(kind, page, build, where) {
-      var cid = String(deps.randomUUID()).toLowerCase();
-      var w = where || {};
-      return Promise.resolve(deps.ready)
-        .then(devMode)
-        .then(function (dev) {
-          var payload = build(cid);
-          var origin = C.captureOrigin(dev);
-          // `then` carries the kind, so heddy:result knows this is no clip.
-          store.put(cid, { payload: payload, origin: origin, tabId: w.tabId, then: kind });
-          return persist()
-            .then(function () {
-              return (w.windowId != null ? chrome.windows.get(w.windowId) : chrome.windows.getLastFocused()).catch(function () { return null; });
-            })
-            .then(function (win) {
-              var spec = Object.assign({ url: C.captureUrl(origin, page, cid), type: 'popup', focused: true }, C.windowBounds(win));
-              return chrome.windows.create(spec);
-            })
-            .then(function (created) {
-              if (created && created.id != null) store.setWindow(cid, created.id);
-              return persist().then(function () { return { ok: true, cid: cid }; });
-            });
-        })
-        .catch(function () {
-          store.drop(cid);
-          return persist().then(function () { return { ok: false }; });
-        });
-    }
-
     return {
       /** heddy:box → /capture/jot. */
       box: function (input, where) {
-        return hold('box', pageFor('jot'), function (cid) { return buildBox(Object.assign({}, input, { cid: cid })); }, where);
+        var w = where || {};
+        return deps.openCapture({
+          page: pageFor('jot'),
+          kind: 'box',
+          windowId: w.windowId,
+          build: function (cid) { return buildBox(Object.assign({}, input, { cid: cid })); },
+          meta: { tabId: w.tabId, title: cleanText(input && input.title, MAX_TITLE) },
+        });
       },
       /** heddy:tool → /capture/room or /capture/card. */
       tool: function (input, where) {
-        return hold('tool', pageFor(input && input.tool), function (cid) { return buildTool(Object.assign({}, input, { cid: cid })); }, where);
+        var w = where || {};
+        var page;
+        try { page = pageFor(input && input.tool); } catch (e) { return Promise.resolve({ ok: false }); }
+        return deps.openCapture({
+          page: page,
+          kind: 'tool',
+          windowId: w.windowId,
+          build: function (cid) { return buildTool(Object.assign({}, input, { cid: cid })); },
+          meta: { tabId: w.tabId, title: cleanText(input && input.title, MAX_TITLE) },
+        });
       },
     };
   }

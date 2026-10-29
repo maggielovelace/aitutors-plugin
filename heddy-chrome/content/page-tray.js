@@ -18,6 +18,7 @@
   var I = globalThis.HeddyI18n;
   var M = globalThis.HeddyMarks;
   var T = globalThis.HeddyToast;
+  var P = globalThis.HeddyProtocol;
   var X = globalThis.HeddyExtract;
   var TOOLS = globalThis.HeddyTrayTools.TOOLS;
   var MENU = globalThis.HeddyTrayTools.MENU;
@@ -116,6 +117,15 @@
     return send(p);
   }
 
+  /** Explain, Make a card or Ask Heddy on the words (lib/tools.js). */
+  function tool(id, s) {
+    hideTray();
+    if (!s) return Promise.resolve({ ok: false });
+    var c = P.contextOf(s.before, s.after);
+    var context = c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after;
+    return globalThis.HeddyTools.sendTool(id, { url: s.url, title: s.title, quote: s.quote, context: context });
+  }
+
   function hidden(el) {
     try {
       var cs = getComputedStyle(el);
@@ -171,6 +181,7 @@
     '.bar button.pri:hover{filter:brightness(1.06)}' +
     '.bar button:focus-visible{outline:2px solid #f2ead8;outline-offset:1px}' +
     'svg{display:block;flex:none}' +
+    '.hf{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center}' +
     '.menu{position:absolute;left:0;top:64px;display:grid;gap:1px;min-width:220px;padding:5px;border-radius:11px;background:#fdfcf8;' +
     'border:1px solid #d9d2c3;box-shadow:0 12px 30px rgba(0,0,0,.18);font:600 13px/1.2 Manrope,Roboto,Arial,sans-serif;color:#002147}' +
     '.menu[hidden]{display:none}' +
@@ -200,7 +211,7 @@
       var b = document.createElement('button');
       b.type = 'button';
       if (tool.primary) b.className = 'pri';
-      b.insertAdjacentHTML('beforeend', M.use(tool.mark, 18));
+      b.insertAdjacentHTML('beforeend', tool.badge ? '<span class="hf">' + M.use(tool.mark, 16) + '</span>' : M.use(tool.mark, 18));
       b.appendChild(document.createTextNode(tr(tool.label)));
       b.addEventListener('click', function () { run(tool.id, s); });
       bar.appendChild(b);
@@ -252,6 +263,7 @@
 
   function run(id, s) {
     if (id === 'jot') return jot(s);
+    if (id === 'explain' || id === 'card' || id === 'ask') return tool(id, s);
     if (id === 'copy') return copy(s);
     if (id === 'paragraph') return selectParagraph(s);
     if (id === 'clip') return clipPage();
