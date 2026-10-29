@@ -7,6 +7,7 @@
 (function (root) {
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
   var C = root.HeddyConfig || (typeof require === 'function' && require('./config.js'));
+  var I = root.HeddyI18n || (typeof require === 'function' && require('./i18n.js'));
 
   var SESSION_KEY = 'heddyCids';
   var SAVED_MS = 2000;
@@ -18,7 +19,12 @@
   // What the background injects into a tab that reached a watch page by
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
-  var CONTENT_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'content/youtube-selectors.js', 'content/youtube.js'];
+  var CONTENT_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
+  // What a gesture injects into any page for Jot it and Clip this page (Phase 2).
+  var PAGE_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'content/extract.js', 'content/page-tray.js'];
+  var MENU_ID = 'heddy-jot';
+  // manifest.json "commands": Ctrl Shift J (⌘⇧J on a Mac).
+  var COMMAND = 'jot-selection';
 
   function createCourier(deps) {
     var chrome = deps.chrome;
@@ -66,48 +72,168 @@
         .catch(function () {});
     }
 
-    /** Add to My Clips / Watch with Heddy: hold the payload, open the window. */
-    function capture(input) {
+    /** Hold a payload for a /capture window and open it. `spec`:
+     *  { page: 'clip'|'jot'|'page', kind, build(cid) → payload, meta, windowId, focused }.
+     *  A J's window and an Undo's do not take focus (D18): the child keeps
+     *  watching while the site saves. */
+    function openCapture(spec) {
       var payload;
       var cid = String(randomUUID()).toLowerCase();
       return ready
         .then(devMode)
         .then(function (dev) {
-          payload = P.buildAdd({ cid: cid, youtubeId: input.youtubeId, startSec: input.startSec, then: input.then });
+          payload = spec.build(cid);
           var origin = C.captureOrigin(dev);
-          store.put(cid, { payload: payload, origin: origin, tabId: input.tabId, then: payload.then, youtubeId: payload.youtubeId, startSec: payload.startSec });
+          store.put(cid, Object.assign({ payload: payload, origin: origin, kind: spec.kind }, spec.meta));
           return persist()
             .then(function () {
-              return (input.windowId != null ? chrome.windows.get(input.windowId) : chrome.windows.getLastFocused()).catch(function () { return null; });
+              return (spec.windowId != null ? chrome.windows.get(spec.windowId) : chrome.windows.getLastFocused()).catch(function () { return null; });
             })
             .then(function (win) {
-              var spec = Object.assign({ url: C.captureUrl(origin, 'clip', cid), type: 'popup', focused: true }, C.windowBounds(win));
-              return chrome.windows.create(spec);
+              var created = Object.assign({ url: C.captureUrl(origin, spec.page, cid), type: 'popup', focused: spec.focused !== false }, C.windowBounds(win));
+              return chrome.windows.create(created);
             })
             .then(function (created) {
               if (created && created.id != null) store.setWindow(cid, created.id);
               return persist().then(function () { return { ok: true, cid: cid }; });
             });
         })
-        .catch(function () {
+        .catch(function (err) {
           store.drop(cid);
-          return persist().then(function () { return { ok: false }; });
+          var error = err && (err.message === 'too_long' || err.message === 'empty') ? err.message : null;
+          return persist().then(function () { return error ? { ok: false, error: error } : { ok: false }; });
         });
     }
 
-    /** heddy:result: the tick on the toolbar, the toast, and the pause. */
+    /** Add to My Clips / Watch with Heddy. */
+    function capture(input) {
+      return openCapture({
+        page: 'clip',
+        kind: 'clip',
+        windowId: input.windowId,
+        build: function (cid) { return P.buildAdd({ cid: cid, youtubeId: input.youtubeId, startSec: input.startSec, then: input.then }); },
+        meta: { tabId: input.tabId, then: input.then, youtubeId: input.youtubeId, startSec: input.startSec == null ? null : Math.floor(input.startSec) },
+      });
+    }
+
+    /** heddy:result: the tick on the toolbar, the toast, and the pause. Each
+     *  window's result means something different; anything the site refused
+     *  that is not listed here, its window explains itself and stays open. */
     function deliverResult(result, meta, origin) {
-      if (result.ok) {
-        setIcon(meta.tabId, 'saved');
-        later(function () { restIcon(meta.tabId); }, SAVED_MS);
-        var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
-        var steps = [tellTab(meta.tabId, toast)];
-        if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
-        return Promise.all(steps);
+      var kind = meta.kind || 'clip';
+      if (kind === 'undo') {
+        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'undone' : 'undo_failed' });
       }
-      // The window stays open and explains every other refusal itself.
-      if (result.error === 'cant_keep') return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'cant_keep' });
-      return Promise.resolve();
+      if (!result.ok) {
+        // J's refusals (Keep and jot, cant_keep, "We don't have this video
+        // yet") stay in the site's window, with Close. Only a clip's refusal
+        // by the family's settings gets Heddy's toast (Phase 1).
+        if (kind === 'clip' && result.error === 'cant_keep') return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'cant_keep' });
+        return Promise.resolve();
+      }
+      setIcon(meta.tabId, 'saved');
+      later(function () { restIcon(meta.tabId); }, SAVED_MS);
+      if (kind === 'moment') {
+        return tellTab(meta.tabId, {
+          type: 'heddy-ui:toast',
+          kind: 'note',
+          t: result.t != null ? result.t : meta.startSec,
+          quote: result.quote,
+          jotId: result.jotId,
+          topic: result.topic,
+          topicLang: result.lang,
+          title: meta.title,
+          href: C.jotterUrl(origin, meta.youtubeId),
+        });
+      }
+      if (kind !== 'clip') return Promise.resolve();
+      var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
+      var steps = [tellTab(meta.tabId, toast)];
+      if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
+      return Promise.all(steps);
+    }
+
+    /** J: one heddy:moment, in a window that does not take focus. */
+    function moment(input) {
+      return openCapture({
+        page: 'jot',
+        kind: 'moment',
+        windowId: input.windowId,
+        focused: false,
+        build: function (cid) { return P.buildMoment({ cid: cid, youtubeId: input.youtubeId, t: input.t, join: input.join }); },
+        meta: { tabId: input.tabId, youtubeId: input.youtubeId, startSec: Math.floor(input.t), title: input.title },
+      });
+    }
+
+    /** Undo on the toast: heddy:undo, in a window that does not take focus. */
+    function undo(input) {
+      return openCapture({
+        page: 'jot',
+        kind: 'undo',
+        windowId: input.windowId,
+        focused: false,
+        build: function (cid) { return P.buildUndo({ cid: cid, jotId: input.jotId }); },
+        meta: { tabId: input.tabId },
+      });
+    }
+
+    /** Jot it: heddy:jot, in a window that takes focus (the child adds a thought there). */
+    function jot(input) {
+      return openCapture({
+        page: 'jot',
+        kind: 'jot',
+        windowId: input.windowId,
+        build: function (cid) { return P.buildJot({ cid: cid, url: input.url, title: input.title, quote: input.quote, before: input.before, after: input.after }); },
+        meta: { tabId: input.tabId },
+      });
+    }
+
+    /** Clip this page: heddy:page. Past 200 KB it answers {ok:false, error:'too_long'}
+     *  and no window opens. */
+    function page(input) {
+      return openCapture({
+        page: 'page',
+        kind: 'page',
+        windowId: input.windowId,
+        build: function (cid) { return P.buildPage({ cid: cid, url: input.url, title: input.title, markdown: input.markdown }); },
+        meta: { tabId: input.tabId },
+      });
+    }
+
+    /** The files that make the page tray, injected on a gesture (activeTab). */
+    function injectPage(tabId) {
+      return chrome.scripting.executeScript({ target: { tabId: tabId }, files: PAGE_FILES });
+    }
+
+    /** The context menu (selection) and the Ctrl Shift J command: inject the
+     *  tray into the tab the gesture came from. The menu item is already the
+     *  child's choice of Jot it, so it jots; the command shows the tray. */
+    function gesture(what, tab) {
+      if (!tab || tab.id == null) return Promise.resolve({ ok: false });
+      return Promise.resolve()
+        .then(function () { return injectPage(tab.id); })
+        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: what === 'menu' ? 'heddy-ui:jot-selection' : 'heddy-ui:tray' }); })
+        .then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; });
+    }
+
+    function menuClicked(info, tab) {
+      if (!info || info.menuItemId !== MENU_ID) return Promise.resolve(null);
+      return gesture('menu', tab);
+    }
+
+    function command(name, tab) {
+      if (name !== COMMAND) return Promise.resolve(null);
+      var t = tab ? Promise.resolve(tab) : chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) { return tabs[0]; }, function () { return null; });
+      return t.then(function (x) { return gesture('command', x); });
+    }
+
+    /** The one context-menu item, in Heddy's language (D36). */
+    function installMenus(lang) {
+      var title = I.t(lang, 'menuJotIt');
+      return Promise.resolve()
+        .then(function () { return chrome.contextMenus.removeAll(); })
+        .then(function () { return chrome.contextMenus.create({ id: MENU_ID, title: title, contexts: ['selection'] }); })
+        .catch(function () {});
     }
 
     /** chrome.runtime.onMessageExternal: heddy:ready and heddy:result from a
@@ -149,6 +275,29 @@
             windowId: tab ? tab.windowId : message.windowId,
           });
         }
+        case 'heddy-ui:moment': {
+          // J, from a watch page: the video must be the one that page shows.
+          if (!tab || !P.isYoutubeId(message.youtubeId) || P.youtubeIdFromUrl(sender.url || tab.url) !== message.youtubeId) return Promise.resolve({ ok: false });
+          if (typeof message.t !== 'number' || !isFinite(message.t) || message.t < 0) return Promise.resolve({ ok: false });
+          return moment({
+            youtubeId: message.youtubeId,
+            t: message.t,
+            join: typeof message.join === 'number' ? message.join : 0,
+            title: typeof message.title === 'string' ? message.title.slice(0, 200) : null,
+            tabId: tab.id,
+            windowId: tab.windowId,
+          });
+        }
+        case 'heddy-ui:undo':
+          // buildUndo refuses anything but a jot id, so a bad one opens nothing.
+          return undo({ jotId: message.jotId, tabId: tab ? tab.id : null, windowId: tab ? tab.windowId : message.windowId });
+        case 'heddy-ui:jot':
+        case 'heddy-ui:page': {
+          // From a page, only that page's own address; the popup names its tab.
+          if (tab && P.pageUrl(message.url) !== P.pageUrl(sender.url || tab.url)) return Promise.resolve({ ok: false });
+          var input = Object.assign({}, message, { tabId: tab ? tab.id : message.tabId, windowId: tab ? tab.windowId : message.windowId });
+          return message.type === 'heddy-ui:jot' ? jot(input) : page(input);
+        }
         case 'heddy-ui:watch-page':
           return setIcon(tab && tab.id, message.on ? 'ready' : 'idle').then(function () { return { ok: true }; });
         case 'heddy-ui:open':
@@ -156,7 +305,7 @@
             var href = typeof message.href === 'string' ? message.href : '';
             var u;
             try { u = new URL(href); } catch (e) { return { ok: false }; }
-            if (C.allowedOrigins(dev).indexOf(u.origin) < 0 || u.pathname.indexOf('/study/clips') !== 0) return { ok: false };
+            if (C.allowedOrigins(dev).indexOf(u.origin) < 0 || !/^\/study\/(clips|jotters)(\/|$)/.test(u.pathname)) return { ok: false };
             return chrome.tabs.create({ url: u.href, openerTabId: tab ? tab.id : undefined }).then(
               function () { return { ok: true }; },
               function () { return { ok: false }; }
@@ -178,10 +327,10 @@
         .then(function () { return setIcon(tabId, 'ready'); });
     }
 
-    return { ready: ready, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated };
+    return { ready: ready, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

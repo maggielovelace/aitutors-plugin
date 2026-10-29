@@ -112,9 +112,9 @@ test('parseExternal answers only v1 heddy:ready / heddy:result with a UUID cid',
   assert.equal(P.parseExternal([{ type: 'heddy:ready', v: 1, cid: CID }]), null);
   assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID }), null, 'ok is required');
   const r = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, topicId: 'map-scales', topic: 'Maths · Map scales' });
-  assert.deepEqual(r, { kind: 'result', cid: CID, ok: true, error: null, topicId: 'map-scales', topic: 'Maths · Map scales', momentId: null, lang: null });
+  assert.deepEqual(r, { kind: 'result', cid: CID, ok: true, error: null, topicId: 'map-scales', topic: 'Maths · Map scales', momentId: null, lang: null, quote: null, t: null, jotId: null });
   const hostile = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: '<img src=x onerror=alert(1)>', topicId: '../../admin', topic: 'x'.repeat(500) });
-  assert.deepEqual(hostile, { kind: 'result', cid: CID, ok: false, error: null, topicId: null, topic: null, momentId: null, lang: null });
+  assert.deepEqual(hostile, { kind: 'result', cid: CID, ok: false, error: null, topicId: null, topic: null, momentId: null, lang: null, quote: null, t: null, jotId: null });
 });
 
 test('momentId must be a UUID and lang one of the site’s two locales', () => {
@@ -150,10 +150,12 @@ test('the protocol file names the site files it mirrors', () => {
   assert.match(read('lib/protocol.js'), /lib\/capture\/protocol\.ts/);
 });
 
-test('the YouTube toast applies the language rule to the topic it shows', () => {
-  // No DOM in these tests, so pin the wiring at the source: the toast's topic
-  // goes through topicForToast with the site's lang and Heddy's own.
-  const src = read('content/youtube.js');
-  assert.match(src, /P\.topicForToast\(msg\.topic, msg\.topicLang, lang\)/);
-  assert.doesNotMatch(src, /parts\.push\(msg\.topic\)/);
+test('the toast applies the language rule to the topic it shows', () => {
+  const T = load('./lib/toast.js');
+  const I = load('./lib/i18n.js');
+  const clip = (topic, topicLang, lang) => T.model({ kind: 'clip', topic, topicLang, startSec: 112 }, lang, I.translator(lang)).line;
+  assert.equal(clip('Maths · Map scales', 'en-GB', 'en'), 'Maths · Map scales · from 1:52');
+  assert.equal(clip('数学 · 比例尺', 'zh-Hans', 'en'), 'from 1:52');
+  assert.equal(clip('Maths · Map scales', 'en-GB', 'zh_CN'), '从 1:52 开始');
+  assert.match(read('content/youtube.js'), /T\.model\(msg, lang, tr\)/);
 });

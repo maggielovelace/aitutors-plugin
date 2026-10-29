@@ -13,6 +13,8 @@
     // The main player's <video>: its currentTime for "From m:ss", and pause()
     // when Watch with Heddy hands the video to Classroom.
     video: '#movie_player video',
+    // The player itself: the once-per-device J hint sits inside it (Phase 2).
+    player: '#movie_player',
     // The player while it plays a live stream: no buttons there (PRD Must 3).
     livePlayer: '#movie_player.ytp-live',
     // The popup's video row. If these miss, it falls back to the tab title.

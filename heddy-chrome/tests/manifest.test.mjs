@@ -10,14 +10,14 @@ import { ROOT, load, manifest } from './helpers.mjs';
 const D3_ALLOWED = ['activeTab', 'scripting', 'contextMenus', 'commands', 'storage'];
 const D3_NOT_REQUESTED = ['tabs', 'history', 'cookies', 'webRequest', 'declarativeNetRequest', 'sidePanel', '<all_urls>'];
 const D3_HOSTS = ['https://www.youtube.com/watch*', 'https://aitutors.me/*', 'https://*.aitutors.me/*'];
-// Phase 1 uses three of D3's five; contextMenus and commands arrive with
-// Jot it and J in Phase 2.
-const PHASE_1 = ['activeTab', 'scripting', 'storage'];
+// Phase 2 uses all five: contextMenus for "Jot it with Heddy" on a selection,
+// commands for Ctrl Shift J (D7 as amended by D17).
+const PHASE_2 = ['activeTab', 'scripting', 'contextMenus', 'commands', 'storage'];
 const EXTERNALLY_CONNECTABLE = ['https://aitutors.me/*', 'http://localhost:3000/*'];
 
-test('permissions are exactly Phase 1’s, all of them inside D3', () => {
+test('permissions are exactly Phase 2’s, all of them inside D3', () => {
   const m = manifest();
-  assert.deepEqual([...m.permissions].sort(), [...PHASE_1].sort());
+  assert.deepEqual([...m.permissions].sort(), [...PHASE_2].sort());
   for (const p of m.permissions) assert.ok(D3_ALLOWED.includes(p), `${p} is not in D3`);
 });
 
@@ -76,4 +76,21 @@ test('the background is a classic worker, so it stays WebExtension-plain (D12)',
   const m = manifest();
   assert.equal(m.manifest_version, 3);
   assert.equal(m.background.type, undefined);
+});
+
+test('one command, Ctrl Shift J (⌘⇧J on a Mac), and it is the one the courier answers', () => {
+  const m = manifest();
+  const { COMMAND } = load('./lib/courier.js');
+  assert.deepEqual(Object.keys(m.commands), [COMMAND]);
+  assert.deepEqual(m.commands[COMMAND].suggested_key, { default: 'Ctrl+Shift+J', mac: 'Command+Shift+J' });
+  assert.ok(!Object.keys(m.commands).some((k) => k.startsWith('_execute')), 'no _execute_ command');
+});
+
+test('the page tray is injected on a gesture, never declared as a content script', () => {
+  const m = manifest();
+  const { PAGE_FILES } = load('./lib/courier.js');
+  for (const f of PAGE_FILES) assert.ok(existsSync(join(ROOT, f)), `${f} is missing`);
+  assert.ok(!m.content_scripts.some((c) => c.js.includes('content/page-tray.js')), 'page-tray must not run uninvited');
+  assert.ok(PAGE_FILES.indexOf('lib/tray-tools.js') < PAGE_FILES.indexOf('content/page-tray.js'));
+  assert.ok(PAGE_FILES.indexOf('content/extract.js') < PAGE_FILES.indexOf('content/page-tray.js'));
 });

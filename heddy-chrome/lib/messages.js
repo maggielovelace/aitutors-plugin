@@ -50,14 +50,117 @@
       "openSite": {
         "message": "Open aitutors.me"
       },
-      "otherPageLine": {
-        "message": "For now, Heddy works on YouTube videos. Open one to keep it in My Clips, or to watch it with Heddy."
-      },
       "sitePageLine": {
-        "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube video pages."
+        "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages."
       },
       "captureFailed": {
         "message": "Heddy couldn't open aitutors.me. Try again."
+      },
+      "commandJot": {
+        "message": "Jot the words you selected"
+      },
+      "menuJotIt": {
+        "message": "Jot it with Heddy"
+      },
+      "trayLabel": {
+        "message": "Heddy: what to do with these words"
+      },
+      "trayJotIt": {
+        "message": "Jot it"
+      },
+      "trayMore": {
+        "message": "More"
+      },
+      "menuCopy": {
+        "message": "Copy"
+      },
+      "menuParagraph": {
+        "message": "Select the whole paragraph"
+      },
+      "menuClipPage": {
+        "message": "Clip the whole page"
+      },
+      "imageLabel": {
+        "message": "Image"
+      },
+      "jHint": {
+        "message": "jots the line being spoken"
+      },
+      "popupJotIt": {
+        "message": "Jot it"
+      },
+      "clipWholePageInstead": {
+        "message": "Clip the whole page instead"
+      },
+      "clipThisPage": {
+        "message": "Clip this page"
+      },
+      "selectSomeWords": {
+        "message": "Select some words"
+      },
+      "selectSomeWordsFor": {
+        "message": "for Jot it"
+      },
+      "jotLineSpoken": {
+        "message": "Jot the line being spoken"
+      },
+      "jotLineSpokenSub": {
+        "message": "New video? It's added first."
+      },
+      "firstTimePage": {
+        "message": "Jot a line, or clip a page, as a source for your Jotter"
+      },
+      "cantReadPage": {
+        "message": "Heddy can't read this page. Try it on a web page or a YouTube video."
+      },
+      "pageTooLong": {
+        "message": "This page is too long to clip. Try Jot it on the part you need."
+      },
+      "pageEmpty": {
+        "message": "This page has no text to clip."
+      },
+      "toastNoteSaved": {
+        "message": "Note saved · $TIME$ — $TITLE$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
+          },
+          "title": {
+            "content": "$2",
+            "example": "Map scales"
+          }
+        }
+      },
+      "toastNoteSavedAt": {
+        "message": "Note saved · $TIME$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
+          }
+        }
+      },
+      "toastQuote": {
+        "message": "“$QUOTE$”",
+        "placeholders": {
+          "quote": {
+            "content": "$1",
+            "example": "On a 1:50 000 map, 2 cm represents 1 km."
+          }
+        }
+      },
+      "toastUndo": {
+        "message": "Undo"
+      },
+      "toastOpenInJotter": {
+        "message": "Open in Jotter"
+      },
+      "toastJotDeleted": {
+        "message": "Jot deleted."
+      },
+      "toastUndoFailed": {
+        "message": "Couldn't undo that note."
       },
       "toastInMyClips": {
         "message": "In My Clips"
@@ -148,14 +251,117 @@
       "openSite": {
         "message": "打开 aitutors.me"
       },
-      "otherPageLine": {
-        "message": "现在 Heddy 只在 YouTube 视频上工作。打开一个视频，就能放进「我的短片」，或和 Heddy 一起看。"
-      },
       "sitePageLine": {
-        "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频页上。"
+        "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。"
       },
       "captureFailed": {
         "message": "Heddy 没能打开 aitutors.me，再试一次。"
+      },
+      "commandJot": {
+        "message": "批注你选中的文字"
+      },
+      "menuJotIt": {
+        "message": "用 Heddy 写批注"
+      },
+      "trayLabel": {
+        "message": "Heddy：怎么处理这段文字"
+      },
+      "trayJotIt": {
+        "message": "写批注"
+      },
+      "trayMore": {
+        "message": "更多"
+      },
+      "menuCopy": {
+        "message": "复制"
+      },
+      "menuParagraph": {
+        "message": "选中整段"
+      },
+      "menuClipPage": {
+        "message": "剪下整页"
+      },
+      "imageLabel": {
+        "message": "图片"
+      },
+      "jHint": {
+        "message": "批注正在说的这一句"
+      },
+      "popupJotIt": {
+        "message": "写批注"
+      },
+      "clipWholePageInstead": {
+        "message": "改为剪下整页"
+      },
+      "clipThisPage": {
+        "message": "剪下这一页"
+      },
+      "selectSomeWords": {
+        "message": "选中一些文字"
+      },
+      "selectSomeWordsFor": {
+        "message": "用来写批注"
+      },
+      "jotLineSpoken": {
+        "message": "批注正在说的这一句"
+      },
+      "jotLineSpokenSub": {
+        "message": "新视频？会先收下它。"
+      },
+      "firstTimePage": {
+        "message": "批注一句话，或剪下一页，作为批注本的来源"
+      },
+      "cantReadPage": {
+        "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。"
+      },
+      "pageTooLong": {
+        "message": "这一页太长，剪不下来。试试只批注你需要的部分。"
+      },
+      "pageEmpty": {
+        "message": "这一页没有可以剪下的文字。"
+      },
+      "toastNoteSaved": {
+        "message": "已记下 · $TIME$ — $TITLE$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
+          },
+          "title": {
+            "content": "$2",
+            "example": "Map scales"
+          }
+        }
+      },
+      "toastNoteSavedAt": {
+        "message": "已记下 · $TIME$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
+          }
+        }
+      },
+      "toastQuote": {
+        "message": "「$QUOTE$」",
+        "placeholders": {
+          "quote": {
+            "content": "$1",
+            "example": "On a 1:50 000 map, 2 cm represents 1 km."
+          }
+        }
+      },
+      "toastUndo": {
+        "message": "撤销"
+      },
+      "toastOpenInJotter": {
+        "message": "在批注本中打开"
+      },
+      "toastJotDeleted": {
+        "message": "随记已删除。"
+      },
+      "toastUndoFailed": {
+        "message": "没能撤销这条批注。"
       },
       "toastInMyClips": {
         "message": "已放进「我的短片」"

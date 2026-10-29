@@ -5,9 +5,16 @@
 //
 //   page  → Heddy  {type:'heddy:ready',  v:1, cid}
 //   Heddy → page   {type:'heddy:add',    v:1, cid, youtubeId, startSec, then}   (the reply, once)
-//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?}
+//   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, join?}        J on YouTube
+//   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId}                       Undo on the toast
+//   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
+//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown}        Clip this page
+//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?}
 //
-// Phase 1 sends only heddy:add. Everything a page sends is untrusted data.
+// `join` on heddy:moment is the number of extra J presses inside the desk's
+// 2.5 s window (PRD-v0.97.0 D11): the site joins that many lines before the
+// line at t. The site's parser drops a field it does not know, so an older
+// site saves the one line. Everything a page sends is untrusted data.
 (function (root) {
   var PROTOCOL_VERSION = 1;
   var YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -21,6 +28,19 @@
   var ERROR = /^[a-z_]{1,40}$/;
   // The site's locale on a result, and the Heddy language each one matches.
   var SITE_LANGS = { 'en-GB': 'en', 'zh-Hans': 'zh_CN' };
+  // The quote a result carries back for the toast (the site's JOT_QUOTE_MAX is larger;
+  // the toast clamps it to three lines anyway).
+  var MAX_RESULT_QUOTE = 2000;
+  // Jot it (D5, D20): the words either side of a selection, and the site's outer
+  // bound on a field (lib/capture/protocol.ts MAX_FIELD).
+  var CONTEXT_SIDE = 300;
+  var MAX_FIELD = 20000;
+  var MAX_TITLE = 300;
+  var MAX_URL = 2048;
+  // Clip this page (D20, Must 6): at most 200 KB of UTF-8, as the site counts it
+  // (lib/jotters/storage.ts MAX_PAGE_BYTES).
+  var MAX_PAGE_BYTES = 200 * 1024;
+  var MAX_JOIN = 10;
 
   function isCaptureId(x) {
     return typeof x === 'string' && UUID.test(x);
@@ -70,6 +90,91 @@
     };
   }
 
+  /** heddy:moment: J on a watch page. `join` (extra presses within 2.5 s) is
+   *  sent only when there was one. */
+  function buildMoment(input) {
+    if (!isCaptureId(input.cid)) throw new Error('bad cid');
+    if (!isYoutubeId(input.youtubeId)) throw new Error('bad youtubeId');
+    if (!isSeconds(input.t)) throw new Error('bad t');
+    var join = input.join == null ? 0 : input.join;
+    if (typeof join !== 'number' || !isFinite(join) || join < 0) throw new Error('bad join');
+    var out = { type: 'heddy:moment', v: PROTOCOL_VERSION, cid: input.cid, youtubeId: input.youtubeId, t: Math.floor(input.t) };
+    if (Math.floor(join) > 0) out.join = Math.min(MAX_JOIN, Math.floor(join));
+    return out;
+  }
+
+  /** heddy:undo: delete the note a J just saved. */
+  function buildUndo(input) {
+    if (!isCaptureId(input.cid)) throw new Error('bad cid');
+    if (!isCaptureId(input.jotId)) throw new Error('bad jotId');
+    return { type: 'heddy:undo', v: PROTOCOL_VERSION, cid: input.cid, jotId: input.jotId.toLowerCase() };
+  }
+
+  /** A page address as Heddy sends it: http(s), without the #fragment. Null otherwise. */
+  function pageUrl(href) {
+    var u;
+    try { u = new URL(href); } catch (e) { return null; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    u.hash = '';
+    var out = u.href;
+    return out.length <= MAX_URL ? out : null;
+  }
+
+  /** Text from a page, made one line of plain characters: control characters
+   *  out, runs of white space one space. */
+  function flat(x) {
+    return typeof x === 'string' ? x.replace(/[\u0000-\u001f\u007f\s]+/g, ' ').trim() : '';
+  }
+
+  /** The words around a selection: at most 300 characters of each side,
+   *  cut at the side away from the quote. */
+  function contextOf(before, after) {
+    var b = flat(before);
+    var a = flat(after);
+    if (b.length > CONTEXT_SIDE) b = b.slice(b.length - CONTEXT_SIDE);
+    if (a.length > CONTEXT_SIDE) a = a.slice(0, CONTEXT_SIDE);
+    return { before: b, after: a };
+  }
+
+  /** heddy:jot. The quote keeps its line breaks (they are the child's words);
+   *  `context` is the words before, " … ", the words after (each ≤ 300). */
+  function buildJot(input) {
+    if (!isCaptureId(input.cid)) throw new Error('bad cid');
+    var url = pageUrl(input.url);
+    if (!url) throw new Error('bad url');
+    var quote = typeof input.quote === 'string' ? input.quote.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim() : '';
+    if (!quote) throw new Error('no quote');
+    if (quote.length > MAX_FIELD) quote = quote.slice(0, MAX_FIELD);
+    var c = contextOf(input.before, input.after);
+    var context = c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after;
+    return { type: 'heddy:jot', v: PROTOCOL_VERSION, cid: input.cid, url: url, title: flat(input.title).slice(0, MAX_TITLE), quote: quote, context: context };
+  }
+
+  /** UTF-8 bytes of a string, as the site measures a page. */
+  function utf8Bytes(s) {
+    var n = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c < 0x80) n += 1;
+      else if (c < 0x800) n += 2;
+      else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length && (s.charCodeAt(i + 1) & 0xfc00) === 0xdc00) { n += 4; i++; }
+      else n += 3;
+    }
+    return n;
+  }
+
+  /** heddy:page, or throws. 'too_long' past 200 KB of UTF-8 (the popup says
+   *  so in the site's words); 'empty' for a page with no text. */
+  function buildPage(input) {
+    if (!isCaptureId(input.cid)) throw new Error('bad cid');
+    var url = pageUrl(input.url);
+    if (!url) throw new Error('bad url');
+    var markdown = typeof input.markdown === 'string' ? input.markdown : '';
+    if (!markdown.trim()) throw new Error('empty');
+    if (utf8Bytes(markdown) > MAX_PAGE_BYTES) throw new Error('too_long');
+    return { type: 'heddy:page', v: PROTOCOL_VERSION, cid: input.cid, url: url, title: flat(input.title).slice(0, MAX_TITLE), markdown: markdown };
+  }
+
   function label(x) {
     if (typeof x !== 'string') return null;
     var s = x.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
@@ -93,6 +198,9 @@
         topic: label(data.topic),
         momentId: isCaptureId(data.momentId) ? data.momentId.toLowerCase() : null,
         lang: typeof data.lang === 'string' && Object.prototype.hasOwnProperty.call(SITE_LANGS, data.lang) ? data.lang : null,
+        quote: typeof data.quote === 'string' && data.quote.trim() ? data.quote.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, MAX_RESULT_QUOTE) : null,
+        t: isSeconds(data.t) ? Math.floor(data.t) : null,
+        jotId: isCaptureId(data.jotId) ? data.jotId.toLowerCase() : null,
       };
     }
     return null;
@@ -125,6 +233,16 @@
     youtubeIdFromUrl: youtubeIdFromUrl,
     startSecFor: startSecFor,
     buildAdd: buildAdd,
+    buildMoment: buildMoment,
+    buildUndo: buildUndo,
+    buildJot: buildJot,
+    buildPage: buildPage,
+    pageUrl: pageUrl,
+    contextOf: contextOf,
+    utf8Bytes: utf8Bytes,
+    CONTEXT_SIDE: CONTEXT_SIDE,
+    MAX_PAGE_BYTES: MAX_PAGE_BYTES,
+    MAX_JOIN: MAX_JOIN,
     parseExternal: parseExternal,
     topicForToast: topicForToast,
     clockOf: clockOf,

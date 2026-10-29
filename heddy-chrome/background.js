@@ -1,6 +1,6 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js');
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js');
 
 var courier = HeddyCourier.createCourier({
   chrome: chrome,
@@ -19,7 +19,7 @@ chrome.runtime.onMessageExternal.addListener(function (message, sender, sendResp
   return true;
 });
 
-// Heddy's own popup and YouTube content script.
+// Heddy's own popup, the YouTube content script and the page tray.
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   courier.internal(message, sender).then(
     function (reply) { sendResponse(reply); },
@@ -30,4 +30,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 chrome.tabs.onUpdated.addListener(function (tabId, change, tab) {
   courier.tabUpdated(tabId, change, tab);
+});
+
+// "Jot it with Heddy" on a selection, and Ctrl Shift J (⌘⇧J): both are
+// gestures, so activeTab lets Heddy inject the tray into that tab (D3, D7).
+chrome.contextMenus.onClicked.addListener(function (info, tab) {
+  courier.menuClicked(info, tab);
+});
+
+chrome.commands.onCommand.addListener(function (name, tab) {
+  courier.command(name, tab);
+});
+
+// The menu item speaks Heddy's language (the options page's switch, D36).
+function menusInLang() {
+  HeddyI18n.currentLang().then(function (lang) { courier.installMenus(lang); });
+}
+chrome.runtime.onInstalled.addListener(menusInLang);
+chrome.storage.onChanged.addListener(function (changes, area) {
+  if (area === 'sync' && changes[HeddyI18n.STORAGE_KEY]) menusInLang();
 });

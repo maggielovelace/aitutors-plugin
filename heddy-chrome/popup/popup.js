@@ -1,12 +1,16 @@
 // popup/popup.js — the toolbar popup (artifact R2 · 03, round 2c, R3b · 05).
 //
-// Four states, Phase 1 only shows what already works (D25, Direction A):
-//   first time    the one line, the YouTube line, Open aitutors.me (primary)
-//   YouTube watch the video row, Whole video / From m:ss, Watch with Heddy
-//                 (primary), Add to My Clips (outlined)
-//   aitutors.me   one line of help, no primary, no footer
-//   any other     "Heddy works on YouTube videos for now", Open aitutors.me
-// Every string from a page (the video's title and channel) is set as text.
+// The states, showing only what already works (D25, Direction A):
+//   first time      the one line, what Heddy does, Open aitutors.me (primary)
+//   YouTube watch   the video row, Whole video / From m:ss, Watch with Heddy
+//                   (primary), Add to My Clips (outlined), the J row
+//   aitutors.me     one line of help, no primary, no footer
+//   words selected  the quote, Jot it (primary), "Clip the whole page instead"
+//   nothing selected the page, Clip this page (primary), the Ctrl Shift J row
+//   can't read      a page Heddy may not script (chrome://, the Web Store)
+// Phase 3 adds Explain, Make a card and Ask Heddy after Jot it, from
+// lib/tray-tools.js. Every string from a page (the video's title and channel,
+// the selection, the page's title) is set as text.
 (function () {
   var P = HeddyProtocol, C = HeddyConfig, I = HeddyI18n, M = HeddyMarks, SEL = HeddyYouTube.SELECTORS;
   var tr = I.translator('en');
@@ -45,7 +49,7 @@
   }
 
   function drawChrome() {
-    $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog']) + M.use('h-eyes', 22);
+    $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog', 'h-quill', 'h-page']) + M.use('h-eyes', 22);
     $('lock').innerHTML = M.use('h-lock', 14);
     $('lockLine').textContent = tr('footerLock');
     var cog = $('settings');
@@ -65,6 +69,10 @@
     line.insertAdjacentHTML('beforeend', M.use('h-film', 16));
     line.appendChild(document.createTextNode(tr('firstTimeYouTube')));
     three.appendChild(line);
+    var line2 = el('span');
+    line2.insertAdjacentHTML('beforeend', M.use('h-quill', 16));
+    line2.appendChild(document.createTextNode(tr('firstTimePage')));
+    three.appendChild(line2);
     body.appendChild(three);
     var open = button('btn wide', 'h-open', 16, tr('openSite'));
     open.addEventListener('click', function () { openSite(origin); });
@@ -72,12 +80,131 @@
     $('foot').hidden = false;
   }
 
-  function renderOther(body, origin) {
-    body.appendChild(el('p', 'lead big', tr('otherPageLine')));
-    var open = button('btn wide', 'h-open', 16, tr('openSite'));
-    open.addEventListener('click', function () { openSite(origin); });
-    body.appendChild(open);
+  /** A row: a label, a line under it, a key hint at the right (a supplement, D17). */
+  function keyRow(mark, title, line, keys) {
+    var row = el('div', 'row');
+    if (mark) {
+      var ic = el('span', 'ico');
+      ic.insertAdjacentHTML('beforeend', M.use(mark, 18));
+      row.appendChild(ic);
+    }
+    var t = el('span', 't');
+    t.appendChild(el('b', null, title));
+    if (line) t.appendChild(el('span', null, line));
+    row.appendChild(t);
+    row.appendChild(el('span', 'r kbd', keys));
+    return row;
+  }
+
+  /** Ctrl Shift J as Chrome has it now (the child may have changed it). */
+  function commandKeys() {
+    var fallback = /Mac/.test(navigator.platform || '') ? '⌘ Shift J' : 'Ctrl Shift J';
+    if (!chrome.commands || !chrome.commands.getAll) return Promise.resolve(fallback);
+    return chrome.commands.getAll().then(function (all) {
+      var c = (all || []).filter(function (x) { return x.name === 'jot-selection'; })[0];
+      // As Chrome prints it ("Ctrl+Shift+J", "⇧⌘J"); none set → the default.
+      return c && c.shortcut ? c.shortcut.replace(/\+/g, ' ') : fallback;
+    }, function () { return fallback; });
+  }
+
+  function fail(err, key) {
+    err.textContent = tr(key);
+    err.hidden = false;
+  }
+
+  /** Clip this page: the readable Markdown, made in the tab (content/extract.js). */
+  function clipPage(tab, btn, err) {
+    btn.setAttribute('aria-busy', 'true');
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.extract(); } })
+      .then(function (res) {
+        var page = res && res[0] && res[0].result;
+        if (!page || !page.markdown || !page.markdown.trim()) throw new Error('empty');
+        if (P.utf8Bytes(page.markdown) > P.MAX_PAGE_BYTES) throw new Error('too_long');
+        return chrome.runtime.sendMessage({ type: 'heddy-ui:page', url: tab.url, title: page.title || tab.title || '', markdown: page.markdown, tabId: tab.id, windowId: tab.windowId });
+      })
+      .then(function (reply) {
+        if (reply && reply.ok) return window.close();
+        throw new Error((reply && reply.error) || 'no window');
+      })
+      .catch(function (e) {
+        btn.removeAttribute('aria-busy');
+        var m = e && e.message;
+        fail(err, m === 'too_long' ? 'pageTooLong' : m === 'empty' ? 'pageEmpty' : 'captureFailed');
+      });
+  }
+
+  function renderSelection(body, tab, sel) {
+    var quote = el('div', 'quote', sel.quote.replace(/\s+/g, ' ').trim());
+    quote.appendChild(el('small', null, [sel.title.trim(), hostLabel(tab.url)].filter(Boolean).join(' · ')));
+    body.appendChild(quote);
+    var err = el('p', 'err');
+    err.hidden = true;
+    var jot = button('btn wide', 'h-quill', 18, tr('popupJotIt'));
+    jot.addEventListener('click', function () {
+      jot.setAttribute('aria-busy', 'true');
+      chrome.runtime.sendMessage({ type: 'heddy-ui:jot', url: tab.url, title: sel.title, quote: sel.quote, before: sel.before, after: sel.after, tabId: tab.id, windowId: tab.windowId })
+        .then(function (reply) {
+          if (reply && reply.ok) return window.close();
+          throw new Error('no window');
+        })
+        .catch(function () { jot.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
+    });
+    body.appendChild(jot);
+    var clip = el('button', 'lk');
+    clip.type = 'button';
+    clip.insertAdjacentHTML('beforeend', M.use('h-page', 16));
+    clip.appendChild(el('span', null, tr('clipWholePageInstead')));
+    clip.addEventListener('click', function () { clipPage(tab, clip, err); });
+    body.appendChild(clip);
+    body.appendChild(err);
     $('foot').hidden = false;
+  }
+
+  function renderNothingSelected(body, tab) {
+    var pg = el('div', 'pg');
+    pg.appendChild(el('b', null, (tab.title || hostLabel(tab.url)).slice(0, 200)));
+    pg.appendChild(el('span', null, shortUrl(tab.url)));
+    body.appendChild(pg);
+    var err = el('p', 'err');
+    err.hidden = true;
+    var clip = button('btn wide', 'h-page', 16, tr('clipThisPage'));
+    clip.addEventListener('click', function () { clipPage(tab, clip, err); });
+    body.appendChild(clip);
+    var row = keyRow(null, tr('selectSomeWords'), tr('selectSomeWordsFor'), '');
+    body.appendChild(row);
+    commandKeys().then(function (k) { row.querySelector('.kbd').textContent = k; });
+    body.appendChild(err);
+    $('foot').hidden = false;
+  }
+
+  function renderCantRead(body) {
+    body.appendChild(el('p', 'lead big', tr('cantReadPage')));
+    $('foot').hidden = false;
+  }
+
+  /** host/…/last-segment, as the artifact prints a page's address. */
+  function shortUrl(url) {
+    try {
+      var u = new URL(url);
+      var parts = u.pathname.split('/').filter(Boolean);
+      var host = u.hostname.replace(/^www\./, '');
+      if (!parts.length) return host;
+      return host + (parts.length > 1 ? '/…/' : '/') + parts[parts.length - 1];
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /** Any other page: the popup opening is the gesture (activeTab), so Heddy
+   *  may now read the selection. Pages Chrome keeps from extensions refuse. */
+  function renderPage(body, tab) {
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: HeddyCourier.PAGE_FILES })
+      .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.selection(); } }); })
+      .then(function (res) {
+        var sel = res && res[0] && res[0].result;
+        if (sel && sel.quote && sel.quote.trim()) return renderSelection(body, tab, sel);
+        return renderNothingSelected(body, tab);
+      }, function () { return renderCantRead(body); });
   }
 
   function renderSite(body) {
@@ -174,6 +301,7 @@
     add.addEventListener('click', function () { go('keep', add); });
     body.appendChild(watch);
     body.appendChild(add);
+    body.appendChild(keyRow('h-quill', tr('jotLineSpoken'), tr('jotLineSpokenSub'), 'J'));
     body.appendChild(err);
     $('foot').hidden = false;
   }
@@ -206,6 +334,7 @@
       return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info, local[C.START_KEY]); });
     }
     if (url && isSite(url, dev)) return renderSite(body);
-    return renderOther(body, origin);
+    if (tab && /^https?:/.test(url || '')) return renderPage(body, tab);
+    return renderCantRead(body);
   });
 })();

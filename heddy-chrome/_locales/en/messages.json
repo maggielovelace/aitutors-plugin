@@ -18,9 +18,49 @@
   "firstTimeLead": { "message": "Heddy brings what you find to your professors on aitutors.me." },
   "firstTimeYouTube": { "message": "Add a YouTube video, or watch it with Heddy" },
   "openSite": { "message": "Open aitutors.me" },
-  "otherPageLine": { "message": "For now, Heddy works on YouTube videos. Open one to keep it in My Clips, or to watch it with Heddy." },
-  "sitePageLine": { "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube video pages." },
+  "sitePageLine": { "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages." },
   "captureFailed": { "message": "Heddy couldn't open aitutors.me. Try again." },
+
+  "commandJot": { "message": "Jot the words you selected" },
+  "menuJotIt": { "message": "Jot it with Heddy" },
+  "trayLabel": { "message": "Heddy: what to do with these words" },
+  "trayJotIt": { "message": "Jot it" },
+  "trayMore": { "message": "More" },
+  "menuCopy": { "message": "Copy" },
+  "menuParagraph": { "message": "Select the whole paragraph" },
+  "menuClipPage": { "message": "Clip the whole page" },
+  "imageLabel": { "message": "Image" },
+
+  "jHint": { "message": "jots the line being spoken" },
+
+  "popupJotIt": { "message": "Jot it" },
+  "clipWholePageInstead": { "message": "Clip the whole page instead" },
+  "clipThisPage": { "message": "Clip this page" },
+  "selectSomeWords": { "message": "Select some words" },
+  "selectSomeWordsFor": { "message": "for Jot it" },
+  "jotLineSpoken": { "message": "Jot the line being spoken" },
+  "jotLineSpokenSub": { "message": "New video? It's added first." },
+  "firstTimePage": { "message": "Jot a line, or clip a page, as a source for your Jotter" },
+  "cantReadPage": { "message": "Heddy can't read this page. Try it on a web page or a YouTube video." },
+  "pageTooLong": { "message": "This page is too long to clip. Try Jot it on the part you need." },
+  "pageEmpty": { "message": "This page has no text to clip." },
+
+  "toastNoteSaved": {
+    "message": "Note saved · $TIME$ — $TITLE$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" }, "title": { "content": "$2", "example": "Map scales" } }
+  },
+  "toastNoteSavedAt": {
+    "message": "Note saved · $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" } }
+  },
+  "toastQuote": {
+    "message": "“$QUOTE$”",
+    "placeholders": { "quote": { "content": "$1", "example": "On a 1:50 000 map, 2 cm represents 1 km." } }
+  },
+  "toastUndo": { "message": "Undo" },
+  "toastOpenInJotter": { "message": "Open in Jotter" },
+  "toastJotDeleted": { "message": "Jot deleted." },
+  "toastUndoFailed": { "message": "Couldn't undo that note." },
 
   "toastInMyClips": { "message": "In My Clips" },
   "toastFrom": {

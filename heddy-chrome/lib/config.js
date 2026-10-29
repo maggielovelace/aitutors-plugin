@@ -46,6 +46,11 @@
     return origin + '/study/clips';
   }
 
+  /** The toast's Open in Jotter after J: the video's Jotter (D25). */
+  function jotterUrl(origin, youtubeId) {
+    return origin + '/study/jotters/v/' + encodeURIComponent(youtubeId);
+  }
+
   /** Where the capture window opens, from the browser window it came from. */
   function windowBounds(win) {
     var b = { width: WINDOW.width, height: WINDOW.height };
@@ -68,6 +73,7 @@
     originOf: originOf,
     captureUrl: captureUrl,
     clipsUrl: clipsUrl,
+    jotterUrl: jotterUrl,
     windowBounds: windowBounds,
   };
   root.HeddyConfig = api;

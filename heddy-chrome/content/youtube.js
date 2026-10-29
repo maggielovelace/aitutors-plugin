@@ -3,10 +3,12 @@
 //
 // Draws Watch with Heddy (filled cream, the eyes mark) and Add to My Clips
 // (outlined) straight after YouTube's Share button, inside a closed shadow
-// root so neither page can restyle the other; shows the "In My Clips" toast;
-// pauses the video when Watch with Heddy hands it to Classroom. It reads only
-// the video id from the address and the player's current time, and only when
-// the child taps. Selectors: content/youtube-selectors.js, nowhere else.
+// root so neither page can restyle the other; shows Heddy's toasts
+// (lib/toast.js); pauses the video when Watch with Heddy hands it to
+// Classroom; and takes J for the line being spoken (Phase 2, D18). It reads
+// only the video id from the address, the player's current time and the
+// video's title, and only when the child taps or presses J. Selectors:
+// content/youtube-selectors.js, nowhere else.
 //
 // "From m:ss" on the bar buttons: they use the choice the child last made in
 // the popup's Whole video / From m:ss control, Whole video until they make
@@ -20,15 +22,15 @@
   var P = globalThis.HeddyProtocol;
   var I = globalThis.HeddyI18n;
   var M = globalThis.HeddyMarks;
+  var T = globalThis.HeddyToast;
+  var K = globalThis.HeddyJotKey;
   var SEL = globalThis.HeddyYouTube.SELECTORS;
   var START_KEY = 'startChoice';
-  var TOAST_MS = 4000;
   var CHECK_MS = 1500;
 
   var lang = 'en';
   var tr = I.translator(lang);
   var bar = null; // { host, watch, add }
-  var toast = null; // { host, timer }
   var lastId = null;
 
   /** chrome.runtime.sendMessage, quiet when Heddy was reloaded under the page. */
@@ -114,62 +116,88 @@
     }).catch(function () {});
   }
 
-  // ─── the toast (artifact R2 · F1 step 3) ──────────────────────────────────
+  // ─── the toast (lib/toast.js: one spec for every Heddy toast, D25) ─────────
 
-  var TOAST_CSS =
-    ':host{all:initial;position:fixed;top:16px;right:24px;z-index:2147483647}' +
-    '.toast{box-sizing:border-box;width:380px;display:flex;align-items:flex-start;gap:11px;padding:11px 13px;' +
-    'background:#fdfcf8;border:1px solid #d9d2c3;border-radius:12px;color:#002147;box-shadow:0 12px 30px rgba(0,0,0,.28);' +
-    'font-family:Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
-    'svg{display:block;flex:none}' +
-    '.t{display:grid;gap:1px;min-width:0;flex:1}' +
-    '.t b{font:700 14px/1.35 Manrope,Roboto,Arial,sans-serif}' +
-    '.t span{font:500 12px/1.35 Manrope,Roboto,Arial,sans-serif;color:#5d6878}' +
-    '.o{all:unset;cursor:pointer;font:700 13px/1.35 Manrope,Roboto,Arial,sans-serif;color:#1f6a40;white-space:nowrap;align-self:center}' +
-    '.o:hover{text-decoration:underline;text-underline-offset:3px}.o:focus-visible{outline:2px solid #1f6a40;outline-offset:2px;border-radius:4px}';
-
-  function hideToast() {
-    if (!toast) return;
-    clearTimeout(toast.timer);
-    toast.host.remove();
-    toast = null;
-  }
-
-  /** A toast: a title, an optional line, an optional Open. Text only. */
-  function showToast(title, line, href) {
-    hideToast();
-    var host = document.createElement('heddy-toast');
-    var shadow = host.attachShadow({ mode: 'closed' });
-    shadow.innerHTML =
-      '<style>' + TOAST_CSS + '</style>' + M.sprite(['h-eyes']) +
-      '<div class="toast" role="status" aria-live="polite">' + M.use('h-eyes', 26) +
-      '<span class="t"><b></b><span></span></span></div>';
-    shadow.querySelector('b').textContent = title;
-    var sub = shadow.querySelector('.t span');
-    if (line) sub.textContent = line;
-    else sub.remove();
-    if (href) {
-      var open = document.createElement('button');
-      open.type = 'button';
-      open.className = 'o';
-      open.textContent = tr('toastOpen');
-      open.addEventListener('click', function () {
-        send({ type: 'heddy-ui:open', href: href });
-        hideToast();
-      });
-      shadow.querySelector('.toast').appendChild(open);
-    }
-    document.documentElement.appendChild(host);
-    toast = { host: host, timer: setTimeout(hideToast, TOAST_MS) };
-  }
+  var toaster = T.createToaster({
+    document: document,
+    marks: M,
+    onOpen: function (href) { send({ type: 'heddy-ui:open', href: href }); },
+    onUndo: function (jotId) { send({ type: 'heddy-ui:undo', jotId: jotId }); },
+  });
 
   function onToast(msg) {
-    if (msg.kind === 'cant_keep') return showToast(tr('toastCantKeep'), null, null);
-    var parts = [];
-    var topic = P.topicForToast(msg.topic, msg.topicLang, lang);
-    if (topic) parts.push(topic);
-    if (typeof msg.startSec === 'number') parts.push(tr('toastFrom', P.clockOf(msg.startSec)));
-    showToast(tr('toastInMyClips'), parts.join(' · '), typeof msg.href === 'string' ? msg.href : null);
+    toaster.show(T.model(msg, lang, tr));
+  }
+
+  // ─── J: the line being spoken (D18; artifact R2 · F3) ──────────────────────
+  // J goes to Heddy, not to YouTube's own "back 10 seconds", on a watch page
+  // that is not live, and never while the child types (lib/jot-key.js). The
+  // press is held 2.5 s so a second J joins the line before, then ONE
+  // heddy:moment goes to a window on aitutors.me that does not take focus.
+
+  var hold = K.createJHold({
+    now: function () { return Date.now(); },
+    setTimer: function (fn, ms) { return setTimeout(fn, ms); },
+    clearTimer: function (h) { clearTimeout(h); },
+    send: function (j) {
+      send({ type: 'heddy-ui:moment', youtubeId: j.video.youtubeId, title: j.video.title, t: j.t, join: j.join });
+    },
+  });
+
+  function videoTitle() {
+    var h = document.querySelector(SEL.title);
+    var text = h ? h.textContent.trim() : '';
+    return (text || document.title.replace(/\s*-\s*YouTube\s*$/, '')).slice(0, 200) || null;
+  }
+
+  function onKeyDown(e) {
+    var id = currentId();
+    if (!id || isLive() || !K.isJotKey(e, document.activeElement)) return;
+    var video = document.querySelector(SEL.video);
+    var t = video ? video.currentTime : NaN;
+    if (!(typeof t === 'number' && isFinite(t) && t >= 0)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    hideHint();
+    hold.press(t, { youtubeId: id, title: videoTitle() });
+  }
+
+  // The J hint: once per device, for 6 s, the first time Heddy loads on a
+  // watch page (artifact R2 · F1). Bottom left of the player, above its bar.
+  var HINT_KEY = 'seenJHint';
+  var HINT_MS = 6000;
+  var hint = null;
+  var hintAsked = false;
+  var HINT_CSS =
+    ':host{all:initial;position:absolute;left:14px;bottom:56px;z-index:70;pointer-events:none}' +
+    '.h{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:#f2ead8;color:#002147;' +
+    'font:700 13px Manrope,Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.4);white-space:nowrap;-webkit-font-smoothing:antialiased}' +
+    'b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:#002147;color:#f2ead8;font:700 12px "JetBrains Mono",ui-monospace,Menlo,monospace}';
+
+  function hideHint() {
+    if (!hint) return;
+    clearTimeout(hint.timer);
+    hint.host.remove();
+    hint = null;
+  }
+
+  function maybeHint() {
+    if (hintAsked || !currentId() || isLive()) return;
+    var player = document.querySelector(SEL.player);
+    if (!player) return;
+    hintAsked = true;
+    chrome.storage.local.get(HINT_KEY).then(function (got) {
+      if (got && got[HINT_KEY]) return;
+      var o = {};
+      o[HINT_KEY] = true;
+      chrome.storage.local.set(o).catch(function () {});
+      var host = document.createElement('heddy-hint');
+      var shadow = host.attachShadow({ mode: 'closed' });
+      shadow.innerHTML = '<style>' + HINT_CSS + '</style><span class="h"><b>J</b><span></span></span>';
+      shadow.querySelector('.h > span').textContent = tr('jHint');
+      player.appendChild(host);
+      hint = { host: host, timer: setTimeout(hideHint, HINT_MS) };
+    }).catch(function () {});
   }
 
   // ─── wiring ────────────────────────────────────────────────────────────────
@@ -177,10 +205,13 @@
   function refresh() {
     var id = currentId();
     if (id !== lastId) {
+      // A J still waiting goes under the video it was pressed on.
+      hold.flush();
       lastId = id;
       send({ type: 'heddy-ui:watch-page', on: !!id });
     }
     ensureBar();
+    maybeHint();
   }
 
   function setLang(next) {
@@ -204,6 +235,8 @@
 
   // YouTube is a single-page app: a new video is a yt-navigate-finish, not a
   // new page. The interval puts the buttons back if YouTube redraws its bar.
+  window.addEventListener('keydown', onKeyDown, true);
+  window.addEventListener('pagehide', function () { hold.flush(); });
   document.addEventListener('yt-navigate-finish', refresh);
   document.addEventListener('yt-page-data-updated', refresh);
   setInterval(refresh, CHECK_MS);

@@ -30,7 +30,7 @@ const FORBIDDEN = [
 const files = shippedFiles().filter((f) => CODE.test(f));
 
 test('the scan sees the extension’s code', () => {
-  for (const f of ['background.js', 'lib/courier.js', 'content/youtube.js', 'popup/popup.js', 'popup/popup.html', 'options/options.js']) {
+  for (const f of ['background.js', 'lib/courier.js', 'content/youtube.js', 'popup/popup.js', 'popup/popup.html', 'options/options.js', 'content/page-tray.js', 'content/extract.js', 'lib/toast.js', 'lib/jot-key.js', 'lib/tray-tools.js']) {
     assert.ok(files.includes(f), `${f} not scanned`);
   }
 });

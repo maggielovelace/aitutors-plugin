@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "Heddy",
   "description": "__MSG_extDescription__",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "default_locale": "en",
   "minimum_chrome_version": "116",
   "homepage_url": "https://aitutors.me",
@@ -24,7 +24,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "scripting", "contextMenus", "commands", "storage"],
   "host_permissions": [
     "https://www.youtube.com/watch*",
     "https://aitutors.me/*",
@@ -38,12 +38,20 @@
         "lib/i18n.js",
         "lib/protocol.js",
         "lib/marks.js",
+        "lib/toast.js",
+        "lib/jot-key.js",
         "content/youtube-selectors.js",
         "content/youtube.js"
       ],
       "run_at": "document_idle"
     }
   ],
+  "commands": {
+    "jot-selection": {
+      "suggested_key": { "default": "Ctrl+Shift+J", "mac": "Command+Shift+J" },
+      "description": "__MSG_commandJot__"
+    }
+  },
   "externally_connectable": {
     "matches": ["https://aitutors.me/*", "http://localhost:3000/*"]
   },
