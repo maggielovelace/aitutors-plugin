@@ -183,7 +183,7 @@
     return '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONS[name] + '</svg>';
   }
 
-  var SANS = 'Manrope,Roboto,Arial,sans-serif';
+  var SANS = '"Heddy Manrope",Manrope,Roboto,Arial,sans-serif';
   var MONO = '"JetBrains Mono",ui-monospace,Menlo,monospace';
   var CSS =
     ':host{all:initial;position:fixed;inset:0;z-index:2147483647;-webkit-font-smoothing:antialiased}' +

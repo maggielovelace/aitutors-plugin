@@ -60,7 +60,7 @@
   var BAR_CSS =
     ':host{all:initial;display:inline-flex;align-items:center;gap:8px;margin-left:8px;flex:none;vertical-align:middle}' +
     'button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;height:36px;border-radius:999px;padding:0 14px;' +
-    'font:600 14px/1 Manrope,Roboto,Arial,sans-serif;white-space:nowrap;cursor:pointer;-webkit-font-smoothing:antialiased}' +
+    'font:600 14px/1 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;white-space:nowrap;cursor:pointer;-webkit-font-smoothing:antialiased}' +
     'svg{display:block;flex:none}' +
     '.watch{background:#f2ead8;color:#002147;font-weight:800}' +
     '.add{background:transparent;color:#f1f1f1;font-weight:700;box-shadow:inset 0 0 0 1px #5a5a5a}' +
@@ -172,7 +172,7 @@
   var HINT_CSS =
     ':host{all:initial;position:absolute;left:14px;bottom:56px;z-index:70;pointer-events:none}' +
     '.h{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:#f2ead8;color:#002147;' +
-    'font:700 13px Manrope,Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.4);white-space:nowrap;-webkit-font-smoothing:antialiased}' +
+    'font:700 13px "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.4);white-space:nowrap;-webkit-font-smoothing:antialiased}' +
     'b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:#002147;color:#f2ead8;font:700 12px "JetBrains Mono",ui-monospace,Menlo,monospace}';
 
   function hideHint() {

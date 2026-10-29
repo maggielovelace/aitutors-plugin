@@ -21,7 +21,17 @@ preferences on your device.
   yourself, Heddy reads the words you selected, at most 300 characters either
   side of them, the page's title and its address (without the part after `#`).
   When you choose *Clip this page*, it reads the page's readable text, with
-  its pictures as links (it downloads no picture).
+  its pictures as links (it downloads no picture). When you choose *Explain*,
+  *Make a card* or *Ask Heddy* on selected words, it reads the same words and
+  the same 300 characters either side.
+- **When you snap a picture** (the popup's *Snap a picture*, right-click a
+  picture → *Jot this picture with Heddy*, or Ctrl Shift K), Heddy takes a
+  screenshot of the part of the tab you can see, cuts out the box you draw,
+  and keeps only that piece (a PNG, at most 1600 pixels on its longest side
+  and 1 MB). It reads the sentence nearest the picture (at most 300
+  characters), the page's title and its address. It sees only what is on your
+  screen and downloads no picture. *Copy picture* puts the piece on your
+  clipboard and nowhere else.
 - **Nothing else.** Heddy reads no captions or transcripts, no comments, no
   history, no cookies, and no page you have not opened Heddy on.
 
@@ -29,7 +39,8 @@ preferences on your device.
 
 Nowhere, by Heddy. When you tap a button or press H, Heddy opens a small
 window on `https://aitutors.me` and hands that page what it read: the video's
-id and the time, or the words and where they came from, or the page. Heddy hands it over through Chrome
+id and the time, or the words and where they came from, or the page, or the
+pictures you boxed. Heddy hands it over through Chrome
 itself: only pages on aitutors.me can ask for it, each hand-over works once,
 and an unclaimed one is forgotten after 10 minutes. The aitutors.me page then
 checks the video and asks you to keep it, under your own aitutors.me account.
@@ -48,16 +59,17 @@ no analytics and no error reporting.
 | Whether you have seen the first-time popup | `chrome.storage.local` | So it shows once |
 | Whether you have seen the "H jots the line being spoken" hint | `chrome.storage.local` | So it shows once |
 | The developer switch (off unless you turned it on) | `chrome.storage.local` | For people building aitutors.me itself |
-| The hand-over waiting for an aitutors.me window: a random id and what it carries (the video id and time, the words you chose, or the page) | `chrome.storage.session`, cleared when Chrome closes | Forgotten once the window takes it, or after 10 minutes |
+| The hand-over waiting for an aitutors.me window: a random id and what it carries (the video id and time, the words you chose, the page, or the pictures) | `chrome.storage.session`, cleared when Chrome closes | Forgotten once the window takes it, or after 10 minutes |
+| Pictures you have boxed for one jot but not sent yet (up to four, from one page) | `chrome.storage.session`, cleared when Chrome closes | Dropped when you send them, press Esc, close the tab or go to another page |
 
 ## Permissions, and why
 
 | Permission | Why |
 |---|---|
-| `activeTab` | Read a page only after you ask: the popup, the right-click menu or your shortcut |
-| `scripting` | Draw the buttons when YouTube moves to a new video without reloading the page, and read the selection or the page you asked about |
-| `contextMenus` | The *Jot it with Heddy* item when you right-click a selection |
-| `commands` | A shortcut for Jot it, if you set one (Heddy sets none) |
+| `activeTab` | Read a page, or take a picture of what is on screen, only after you ask: the popup, the right-click menu or a shortcut |
+| `scripting` | Draw the buttons when YouTube moves to a new video without reloading the page, read the selection or the page you asked about, and draw the box for Snap a picture |
+| `contextMenus` | *Jot it with Heddy* when you right-click a selection, and *Jot this picture with Heddy* when you right-click a picture |
+| `commands` | Ctrl Shift K for Snap a picture, and a shortcut for Jot it if you set one (Heddy sets none for it) |
 | `storage` | The preferences above |
 | `https://www.youtube.com/watch*` | YouTube video pages, and nothing else on YouTube |
 | `https://aitutors.me/*`, `https://*.aitutors.me/*` | The windows Heddy opens |

@@ -88,3 +88,8 @@ npm test
 
 代码采用 MIT 许可，见 [LICENSE](LICENSE)。Heddy 的名字、角色形象和图标
 不在许可范围内。
+
+`fonts/` 里的 Manrope 字体（以及 `lib/font-data.js` 里的同一份字体数据）
+版权归 The Manrope Project Authors，采用 SIL Open Font License 1.1 许可，
+见 [fonts/OFL.txt](fonts/OFL.txt)。字体随扩展程序打包，不从网上下载：扩展程序
+仍然不发出任何网络请求。

@@ -90,6 +90,10 @@ YouTube page ──tap──▶ Heddy ──opens──▶ aitutors.me/capture/c
 - `_locales/` — English and 简体中文. After editing them, run
   `node scripts/build-messages.mjs` (the settings switch reads a bundled copy).
 
+- `fonts/` — Manrope (SIL OFL 1.1), bundled; see Licence below.
+- `store/` — the Web Store listing (English and 简体中文), the privacy-practices
+  answers and the screenshots. Not part of the package.
+
 No build step: the folder is the extension.
 
 ## Tests
@@ -103,10 +107,17 @@ Node 20 or later, no dependencies. The tests pin the permissions, forbid any
 network call in the shipped files, check that each `cid` is answered once and
 expires at 10 minutes, and check every message against the site's validator.
 
-`scripts/render-icons.sh` redraws the PNG icons from `icons/src/*.svg` (needs
+`scripts/build-fonts.mjs` rewrites `lib/font-data.js` from `fonts/*.woff2`
+(the page surfaces load Manrope from those bytes, so no font URL is exposed to
+the page). `scripts/render-icons.sh` redraws the PNG icons from `icons/src/*.svg` (needs
 `rsvg-convert`).
 
 ## Licence
 
 MIT for the code — see [LICENSE](LICENSE). The Heddy name, character and
 icons are not covered.
+
+The Manrope typeface in `fonts/` (and its bytes in `lib/font-data.js`) is
+© The Manrope Project Authors and is licensed under the SIL Open Font
+License 1.1 — see [fonts/OFL.txt](fonts/OFL.txt). It is bundled, not
+downloaded: the extension still makes no network call.
