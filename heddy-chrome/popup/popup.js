@@ -344,6 +344,9 @@
       chrome.storage.local.set(o).catch(function () {});
       return renderFirstTime(body, origin);
     }
+    // Snap a picture (R3b · 05): every popup but the first-time one and
+    // aitutors.me's, and only on a web page Heddy can draw box mode on.
+    if (url && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab });
     var youtubeId = url ? P.youtubeIdFromUrl(url) : null;
     if (youtubeId) {
       return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info, local[C.START_KEY]); });

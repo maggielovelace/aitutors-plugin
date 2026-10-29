@@ -26,6 +26,17 @@ button { font: inherit; }
 .pfb { all: unset; width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: inherit; cursor: pointer; }
 .pfb:hover { background: var(--pr); box-shadow: inset 0 0 0 1px var(--ph); color: var(--pd); }
 .pfb:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.pfb[hidden] { display: none; }
+/* Snap a picture (R3b · 05): plain at rest, the soft frame on hover and while
+   the popup waits ~250 ms to tell a click from a double-click. */
+.pfb.snap[aria-pressed="true"] { background: var(--pr); box-shadow: inset 0 0 0 1px var(--ph); color: var(--pd); }
+.pf { position: relative; }
+.snaptip { position: absolute; right: 22px; bottom: 40px; width: 214px; box-sizing: border-box; display: none; gap: 3px; padding: 10px 12px; border-radius: 10px; background: #002147; color: #fff; font: 500 12px/1.35 var(--sans); box-shadow: 0 10px 26px rgba(0, 0, 0, .25); white-space: normal; z-index: 2; pointer-events: none; }
+.snaptip b { font: 700 13px var(--sans); }
+.snaptip em { font-style: normal; font: 600 11px var(--mono); color: #a9b8cc; margin-top: 3px; }
+.snaptip::after { content: ""; position: absolute; right: 32px; bottom: -6px; width: 12px; height: 12px; background: #002147; transform: rotate(45deg); }
+.pf:has(.snap:hover, .snap:focus-visible) .snaptip { display: grid; }
+.pf:has(.snap[aria-pressed="true"]) .snaptip { display: none; }
 
 .lead { margin: 0; font: 500 13px/1.45 var(--sans); color: var(--pm); }
 .lead.big { font-size: 14px; color: var(--pd); }

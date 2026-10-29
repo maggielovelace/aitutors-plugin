@@ -83,5 +83,42 @@
   "optionsDevHeading": { "message": "For developers" },
   "optionsDevToggle": { "message": "Send captures to http://localhost:3000 instead of aitutors.me" },
   "optionsDevHint": { "message": "Only for building aitutors.me on your own computer. Leave this off." },
-  "optionsSaved": { "message": "Saved" }
+  "optionsSaved": { "message": "Saved" },
+
+  "snapPicture": { "message": "Snap a picture" },
+  "snapTipClick": { "message": "Click: choose an area" },
+  "snapTipDouble": { "message": "Double-click: the whole screen" },
+  "snapTipKey": {
+    "message": "$KEY$ · twice for the whole screen",
+    "placeholders": { "key": { "content": "$1", "example": "Ctrl Shift K" } }
+  },
+  "cmdSnap": { "message": "Snap a picture (twice for the whole screen)" },
+  "menuJotPicture": { "message": "Jot this picture with Heddy" },
+  "boxHintBefore": { "message": "Drag over a picture ·" },
+  "boxHintAfter": { "message": "to stop" },
+  "boxCollecting": { "message": "Collecting for one jot ·" },
+  "boxKept": {
+    "message": "$N$ kept",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "boxEscNone": { "message": "· Esc keeps none" },
+  "boxWholePicture": { "message": "Whole picture · click to keep" },
+  "boxKeptLabel": {
+    "message": "$N$ · kept",
+    "placeholders": { "n": { "content": "$1", "example": "1" } }
+  },
+  "boxDropped": { "message": "The page changed, so the pictures you kept were dropped." },
+  "boxFailed": { "message": "Heddy couldn't take that picture. Try again." },
+  "trayJot": { "message": "Jot it" },
+  "trayJotN": {
+    "message": "Jot it · $N$",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "trayAdd": { "message": "Add to this jot" },
+  "trayExplain": { "message": "Explain" },
+  "trayCard": { "message": "Make a card" },
+  "trayAsk": { "message": "Ask Heddy" },
+  "trayMore": { "message": "More" },
+  "trayOnePicture": { "message": "Explain and Make a card take one picture" },
+  "menuWholeScreen": { "message": "Snap the whole screen instead" }
 }

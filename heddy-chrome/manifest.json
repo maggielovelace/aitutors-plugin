@@ -49,6 +49,10 @@
   "commands": {
     "jot-selection": {
       "description": "__MSG_commandJot__"
+    },
+    "snap-picture": {
+      "suggested_key": { "default": "Ctrl+Shift+K", "mac": "Command+Shift+K" },
+      "description": "__MSG_cmdSnap__"
     }
   },
   "externally_connectable": {

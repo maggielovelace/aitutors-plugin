@@ -95,3 +95,17 @@ test('the page tray is injected on a gesture, never declared as a content script
   assert.ok(PAGE_FILES.indexOf('lib/tray-tools.js') < PAGE_FILES.indexOf('content/page-tray.js'));
   assert.ok(PAGE_FILES.indexOf('content/extract.js') < PAGE_FILES.indexOf('content/page-tray.js'));
 });
+
+test('Snap a picture’s shortcut is Ctrl Shift K (⌘ Shift K on a Mac), one Chrome command', () => {
+  const m = manifest();
+  assert.ok(m.commands['snap-picture']);
+  assert.deepEqual(m.commands['snap-picture'].suggested_key, { default: 'Ctrl+Shift+K', mac: 'Command+Shift+K' });
+  assert.ok(Object.keys(m.commands).length <= 4, 'Chrome allows four suggested shortcuts');
+});
+
+test('box mode’s files are injected, never declared as content scripts on every page', () => {
+  const m = manifest();
+  const { BOX_FILES } = load('./lib/snap.js');
+  for (const c of m.content_scripts) assert.ok(!c.js.includes('content/box-mode.js'));
+  for (const f of BOX_FILES) assert.ok(existsSync(join(ROOT, f)), `${f} is missing`);
+});

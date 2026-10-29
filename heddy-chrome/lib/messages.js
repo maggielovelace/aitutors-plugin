@@ -218,6 +218,99 @@
       },
       "optionsSaved": {
         "message": "Saved"
+      },
+      "snapPicture": {
+        "message": "Snap a picture"
+      },
+      "snapTipClick": {
+        "message": "Click: choose an area"
+      },
+      "snapTipDouble": {
+        "message": "Double-click: the whole screen"
+      },
+      "snapTipKey": {
+        "message": "$KEY$ · twice for the whole screen",
+        "placeholders": {
+          "key": {
+            "content": "$1",
+            "example": "Ctrl Shift K"
+          }
+        }
+      },
+      "cmdSnap": {
+        "message": "Snap a picture (twice for the whole screen)"
+      },
+      "menuJotPicture": {
+        "message": "Jot this picture with Heddy"
+      },
+      "boxHintBefore": {
+        "message": "Drag over a picture ·"
+      },
+      "boxHintAfter": {
+        "message": "to stop"
+      },
+      "boxCollecting": {
+        "message": "Collecting for one jot ·"
+      },
+      "boxKept": {
+        "message": "$N$ kept",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "boxEscNone": {
+        "message": "· Esc keeps none"
+      },
+      "boxWholePicture": {
+        "message": "Whole picture · click to keep"
+      },
+      "boxKeptLabel": {
+        "message": "$N$ · kept",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "1"
+          }
+        }
+      },
+      "boxDropped": {
+        "message": "The page changed, so the pictures you kept were dropped."
+      },
+      "boxFailed": {
+        "message": "Heddy couldn't take that picture. Try again."
+      },
+      "trayJot": {
+        "message": "Jot it"
+      },
+      "trayJotN": {
+        "message": "Jot it · $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "trayAdd": {
+        "message": "Add to this jot"
+      },
+      "trayExplain": {
+        "message": "Explain"
+      },
+      "trayCard": {
+        "message": "Make a card"
+      },
+      "trayAsk": {
+        "message": "Ask Heddy"
+      },
+      "trayOnePicture": {
+        "message": "Explain and Make a card take one picture"
+      },
+      "menuWholeScreen": {
+        "message": "Snap the whole screen instead"
       }
     },
     "zh_CN": {
@@ -437,6 +530,99 @@
       },
       "optionsSaved": {
         "message": "已保存"
+      },
+      "snapPicture": {
+        "message": "截一张图"
+      },
+      "snapTipClick": {
+        "message": "单击：框选一块"
+      },
+      "snapTipDouble": {
+        "message": "双击：整个屏幕"
+      },
+      "snapTipKey": {
+        "message": "$KEY$ · 按两下截整个屏幕",
+        "placeholders": {
+          "key": {
+            "content": "$1",
+            "example": "Ctrl Shift K"
+          }
+        }
+      },
+      "cmdSnap": {
+        "message": "截一张图（按两下截整个屏幕）"
+      },
+      "menuJotPicture": {
+        "message": "用 Heddy 批注这张图"
+      },
+      "boxHintBefore": {
+        "message": "在图片上拖出一个框 · 按"
+      },
+      "boxHintAfter": {
+        "message": "退出"
+      },
+      "boxCollecting": {
+        "message": "正在收进同一条批注 ·"
+      },
+      "boxKept": {
+        "message": "已留 $N$ 张",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "boxEscNone": {
+        "message": "· 按 Esc 一张都不留"
+      },
+      "boxWholePicture": {
+        "message": "整张图 · 单击留下"
+      },
+      "boxKeptLabel": {
+        "message": "$N$ · 已留",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "1"
+          }
+        }
+      },
+      "boxDropped": {
+        "message": "页面变了，已留的图片都没有保存。"
+      },
+      "boxFailed": {
+        "message": "Heddy 没能截下这张图，再试一次。"
+      },
+      "trayJot": {
+        "message": "写下批注"
+      },
+      "trayJotN": {
+        "message": "写下批注 · $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "trayAdd": {
+        "message": "加进这条批注"
+      },
+      "trayExplain": {
+        "message": "讲解"
+      },
+      "trayCard": {
+        "message": "做成卡片"
+      },
+      "trayAsk": {
+        "message": "问 Heddy"
+      },
+      "trayOnePicture": {
+        "message": "讲解和做成卡片只用一张图"
+      },
+      "menuWholeScreen": {
+        "message": "改成截整个屏幕"
       }
     }
   };
