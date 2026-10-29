@@ -33,6 +33,12 @@ chrome.runtime.onMessageExternal.addListener(function (message, sender, sendResp
   return true;
 });
 
+// A fresh install opens the first-run page on aitutors.me (PRD D8); an update
+// of Heddy or of Chrome does not.
+chrome.runtime.onInstalled.addListener(function (details) {
+  courier.installed(details);
+});
+
 // Heddy's own popup, the YouTube content script and the page tray.
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   var pictures = snap.internal(message, sender);

@@ -45,8 +45,8 @@
     return dev && u.origin === C.DEV_ORIGIN;
   }
 
-  function openSite(origin) {
-    chrome.tabs.create({ url: origin + '/' }).then(function () { window.close(); }, function () {});
+  function openSite(url) {
+    chrome.tabs.create({ url: url }).then(function () { window.close(); }, function () {});
   }
 
   function drawChrome() {
@@ -62,7 +62,7 @@
 
   // ─── states ────────────────────────────────────────────────────────────────
 
-  function renderFirstTime(body, origin) {
+  function renderFirstTime(body, origin, lang) {
     $('ctx').textContent = tr('ctxFirstTime');
     body.appendChild(el('p', 'lead big', tr('firstTimeLead')));
     var three = el('div', 'three');
@@ -76,7 +76,8 @@
     three.appendChild(line2);
     body.appendChild(three);
     var open = button('btn wide', 'h-open', 16, tr('openSite'));
-    open.addEventListener('click', function () { openSite(origin); });
+    // The same first-run page a fresh install opens (PRD D8).
+    open.addEventListener('click', function () { openSite(C.welcomeUrl(origin, lang)); });
     body.appendChild(open);
     $('foot').hidden = false;
   }
@@ -375,7 +376,7 @@
       var o = {};
       o[C.FIRST_RUN_KEY] = true;
       chrome.storage.local.set(o).catch(function () {});
-      return renderFirstTime(body, origin);
+      return renderFirstTime(body, origin, lang);
     }
     // Snap a picture (R3b · 05): every popup but the first-time one and
     // aitutors.me's, and only on a web page Heddy can draw box mode on.

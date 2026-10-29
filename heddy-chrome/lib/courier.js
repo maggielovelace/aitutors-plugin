@@ -285,6 +285,20 @@
         .catch(function () {});
     }
 
+    function isPing(message) {
+      return !!message && typeof message === 'object' && !Array.isArray(message) && message.type === 'heddy:ping' && message.v === P.PROTOCOL_VERSION;
+    }
+
+    /** chrome.runtime.onInstalled (PRD D8): a fresh install opens the
+     *  first-run page on aitutors.me in Heddy's language, once. An update of
+     *  Heddy or of Chrome opens nothing. tabs.create needs no permission. */
+    function installed(details) {
+      if (!details || details.reason !== 'install') return Promise.resolve(null);
+      return Promise.all([devMode(), I.currentLang(chrome)])
+        .then(function (got) { return chrome.tabs.create({ url: C.welcomeUrl(C.captureOrigin(got[0]), got[1]) }); })
+        .catch(function () { return null; });
+    }
+
     /** chrome.runtime.onMessageExternal: heddy:ready and heddy:result from a
      *  page on aitutors.me. Resolves to the reply (null = nothing for you). */
     function external(message, sender) {
@@ -292,6 +306,10 @@
         var origin = sender && (sender.origin || C.originOf(sender.url));
         if (!origin || C.allowedOrigins(dev).indexOf(origin) < 0) return null;
         if (sender.url && C.originOf(sender.url) !== origin) return null;
+        // heddy:ping (D8): aitutors.me asks whether Heddy is installed, to hide
+        // its "Clip the web with Heddy" links. The answer is the version and
+        // nothing else; nothing is held or changed.
+        if (isPing(message)) return { type: 'heddy:pong', v: P.PROTOCOL_VERSION, version: chrome.runtime.getManifest().version };
         var m = P.parseExternal(message);
         if (!m) return null;
         var who = { origin: origin, windowId: sender.tab ? sender.tab.windowId : null };
@@ -376,7 +394,7 @@
         .then(function () { return setIcon(tabId, 'ready'); });
     }
 
-    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus };
+    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
   var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };

@@ -57,6 +57,12 @@
     return jotterId ? origin + '/study/jotters/' + encodeURIComponent(jotterId) : origin + '/study/jotters';
   }
 
+  /** The first-run page (PRD D8): opened once, when Heddy is installed, and
+   *  from the popup's first-time state. In Heddy's language: /zh for zh_CN. */
+  function welcomeUrl(origin, lang) {
+    return origin + (lang === 'zh_CN' ? '/zh' : '') + '/heddy-chrome/welcome';
+  }
+
   /** Where the capture window opens, from the browser window it came from. */
   function windowBounds(win) {
     var b = { width: WINDOW.width, height: WINDOW.height };
@@ -81,6 +87,7 @@
     clipsUrl: clipsUrl,
     jotterUrl: jotterUrl,
     jotterById: jotterById,
+    welcomeUrl: welcomeUrl,
     windowBounds: windowBounds,
   };
   root.HeddyConfig = api;
