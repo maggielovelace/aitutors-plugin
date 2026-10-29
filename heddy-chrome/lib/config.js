@@ -34,15 +34,15 @@
     return origin + '/capture/' + page + '?cid=' + encodeURIComponent(cid);
   }
 
-  /** The toast's Open, best first: the child's own clip in Classroom
-   *  (momentId), the library clip (topicId), else My Clips. */
+  /** The toast's Open, best first: the topic's clip page, which plays any
+   *  clip on the child's map with the desk (topicId); an off-map clip in
+   *  Mentor's Classroom (momentId); else My Clips. */
   function clipsUrl(origin, where) {
     var w = where || {};
-    if (w.momentId) return origin + '/study/clips/m/' + encodeURIComponent(w.momentId);
-    var topicId = w.topicId, youtubeId = w.youtubeId;
-    if (topicId && youtubeId) {
-      return origin + '/study/clips/' + encodeURIComponent(topicId) + '?v=' + encodeURIComponent(youtubeId);
+    if (w.topicId && w.youtubeId) {
+      return origin + '/study/clips/' + encodeURIComponent(w.topicId) + '?v=' + encodeURIComponent(w.youtubeId);
     }
+    if (w.momentId) return origin + '/study/clips/m/' + encodeURIComponent(w.momentId);
     return origin + '/study/clips';
   }
 

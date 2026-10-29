@@ -123,7 +123,7 @@ test('Add to My Clips does not pause; without a topic, Open goes to My Clips', a
   assert.equal(msgs[0].href, `${PROD}/study/clips`);
 });
 
-test('Open goes to the child’s own clip first, then the library clip, then My Clips', async () => {
+test('Open goes to the topic’s clip page first, then an off-map clip in Mentor’s Classroom, then My Clips', async () => {
   const MOMENT = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
   async function hrefFor(extra) {
     const s = setup();
@@ -132,7 +132,9 @@ test('Open goes to the child’s own clip first, then the library clip, then My 
     await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, ...extra }, page());
     return s.calls.tabMessages[0].m;
   }
-  assert.equal((await hrefFor({ momentId: MOMENT, topicId: 'map-scales' })).href, `${PROD}/study/clips/m/${MOMENT}`);
+  assert.equal((await hrefFor({ momentId: MOMENT, topicId: 'map-scales' })).href, `${PROD}/study/clips/map-scales?v=${VIDEO}`);
+  assert.equal((await hrefFor({ momentId: MOMENT })).href, `${PROD}/study/clips/m/${MOMENT}`);
+  assert.equal((await hrefFor({ momentId: MOMENT, topicId: '../x' })).href, `${PROD}/study/clips/m/${MOMENT}`, 'a bad topicId falls through');
   assert.equal((await hrefFor({ topicId: 'map-scales' })).href, `${PROD}/study/clips/map-scales?v=${VIDEO}`);
   assert.equal((await hrefFor({ momentId: 'not-a-uuid', topicId: 'map-scales' })).href, `${PROD}/study/clips/map-scales?v=${VIDEO}`);
   assert.equal((await hrefFor({})).href, `${PROD}/study/clips`);
