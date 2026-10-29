@@ -138,12 +138,16 @@ Lanczos-upscaled to 4K. The 9:16 cut is cropped from the same frames, and the st
 run "on twos". Titles are set in Bricolage Grotesque and IBM Plex Sans (OFL, `tools/fonts/`).
 The sound is synthesised: one click per part landing, a quiet A-major-7 pad and a chime on the logo.
 
+There is also a 10-second dance, where Heddy leads the eight brick-built AI tutors: see
+[`dance/`](dance/README.md).
+
 ## 6. Files
 
 ```
 model/        heddy.json (locked), heddy.ldr, heddy_steps.json, bom.csv/.md, validation.json/.md
 renders/      view-front/rear/left/right, hero-3q, hero-4k (final hero image), exploded, exploded-labelled
 video/        hero film, 9:16 social cut, sting
+dance/        10 s dance: Heddy alone and leading the AI tutors
 instructions/ heddy-lego-instructions.pdf (pages/ and steps/ are regenerated, not committed)
 tools/        build_heddy.py → sequence.py → validate.py → make_bom.py → render_* → make_booklet.py
 ldraw/        vendored LDraw subset (CC BY 4.0, see lib/CAreadme.txt) + authored parts
