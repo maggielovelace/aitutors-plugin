@@ -42,7 +42,6 @@
   "jotLineSpokenSub": { "message": "New video? It's added first." },
   "firstTimePage": { "message": "Jot a line, or clip a page, as a source for your Jotter" },
   "cantReadPage": { "message": "Heddy can't read this page. Try it on a web page or a YouTube video." },
-  "pageTooLong": { "message": "This page is too long to clip. Try Jot it on the part you need." },
   "pageEmpty": { "message": "This page has no text to clip." },
 
   "toastNoteSaved": {
@@ -61,6 +60,14 @@
   "toastOpenInJotter": { "message": "Open in Jotter" },
   "toastJotDeleted": { "message": "Jot deleted." },
   "toastUndoFailed": { "message": "Couldn't undo that note." },
+  "toastJotted": { "message": "Jotted" },
+  "toastClipped": {
+    "message": "Clipped · $TITLE$",
+    "placeholders": { "title": { "content": "$1", "example": "Understanding map scales" } }
+  },
+  "toastClippedNoTitle": { "message": "Clipped" },
+  "toastPageCut": { "message": "Heddy kept the first part of this page." },
+  "setShortcut": { "message": "Set a shortcut" },
 
   "toastInMyClips": { "message": "In My Clips" },
   "toastFrom": {

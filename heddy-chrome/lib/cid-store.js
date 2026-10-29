@@ -18,9 +18,9 @@
     var now = opts.now || Date.now;
     var holdMs = opts.holdMs || HOLD_MS;
     var resultMs = opts.resultMs || RESULT_MS;
-    // cid → { payload, createdAt, origin, windowId, tabId, then, youtubeId, startSec, kind, title }
+    // cid → { payload, createdAt, origin, windowId, tabId, then, youtubeId, startSec, kind, title, cut }
     var held = {};
-    // cid → { claimedAt, origin, windowId, tabId, then, youtubeId, startSec, kind, title }
+    // cid → { claimedAt, origin, windowId, tabId, then, youtubeId, startSec, kind, title, cut }
     var claimed = {};
 
     function sweep() {
@@ -59,6 +59,7 @@
           // 'page') and what its result needs (the video's title for the toast).
           kind: entry.kind || 'clip',
           title: typeof entry.title === 'string' ? entry.title : null,
+          cut: entry.cut === true,
         };
       },
 
@@ -81,7 +82,7 @@
         var e = held[k];
         if (!e || e.origin !== sender.origin || !sameWindow(e, sender.windowId)) return null;
         delete held[k];
-        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title };
+        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true };
         return e.payload;
       },
 

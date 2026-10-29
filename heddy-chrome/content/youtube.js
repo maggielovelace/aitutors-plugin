@@ -5,9 +5,10 @@
 // (outlined) straight after YouTube's Share button, inside a closed shadow
 // root so neither page can restyle the other; shows Heddy's toasts
 // (lib/toast.js); pauses the video when Watch with Heddy hands it to
-// Classroom; and takes J for the line being spoken (Phase 2, D18). It reads
-// only the video id from the address, the player's current time and the
-// video's title, and only when the child taps or presses J. Selectors:
+// Classroom; and takes H for the line being spoken (Phase 2, D18; "H for
+// Heddy", owner 2026-10-29). It reads only the video id from the address, the
+// player's current time and the video's title, and only when the child taps
+// or presses H. Selectors:
 // content/youtube-selectors.js, nowhere else.
 //
 // "From m:ss" on the bar buttons: they use the choice the child last made in
@@ -129,11 +130,12 @@
     toaster.show(T.model(msg, lang, tr));
   }
 
-  // ─── J: the line being spoken (D18; artifact R2 · F3) ──────────────────────
-  // J goes to Heddy, not to YouTube's own "back 10 seconds", on a watch page
-  // that is not live, and never while the child types (lib/jot-key.js). The
-  // press is held 2.5 s so a second J joins the line before, then ONE
-  // heddy:moment goes to a window on aitutors.me that does not take focus.
+  // ─── H: the line being spoken (D18; artifact R2 · F3) ──────────────────────
+  // H on a watch page that is not live, never while the child types
+  // (lib/jot-key.js). YouTube's own keys, J among them, are left alone: Heddy
+  // only listens. The press is held 2.5 s so a second H joins the line
+  // before, then ONE heddy:moment goes to a window on aitutors.me that does
+  // not take focus.
 
   var hold = K.createJHold({
     now: function () { return Date.now(); },
@@ -156,15 +158,13 @@
     var video = document.querySelector(SEL.video);
     var t = video ? video.currentTime : NaN;
     if (!(typeof t === 'number' && isFinite(t) && t >= 0)) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
     hideHint();
     hold.press(t, { youtubeId: id, title: videoTitle() });
   }
 
-  // The J hint: once per device, for 6 s, the first time Heddy loads on a
+  // The H hint: once per device, for 6 s, the first time Heddy loads on a
   // watch page (artifact R2 · F1). Bottom left of the player, above its bar.
-  var HINT_KEY = 'seenJHint';
+  var HINT_KEY = 'seenHHint';
   var HINT_MS = 6000;
   var hint = null;
   var hintAsked = false;
@@ -193,7 +193,7 @@
       chrome.storage.local.set(o).catch(function () {});
       var host = document.createElement('heddy-hint');
       var shadow = host.attachShadow({ mode: 'closed' });
-      shadow.innerHTML = '<style>' + HINT_CSS + '</style><span class="h"><b>J</b><span></span></span>';
+      shadow.innerHTML = '<style>' + HINT_CSS + '</style><span class="h"><b>H</b><span></span></span>';
       shadow.querySelector('.h > span').textContent = tr('jHint');
       player.appendChild(host);
       hint = { host: host, timer: setTimeout(hideHint, HINT_MS) };
@@ -205,7 +205,7 @@
   function refresh() {
     var id = currentId();
     if (id !== lastId) {
-      // A J still waiting goes under the video it was pressed on.
+      // An H still waiting goes under the video it was pressed on.
       hold.flush();
       lastId = id;
       send({ type: 'heddy-ui:watch-page', on: !!id });

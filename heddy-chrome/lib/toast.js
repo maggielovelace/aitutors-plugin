@@ -2,8 +2,10 @@
 // and Round 3 · "After J · one toast spec on both hosts").
 //
 // One module for every toast Heddy shows on a page: "In My Clips" after Add to
-// My Clips (Phase 1), and after J "Note saved · 2:48 — Map scales", the quote,
-// Undo and Open in Jotter (Phase 2, the same layout as the desk's JotToast).
+// My Clips (Phase 1); after H on YouTube "Note saved · 2:48 — Map scales", the
+// quote, Undo and Open in Jotter (Phase 2, the same layout as the desk's
+// JotToast); after Jot it "Jotted", the quote, Undo and Open in Jotter; after
+// Clip this page "Clipped · {title}" and Open in Jotter, with the cut line.
 // It lives in a closed shadow root at the top right, so neither page can
 // restyle the other. Every string from a page or a result is set as text.
 //
@@ -44,6 +46,25 @@
           title: name ? tr('toastNoteSaved', time, name) : tr('toastNoteSavedAt', time),
           quote: typeof msg.quote === 'string' && msg.quote ? tr('toastQuote', msg.quote) : null,
           undo: typeof msg.jotId === 'string' && P.isCaptureId(msg.jotId) ? { label: tr('toastUndo'), jotId: msg.jotId } : null,
+          open: typeof msg.href === 'string' ? { label: tr('toastOpenInJotter'), href: msg.href, quiet: true } : null,
+          ms: NOTE_MS,
+        };
+      }
+      case 'jotted':
+        return {
+          wide: true,
+          title: tr('toastJotted'),
+          quote: typeof msg.quote === 'string' && msg.quote ? tr('toastQuote', msg.quote) : null,
+          undo: typeof msg.jotId === 'string' && P.isCaptureId(msg.jotId) ? { label: tr('toastUndo'), jotId: msg.jotId } : null,
+          open: typeof msg.href === 'string' ? { label: tr('toastOpenInJotter'), href: msg.href, quiet: true } : null,
+          ms: NOTE_MS,
+        };
+      case 'clipped': {
+        var page = typeof msg.title === 'string' && msg.title.trim() ? msg.title.trim() : null;
+        return {
+          wide: true,
+          title: page ? tr('toastClipped', page) : tr('toastClippedNoTitle'),
+          line: msg.cut === true ? tr('toastPageCut') : null,
           open: typeof msg.href === 'string' ? { label: tr('toastOpenInJotter'), href: msg.href, quiet: true } : null,
           ms: NOTE_MS,
         };

@@ -23,7 +23,8 @@
   // What a gesture injects into any page for Jot it and Clip this page (Phase 2).
   var PAGE_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'content/extract.js', 'content/page-tray.js'];
   var MENU_ID = 'heddy-jot';
-  // manifest.json "commands": Ctrl Shift J (⌘⇧J on a Mac).
+  // manifest.json "commands": jot the selected words. No default key (owner,
+  // 2026-10-29); the child binds one at chrome://extensions/shortcuts.
   var COMMAND = 'jot-selection';
 
   function createCourier(deps) {
@@ -100,7 +101,7 @@
         })
         .catch(function (err) {
           store.drop(cid);
-          var error = err && (err.message === 'too_long' || err.message === 'empty') ? err.message : null;
+          var error = err && err.message === 'empty' ? 'empty' : null;
           return persist().then(function () { return error ? { ok: false, error: error } : { ok: false }; });
         });
     }
@@ -146,6 +147,14 @@
           href: C.jotterUrl(origin, meta.youtubeId),
         });
       }
+      // The Jot it and Clip this page windows close about 1 s after an ok
+      // result (owner, 2026-10-29), so the page shows what was kept.
+      if (kind === 'jot') {
+        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, href: C.jotterById(origin, result.jotterId) });
+      }
+      if (kind === 'page') {
+        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
+      }
       if (kind !== 'clip') return Promise.resolve();
       var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
       var steps = [tellTab(meta.tabId, toast)];
@@ -188,15 +197,21 @@
       });
     }
 
-    /** Clip this page: heddy:page. Past 200 KB it answers {ok:false, error:'too_long'}
-     *  and no window opens. */
+    /** Clip this page: heddy:page. Past 200 KB of UTF-8 it keeps the first
+     *  part (`cut: true`), and the toast after the save says so. */
     function page(input) {
+      var meta = { tabId: input.tabId, title: null, cut: false };
       return openCapture({
         page: 'page',
         kind: 'page',
         windowId: input.windowId,
-        build: function (cid) { return P.buildPage({ cid: cid, url: input.url, title: input.title, markdown: input.markdown }); },
-        meta: { tabId: input.tabId },
+        build: function (cid) {
+          var p = P.buildPage({ cid: cid, url: input.url, title: input.title, markdown: input.markdown });
+          meta.title = p.title || null;
+          meta.cut = p.cut === true;
+          return p;
+        },
+        meta: meta,
       });
     }
 
@@ -205,7 +220,7 @@
       return chrome.scripting.executeScript({ target: { tabId: tabId }, files: PAGE_FILES });
     }
 
-    /** The context menu (selection) and the Ctrl Shift J command: inject the
+    /** The context menu (selection) and the jot-selection command: inject the
      *  tray into the tab the gesture came from. The menu item is already the
      *  child's choice of Jot it, so it jots; the command shows the tray. */
     function gesture(what, tab) {

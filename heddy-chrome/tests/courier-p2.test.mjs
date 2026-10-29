@@ -144,16 +144,19 @@ test('a page can only jot or clip itself; the popup names its tab', async () => 
   assert.equal(r.ok, true);
 });
 
-test('Clip this page: heddy:page to /capture/page; past 200 KB, too_long and no window', async () => {
+test('Clip this page: heddy:page to /capture/page; past 200 KB, the first part with cut: true', async () => {
   const s = setup();
   const r = await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales\n\nOn a 1:50 000 map…' }, fromArticle);
   assert.equal(r.ok, true);
   assert.equal(s.calls.windows[0].url, `${PROD}/capture/page?cid=${CID}`);
   assert.equal((await claim(s)).type, 'heddy:page');
   const big = setup();
-  const no = await big.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, markdown: 'a'.repeat(200 * 1024 + 1) }, fromArticle);
-  assert.deepEqual(no, { ok: false, error: 'too_long' });
-  assert.equal(big.calls.windows.length, 0);
+  const cut = await big.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Long', markdown: 'a'.repeat(1000) + '\n\n' + 'b'.repeat(200 * 1024) }, fromArticle);
+  assert.equal(cut.ok, true);
+  assert.equal(big.calls.windows.length, 1);
+  const payload = await claim(big);
+  assert.equal(payload.cut, true);
+  assert.equal(payload.markdown, 'a'.repeat(1000));
 });
 
 test('the context menu jots the selection; Ctrl Shift J shows the tray; both inject only then', async () => {
@@ -191,4 +194,42 @@ test('Open goes to the child’s Jotter as well as My Clips, on the capture orig
   assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: `${PROD}/study/jotters/v/${VIDEO}` }, fromYouTube), { ok: true });
   assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: `${PROD}/study/jottersx` }, fromYouTube), { ok: false });
   assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: `https://evil.example/study/jotters/v/${VIDEO}` }, fromYouTube), { ok: false });
+});
+
+const JOTTER = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
+
+test('Jot it saved: the window closes on the site’s side, the page shows "Jotted", the quote, Undo, Open in Jotter', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await claim(s);
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId: JOT, jotterId: JOTTER, quote: 'On a 1:50 000 map' }, page());
+  assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'jotted', quote: 'On a 1:50 000 map', jotId: JOT, href: `${PROD}/study/jotters/${JOTTER}` } }]);
+});
+
+test('Open in Jotter without a valid jotterId goes to the Jotters shelf', async () => {
+  for (const jotterId of [undefined, '../../admin', 'abc']) {
+    const s = setup();
+    await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle);
+    await claim(s);
+    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId: JOT, jotterId }, page());
+    assert.equal(s.calls.tabMessages[0].m.href, `${PROD}/study/jotters`, String(jotterId));
+  }
+});
+
+test('Clip this page saved: "Clipped · title", Open in Jotter, and the cut line only when cut', async () => {
+  for (const [markdown, cut] of [['# Short', false], ['a'.repeat(10) + '\n\n' + 'b'.repeat(200 * 1024), true]]) {
+    const s = setup();
+    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Understanding map scales', markdown }, fromArticle);
+    await claim(s);
+    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: JOTTER }, page());
+    assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'clipped', title: 'Understanding map scales', cut, href: `${PROD}/study/jotters/${JOTTER}` } }]);
+  }
+});
+
+test('a refused Jot it or Clip this page stays in its window: no toast', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle);
+  await claim(s);
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'too_long' }, page());
+  assert.equal(s.calls.tabMessages.length, 0);
 });

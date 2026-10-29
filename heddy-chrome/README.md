@@ -18,8 +18,17 @@ call of its own: every tap opens a small window on aitutors.me, and that page
 checks the video and saves it under the child's own account, with one tap
 there. **Reads a page only when you ask it to** — see [PRIVACY.md](PRIVACY.md).
 
-Jotting the line being spoken (J), Jot it on any page and Clip this page come
-in the next versions.
+And on any page:
+
+- **H on a YouTube video** jots the line being spoken into the video's
+  Jotter. Press H twice quickly to take the line before as well. YouTube's
+  own keys, J included, keep doing what they always did.
+- **Jot it** keeps words you select on any page, with where they came from.
+  Right-click a selection → *Jot it with Heddy*, or open Heddy's popup. You
+  can also give it a shortcut of your own at `chrome://extensions/shortcuts`
+  (Heddy sets none, so it never takes one of Chrome's).
+- **Clip this page** keeps the readable part of a page as a source for your
+  Jotter. A very long page keeps its first part, and Heddy tells you so.
 
 ## Install
 

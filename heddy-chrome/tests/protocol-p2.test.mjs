@@ -113,15 +113,35 @@ test('heddy:jot refuses what the site would refuse: no words, not http(s), too l
   }
 });
 
-test('heddy:page: Markdown up to 200 KB of UTF-8 bytes, not characters', () => {
+test('heddy:page: up to 200 KB of UTF-8 goes whole, without `cut`', () => {
   assert.equal(P.MAX_PAGE_BYTES, 200 * 1024);
   const ok = P.buildPage({ cid: CID, url: 'https://a.example/p#top', title: 'P', markdown: 'a'.repeat(P.MAX_PAGE_BYTES) });
   assert.equal(ok.url, 'https://a.example/p');
+  assert.equal('cut' in ok, false);
   assert.equal(siteParse(wire(ok)).ok, true);
-  assert.throws(() => P.buildPage({ cid: CID, url: 'https://a.example/', markdown: 'a'.repeat(P.MAX_PAGE_BYTES + 1) }), /too_long/);
-  // 70 000 Chinese characters are 210 000 bytes: too long, though fewer characters.
-  assert.throws(() => P.buildPage({ cid: CID, url: 'https://a.example/', markdown: '比'.repeat(70000) }), /too_long/);
   assert.throws(() => P.buildPage({ cid: CID, url: 'https://a.example/', markdown: ' \n ' }), /empty/);
+});
+
+test('heddy:page: past 200 KB it keeps the first part, cut at a paragraph, and says cut: true', () => {
+  const para = 'p'.repeat(1000);
+  const md = Array.from({ length: 300 }, (_, i) => `${i} ${para}`).join('\n\n');
+  const p = P.buildPage({ cid: CID, url: 'https://a.example/', markdown: md });
+  assert.equal(p.cut, true);
+  assert.ok(P.utf8Bytes(p.markdown) <= P.MAX_PAGE_BYTES);
+  assert.ok(md.startsWith(p.markdown), 'the FIRST part');
+  assert.ok(md.slice(p.markdown.length).startsWith('\n\n'), 'cut at a paragraph boundary');
+  assert.ok(P.utf8Bytes(p.markdown) > P.MAX_PAGE_BYTES - 1100, 'as much as fits');
+  assert.equal(siteParse(wire(p)).ok, true);
+});
+
+test('cutting counts bytes, not characters, and never splits a character', () => {
+  // 70 000 Chinese characters are 210 000 bytes: cut, though fewer characters than the cap.
+  const zh = P.cutMarkdown('比'.repeat(70000));
+  assert.equal(zh.cut, true);
+  assert.equal(P.utf8Bytes(zh.markdown), Math.floor(P.MAX_PAGE_BYTES / 3) * 3);
+  const emoji = P.cutMarkdown('😀'.repeat(10), 9);
+  assert.deepEqual(emoji, { markdown: '😀😀', cut: true }, 'no half surrogate pair');
+  assert.deepEqual(P.cutMarkdown('short'), { markdown: 'short', cut: false });
 });
 
 test('utf8Bytes counts as TextEncoder does', () => {
@@ -134,6 +154,7 @@ test('a result’s quote, time and jot id are read; anything else in them is dro
   assert.equal(r.quote, 'On a map');
   assert.equal(r.t, 168);
   assert.equal(r.jotId, JOT);
-  const h = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, quote: 42, t: -5, jotId: '../../x' });
-  assert.deepEqual([h.quote, h.t, h.jotId], [null, null, null]);
+  const h = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, quote: 42, t: -5, jotId: '../../x', jotterId: '../../admin' });
+  assert.deepEqual([h.quote, h.t, h.jotId, h.jotterId], [null, null, null, null]);
+  assert.equal(P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: JOT.toUpperCase() }).jotterId, JOT);
 });

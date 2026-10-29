@@ -1,11 +1,16 @@
-// lib/jot-key.js — J on a YouTube watch page (PRD-v0.96.0 D18; artifact R2 · F3),
-// with the desk's rules (aitutors.me lib/videos/jots-client.ts, PRD-v0.97.0 D11):
+// lib/jot-key.js — H on a YouTube watch page (PRD-v0.96.0 D18; artifact R2 · F3),
+// with the desk's rules (aitutors.me lib/videos/jots-client.ts, PRD-v0.97.0 D11).
 //
-//   - isJotKey: J (either case, or the J key on any layout), no modifier, not
+// The key is H, "H for Heddy" (owner, 2026-10-29), not the desk's J: on
+// YouTube J is the player's own "back 10 seconds", and Heddy leaves it alone.
+// H is none of YouTube's player keys (k j l f t i m c, the digits, , . < > / and
+// the arrows), so Heddy does not need to stop the event either.
+//
+//   - isJotKey: H (either case, or the H key on any layout), no modifier, not
 //     held down, not during IME composition, and not while the child types in
 //     a field: an input, a textarea, a select, anything contenteditable or a
 //     textbox (YouTube's search box and comment box among them);
-//   - createJHold: a J is held for 2.5 s; another J inside that window joins
+//   - createJHold: an H is held for 2.5 s; another H inside that window joins
 //     the line before (the window restarts from the newest press), and when it
 //     closes Heddy sends ONE heddy:moment: `t` the FIRST press's player time,
 //     and `tEnd` the LAST press's (only when there was more than one press),
@@ -31,15 +36,15 @@
     return false;
   }
 
-  /** Is this keydown a J for Heddy? `active` is document.activeElement: focus
+  /** Is this keydown an H for Heddy? `active` is document.activeElement: focus
    *  can sit in a field inside a shadow root while the event's target is the
    *  host, so both are checked. keyCode 229 is a key the IME is holding. */
   function isJotKey(e, active) {
     if (!e || e.defaultPrevented || e.repeat || e.isComposing || e.keyCode === 229) return false;
     if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
     var key = typeof e.key === 'string' ? e.key : '';
-    var isJ = key === 'j' || key === 'J' || (e.code === 'KeyJ' && key.length === 1);
-    if (!isJ) return false;
+    var isH = key === 'h' || key === 'H' || (e.code === 'KeyH' && key.length === 1);
+    if (!isH) return false;
     return !isTypingTarget(e.target) && !isTypingTarget(active);
   }
 

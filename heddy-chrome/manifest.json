@@ -48,7 +48,6 @@
   ],
   "commands": {
     "jot-selection": {
-      "suggested_key": { "default": "Ctrl+Shift+J", "mac": "Command+Shift+J" },
       "description": "__MSG_commandJot__"
     }
   },

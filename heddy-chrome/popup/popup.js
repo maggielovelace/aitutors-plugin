@@ -3,10 +3,11 @@
 // The states, showing only what already works (D25, Direction A):
 //   first time      the one line, what Heddy does, Open aitutors.me (primary)
 //   YouTube watch   the video row, Whole video / From m:ss, Watch with Heddy
-//                   (primary), Add to My Clips (outlined), the J row
+//                   (primary), Add to My Clips (outlined), the H row
 //   aitutors.me     one line of help, no primary, no footer
 //   words selected  the quote, Jot it (primary), "Clip the whole page instead"
-//   nothing selected the page, Clip this page (primary), the Ctrl Shift J row
+//   nothing selected the page, Clip this page (primary), the shortcut row
+//                   (the child's binding, else "Set a shortcut")
 //   can't read      a page Heddy may not script (chrome://, the Web Store)
 // Phase 3 adds Explain, Make a card and Ask Heddy after Jot it, from
 // lib/tray-tools.js. Every string from a page (the video's title and channel,
@@ -96,15 +97,25 @@
     return row;
   }
 
-  /** Ctrl Shift J as Chrome has it now (the child may have changed it). */
+  /** The jot-selection shortcut the child set in Chrome, or null. There is no
+   *  default (owner, 2026-10-29): the obvious keys are Chrome's own. */
   function commandKeys() {
-    var fallback = /Mac/.test(navigator.platform || '') ? '⌘ Shift J' : 'Ctrl Shift J';
-    if (!chrome.commands || !chrome.commands.getAll) return Promise.resolve(fallback);
+    if (!chrome.commands || !chrome.commands.getAll) return Promise.resolve(null);
     return chrome.commands.getAll().then(function (all) {
-      var c = (all || []).filter(function (x) { return x.name === 'jot-selection'; })[0];
-      // As Chrome prints it ("Ctrl+Shift+J", "⇧⌘J"); none set → the default.
-      return c && c.shortcut ? c.shortcut.replace(/\+/g, ' ') : fallback;
-    }, function () { return fallback; });
+      var c = (all || []).filter(function (x) { return x.name === HeddyCourier.COMMAND; })[0];
+      // As Chrome prints it: "Ctrl+Shift+Y", "⇧⌘Y".
+      return c && c.shortcut ? c.shortcut.replace(/\+/g, ' ') : null;
+    }, function () { return null; });
+  }
+
+  /** "Set a shortcut": Chrome's own page for extension shortcuts. */
+  function shortcutLink() {
+    var a = el('button', 'lk', tr('setShortcut'));
+    a.type = 'button';
+    a.addEventListener('click', function () {
+      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }).then(function () { window.close(); }, function () {});
+    });
+    return a;
   }
 
   function fail(err, key) {
@@ -112,14 +123,14 @@
     err.hidden = false;
   }
 
-  /** Clip this page: the readable Markdown, made in the tab (content/extract.js). */
+  /** Clip this page: the readable Markdown, made in the tab (content/extract.js).
+   *  A page past 200 KB is cut by the courier, and the toast after the save says so. */
   function clipPage(tab, btn, err) {
     btn.setAttribute('aria-busy', 'true');
     return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.extract(); } })
       .then(function (res) {
         var page = res && res[0] && res[0].result;
         if (!page || !page.markdown || !page.markdown.trim()) throw new Error('empty');
-        if (P.utf8Bytes(page.markdown) > P.MAX_PAGE_BYTES) throw new Error('too_long');
         return chrome.runtime.sendMessage({ type: 'heddy-ui:page', url: tab.url, title: page.title || tab.title || '', markdown: page.markdown, tabId: tab.id, windowId: tab.windowId });
       })
       .then(function (reply) {
@@ -129,7 +140,7 @@
       .catch(function (e) {
         btn.removeAttribute('aria-busy');
         var m = e && e.message;
-        fail(err, m === 'too_long' ? 'pageTooLong' : m === 'empty' ? 'pageEmpty' : 'captureFailed');
+        fail(err, m === 'empty' ? 'pageEmpty' : 'captureFailed');
       });
   }
 
@@ -172,7 +183,11 @@
     body.appendChild(clip);
     var row = keyRow(null, tr('selectSomeWords'), tr('selectSomeWordsFor'), '');
     body.appendChild(row);
-    commandKeys().then(function (k) { row.querySelector('.kbd').textContent = k; });
+    commandKeys().then(function (k) {
+      var slot = row.querySelector('.kbd');
+      if (k) slot.textContent = k;
+      else slot.replaceWith(Object.assign(shortcutLink(), { className: 'lk r' }));
+    });
     body.appendChild(err);
     $('foot').hidden = false;
   }
@@ -301,7 +316,7 @@
     add.addEventListener('click', function () { go('keep', add); });
     body.appendChild(watch);
     body.appendChild(add);
-    body.appendChild(keyRow('h-quill', tr('jotLineSpoken'), tr('jotLineSpokenSub'), 'J'));
+    body.appendChild(keyRow('h-quill', tr('jotLineSpoken'), tr('jotLineSpokenSub'), 'H'));
     body.appendChild(err);
     $('foot').hidden = false;
   }

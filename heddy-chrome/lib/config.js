@@ -46,9 +46,15 @@
     return origin + '/study/clips';
   }
 
-  /** The toast's Open in Jotter after J: the video's Jotter (D25). */
+  /** The toast's Open in Jotter after H: the video's Jotter (D25). */
   function jotterUrl(origin, youtubeId) {
     return origin + '/study/jotters/v/' + encodeURIComponent(youtubeId);
+  }
+
+  /** Open in Jotter after Jot it or Clip this page: the Jotter the site named
+   *  (a UUID, checked by the protocol), else the Jotters shelf. */
+  function jotterById(origin, jotterId) {
+    return jotterId ? origin + '/study/jotters/' + encodeURIComponent(jotterId) : origin + '/study/jotters';
   }
 
   /** Where the capture window opens, from the browser window it came from. */
@@ -74,6 +80,7 @@
     captureUrl: captureUrl,
     clipsUrl: clipsUrl,
     jotterUrl: jotterUrl,
+    jotterById: jotterById,
     windowBounds: windowBounds,
   };
   root.HeddyConfig = api;

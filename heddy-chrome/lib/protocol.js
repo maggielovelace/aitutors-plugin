@@ -8,8 +8,8 @@
 //   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, tEnd?}        J on YouTube
 //   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId}                       Undo on the toast
 //   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
-//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown}        Clip this page
-//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?}
+//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Clip this page
+//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?}
 //
 // `tEnd` on heddy:moment is the player time of the LAST J in a chain of
 // presses each within 2.5 s of the one before (PRD-v0.97.0 D11); `t` is the
@@ -163,16 +163,50 @@
     return n;
   }
 
-  /** heddy:page, or throws. 'too_long' past 200 KB of UTF-8 (the popup says
-   *  so in the site's words); 'empty' for a page with no text. */
+  /** The first 200 KB of UTF-8 of a page's Markdown, cut at a paragraph
+   *  boundary (owner, 2026-10-29: cut, don't refuse). A first paragraph that
+   *  is itself too long is cut at the last whole character that fits.
+   *  Returns { markdown, cut }. */
+  function cutMarkdown(markdown, max) {
+    var limit = max || MAX_PAGE_BYTES;
+    if (utf8Bytes(markdown) <= limit) return { markdown: markdown, cut: false };
+    var paras = markdown.split(/\n{2,}/);
+    var kept = [];
+    var bytes = 0;
+    for (var i = 0; i < paras.length; i++) {
+      var add = utf8Bytes(paras[i]) + (kept.length ? 2 : 0);
+      if (bytes + add > limit) break;
+      kept.push(paras[i]);
+      bytes += add;
+    }
+    if (kept.length && kept.join('').trim()) return { markdown: kept.join('\n\n'), cut: true };
+    var out = '';
+    var n = 0;
+    for (var j = 0; j < markdown.length; j++) {
+      var c = markdown.charCodeAt(j);
+      var pair = c >= 0xd800 && c <= 0xdbff && j + 1 < markdown.length && (markdown.charCodeAt(j + 1) & 0xfc00) === 0xdc00;
+      var ch = pair ? markdown.slice(j, j + 2) : markdown[j];
+      var w = utf8Bytes(ch);
+      if (n + w > limit) break;
+      out += ch;
+      n += w;
+      if (pair) j++;
+    }
+    return { markdown: out, cut: true };
+  }
+
+  /** heddy:page, or throws 'empty' for a page with no text. Past 200 KB of
+   *  UTF-8 the Markdown is cut (cutMarkdown) and the message says `cut: true`. */
   function buildPage(input) {
     if (!isCaptureId(input.cid)) throw new Error('bad cid');
     var url = pageUrl(input.url);
     if (!url) throw new Error('bad url');
     var markdown = typeof input.markdown === 'string' ? input.markdown : '';
     if (!markdown.trim()) throw new Error('empty');
-    if (utf8Bytes(markdown) > MAX_PAGE_BYTES) throw new Error('too_long');
-    return { type: 'heddy:page', v: PROTOCOL_VERSION, cid: input.cid, url: url, title: flat(input.title).slice(0, MAX_TITLE), markdown: markdown };
+    var c = cutMarkdown(markdown, MAX_PAGE_BYTES);
+    var out = { type: 'heddy:page', v: PROTOCOL_VERSION, cid: input.cid, url: url, title: flat(input.title).slice(0, MAX_TITLE), markdown: c.markdown };
+    if (c.cut) out.cut = true;
+    return out;
   }
 
   function label(x) {
@@ -201,6 +235,7 @@
         quote: typeof data.quote === 'string' && data.quote.trim() ? data.quote.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, MAX_RESULT_QUOTE) : null,
         t: isSeconds(data.t) ? Math.floor(data.t) : null,
         jotId: isCaptureId(data.jotId) ? data.jotId.toLowerCase() : null,
+        jotterId: isCaptureId(data.jotterId) ? data.jotterId.toLowerCase() : null,
       };
     }
     return null;
@@ -240,6 +275,7 @@
     pageUrl: pageUrl,
     contextOf: contextOf,
     utf8Bytes: utf8Bytes,
+    cutMarkdown: cutMarkdown,
     CONTEXT_SIDE: CONTEXT_SIDE,
     MAX_PAGE_BYTES: MAX_PAGE_BYTES,
     parseExternal: parseExternal,

@@ -2,7 +2,7 @@
 // D17, D16, D25; artifact Round 3 · Direction A "Selection · Phase 2").
 //
 // Injected only on a gesture: the context-menu item "Jot it with Heddy", the
-// Ctrl Shift J command (⌘⇧J on a Mac), or the toolbar popup. That is activeTab
+// jot-selection command (no default key; the child binds one), or the toolbar popup. That is activeTab
 // (D3): Heddy may run on a page only after the child asks, so there is no
 // bubble waiting over a selection before that first gesture. Round 1's
 // always-on bubble (D7) is a deliberate casualty of D3, not an omission.
@@ -37,11 +37,14 @@
     }
   }
 
+  // The toasts after Jot it ("Jotted", the quote, Undo, Open in Jotter) and
+  // Clip this page ("Clipped · title", Open in Jotter): the windows on
+  // aitutors.me close once they have saved, and the page says what was kept.
   var toaster = T.createToaster({
     document: document,
     marks: M,
-    onOpen: function () {},
-    onUndo: function () {},
+    onOpen: function (href) { send({ type: 'heddy-ui:open', href: href }); },
+    onUndo: function (jotId) { send({ type: 'heddy-ui:undo', jotId: jotId }); },
   });
 
   // ─── reading the selection ─────────────────────────────────────────────────
@@ -132,8 +135,7 @@
     hideTray();
     var page = extract();
     return send({ type: 'heddy-ui:page', url: page.url, title: page.title, markdown: page.markdown }).then(function (reply) {
-      if (reply && reply.error === 'too_long') toaster.show({ title: tr('pageTooLong'), ms: T.NOTE_MS });
-      else if (reply && reply.error === 'empty') toaster.show({ title: tr('pageEmpty'), ms: T.NOTE_MS });
+      if (reply && reply.error === 'empty') toaster.show({ title: tr('pageEmpty'), ms: T.NOTE_MS });
       return reply;
     });
   }
@@ -269,6 +271,13 @@
     if (msg.type === 'heddy-ui:tray') {
       langReady.then(function () { reply({ ok: showTray() }); });
       return true;
+    }
+    if (msg.type === 'heddy-ui:toast') {
+      // On a YouTube watch page content/youtube.js shows every toast (same
+      // module, same isolated world), so the tray stays quiet: one toast, not two.
+      if (globalThis.__heddyYouTube) return undefined;
+      langReady.then(function () { toaster.show(T.model(msg, lang, tr)); });
+      return undefined;
     }
     if (msg.type === 'heddy-ui:jot-selection') {
       jot(readSelection()).then(function (r) { reply(r || { ok: false }); });

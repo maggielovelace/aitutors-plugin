@@ -1,6 +1,7 @@
-// J on YouTube (D18): the guards are the desk's isJotKey (aitutors.me
-// lib/videos/jots-client.ts), and a second J within 2.5 s joins the line
-// before, held and sent ONCE, as the desk's createJotKeeper does.
+// H on YouTube (D18; "H for Heddy", owner 2026-10-29): the guards are the
+// desk's isJotKey (aitutors.me lib/videos/jots-client.ts) with H for J, and a
+// second H within 2.5 s joins the line before, held and sent ONCE with the
+// first and last press times, as the desk's createJotKeeper holds its post.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, read } from './helpers.mjs';
@@ -9,14 +10,16 @@ const K = load('./lib/jot-key.js');
 
 const el = (tagName, extra = {}) => ({ tagName, closest: () => null, ...extra });
 const body = el('BODY');
-const key = (over = {}) => ({ key: 'j', code: 'KeyJ', target: body, ...over });
+const key = (over = {}) => ({ key: 'h', code: 'KeyH', target: body, ...over });
 
-test('J and Shift-less J on any layout is a jot', () => {
+test('H on any layout is a jot; J, YouTube’s own back-10-seconds, is not', () => {
   assert.equal(K.isJotKey(key(), body), true);
-  assert.equal(K.isJotKey(key({ key: 'J' }), body), true);
-  assert.equal(K.isJotKey(key({ key: 'й', code: 'KeyJ' }), body), true, 'the J key on a Cyrillic layout');
-  assert.equal(K.isJotKey(key({ key: 'k', code: 'KeyK' }), body), false);
-  assert.equal(K.isJotKey(key({ key: 'Enter', code: 'KeyJ' }), body), false);
+  assert.equal(K.isJotKey(key({ key: 'H' }), body), true);
+  assert.equal(K.isJotKey(key({ key: 'р', code: 'KeyH' }), body), true, 'the H key on a Cyrillic layout');
+  assert.equal(K.isJotKey(key({ key: 'j', code: 'KeyJ' }), body), false, 'J stays YouTube’s');
+  assert.equal(K.isJotKey(key({ key: 'J', code: 'KeyJ' }), body), false);
+  for (const k of ['k', 'l', 'f', 't', 'i', 'm', 'c', '0', ',', '.', '/']) assert.equal(K.isJotKey(key({ key: k, code: '' }), body), false, k);
+  assert.equal(K.isJotKey(key({ key: 'Enter', code: 'KeyH' }), body), false);
 });
 
 test('no modifier, no auto-repeat, not already handled', () => {
@@ -122,10 +125,11 @@ test('a J on another video never joins, and a waiting J goes under its own video
   assert.equal(c.sent.length, 2, 'flushed, never sent twice');
 });
 
-test('the content script takes J before YouTube, guarded, on a watch page that is not live', () => {
+test('the content script listens for H, guarded, on a watch page that is not live, and stops no key', () => {
   const src = read('content/youtube.js');
-  assert.match(src, /addEventListener\('keydown', onKeyDown, true\)/, 'capture phase, ahead of YouTube’s own J');
+  assert.match(src, /addEventListener\('keydown', onKeyDown, true\)/);
   assert.match(src, /if \(!id \|\| isLive\(\) \|\| !K\.isJotKey\(e, document\.activeElement\)\) return;/);
-  assert.match(src, /e\.stopImmediatePropagation\(\)/);
+  assert.doesNotMatch(src, /stopImmediatePropagation|stopPropagation|preventDefault/, 'YouTube’s own keys are left alone');
   assert.match(src, /hold\.flush\(\)/);
+  assert.match(src, /<b>H<\/b>/, 'the hint shows H');
 });

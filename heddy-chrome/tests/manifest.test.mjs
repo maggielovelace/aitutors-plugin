@@ -78,11 +78,12 @@ test('the background is a classic worker, so it stays WebExtension-plain (D12)',
   assert.equal(m.background.type, undefined);
 });
 
-test('one command, Ctrl Shift J (⌘⇧J on a Mac), and it is the one the courier answers', () => {
+test('one command, with NO default key (owner, 2026-10-29), and it is the one the courier answers', () => {
   const m = manifest();
   const { COMMAND } = load('./lib/courier.js');
-  assert.deepEqual(Object.keys(m.commands), [COMMAND]);
-  assert.deepEqual(m.commands[COMMAND].suggested_key, { default: 'Ctrl+Shift+J', mac: 'Command+Shift+J' });
+  assert.ok(Object.keys(m.commands).includes(COMMAND));
+  assert.equal(m.commands[COMMAND].suggested_key, undefined, 'the child binds it at chrome://extensions/shortcuts');
+  assert.match(m.commands[COMMAND].description, /^__MSG_\w+__$/);
   assert.ok(!Object.keys(m.commands).some((k) => k.startsWith('_execute')), 'no _execute_ command');
 });
 

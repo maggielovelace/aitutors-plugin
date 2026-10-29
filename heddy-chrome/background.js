@@ -32,7 +32,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, change, tab) {
   courier.tabUpdated(tabId, change, tab);
 });
 
-// "Jot it with Heddy" on a selection, and Ctrl Shift J (⌘⇧J): both are
+// "Jot it with Heddy" on a selection, and the jot-selection command: both are
 // gestures, so activeTab lets Heddy inject the tray into that tab (D3, D7).
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   courier.menuClicked(info, tab);

@@ -113,9 +113,6 @@
       "cantReadPage": {
         "message": "Heddy can't read this page. Try it on a web page or a YouTube video."
       },
-      "pageTooLong": {
-        "message": "This page is too long to clip. Try Jot it on the part you need."
-      },
       "pageEmpty": {
         "message": "This page has no text to clip."
       },
@@ -161,6 +158,27 @@
       },
       "toastUndoFailed": {
         "message": "Couldn't undo that note."
+      },
+      "toastJotted": {
+        "message": "Jotted"
+      },
+      "toastClipped": {
+        "message": "Clipped · $TITLE$",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Understanding map scales"
+          }
+        }
+      },
+      "toastClippedNoTitle": {
+        "message": "Clipped"
+      },
+      "toastPageCut": {
+        "message": "Heddy kept the first part of this page."
+      },
+      "setShortcut": {
+        "message": "Set a shortcut"
       },
       "toastInMyClips": {
         "message": "In My Clips"
@@ -314,9 +332,6 @@
       "cantReadPage": {
         "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。"
       },
-      "pageTooLong": {
-        "message": "这一页太长，剪不下来。试试只批注你需要的部分。"
-      },
       "pageEmpty": {
         "message": "这一页没有可以剪下的文字。"
       },
@@ -362,6 +377,27 @@
       },
       "toastUndoFailed": {
         "message": "没能撤销这条批注。"
+      },
+      "toastJotted": {
+        "message": "批注已保存"
+      },
+      "toastClipped": {
+        "message": "已剪下 · $TITLE$",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Understanding map scales"
+          }
+        }
+      },
+      "toastClippedNoTitle": {
+        "message": "已剪下"
+      },
+      "toastPageCut": {
+        "message": "Heddy 只保留了这一页的前一部分。"
+      },
+      "setShortcut": {
+        "message": "设置快捷键"
       },
       "toastInMyClips": {
         "message": "已放进「我的短片」"
