@@ -32,17 +32,22 @@ And on any page:
   Jotter. Press H twice quickly to take the line before as well. YouTube's
   own keys, J included, keep doing what they always did.
 - **Collect, then Save to Jotters.** Click Heddy's icon and its panel stays
-  on the page while you read. Select words and tap **+ Text**, or tap
-  **+ Picture** and draw a box: each one is a numbered card, and the same
-  number shows on the page beside its highlight or box. Up to 10 snippets
-  and 4 pictures, all from one page; going to another page clears them.
-  **Save to Jotters** puts them on the left page of that page's Jotter, in
-  the page's own order, where you jot from them. **Save and jot now** opens
+  on the page while you read. While it is open, **select words and each
+  selection is added by itself** as the next card (stretch or shrink it
+  within 5 seconds and the card follows; ✕ removes one you did not want).
+  **+ Text** and **+ Picture** are a switch: tap **+ Picture** and draw a
+  box for a picture. Each one is a numbered card, and the same number shows
+  on the page beside its highlight or box. Drag a card by ⠿, or use ↑ / ↓
+  (Alt+↑ / Alt+↓ on a focused card), to put them in your order. Up to 10
+  snippets and 4 pictures, all from one page; going to another page clears
+  them. **Save to Jotters** puts them on the left page of that page's
+  Jotter, in your order, where you jot from them. **Save and jot now** opens
   the notebook at them. Explain, Make a card and Ask Heddy act on card 1.
-- **Snap a picture** (the panel's + Picture, or Ctrl Shift K): under a box,
-  **Save to Jotters** · **+ Picture** for another · **Heddy ▾** with Explain
-  this picture, Make a card, Ask Heddy about it, Copy picture and Whole
-  visible page.
+- **Snap a picture** (the panel's + Picture, or Ctrl Shift K, which opens
+  the panel too): under a box, the **Text | Picture** switch · **+ Picture**
+  to keep it · **Heddy ▾** with Explain this picture, Make a card, Ask Heddy
+  about it, Copy picture and Whole visible page. Saving is in the panel.
+  Esc, or Text on the switch, goes back to words.
 - **Right-click** words → *Save to Jotters*, or a picture → *Add picture to
   Heddy*: either becomes the next card, and the panel opens on it. Heddy's
   buttons under a selection (+ Add, Explain, Make a card, Ask Heddy) come up

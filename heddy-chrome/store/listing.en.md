@@ -33,11 +33,11 @@ ON A YOUTUBE VIDEO
 • H: jots the line being spoken into the video's Jotter. Press it twice quickly to take the line before as well. YouTube's own keys keep working.
 
 ON ANY PAGE
-• Collect as you read: select words and tap + Text, or tap + Picture and draw a box. Each is a numbered card in Heddy's panel, with the same number on the page. Keep up to 10 snippets and up to four pictures from the same page.
-• Save to Jotters puts them on the left page of that page's Jotter, in the page's own order, ready to jot from. Save and jot now opens the notebook at them.
+• Collect as you read: with Heddy's panel open, each selection of words is added by itself, or tap + Picture and draw a box (+ Text switches back to words). Each is a numbered card in Heddy's panel, with the same number on the page, and you can drag them into your own order. Keep up to 10 snippets and up to four pictures from the same page.
+• Save to Jotters puts them on the left page of that page's Jotter, in your order, ready to jot from. Save and jot now opens the notebook at them.
 • Explain, Make a card or Ask Heddy about what you found. Or right-click some words and choose "Save to Jotters" to add them as a card.
 • Save page to Jotters: keeps the readable part of a page as a source in your Jotters.
-• Snap a picture: draw a box round a diagram, chart or photo, then Save to Jotters, + Picture for another, or Heddy's menu: Explain this picture, Make a card, Ask Heddy about it, Copy picture. Right-click a picture and choose "Add picture to Heddy", or press Ctrl Shift K (twice to keep the whole screen).
+• Snap a picture: draw a box round a diagram, chart or photo, then + Picture to keep it, or Heddy's menu: Explain this picture, Make a card, Ask Heddy about it, Copy picture. Right-click a picture and choose "Add picture to Heddy", or press Ctrl Shift K (twice to keep the whole screen).
 
 AFTER YOU SAVE
 A small note on the page says what was kept, and Open in Jotter goes straight to it. After H on a video, Undo takes the note back.
