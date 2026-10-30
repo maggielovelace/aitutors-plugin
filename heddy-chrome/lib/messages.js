@@ -101,9 +101,6 @@
       "firstTimePage": {
         "message": "Save words, pictures or a whole page to Jotters"
       },
-      "cantReadPage": {
-        "message": "Heddy can't read this page. Try it on a web page or a YouTube video."
-      },
       "pageEmpty": {
         "message": "This page has no text to save."
       },
@@ -193,7 +190,7 @@
         "message": "Language"
       },
       "optionsLanguageHint": {
-        "message": "For Heddy's buttons, popup and messages. The windows on aitutors.me follow the language you chose there."
+        "message": "For Heddy's buttons, panel and messages. Pages on aitutors.me follow the language you chose there."
       },
       "optionsDevHeading": {
         "message": "For developers"
@@ -398,6 +395,162 @@
       },
       "toastNoCaptions": {
         "message": "Heddy needs captions to help with this video, and this one has none."
+      },
+      "kindChrome": {
+        "message": "Chrome page"
+      },
+      "kindNewTab": {
+        "message": "New tab"
+      },
+      "kindSettings": {
+        "message": "Chrome settings"
+      },
+      "kindExtensions": {
+        "message": "Extensions"
+      },
+      "kindExtension": {
+        "message": "Another extension"
+      },
+      "kindChromeLine": {
+        "message": "Nothing to read here."
+      },
+      "kindChromeSub": {
+        "message": "Open a web page or a YouTube video, then click me."
+      },
+      "kindStore": {
+        "message": "Chrome Web Store"
+      },
+      "kindStoreLine": {
+        "message": "Chrome keeps Heddy out of the Web Store."
+      },
+      "kindStoreSub": {
+        "message": "Heddy can't read or save this page. Try another page."
+      },
+      "kindHeddy": {
+        "message": "Heddy page"
+      },
+      "kindHeddySettings": {
+        "message": "Heddy settings"
+      },
+      "kindHeddyLine": {
+        "message": "This is one of Heddy's own pages."
+      },
+      "kindHeddySub": {
+        "message": "Open a web page or a YouTube video, then click me."
+      },
+      "kindSource": {
+        "message": "Page source"
+      },
+      "kindSourceLine": {
+        "message": "Heddy can't save a page's source code."
+      },
+      "kindSourceSub": {
+        "message": "Open the page itself, then click me."
+      },
+      "kindFile": {
+        "message": "PDF file"
+      },
+      "kindFileLine": {
+        "message": "Heddy can't save this PDF yet."
+      },
+      "kindFileSub": {
+        "message": "Upload it to Jotters instead: My Jotters › Add a PDF."
+      },
+      "kindLocalFile": {
+        "message": "File on this computer"
+      },
+      "kindLocalLine": {
+        "message": "Heddy can't read files on this computer."
+      },
+      "kindLocalSub": {
+        "message": "Open it on the web, or upload a PDF to Jotters."
+      },
+      "kindOther": {
+        "message": "This page"
+      },
+      "kindOtherLine": {
+        "message": "Heddy can't read this page."
+      },
+      "kindOtherSub": {
+        "message": "Try another web page or a YouTube video."
+      },
+      "whoYear": {
+        "message": "Year $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "8"
+          }
+        }
+      },
+      "whoOpenStudy": {
+        "message": "Open my Study"
+      },
+      "whoSignInToSave": {
+        "message": "Sign in to save with Heddy"
+      },
+      "whoSignIn": {
+        "message": "Sign in"
+      },
+      "whoImNew": {
+        "message": "I'm new"
+      },
+      "whoGrownUp": {
+        "message": "Signed in as a grown-up"
+      },
+      "whoOpenDashboard": {
+        "message": "Open my dashboard"
+      },
+      "tileJotters": {
+        "message": "My Jotters"
+      },
+      "tileClips": {
+        "message": "My Clips"
+      },
+      "tileStudy": {
+        "message": "My Study"
+      },
+      "passEyebrow": {
+        "message": "aitutors.me · Study pass"
+      },
+      "passNotSignedIn": {
+        "message": "Not signed in"
+      },
+      "passSavesTo": {
+        "message": "Heddy saves to your Jotters and My Clips on aitutors.me."
+      },
+      "passGrownUpLine": {
+        "message": "Heddy saves for a child's account. On your child's computer, sign them in to use it."
+      },
+      "passSwitch": {
+        "message": "Not you? Switch"
+      },
+      "passMakeAccount": {
+        "message": "I'm new: make my account"
+      },
+      "passParent": {
+        "message": "I'm a parent"
+      },
+      "aboutHeading": {
+        "message": "About Heddy"
+      },
+      "aboutVersion": {
+        "message": "Version"
+      },
+      "aboutId": {
+        "message": "Extension ID"
+      },
+      "aboutCopy": {
+        "message": "Copy"
+      },
+      "aboutCopied": {
+        "message": "Copied"
+      },
+      "aboutPrivacy": {
+        "message": "Privacy"
+      },
+      "aboutPrivacyLink": {
+        "message": "What Heddy reads, and when"
       }
     },
     "zh_CN": {
@@ -500,9 +653,6 @@
       "firstTimePage": {
         "message": "把文字、图片或整页存到 Jotters"
       },
-      "cantReadPage": {
-        "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。"
-      },
       "pageEmpty": {
         "message": "这一页没有可以保存的文字。"
       },
@@ -592,7 +742,7 @@
         "message": "语言"
       },
       "optionsLanguageHint": {
-        "message": "用于 Heddy 的按钮、弹出框和提示。aitutors.me 上的窗口跟随你在网站上选的语言。"
+        "message": "用于 Heddy 的按钮、面板和提示。aitutors.me 上的页面跟随你在网站上选的语言。"
       },
       "optionsDevHeading": {
         "message": "开发者选项"
@@ -797,6 +947,162 @@
       },
       "toastNoCaptions": {
         "message": "Heddy 需要字幕才能帮你看这个视频，可这个视频没有字幕。"
+      },
+      "kindChrome": {
+        "message": "Chrome 页面"
+      },
+      "kindNewTab": {
+        "message": "新标签页"
+      },
+      "kindSettings": {
+        "message": "Chrome 设置"
+      },
+      "kindExtensions": {
+        "message": "扩展程序"
+      },
+      "kindExtension": {
+        "message": "其他扩展程序"
+      },
+      "kindChromeLine": {
+        "message": "这里没有可以读的内容。"
+      },
+      "kindChromeSub": {
+        "message": "打开一个网页或 YouTube 视频，再点我。"
+      },
+      "kindStore": {
+        "message": "Chrome 网上应用店"
+      },
+      "kindStoreLine": {
+        "message": "Chrome 不让 Heddy 进入网上应用店。"
+      },
+      "kindStoreSub": {
+        "message": "Heddy 读不了也存不了这个页面，换一个页面试试。"
+      },
+      "kindHeddy": {
+        "message": "Heddy 页面"
+      },
+      "kindHeddySettings": {
+        "message": "Heddy 设置"
+      },
+      "kindHeddyLine": {
+        "message": "这是 Heddy 自己的页面。"
+      },
+      "kindHeddySub": {
+        "message": "打开一个网页或 YouTube 视频，再点我。"
+      },
+      "kindSource": {
+        "message": "网页源代码"
+      },
+      "kindSourceLine": {
+        "message": "Heddy 不能保存网页的源代码。"
+      },
+      "kindSourceSub": {
+        "message": "打开这个网页本身，再点我。"
+      },
+      "kindFile": {
+        "message": "PDF 文件"
+      },
+      "kindFileLine": {
+        "message": "Heddy 还不能保存这个 PDF。"
+      },
+      "kindFileSub": {
+        "message": "可以改为上传到 Jotters：我的 Jotters › 添加 PDF。"
+      },
+      "kindLocalFile": {
+        "message": "本机文件"
+      },
+      "kindLocalLine": {
+        "message": "Heddy 读不了这台电脑上的文件。"
+      },
+      "kindLocalSub": {
+        "message": "请在网上打开它，或把 PDF 上传到 Jotters。"
+      },
+      "kindOther": {
+        "message": "这个页面"
+      },
+      "kindOtherLine": {
+        "message": "Heddy 读不了这个页面。"
+      },
+      "kindOtherSub": {
+        "message": "换一个网页或 YouTube 视频试试。"
+      },
+      "whoYear": {
+        "message": "Year $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "8"
+          }
+        }
+      },
+      "whoOpenStudy": {
+        "message": "打开我的学习"
+      },
+      "whoSignInToSave": {
+        "message": "登录后才能用 Heddy 保存"
+      },
+      "whoSignIn": {
+        "message": "登录"
+      },
+      "whoImNew": {
+        "message": "我是新用户"
+      },
+      "whoGrownUp": {
+        "message": "已用家长账号登录"
+      },
+      "whoOpenDashboard": {
+        "message": "打开家长中心"
+      },
+      "tileJotters": {
+        "message": "我的 Jotters"
+      },
+      "tileClips": {
+        "message": "我的短片"
+      },
+      "tileStudy": {
+        "message": "我的学习"
+      },
+      "passEyebrow": {
+        "message": "aitutors.me · 学习通行证"
+      },
+      "passNotSignedIn": {
+        "message": "未登录"
+      },
+      "passSavesTo": {
+        "message": "Heddy 会把内容存进你在 aitutors.me 上的 Jotters 和「我的短片」。"
+      },
+      "passGrownUpLine": {
+        "message": "Heddy 为孩子的账号保存内容。请在孩子的电脑上用孩子的账号登录。"
+      },
+      "passSwitch": {
+        "message": "不是你？切换"
+      },
+      "passMakeAccount": {
+        "message": "我是新用户：创建账号"
+      },
+      "passParent": {
+        "message": "我是家长"
+      },
+      "aboutHeading": {
+        "message": "关于 Heddy"
+      },
+      "aboutVersion": {
+        "message": "版本"
+      },
+      "aboutId": {
+        "message": "扩展程序 ID"
+      },
+      "aboutCopy": {
+        "message": "复制"
+      },
+      "aboutCopied": {
+        "message": "已复制"
+      },
+      "aboutPrivacy": {
+        "message": "隐私"
+      },
+      "aboutPrivacyLink": {
+        "message": "Heddy 读什么、什么时候读"
       }
     }
   };

@@ -3,8 +3,9 @@
 **English** · [简体中文](README.zh-CN.md#隐私)
 
 **Reads a page only when you ask it to.** Heddy for Chrome holds no account,
-key or token, makes no network call of its own, and keeps only a few
-preferences on your device.
+key or token, and keeps only a few preferences on your device. It makes one
+request of its own, to aitutors.me, to ask who is signed in there (see *Who
+Heddy saves for*, below).
 
 ## What Heddy reads
 
@@ -55,6 +56,19 @@ anyone else beyond aitutors.me's own processing.
 
 Heddy itself sends nothing to aitutors.me, to us, or to anyone else. It has
 no analytics and no error reporting.
+
+## Who Heddy saves for
+
+When you open Heddy's settings, or its panel on a page it can't save from,
+Heddy asks aitutors.me one question: `GET https://aitutors.me/api/learn/heddy/me`.
+Chrome sends it with your own aitutors.me sign-in cookie, as it would for any
+aitutors.me page; Heddy never reads or keeps that cookie, and sends nothing
+else with the request. aitutors.me answers with no more than a child's first
+name, year group and subjects (or, for a parent, only that a grown-up is
+signed in, with no name). Heddy shows that answer on the study pass or the
+account row, and forgets it when the page closes: it is never stored and
+never sent anywhere else. If the question fails, Heddy shows "Not signed in".
+This is the only request Heddy makes of its own.
 
 ## What Heddy stores on your device
 

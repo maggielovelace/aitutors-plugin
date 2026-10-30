@@ -30,6 +30,11 @@
   var params = new URLSearchParams(location.search);
   var HOST = params.get('host') === 'panel' || params.get('host') === 'window' ? params.get('host') : 'popup';
   var TAB_ID = /^\d+$/.test(params.get('tab') || '') ? Number(params.get('tab')) : null;
+  // The kind of page, from the background, for when Chrome hides the address.
+  var HINT_KIND = (function (k) {
+    var K = HeddyPageKind.KINDS;
+    return Object.prototype.hasOwnProperty.call(K, k) ? { kind: k, chip: K[k].chip, line: K[k].line, sub: K[k].sub } : null;
+  })(params.get('kind'));
 
   /** Close the panel (its host page removes the frame) or the window. */
   function closeUi() {
@@ -96,7 +101,7 @@
   }
 
   function drawChrome() {
-    $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog', 'h-quill', 'h-page', 'h-explain', 'h-cardt']) + M.use('h-eyes', 22);
+    $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog', 'h-quill', 'h-page', 'h-explain', 'h-cardt', 'h-face', 'h-pen', 'h-school']) + M.use('h-eyes', 22);
     $('lock').innerHTML = M.use('h-lock', 14);
     $('lockLine').textContent = tr('footerLock');
     var cog = $('settings');
@@ -156,9 +161,83 @@
     err.hidden = false;
   }
 
-  function renderCantRead(body) {
-    body.appendChild(el('p', 'lead big', tr('cantReadPage')));
+  // ─── a page Heddy can't add to Jotters (D61; R6 · owner's pick) ──────────
+  //
+  // Heddy's face and a line saying why; the account row from /me (lib/who.js);
+  // My Jotters · My Clips · My Study. The header's chip names the kind of
+  // page (lib/page-kind.js) and never prints the raw extension id. The same
+  // body shows in D49's small window.
+
+  var ORIGIN = C.PROD_ORIGIN;
+
+  function openAndClose(url) {
+    chrome.tabs.create({ url: url }).then(closeUi, function () {});
+  }
+
+  function linkButton(cls, label, url) {
+    var b = el('button', cls, label);
+    b.type = 'button';
+    b.addEventListener('click', function () { openAndClose(url); });
+    return b;
+  }
+
+  /** The account row: "S  Shan · Year 8 · Open my Study", "Signed in as a
+   *  grown-up · Open my dashboard", or "Sign in to save with Heddy · Sign in
+   *  · I'm new". Signed out until /me says otherwise; no error is shown. */
+  function accountRow(row, me) {
+    var L = HeddyWho.links(ORIGIN);
+    row.textContent = '';
+    row.className = 'acc';
+    if (me.signedIn && me.role === 'child') {
+      row.appendChild(el('span', 'av', HeddyWho.initial(me.firstName)));
+      row.appendChild(el('span', 'who', [me.firstName, me.yearGroup ? tr('whoYear', String(me.yearGroup)) : null].filter(Boolean).join(' · ')));
+      row.appendChild(linkButton('ln1', tr('whoOpenStudy'), L.study));
+    } else if (me.signedIn && me.role === 'parent') {
+      row.appendChild(el('span', 'who', tr('whoGrownUp')));
+      row.appendChild(linkButton('ln1', tr('whoOpenDashboard'), L.dashboard));
+    } else {
+      row.classList.add('out');
+      row.appendChild(el('span', 'who', tr('whoSignInToSave')));
+      row.appendChild(linkButton('ln1', tr('whoSignIn'), L.signIn));
+      row.appendChild(linkButton('ln1', tr('whoImNew'), L.signUp));
+    }
+    row.hidden = false;
+  }
+
+  function tile(mark, label, url) {
+    var b = el('button', 'tile');
+    b.type = 'button';
+    b.insertAdjacentHTML('beforeend', M.use(mark, 18));
+    b.appendChild(el('span', null, label));
+    b.addEventListener('click', function () { openAndClose(url); });
+    return b;
+  }
+
+  /** desc: lib/page-kind.js describe(), or the 'other' kind. */
+  function renderCantSave(body, desc) {
+    var d = desc || { kind: 'other', chip: 'kindOther', line: 'kindOtherLine', sub: 'kindOtherSub' };
+    var ctx = $('ctx');
+    ctx.textContent = tr(d.chip);
+    ctx.classList.add('chip');
+    $('pop').classList.add('cs');
+    var why = el('div', 'why');
+    why.insertAdjacentHTML('beforeend', M.use('h-face', 60));
+    var words = el('div');
+    words.appendChild(el('p', null, tr(d.line)));
+    words.appendChild(el('small', null, tr(d.sub)));
+    why.appendChild(words);
+    body.appendChild(why);
+    var row = el('div', 'acc');
+    row.hidden = true;
+    body.appendChild(row);
+    var L = HeddyWho.links(ORIGIN);
+    var tiles = el('div', 'tiles');
+    tiles.appendChild(tile('h-pen', tr('tileJotters'), L.jotters));
+    tiles.appendChild(tile('h-film', tr('tileClips'), L.clips));
+    tiles.appendChild(tile('h-school', tr('tileStudy'), L.study));
+    body.appendChild(tiles);
     $('foot').hidden = false;
+    HeddyWho.loadMe(window.fetch.bind(window), ORIGIN).then(function (me) { accountRow(row, me); });
   }
 
   /** host/…/last-segment, as the artifact prints a page's address. */
@@ -371,7 +450,7 @@
       .then(function (st) {
         view = { tab: tab, state: st };
         drawCards();
-      }, function () { return renderCantRead(body); });
+      }, function () { return renderCantSave(body, null); });
   }
 
   /** The background changed the list (box mode kept a picture, the site
@@ -512,9 +591,14 @@
     drawChrome();
     var dev = local[C.DEV_KEY] === true;
     var origin = C.captureOrigin(dev);
+    ORIGIN = origin;
     var body = $('body');
     var url = tab && tab.url;
-    $('ctx').textContent = url ? hostLabel(url) : '';
+    // A page Heddy can't add to Jotters (D61). Chrome may hide such a tab's
+    // address from the panel's window; the background then names the kind.
+    var cant = url ? HeddyPageKind.describe(url, chrome.runtime.id) : HINT_KIND;
+    // The site's name for a web page; never an extension's id.
+    $('ctx').textContent = url && /^https?:/.test(url) ? hostLabel(url) : '';
 
     if (!local[C.FIRST_RUN_KEY]) {
       var o = {};
@@ -524,13 +608,14 @@
     }
     // Snap a picture (R3b · 05): every popup but the first-time one and
     // aitutors.me's, and only on a web page Heddy can draw box mode on.
-    if (url && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab, close: closeUi });
+    if (url && !cant && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab, close: closeUi });
     var youtubeId = url ? P.youtubeIdFromUrl(url) : null;
     if (youtubeId) {
       return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info, local[C.START_KEY]); });
     }
+    if (cant) return renderCantSave(body, cant);
     if (url && isSite(url, dev)) return renderSite(body);
     if (tab && /^https?:/.test(url || '')) return renderPage(body, tab);
-    return renderCantRead(body);
+    return renderCantSave(body, null);
   });
 })();

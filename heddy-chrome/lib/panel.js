@@ -12,6 +12,7 @@
 //
 // Chrome passed in, so the tests drive it with a fake (background.js wires it).
 (function (root) {
+  var K = root.HeddyPageKind || (typeof require === 'function' && require('./page-kind.js'));
   var PANEL_FILES = ['content/panel.js'];
   var PAGE = 'popup/popup.html';
   // chrome.storage.session: tab id → the fallback window open for it.
@@ -20,9 +21,11 @@
   // resizes it to its content once drawn (popup.js).
   var WINDOW = { width: 376, height: 520, right: 16, top: 80 };
 
-  /** popup.html?tab=<id>&host=panel|window: the tab it acts on, and where it is drawn. */
-  function pageUrl(getURL, tabId, host) {
-    return getURL(PAGE) + '?tab=' + encodeURIComponent(String(tabId)) + '&host=' + host;
+  /** popup.html?tab=<id>&host=panel|window: the tab it acts on, and where
+   *  it is drawn. `kind` (lib/page-kind.js) names the page for the window,
+   *  which may not be told the address of a page Chrome keeps to itself. */
+  function pageUrl(getURL, tabId, host, kind) {
+    return getURL(PAGE) + '?tab=' + encodeURIComponent(String(tabId)) + '&host=' + host + (kind ? '&kind=' + encodeURIComponent(kind) : '');
   }
 
   function windowBounds(win) {
@@ -67,7 +70,8 @@
             return (tab.windowId != null ? chrome.windows.get(tab.windowId) : chrome.windows.getLastFocused())
               .catch(function () { return null; })
               .then(function (win) {
-                return chrome.windows.create(Object.assign({ url: pageUrl(chrome.runtime.getURL, tab.id, 'window'), type: 'popup', focused: true }, windowBounds(win)));
+                var kind = tab.url ? K.kindOf(tab.url, chrome.runtime.id) : 'other';
+                return chrome.windows.create(Object.assign({ url: pageUrl(chrome.runtime.getURL, tab.id, 'window', kind), type: 'popup', focused: true }, windowBounds(win)));
               })
               .then(function (created) {
                 if (created && created.id != null) map[tab.id] = created.id;

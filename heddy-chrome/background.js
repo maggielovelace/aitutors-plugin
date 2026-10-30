@@ -1,6 +1,6 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js');
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js');
 
 var cards = null;
 var courier = HeddyCourier.createCourier({

@@ -17,9 +17,11 @@ while you scroll, select or click the page, and closes on its ✕, on Esc, or
 on a second click of the icon. On pages Chrome keeps extensions out of
 (`chrome://` pages, the Web Store) it opens as a small window instead.
 
-Heddy is a courier. It keeps no account, key or token and makes no network
-call of its own: every tap opens a page on aitutors.me, and that page checks
-the video and saves it under the child's own account, with one tap there.
+Heddy is a courier. It keeps no account, key or token: every tap opens a
+page on aitutors.me, and that page checks the video and saves it under the
+child's own account, with one tap there. Its one request of its own asks
+aitutors.me who is signed in, for the study pass in its settings and the
+account row in its panel, and keeps nothing it hears.
 Watch with Heddy and Add to My Clips open it in a new tab beside the video,
 which Heddy closes once the video is kept, bringing you back to it; the
 other captures open a small window. **Reads a page only when you ask it to** — see [PRIVACY.md](PRIVACY.md).
@@ -125,7 +127,8 @@ npm test
 ```
 
 Node 20 or later, no dependencies. The tests pin the permissions, forbid any
-network call in the shipped files, check that each `cid` is answered once and
+network call in the shipped files but the one who-is-signed-in request
+(`lib/who.js`), check that each `cid` is answered once and
 expires at 10 minutes, and check every message against the site's validator.
 
 `scripts/build-fonts.mjs` rewrites `lib/font-data.js` from `fonts/*.woff2`
@@ -141,4 +144,4 @@ icons are not covered.
 The Manrope typeface in `fonts/` (and its bytes in `lib/font-data.js`) is
 © The Manrope Project Authors and is licensed under the SIL Open Font
 License 1.1 — see [fonts/OFL.txt](fonts/OFL.txt). It is bundled, not
-downloaded: the extension still makes no network call.
+downloaded: the extension makes no request for it.

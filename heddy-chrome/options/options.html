@@ -10,6 +10,17 @@
 <main class="wrap">
   <header class="hd"><span id="mark"></span><h1 id="title"></h1></header>
 
+  <!-- D60: the study pass. Filled from /api/learn/heddy/me (lib/who.js); signed out until it answers. -->
+  <section class="pass blank" id="pass" aria-labelledby="passName">
+    <div class="pl">
+      <span class="eb" id="passEyebrow"></span>
+      <b id="passName"></b>
+      <small id="passLine"></small>
+      <div class="two" id="passActions"></div>
+    </div>
+    <div class="pr"><span id="passFace"></span><code id="passId"></code></div>
+  </section>
+
   <section class="card">
     <h2 id="langLabel"></h2>
     <div class="choices" role="radiogroup" aria-labelledby="langLabel">
@@ -20,19 +31,26 @@
     <p class="hint" id="langHint"></p>
   </section>
 
-  <section class="card dev">
-    <h2 id="devHeading"></h2>
-    <label class="toggle"><input type="checkbox" id="dev"> <span id="devToggle"></span></label>
-    <p class="hint" id="devHint"></p>
+  <section class="card">
+    <h2 id="aboutHeading"></h2>
+    <div class="kv"><span id="aboutVersion"></span><b id="version"></b></div>
+    <div class="kv"><span id="aboutId"></span><code id="extId"></code><button type="button" class="lk" id="copyId"></button></div>
+    <div class="kv"><span id="aboutPrivacy"></span><button type="button" class="lk" id="privacy"></button></div>
   </section>
 
+  <details class="dev">
+    <summary id="devHeading"></summary>
+    <label class="toggle"><input type="checkbox" id="dev"> <span id="devToggle"></span></label>
+    <p class="hint" id="devHint"></p>
+  </details>
+
   <p class="saved" id="saved" role="status" aria-live="polite"></p>
-  <p class="foot"><span id="lock"></span><span id="lockLine"></span></p>
 </main>
 <script src="../lib/messages.js"></script>
 <script src="../lib/i18n.js"></script>
 <script src="../lib/config.js"></script>
 <script src="../lib/marks.js"></script>
+<script src="../lib/who.js"></script>
 <script src="options.js"></script>
 </body>
 </html>

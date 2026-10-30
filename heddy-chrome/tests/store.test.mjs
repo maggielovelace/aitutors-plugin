@@ -40,7 +40,7 @@ for (const { file, lead } of LISTINGS) {
 
 test('the English listing names every tool that shipped, and the for-schools line', () => {
   const d = between(read('store/listing.en.md'), 'description');
-  for (const s of ['Watch with Heddy', 'Add to My Clips', 'line being spoken', 'Jot it', 'Explain', 'Make a card', 'Ask Heddy', 'Save page to Jotters', 'Snap a picture', 'up to four pictures', 'Copy picture', 'Undo', 'Open in Jotter', 'until you tap Keep', 'no network call', 'only when you ask', 'FOR SCHOOLS']) {
+  for (const s of ['Watch with Heddy', 'Add to My Clips', 'line being spoken', 'Jot it', 'Explain', 'Make a card', 'Ask Heddy', 'Save page to Jotters', 'Snap a picture', 'up to four pictures', 'Copy picture', 'Undo', 'Open in Jotter', 'until you tap Keep', 'only request of its own', 'keeps nothing it hears', 'only when you ask', 'FOR SCHOOLS']) {
     assert.ok(d.includes(s), `missing: ${s}`);
   }
   assert.match(read('store/listing.en.md'), /\| Category \| Education \|/);

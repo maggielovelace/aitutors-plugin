@@ -135,3 +135,28 @@ button { font: inherit; }
 .ln button:focus-visible { outline: 2px solid var(--pd); outline-offset: 2px; border-radius: 3px; }
 .ln button[aria-busy="true"] { opacity: .6; cursor: progress; }
 .ln .dot { color: #b9b2a3; }
+
+/* Round 6 (D61): a page Heddy can't add to Jotters, R6 · owner's pick (.r6pp):
+   the header's kind chip, Heddy's face and why, the account row, three tiles. */
+.pop.cs .ph { gap: 10px; padding: 14px 18px; }
+.pop.cs .ph b { font: 800 17px var(--sans); }
+.pop.cs #mark > svg:last-child { width: 30px; height: 30px; }
+.ph .ctx.chip { font: 600 11.5px var(--sans); color: var(--pm); background: #efe9dc; border-radius: 999px; padding: 3px 10px; }
+.pop.cs .pbd { gap: 0; padding: 4px 0 0; }
+.why { display: flex; gap: 12px; align-items: center; padding: 4px 18px 14px; }
+.why p { margin: 0; font: 700 15.5px/1.35 var(--sans); color: var(--pd); }
+.why small { display: block; font: 500 13px/1.5 var(--sans); color: var(--pm); }
+.acc { display: flex; align-items: center; gap: 8px; margin: 0 18px 12px; padding: 8px 10px; background: #f1f8f3; border: 1px solid #b9d8c4; border-radius: 10px; font: 700 12.5px var(--sans); color: var(--pi); min-height: 26px; }
+.acc[hidden] { display: flex; visibility: hidden; }
+.acc .av { width: 26px; height: 26px; border-radius: 50%; background: var(--pacc); color: #fff; display: grid; place-items: center; font: 800 12px var(--sans); flex: none; }
+.acc .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc .ln1 { all: unset; margin-left: auto; flex: none; font: 700 12px var(--sans); color: #1f6a40; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.acc .ln1:focus-visible { outline: 2px solid var(--pd); outline-offset: 2px; border-radius: 3px; }
+.acc.out { background: #fff8e8; border-color: #ecd49a; gap: 12px; }
+.acc.out .who { flex: 1; }
+.acc.out .ln1 { margin-left: 0; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 18px 14px; }
+.tile { all: unset; box-sizing: border-box; display: grid; justify-items: center; gap: 6px; padding: 10px 4px; border: 1px solid #e3dccd; border-radius: 12px; background: #fff; font: 700 12px var(--sans); color: var(--pd); cursor: pointer; text-align: center; }
+.tile:hover { background: var(--pr); }
+.tile:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.pop.cs .pf { padding: 11px 18px; }

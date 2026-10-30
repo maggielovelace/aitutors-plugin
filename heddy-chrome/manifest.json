@@ -70,6 +70,8 @@
         "lib/courier.js",
         "lib/tray-tools.js",
         "lib/cards.js",
+        "lib/page-kind.js",
+        "lib/who.js",
         "lib/snap.js",
         "content/youtube-selectors.js",
         "fonts/manrope-latin.woff2",

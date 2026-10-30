@@ -1,5 +1,9 @@
 // "The extension makes no fetch, XMLHttpRequest or WebSocket call" (PRD Must 2,
-// D2, PRIVACY.md). Scans every file a store build ships, comments removed.
+// D2, PRIVACY.md), with ONE exception, D60: GET /api/learn/heddy/me on
+// aitutors.me, for the study pass and the panel's account row (lib/who.js).
+// Scans every file a store build ships, comments removed: any mention of
+// fetch at all fails, except that one request and the two pages that hand
+// it their window's fetch.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { read, shippedFiles } from './helpers.mjs';
@@ -13,8 +17,20 @@ function stripComments(src, file) {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:"'\\])\/\/.*$/gm, '$1');
 }
 
+// The one request (lib/who.js) and the pages that hand it their fetch.
+const ALLOWED_FETCH = {
+  'lib/who.js': [/fetchImpl\(origin \+ PATH, \{ method: 'GET', credentials: 'include'/],
+  'popup/popup.js': [/HeddyWho\.loadMe\(window\.fetch\.bind\(window\), ORIGIN\)/],
+  'options/options.js': [/W\.loadMe\(window\.fetch\.bind\(window\), origin\)/],
+};
+
+/** Source with the allowed uses taken out, so nothing else may mention fetch. */
+function withoutAllowed(src, file) {
+  return (ALLOWED_FETCH[file] || []).reduce((s, re) => s.replace(re, ''), src);
+}
+
 const FORBIDDEN = [
-  [/\bfetch\s*\(/, 'fetch('],
+  [/\bfetch\b/, 'fetch'],
   [/\bXMLHttpRequest\b/, 'XMLHttpRequest'],
   [/\bWebSocket\b/, 'WebSocket'],
   [/\bEventSource\b/, 'EventSource'],
@@ -37,7 +53,7 @@ test('the scan sees the extension’s code', () => {
 
 for (const file of files) {
   test(`no network call in ${file}`, () => {
-    const src = stripComments(read(file), file);
+    const src = withoutAllowed(stripComments(read(file), file), file);
     for (const [pattern, name] of FORBIDDEN) {
       assert.ok(!pattern.test(src), `${file} uses ${name}`);
     }
@@ -49,4 +65,15 @@ test('the comment stripper keeps code that contains a URL', () => {
   assert.match(src, /https:\/\/aitutors\.me/);
   assert.match(src, /fetch\(y\)/);
   assert.doesNotMatch(src, /fetch\(x\)/);
+});
+
+test('the one request (D60) is GET /api/learn/heddy/me on the capture origin, with the browser’s cookie, and each allowed use is really there', () => {
+  for (const [file, uses] of Object.entries(ALLOWED_FETCH)) {
+    const src = stripComments(read(file), file);
+    for (const re of uses) assert.match(src, re, `${file}: the allowed use moved; update this test, do not widen it`);
+  }
+  const who = read('lib/who.js');
+  assert.match(who, /var PATH = '\/api\/learn\/heddy\/me';/);
+  assert.equal((stripComments(who, 'lib/who.js').match(/fetchImpl\(/g) || []).length, 1, 'one request, one place');
+  assert.doesNotMatch(who, /chrome\.storage|localStorage|sessionStorage|indexedDB/, 'never stored');
 });

@@ -46,7 +46,7 @@ YOU ARE IN CHARGE
 • Nothing is kept until you tap Keep on aitutors.me, under your own account.
 • Heddy reads a page only when you ask it to: its icon, the right-click menu or your shortcut.
 • Heddy holds no account, password, key or token.
-• Heddy makes no network call of its own. It has no analytics and no error reporting.
+• Heddy's only request of its own asks aitutors.me who is signed in, to show your first name and year in its settings. It keeps nothing it hears, and has no analytics and no error reporting.
 • It keeps only a few preferences on your device, such as your language.
 
 English and 简体中文: choose in Heddy's options.

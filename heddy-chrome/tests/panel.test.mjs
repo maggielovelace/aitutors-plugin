@@ -69,7 +69,7 @@ test('on a page Chrome keeps from extensions, the popup opens in a small window 
   const panel = createPanel({ chrome: f.chrome });
   assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'window', open: true });
   const w = f.calls.windows[0];
-  assert.equal(w.url, `${EXT}/popup/popup.html?tab=11&host=window`);
+  assert.equal(w.url, `${EXT}/popup/popup.html?tab=11&host=window&kind=store`, 'the window is told the kind of page (D61)');
   assert.equal(w.type, 'popup');
   assert.equal(w.focused, true);
   assert.equal(w.width, WINDOW.width);

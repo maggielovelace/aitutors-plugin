@@ -59,7 +59,15 @@ them; it goes only to aitutors.me, under the student's own account. It is
 never sold, never used for advertising or to decide creditworthiness, and not
 shared with third parties beyond aitutors.me's own processing. Heddy itself
 sends nothing to any server, keeps no copy after the hand-over, and has no
-analytics or error reporting. What is kept on aitutors.me is covered by
+analytics or error reporting.
+
+Who is signed in (D60): the settings page and the panel on a page Heddy
+can't save from send one `GET https://aitutors.me/api/learn/heddy/me`, with
+the browser's own aitutors.me cookie and no body. The answer (a child's first
+name, year group and subjects, or only "a grown-up is signed in") is shown
+and never stored or sent on. ⚠️ Owner to decide before the next submission
+whether this counts as "Personally identifiable information" in the table
+above; it is left at its current answer until then. What is kept on aitutors.me is covered by
 https://aitutors.me/privacy.
 
 ### Certifications (all three ticked)
