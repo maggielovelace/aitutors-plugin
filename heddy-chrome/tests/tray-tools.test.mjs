@@ -42,13 +42,13 @@ test('Ask Heddy wears the eyes mark (D34); every mark exists; every label in bot
   }
 });
 
-test('the page tray and the popup dispatch the three tools through sendTool / heddy-ui:tool', () => {
+test('the page tray dispatches the three tools through sendTool; the panel through heddy-cards:tool on card 1', () => {
   const tray = read('content/page-tray.js');
   assert.match(tray, /if \(id === 'explain' \|\| id === 'card' \|\| id === 'ask'\) return tool\(id, s\);/);
   assert.match(tray, /HeddyTools\.sendTool\(id,/);
   const popup = read('popup/popup.js');
   assert.match(popup, /TOOLS\.filter\(function \(t\) \{ return !t\.primary; \}\)/, 'the popup draws only the outlined tools in its row');
-  assert.match(popup, /type: 'heddy-ui:tool'/);
+  assert.match(popup, /cardsCall\(\{ type: 'heddy-cards:tool', tool: t\.id \}, tab\)/);
   const { PAGE_FILES } = load('./lib/courier.js');
   assert.ok(PAGE_FILES.indexOf('lib/tools.js') >= 0 && PAGE_FILES.indexOf('lib/tools.js') < PAGE_FILES.indexOf('content/page-tray.js'));
 });

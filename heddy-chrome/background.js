@@ -1,11 +1,14 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/panel.js');
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js');
 
+var cards = null;
 var courier = HeddyCourier.createCourier({
   chrome: chrome,
   store: HeddyCidStore.createCidStore(),
   randomUUID: function () { return crypto.randomUUID(); },
+  // Save to Jotters saved: those cards leave the panel's list (lib/cards.js).
+  saved: function (meta) { return cards && cards.saved(meta); },
 });
 
 // The toolbar icon opens Heddy's panel in the page (lib/panel.js), or a small
@@ -23,17 +26,31 @@ chrome.windows.onRemoved.addListener(function (windowId) {
 // Snap a picture and the three tools (lib/snap.js, lib/tools.js). They open
 // their windows through the courier, which answers heddy:ready and
 // heddy:result for them like any other kind.
+var sender = HeddyTools.createSender({ openCapture: courier.openCapture });
 var snap = HeddySnap.createSnap({
   chrome: chrome,
   crop: HeddyCrop,
   tools: HeddyTools,
   makers: { createImageBitmap: createImageBitmap.bind(self), OffscreenCanvas: OffscreenCanvas, Blob: Blob },
+  sender: sender,
+  // The panel leaves the page before a whole-tab screenshot. Box mode keeps
+  // it open beside itself and hides it only for each screenshot.
+  hidePanel: panel.hide,
+});
+
+// The panel's numbered cards and Save to Jotters (lib/cards.js, Round 5).
+cards = HeddyCards.createCards({
+  chrome: chrome,
+  crop: HeddyCrop,
+  openCapture: courier.openCapture,
+  sender: sender,
+  randomUUID: function () { return crypto.randomUUID(); },
+  pageFiles: HeddyCourier.PAGE_FILES,
+  capture: snap.cropOne,
+  showLine: snap.showLine,
   droppedText: function () {
     return HeddyI18n.currentLang(chrome).then(function (lang) { return HeddyI18n.t(lang, 'boxDropped'); });
   },
-  sender: HeddyTools.createSender({ openCapture: courier.openCapture }),
-  // The panel leaves the page before box mode or a screenshot.
-  hidePanel: panel.hide,
 });
 
 // The /capture window asks for its payload (heddy:ready) and reports
@@ -55,9 +72,9 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 // Heddy's own popup, the YouTube content script and the page tray.
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  var pictures = snap.internal(message, sender);
-  if (pictures) {
-    pictures.then(function (reply) { sendResponse(reply); }, function () { sendResponse(null); });
+  var mine = snap.internal(message, sender) || cards.internal(message, sender);
+  if (mine) {
+    mine.then(function (reply) { sendResponse(reply); }, function () { sendResponse(null); });
     return true;
   }
   courier.internal(message, sender).then(
@@ -69,11 +86,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 chrome.tabs.onUpdated.addListener(function (tabId, change, tab) {
   courier.tabUpdated(tabId, change, tab);
-  snap.tabUpdated(tabId, change);
+  cards.tabUpdated(tabId, change);
 });
 
 chrome.tabs.onRemoved.addListener(function (tabId) {
-  snap.tabGone(tabId);
+  cards.tabGone(tabId);
   courier.tabRemoved(tabId);
 });
 

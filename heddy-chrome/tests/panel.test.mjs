@@ -106,21 +106,23 @@ test('hide takes the panel off a page and resolves; a page without one resolves 
   await panel.hide(9);
 });
 
-test('Snap a picture from the panel: the panel leaves the page BEFORE box mode is drawn', async () => {
+test('+ Picture from the panel: box mode is drawn BESIDE the panel (R5b); the whole tab still takes the panel off first', async () => {
   const order = [];
   const chrome = {
     runtime: { id: 'heddy' },
     storage: { session: { get: async () => ({}), set: async () => {}, remove: async () => {} } },
-    tabs: { get: async (id) => ({ ...ARTICLE, id }), sendMessage: async (tabId, m) => { order.push(m.type); return { ok: true }; } },
-    scripting: { executeScript: async (o) => { order.push(o.files ? 'inject' : 'func'); } },
+    tabs: { get: async (id) => ({ ...ARTICLE, id }), sendMessage: async (tabId, m) => { order.push(m.type); return { ok: true }; }, captureVisibleTab: async () => { throw new Error('stop'); } },
+    scripting: { executeScript: async (o) => { order.push(o.files ? 'inject' : 'func'); return [{ result: { vw: 1280, vh: 800 } }]; } },
   };
-  const snap = createSnap({ chrome, crop: {}, tools: {}, makers: {}, sender: {}, hidePanel: async (tabId) => { order.push(`hide:${tabId}`); } });
+  const snap = createSnap({ chrome, crop: { clampBox: (r) => r }, tools: {}, makers: {}, sender: {}, later: (fn) => fn(), hidePanel: async (tabId) => { order.push(`hide:${tabId}`); } });
   // The panel's frame has a sender.tab (the page it sits in) and an extension URL.
   const frame = { id: 'heddy', url: `${EXT}/popup/popup.html?tab=9&host=panel`, tab: ARTICLE, frameId: 3 };
   const r = await snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 9 }, frame);
   assert.deepEqual(r, { ok: true });
-  assert.deepEqual(order.slice(0, 2), ['hide:9', 'inject']);
-  assert.ok(order.includes('heddy-box:start'));
+  assert.deepEqual(order, ['inject', 'heddy-box:start'], 'the panel stays: box mode hides it only for each screenshot');
+  order.length = 0;
+  await snap.internal({ type: 'heddy-ui:snap', mode: 'whole', tabId: 9 }, frame);
+  assert.equal(order[0], 'hide:9', 'the whole tab: the panel leaves before the screenshot');
 });
 
 test('the panel’s frame names its tab like the old popup: a capture from it is not refused for its own URL', async () => {
@@ -156,7 +158,7 @@ function page() {
   let onMessage = null;
   function el(tag) {
     const e = {
-      tag, attrs: {}, style: {}, children: [], className: '', title: '',
+      tag, attrs: {}, style: { setProperty(k, v, prio) { this[k] = `${v} !${prio}`; } }, children: [], className: '', title: '',
       classList: { set: new Set(), add(c) { this.set.add(c); }, contains(c) { return this.set.has(c); } },
       setAttribute(k, v) { this.attrs[k] = v; },
       appendChild(c) { this.children.push(c); return c; },
@@ -174,7 +176,7 @@ function page() {
     document: {
       createElement: el,
       body: { appendChild: (c) => { appended.push(c); return c; } },
-      documentElement: {},
+      documentElement: { appendChild: (c) => { appended.push(c); return c; } },
       addEventListener: on('doc'),
       removeEventListener: off('doc'),
     },
@@ -307,7 +309,20 @@ test('the popup acts on the tab it is given (?tab=), not on its own window’s a
   assert.match(popup, /HOST !== 'panel' \|\| e\.source !== window\.parent/, 'hints only from the page that holds it');
 });
 
-test('a changed selection redraws the words, never during an action', () => {
-  assert.match(popup, /if \(e\.data\.heddyPanel === 'selection'\) refreshSelection\(\);/);
-  assert.match(popup, /if \(!shown \|\| document\.querySelector\('\[aria-busy="true"\]'\)\) return;/);
+test('a new selection changes nothing until + Text; the background’s "changed" redraws the cards, never during an action', () => {
+  assert.doesNotMatch(popup, /heddyPanel === 'selection'/);
+  assert.match(popup, /if \(m && m\.type === 'heddy-cards:changed' && view && m\.tabId === view\.tab\.id\) refreshCards\(\);/);
+  assert.match(popup, /if \(!view \|\| busyNow\(\)\) return;/);
+});
+
+test('the panel is put on <html>, last, so box mode can sit just under it; away() hides it for a screenshot without reloading it', async () => {
+  const p = page();
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  assert.equal(p.ctx.__heddyPanel.host(), p.host());
+  p.ctx.__heddyPanel.away(true);
+  assert.equal(p.host().style.opacity, '0 !important');
+  assert.equal(p.appended.length, 1, 'still in the page: a frame removed would load again');
+  p.ctx.__heddyPanel.away(false);
+  assert.equal(p.host().style.opacity, '1 !important');
+  assert.match(read('content/panel.js'), /document\.documentElement\.appendChild\(host\);/);
 });

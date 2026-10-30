@@ -105,3 +105,33 @@ button { font: inherit; }
 .lk:hover { color: var(--pd); }
 .lk:focus-visible { outline: 2px solid var(--pd); outline-offset: 2px; border-radius: 4px; }
 .lk[aria-busy="true"] { opacity: .7; cursor: progress; }
+
+/* Round 5 (D54, D55): the numbered cards, R5b's panel (.pn6) at R5 · Chrome's
+   measures. Cards scroll inside the panel after about six. */
+.pbd.cardsv { gap: 8px; }
+.cnt { font: 700 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #80868b; }
+.cards { display: flex; flex-direction: column; gap: 6px; max-height: 334px; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
+.c { display: flex; align-items: center; gap: 8px; flex: none; background: #fff; border: 1px solid #e3dccd; border-radius: 9px; padding: 7px 7px 7px 9px; min-height: 30px; }
+.c > b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--pacc); color: #fff; font: 800 10.5px var(--sans); flex: none; }
+.c q { quotes: none; flex: 1; min-width: 0; font: 500 12.5px/1.4 var(--serif); color: var(--pi); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.c .th { flex: none; width: 52px; height: 30px; border-radius: 4px; object-fit: cover; background: var(--pr); box-shadow: inset 0 0 0 1px var(--ph); }
+.c .pl { flex: 1; min-width: 0; font: 500 12.5px var(--serif); color: var(--pi); }
+.cx { all: unset; flex: none; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; color: #80868b; cursor: pointer; }
+.cx:hover { background: var(--pr); color: var(--pd); }
+.cx:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.cx[aria-busy="true"] { opacity: .5; cursor: progress; }
+.adds { display: flex; gap: 8px; }
+.adds button { all: unset; box-sizing: border-box; flex: 1; text-align: center; border: 1px dashed #b9b2a3; border-radius: 9px; padding: 7px 0; font: 700 12.5px var(--sans); color: #1f6a40; cursor: pointer; }
+.adds button:hover { background: var(--pr); }
+.adds button:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.adds button[aria-busy="true"] { opacity: .7; cursor: progress; }
+.cardsv .btn.wide { margin-top: 4px; }
+.lk.go { align-self: center; color: #1f6a40; }
+.lk.go:hover { color: #174f30; }
+.fine { margin: 0; font: 500 11.5px/1.45 var(--sans); color: var(--pm); overflow-wrap: anywhere; }
+.ln { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 600 12px var(--sans); color: #4b5b73; }
+.ln button { all: unset; cursor: pointer; text-underline-offset: 3px; }
+.ln button:hover { text-decoration: underline; color: var(--pd); }
+.ln button:focus-visible { outline: 2px solid var(--pd); outline-offset: 2px; border-radius: 3px; }
+.ln button[aria-busy="true"] { opacity: .6; cursor: progress; }
+.ln .dot { color: #b9b2a3; }

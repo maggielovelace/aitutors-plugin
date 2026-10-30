@@ -71,6 +71,21 @@
           ms: NOTE_MS,
         };
       }
+      case 'saved': {
+        // Save to Jotters (Round 5, D54): no Undo, as the result names saves,
+        // not a jot; no Open in Jotter after Save and jot now (its tab is
+        // already the notebook).
+        var jotter = typeof msg.title === 'string' && msg.title.trim() ? msg.title.trim() : null;
+        return {
+          wide: true,
+          title: jotter ? tr('toastClipped', jotter) : tr('toastClippedNoTitle'),
+          open: typeof msg.href === 'string' ? { label: tr('toastOpenInJotter'), href: msg.href, quiet: true } : null,
+          ms: NOTE_MS,
+        };
+      }
+      case 'no_captions':
+        // D59: /capture/clip refused a video whose captions are none.
+        return { title: tr('toastNoCaptions'), ms: NOTE_MS };
       case 'card':
         // Make a card (owner, 2026-10-29): Undo deletes the cards it made.
         return {

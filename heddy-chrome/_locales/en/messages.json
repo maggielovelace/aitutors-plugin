@@ -34,14 +34,10 @@
 
   "jHint": { "message": "jots the line being spoken" },
 
-  "popupJotIt": { "message": "Jot it" },
-  "clipWholePageInstead": { "message": "Save the whole page instead" },
   "clipThisPage": { "message": "Save page to Jotters" },
-  "selectSomeWords": { "message": "Select some words" },
-  "selectSomeWordsFor": { "message": "for Jot it" },
   "jotLineSpoken": { "message": "Jot the line being spoken" },
   "jotLineSpokenSub": { "message": "New video? It's added first." },
-  "firstTimePage": { "message": "Jot a line, or save a page to Jotters as a source" },
+  "firstTimePage": { "message": "Save words, pictures or a whole page to Jotters" },
   "cantReadPage": { "message": "Heddy can't read this page. Try it on a web page or a YouTube video." },
   "pageEmpty": { "message": "This page has no text to save." },
 
@@ -68,7 +64,6 @@
   },
   "toastClippedNoTitle": { "message": "Saved to Jotters" },
   "toastPageCut": { "message": "Heddy kept the first part of this page." },
-  "setShortcut": { "message": "Set a shortcut" },
 
   "toastInMyClips": { "message": "In My Clips" },
   "toastFrom": {
@@ -97,34 +92,66 @@
   "menuJotPicture": { "message": "Jot this picture with Heddy" },
   "boxHintBefore": { "message": "Drag over a picture ·" },
   "boxHintAfter": { "message": "to stop" },
-  "boxCollecting": { "message": "Collecting for one jot ·" },
+  "boxCollecting": { "message": "Box mode ·" },
   "boxKept": {
     "message": "$N$ kept",
     "placeholders": { "n": { "content": "$1", "example": "2" } }
   },
-  "boxEscNone": { "message": "· Esc keeps none" },
   "boxWholePicture": { "message": "Whole picture · click to keep" },
   "boxKeptLabel": {
     "message": "$N$ · kept",
     "placeholders": { "n": { "content": "$1", "example": "1" } }
   },
-  "boxDropped": { "message": "The page changed, so the pictures you kept were dropped." },
+  "boxDropped": { "message": "The page changed, so the cards you collected were cleared." },
   "boxFailed": { "message": "Heddy couldn't take that picture. Try again." },
-  "trayJot": { "message": "Jot it" },
-  "trayJotN": {
-    "message": "Jot it · $N$",
-    "placeholders": { "n": { "content": "$1", "example": "3" } }
-  },
-  "trayAdd": { "message": "Add to this jot" },
   "trayExplain": { "message": "Explain" },
   "trayCard": { "message": "Make a card" },
   "trayAsk": { "message": "Ask Heddy" },
-  "trayOnePicture": { "message": "Explain and Make a card take one picture" },
-  "menuWholeScreen": { "message": "Snap the whole screen instead" },
   "menuCopyPicture": { "message": "Copy picture" },
   "menuCopied": { "message": "Copied" },
   "copyFailed": { "message": "Couldn't copy the picture." },
   "toastCardMade": { "message": "Card made" },
   "toastCardDeleted": { "message": "Card deleted." },
-  "toastCardUndoFailed": { "message": "Couldn't undo that card." }
+  "toastCardUndoFailed": { "message": "Couldn't undo that card." },
+
+  "saveToJotters": { "message": "Save to Jotters" },
+  "saveAndJot": { "message": "Save and jot now" },
+  "saveGoesTo": {
+    "message": "Goes to the left page of your \"$TITLE$\" Jotter. You can jot it there.",
+    "placeholders": { "title": { "content": "$1", "example": "Sparx Science – Home" } }
+  },
+  "saveGoesToNoTitle": { "message": "Goes to the left page of this page's Jotter. You can jot it there." },
+  "savePageToo": { "message": "Save the whole page too" },
+  "cardsHeading": { "message": "In this save" },
+  "cardsSnippet": { "message": "1 snippet" },
+  "cardsSnippets": {
+    "message": "$N$ snippets",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "cardsPicture": { "message": "1 picture" },
+  "cardsPictures": {
+    "message": "$N$ pictures",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "addText": { "message": "+ Text" },
+  "addPicture": { "message": "+ Picture" },
+  "cardPictureLabel": { "message": "Picture" },
+  "cardRemove": {
+    "message": "Remove card $N$",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "cardsSelectFirst": { "message": "Select some words on the page, then tap + Text." },
+  "cardsSame": {
+    "message": "Those words are already card $N$.",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "cardsFullText": { "message": "Heddy keeps up to 10 snippets from one page." },
+  "cardsFullPictures": { "message": "Heddy keeps up to 4 pictures from one page." },
+  "toolsOnCard1": { "message": "On card 1" },
+  "barHeddy": { "message": "Heddy ▾" },
+  "menuExplainPicture": { "message": "Explain this picture" },
+  "menuAskAbout": { "message": "Ask Heddy about it" },
+  "menuWholePage": { "message": "Whole visible page" },
+  "boxEscDone": { "message": "· Esc to stop" },
+  "toastNoCaptions": { "message": "Heddy needs captions to help with this video, and this one has none." }
 }

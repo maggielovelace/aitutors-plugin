@@ -17,6 +17,8 @@
   var TAB_CLOSE_MS = 1000;
   // heddy:result's error when the child taps Cancel or Close on a capture page.
   var CANCELLED = 'cancelled';
+  // /capture/clip's refusal of a video with no captions (D59).
+  var NO_CAPTIONS = 'no_captions';
   var ICONS = {
     idle: { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' },
     ready: { 16: 'icons/toolbar-ready-16.png', 32: 'icons/toolbar-ready-32.png' },
@@ -26,8 +28,10 @@
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
   var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
-  // What a gesture injects into any page for Jot it and Save page to Jotters (Phase 2).
-  var PAGE_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js'];
+  // What a gesture injects into any page for Jot it and Save page to Jotters
+  // (Phase 2), and for the panel's cards: lib/pos.js places a snippet on its
+  // page, content/cards-layer.js draws the cards' numbers (Round 5).
+  var PAGE_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js', 'lib/pos.js', 'content/cards-layer.js'];
   var MENU_ID = 'heddy-jot';
   // manifest.json "commands": jot the selected words. No default key (owner,
   // 2026-10-29); the child binds one at chrome://extensions/shortcuts.
@@ -167,6 +171,14 @@
       if (kind === 'undo') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'undone' : 'undo_failed' });
       }
+      // A video with no captions is not kept (D59): the page says so, then
+      // Heddy closes its tab and says the same on the video.
+      if (!result.ok && result.error === NO_CAPTIONS && kind === 'clip') {
+        var none = { type: 'heddy-ui:toast', kind: 'no_captions' };
+        if (meta.captureTabId == null) return tellTab(meta.tabId, none);
+        later(function () { closeCaptureTab(meta).then(function () { return tellTab(meta.tabId, none); }); }, TAB_CLOSE_MS);
+        return Promise.resolve();
+      }
       if (!result.ok) {
         // J's refusals (Keep and jot, cant_keep, "We don't have this video
         // yet") stay in the site's window, with Close. Only a clip's refusal
@@ -225,6 +237,20 @@
       }
       if (kind === 'page') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
+      }
+      // Save to Jotters (Round 5, D54): the cards it carried leave the panel,
+      // and the page says "Saved to Jotters · {title}". The site closes its
+      // window; with Save and jot now its tab has become the notebook and
+      // stays, so there is no Open in Jotter. The heddy:save result names
+      // saves, not a jot, so there is no Undo to offer.
+      if (kind === 'save') {
+        var done = deps.saved ? Promise.resolve().then(function () { return deps.saved(meta, result); }).catch(function () {}) : Promise.resolve();
+        var saved = { type: 'heddy-ui:toast', kind: 'saved', title: result.title || meta.title };
+        if (meta.then !== 'jot') saved.href = C.jotterById(origin, result.jotterId);
+        return done
+          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
+          .catch(function () {})
+          .then(function () { return tellTab(meta.tabId, saved); });
       }
       if (kind !== 'clip') return Promise.resolve();
       // "from m:ss" is where the site says the kept clip starts (its `t`):
@@ -492,7 +518,7 @@
     return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, NO_CAPTIONS: NO_CAPTIONS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

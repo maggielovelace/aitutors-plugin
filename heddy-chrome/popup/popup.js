@@ -5,13 +5,16 @@
 //   YouTube watch   the video row, Whole video / From m:ss, Watch with Heddy
 //                   (primary), Add to My Clips (outlined), the H row
 //   aitutors.me     one line of help, no primary, no footer
-//   words selected  the quote, Jot it (primary), "Save the whole page instead"
-//   nothing selected the page, Save page to Jotters (primary), the shortcut row
-//                   (the child's binding, else "Set a shortcut")
+//   any other page  the numbered cards (Round 5, D54, D55): "In this save ·
+//                   2 snippets · 1 picture", the cards with ✕, + Text and
+//                   + Picture, Save to Jotters (primary) and Save and jot now,
+//                   the line naming the Jotter, Explain · Make a card · Ask
+//                   Heddy on card 1, and Save the whole page too. With no
+//                   card: the page, + Text and + Picture, and Save page to
+//                   Jotters (primary)
 //   can't read      a page Heddy may not script (chrome://, the Web Store)
-// Phase 3 adds Explain, Make a card and Ask Heddy after Jot it, from
-// lib/tray-tools.js. Every string from a page (the video's title and channel,
-// the selection, the page's title) is set as text.
+// Every string from a page (the video's title and channel, a card's quote,
+// the page's title) is set as text.
 //
 // Where it is drawn (owner, 2026-10-30; lib/panel.js): ?host=panel is the
 // frame content/panel.js puts in the page, ?host=window the small window on a
@@ -148,130 +151,9 @@
 
   /** The jot-selection shortcut the child set in Chrome, or null. There is no
    *  default (owner, 2026-10-29): the obvious keys are Chrome's own. */
-  function commandKeys() {
-    if (!chrome.commands || !chrome.commands.getAll) return Promise.resolve(null);
-    return chrome.commands.getAll().then(function (all) {
-      var c = (all || []).filter(function (x) { return x.name === HeddyCourier.COMMAND; })[0];
-      // As Chrome prints it: "Ctrl+Shift+Y", "⇧⌘Y".
-      return c && c.shortcut ? c.shortcut.replace(/\+/g, ' ') : null;
-    }, function () { return null; });
-  }
-
-  /** "Set a shortcut": Chrome's own page for extension shortcuts. */
-  function shortcutLink() {
-    var a = el('button', 'lk', tr('setShortcut'));
-    a.type = 'button';
-    a.addEventListener('click', function () {
-      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }).then(closeUi, function () {});
-    });
-    return a;
-  }
-
   function fail(err, key) {
-    err.textContent = tr(key);
+    err.textContent = tr.apply(null, [key].concat(Array.prototype.slice.call(arguments, 2)));
     err.hidden = false;
-  }
-
-  /** Save page to Jotters: the readable Markdown, made in the tab (content/extract.js).
-   *  A page past 200 KB is cut by the courier, and the toast after the save says so. */
-  function clipPage(tab, btn, err) {
-    btn.setAttribute('aria-busy', 'true');
-    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.extract(); } })
-      .then(function (res) {
-        var page = res && res[0] && res[0].result;
-        if (!page || !page.markdown || !page.markdown.trim()) throw new Error('empty');
-        return chrome.runtime.sendMessage({ type: 'heddy-ui:page', url: tab.url, title: page.title || tab.title || '', markdown: page.markdown, tabId: tab.id, windowId: tab.windowId });
-      })
-      .then(function (reply) {
-        if (reply && reply.ok) return closeUi();
-        throw new Error((reply && reply.error) || 'no window');
-      })
-      .catch(function (e) {
-        btn.removeAttribute('aria-busy');
-        var m = e && e.message;
-        fail(err, m === 'empty' ? 'pageEmpty' : 'captureFailed');
-      });
-  }
-
-  function renderSelection(body, tab, sel) {
-    var quote = el('div', 'quote', sel.quote.replace(/\s+/g, ' ').trim());
-    quote.appendChild(el('small', null, [sel.title.trim(), hostLabel(tab.url)].filter(Boolean).join(' · ')));
-    body.appendChild(quote);
-    var err = el('p', 'err');
-    err.hidden = true;
-    var jot = button('btn wide', 'h-quill', 18, tr('popupJotIt'));
-    jot.addEventListener('click', function () {
-      jot.setAttribute('aria-busy', 'true');
-      chrome.runtime.sendMessage({ type: 'heddy-ui:jot', url: tab.url, title: sel.title, quote: sel.quote, before: sel.before, after: sel.after, tabId: tab.id, windowId: tab.windowId })
-        .then(function (reply) {
-          if (reply && reply.ok) return closeUi();
-          throw new Error('no window');
-        })
-        .catch(function () { jot.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
-    });
-    body.appendChild(jot);
-    body.appendChild(toolRow(tab, sel, err));
-    var clip = el('button', 'lk');
-    clip.type = 'button';
-    clip.insertAdjacentHTML('beforeend', M.use('h-page', 16));
-    clip.appendChild(el('span', null, tr('clipWholePageInstead')));
-    clip.addEventListener('click', function () { clipPage(tab, clip, err); });
-    body.appendChild(clip);
-    body.appendChild(err);
-    $('foot').hidden = false;
-  }
-
-  /** Explain · Make a card · Ask Heddy under Jot it (R3b · 05 "Words
-   *  selected", round 2c): outlined, never filled; Jot it stays the one
-   *  primary. The free-rounds line is printed only inside the aitutors.me
-   *  windows (owner, 2026-10-29), so not here. */
-  function toolRow(tab, sel, err) {
-    var row = el('div', 'tools');
-    HeddyTrayTools.TOOLS.filter(function (t) { return !t.primary; }).forEach(function (t) {
-      var b = el('button', 'tool');
-      b.type = 'button';
-      if (t.badge) {
-        var hf = el('span', 'hf');
-        hf.insertAdjacentHTML('beforeend', M.use(t.popupMark, 18));
-        b.appendChild(hf);
-      } else {
-        b.insertAdjacentHTML('beforeend', M.use(t.popupMark, 15));
-      }
-      b.appendChild(el('span', null, tr(t.label)));
-      b.addEventListener('click', function () {
-        b.setAttribute('aria-busy', 'true');
-        var c = P.contextOf(sel.before, sel.after);
-        chrome.runtime.sendMessage({ type: 'heddy-ui:tool', tool: t.id, quote: sel.quote, context: c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after, tabId: tab.id })
-          .then(function (reply) {
-            if (reply && reply.ok) return closeUi();
-            throw new Error('no window');
-          })
-          .catch(function () { b.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
-      });
-      row.appendChild(b);
-    });
-    return row;
-  }
-
-  function renderNothingSelected(body, tab) {
-    var pg = el('div', 'pg');
-    pg.appendChild(el('b', null, (tab.title || hostLabel(tab.url)).slice(0, 200)));
-    pg.appendChild(el('span', null, shortUrl(tab.url)));
-    body.appendChild(pg);
-    var err = el('p', 'err');
-    err.hidden = true;
-    var clip = button('btn wide', 'h-page', 16, tr('clipThisPage'));
-    clip.addEventListener('click', function () { clipPage(tab, clip, err); });
-    body.appendChild(clip);
-    var row = keyRow(null, tr('selectSomeWords'), tr('selectSomeWordsFor'), '');
-    body.appendChild(row);
-    commandKeys().then(function (k) {
-      var slot = row.querySelector('.kbd');
-      if (k) slot.textContent = k;
-      else slot.replaceWith(Object.assign(shortcutLink(), { className: 'lk r' }));
-    });
-    body.appendChild(err);
-    $('foot').hidden = false;
   }
 
   function renderCantRead(body) {
@@ -292,7 +174,7 @@
     }
   }
 
-  /** The page's selection, read in the tab (content/extract.js), or null. */
+  /** The page's selection, read in the tab (content/page-tray.js), or null. */
   function readSelection(tab) {
     return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.selection(); } })
       .then(function (res) {
@@ -301,39 +183,207 @@
       });
   }
 
-  // What the page state shows, so a new selection redraws it (below).
-  var shown = null;
+  // ─── the page: numbered cards (D54, D55; R4 · B, R5 · Chrome, R5b) ────────
+  //
+  // One numbered list of snippets and pictures from this page, each with ✕;
+  // + Text keeps the words selected now, + Picture starts box mode beside the
+  // panel. Save to Jotters sends them all to the left page of this page's
+  // Jotter; Save and jot now opens the notebook at them. Explain, Make a card
+  // and Ask Heddy act on card 1. With no card, the page itself is the thing
+  // to save. The list lives in the background (lib/cards.js); this draws it.
 
-  function drawPage(body, tab, sel) {
-    shown = { tab: tab, quote: sel ? sel.quote : null };
-    if (sel) return renderSelection(body, tab, sel);
-    return renderNothingSelected(body, tab);
+  var view = null; // { tab, state } while the page state shows
+
+  function cardsCall(message, tab) {
+    return Promise.resolve()
+      .then(function () { return chrome.runtime.sendMessage(Object.assign({ tabId: tab.id }, message)); })
+      .then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; });
+  }
+
+  /** "In this save · 2 snippets · 1 picture" (R5b), leaving out a zero. */
+  function countLine(c) {
+    var parts = [tr('cardsHeading')];
+    if (c.text) parts.push(c.text === 1 ? tr('cardsSnippet') : tr('cardsSnippets', String(c.text)));
+    if (c.image) parts.push(c.image === 1 ? tr('cardsPicture') : tr('cardsPictures', String(c.image)));
+    return parts.join(' · ');
+  }
+
+  function busyNow() {
+    return !!document.querySelector('[aria-busy="true"]');
+  }
+
+  function cardRow(card, tab) {
+    var row = el('div', 'c');
+    row.appendChild(el('b', null, String(card.n)));
+    if (card.kind === 'image') {
+      var th = el('img', 'th');
+      th.alt = '';
+      // The crop Heddy cut itself, as a data: URL; nothing is fetched.
+      if (/^[A-Za-z0-9+/=]+$/.test(card.png || '')) th.src = 'data:image/png;base64,' + card.png;
+      row.appendChild(th);
+      row.appendChild(el('span', 'pl', tr('cardPictureLabel')));
+    } else {
+      row.appendChild(el('q', null, card.quote.replace(/\s+/g, ' ').trim()));
+    }
+    var x = el('button', 'cx');
+    x.type = 'button';
+    x.setAttribute('aria-label', tr('cardRemove', String(card.n)));
+    x.title = tr('cardRemove', String(card.n));
+    x.insertAdjacentHTML('beforeend', '<svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>');
+    x.addEventListener('click', function () {
+      x.setAttribute('aria-busy', 'true');
+      cardsCall({ type: 'heddy-cards:remove', id: card.id }, tab).then(function (r) {
+        if (r.ok) setState(r);
+        else x.removeAttribute('aria-busy');
+      });
+    });
+    row.appendChild(x);
+    return row;
+  }
+
+  /** Save to Jotters, Save and jot now, Save page to Jotters: one heddy:save
+   *  (lib/cards.js), in /capture/save; the panel closes once it is open. */
+  function save(btn, err, then, withPage) {
+    btn.setAttribute('aria-busy', 'true');
+    cardsCall({ type: 'heddy-cards:save', then: then, page: withPage }, view.tab).then(function (r) {
+      if (r.ok) return closeUi();
+      btn.removeAttribute('aria-busy');
+      fail(err, r.error === 'empty' ? 'pageEmpty' : 'captureFailed');
+    });
+  }
+
+  function drawCards() {
+    var body = $('body');
+    var tab = view.tab, st = view.state;
+    var cards = st.cards || [];
+    var c = st.counts || { text: 0, image: 0 };
+    body.textContent = '';
+    body.classList.add('cardsv');
+
+    if (cards.length) {
+      body.appendChild(el('span', 'cnt', countLine(c)));
+      var list = el('div', 'cards');
+      cards.forEach(function (card) { list.appendChild(cardRow(card, tab)); });
+      body.appendChild(list);
+    } else {
+      var pg = el('div', 'pg');
+      pg.appendChild(el('b', null, (tab.title || hostLabel(tab.url)).slice(0, 200)));
+      pg.appendChild(el('span', null, shortUrl(tab.url)));
+      body.appendChild(pg);
+    }
+
+    var err = el('p', 'err');
+    err.hidden = true;
+
+    // + Text · + Picture (R5b's dashed pair).
+    var adds = el('div', 'adds');
+    var addText = el('button', null, tr('addText'));
+    addText.type = 'button';
+    var addPic = el('button', null, tr('addPicture'));
+    addPic.type = 'button';
+    addText.addEventListener('click', function () {
+      if (c.text >= HeddyCards.MAX_TEXT) return fail(err, 'cardsFullText');
+      addText.setAttribute('aria-busy', 'true');
+      cardsCall({ type: 'heddy-cards:add-text' }, tab).then(function (r) {
+        addText.removeAttribute('aria-busy');
+        if (r.ok) return setState(r);
+        if (r.error === 'no_selection') return fail(err, 'cardsSelectFirst');
+        if (r.error === 'same') return fail(err, 'cardsSame', String(r.n));
+        if (r.error === 'full_text') return fail(err, 'cardsFullText');
+        fail(err, 'captureFailed');
+      });
+    });
+    addPic.addEventListener('click', function () {
+      if (c.image >= HeddyCards.MAX_IMAGES) return fail(err, 'cardsFullPictures');
+      // Box mode beside the panel; its + Picture adds the cards here.
+      cardsCall({ type: 'heddy-ui:snap', mode: 'box' }, tab);
+    });
+    adds.appendChild(addText);
+    adds.appendChild(addPic);
+    body.appendChild(adds);
+    body.appendChild(err);
+
+    var title = (tab.title || '').replace(/\s+/g, ' ').trim();
+    if (cards.length) {
+      var primary = button('btn wide', null, 0, tr('saveToJotters'));
+      primary.addEventListener('click', function () { save(primary, err, 'save', false); });
+      body.appendChild(primary);
+      var jot = el('button', 'lk go', tr('saveAndJot'));
+      jot.type = 'button';
+      jot.addEventListener('click', function () { save(jot, err, 'jot', false); });
+      body.appendChild(jot);
+    } else {
+      var page = button('btn wide', 'h-page', 16, tr('clipThisPage'));
+      page.addEventListener('click', function () { save(page, err, 'save', true); });
+      body.appendChild(page);
+    }
+    body.appendChild(el('p', 'fine', title ? tr('saveGoesTo', title) : tr('saveGoesToNoTitle')));
+
+    if (cards.length) {
+      // Explain · Make a card · Ask Heddy, small, on card 1 (D55).
+      var ln = el('div', 'ln');
+      ln.title = tr('toolsOnCard1');
+      HeddyTrayTools.TOOLS.filter(function (t) { return !t.primary; }).forEach(function (t, i) {
+        if (i) ln.appendChild(el('span', 'dot', '·'));
+        var b = el('button', null, tr(t.label));
+        b.type = 'button';
+        b.addEventListener('click', function () {
+          b.setAttribute('aria-busy', 'true');
+          cardsCall({ type: 'heddy-cards:tool', tool: t.id }, tab).then(function (r) {
+            if (r.ok) return closeUi();
+            b.removeAttribute('aria-busy');
+            fail(err, 'captureFailed');
+          });
+        });
+        ln.appendChild(b);
+      });
+      body.appendChild(ln);
+      var whole = el('button', 'lk');
+      whole.type = 'button';
+      whole.insertAdjacentHTML('beforeend', M.use('h-page', 16));
+      whole.appendChild(el('span', null, tr('savePageToo')));
+      whole.addEventListener('click', function () { save(whole, err, 'save', true); });
+      body.appendChild(whole);
+    }
+    $('foot').hidden = false;
+  }
+
+  function setState(st) {
+    if (!view || !st || !Array.isArray(st.cards)) return;
+    view.state = st;
+    drawCards();
   }
 
   /** Any other page: the icon click is the gesture (activeTab), so Heddy
-   *  may now read the selection. Pages Chrome keeps from extensions refuse. */
+   *  may now read it. Words already selected when the panel opens, with no
+   *  card yet, become card 1. Pages Chrome keeps from extensions refuse. */
   function renderPage(body, tab) {
     return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: HeddyCourier.PAGE_FILES })
-      .then(function () { return readSelection(tab); })
-      .then(function (sel) { return drawPage(body, tab, sel); }, function () { return renderCantRead(body); });
+      .then(function () { return cardsCall({ type: 'heddy-cards:get' }, tab); })
+      .then(function (st) {
+        if (!st.ok) throw new Error('no cards');
+        if (st.cards.length) return st;
+        return readSelection(tab).then(function (sel) {
+          if (!sel) return st;
+          return cardsCall({ type: 'heddy-cards:add-text' }, tab).then(function (r) { return r.ok ? r : st; });
+        }, function () { return st; });
+      })
+      .then(function (st) {
+        view = { tab: tab, state: st };
+        drawCards();
+      }, function () { return renderCantRead(body); });
   }
 
-  /** The panel stays open while the child selects more (owner, 2026-10-30):
-   *  on the page's hint, read the selection again and redraw the words or
-   *  the nothing-selected state if it changed. Never while an action is on
-   *  its way, and only on the two page states. A cleared selection keeps the
-   *  quote until the next one, so clicking the panel never loses it. */
-  function refreshSelection() {
-    if (!shown || document.querySelector('[aria-busy="true"]')) return;
-    var tab = shown.tab;
-    readSelection(tab).then(function (sel) {
-      if (!shown || document.querySelector('[aria-busy="true"]')) return;
-      if (!sel || sel.quote === shown.quote) return;
-      var body = $('body');
-      body.textContent = '';
-      drawPage(body, tab, sel);
-    }, function () {});
+  /** The background changed the list (box mode kept a picture, the site
+   *  saved some): draw it again, unless an action is on its way. */
+  function refreshCards() {
+    if (!view || busyNow()) return;
+    cardsCall({ type: 'heddy-cards:get' }, view.tab).then(function (st) { if (st.ok && !busyNow()) setState(st); });
   }
+
+  chrome.runtime.onMessage.addListener(function (m) {
+    if (m && m.type === 'heddy-cards:changed' && view && m.tabId === view.tab.id) refreshCards();
+  });
 
   function renderSite(body) {
     body.appendChild(el('p', 'here', tr('sitePageLine')));
@@ -438,10 +488,10 @@
 
   // Hints from the page that holds the panel (content/panel.js), and only
   // from it: they carry no data, the popup reads the page itself.
+  // A new selection changes nothing until + Text; another page, everything.
   window.addEventListener('message', function (e) {
     if (HOST !== 'panel' || e.source !== window.parent || !e.data || typeof e.data !== 'object') return;
-    if (e.data.heddyPanel === 'selection') refreshSelection();
-    else if (e.data.heddyPanel === 'moved') location.reload();
+    if (e.data.heddyPanel === 'moved') location.reload();
   });
 
   function theTab() {
