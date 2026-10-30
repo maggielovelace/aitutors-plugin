@@ -29,10 +29,22 @@ And on any page:
 - **H on a YouTube video** jots the line being spoken into the video's
   Jotter. Press H twice quickly to take the line before as well. YouTube's
   own keys, J included, keep doing what they always did.
-- **Jot it** keeps words you select on any page, with where they came from.
-  Right-click a selection → *Jot it with Heddy*, or click Heddy's icon. You
-  can also give it a shortcut of your own at `chrome://extensions/shortcuts`
-  (Heddy sets none, so it never takes one of Chrome's).
+- **Collect, then Save to Jotters.** Click Heddy's icon and its panel stays
+  on the page while you read. Select words and tap **+ Text**, or tap
+  **+ Picture** and draw a box: each one is a numbered card, and the same
+  number shows on the page beside its highlight or box. Up to 10 snippets
+  and 4 pictures, all from one page; going to another page clears them.
+  **Save to Jotters** puts them on the left page of that page's Jotter, in
+  the page's own order, where you jot from them. **Save and jot now** opens
+  the notebook at them. Explain, Make a card and Ask Heddy act on card 1.
+- **Snap a picture** (the panel's + Picture, or Ctrl Shift K): under a box,
+  **Save to Jotters** · **+ Picture** for another · **Heddy ▾** with Explain
+  this picture, Make a card, Ask Heddy about it, Copy picture and Whole
+  visible page.
+- **Jot it with Heddy** on the right-click menu still jots a selection at
+  once. You can give it a shortcut of your own at
+  `chrome://extensions/shortcuts` (Heddy sets none, so it never takes one of
+  Chrome's).
 - **Save page to Jotters** keeps the readable part of a page as a source in
   your Jotters. A very long page keeps its first part, and Heddy tells you so.
 
