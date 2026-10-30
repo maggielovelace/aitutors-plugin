@@ -20,7 +20,7 @@ const PROD = 'https://aitutors.me';
 const WATCH = `https://www.youtube.com/watch?v=${VIDEO}`;
 const ARTICLE = 'https://www.ordnancesurvey.co.uk/map-scales';
 
-function setup({ tabReply = { ok: true } } = {}) {
+function setup({ tabReply = { ok: true }, store = createCidStore() } = {}) {
   const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [], tabsCreated: [], windowsRemoved: [] };
   const session = {};
   const chrome = {
@@ -49,7 +49,7 @@ function setup({ tabReply = { ok: true } } = {}) {
       create: (o) => { calls.menus.push(o); },
     },
   };
-  const courier = createCourier({ chrome, store: createCidStore(), randomUUID: () => CID, setTimeout: () => {} });
+  const courier = createCourier({ chrome, store, randomUUID: () => CID, setTimeout: () => {} });
   return { chrome, calls, courier };
 }
 
@@ -259,15 +259,30 @@ test('Cancel or Close in a capture window (heddy:result cancelled): Heddy closes
   assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'dropped');
 });
 
-test('a Clip this page the site refuses as not study (not_study): no Clipped toast, the window stays open with its reason', async () => {
-  const s = setup();
+test('a Clip this page the site refuses after its file check (not_study, too_long, unreadable, failed): no Clipped toast, the window stays; Close then closes it', async () => {
+  for (const error of ['not_study', 'too_long', 'unreadable', 'failed']) {
+    const s = setup();
+    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
+    await claim(s);
+    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error }, page()), { ok: true }, error);
+    assert.equal(s.calls.tabMessages.length, 0, `${error}: no toast`);
+    assert.deepEqual(s.calls.windowsRemoved, [], `${error}: the window stays`);
+    assert.equal(s.calls.icons.length, 0, `${error}: no tick`);
+    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+    assert.deepEqual(s.calls.windowsRemoved, [42], `${error}: Close afterwards closes it`);
+  }
+});
+
+test('a Clip this page ok that comes ~30 s after the tap (the site waited for its file check) still gets the Clipped toast', async () => {
+  let now = 1_000_000;
+  const s = setup({ store: createCidStore({ now: () => now }) });
   await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
   await claim(s);
-  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'not_study' }, page()), { ok: true });
-  assert.equal(s.calls.tabMessages.length, 0, 'no toast');
-  assert.deepEqual(s.calls.windowsRemoved, [], 'the window stays');
-  assert.equal(s.calls.icons.length, 0, 'no tick');
+  now += 30_000;
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: '6ba7b810-9dad-41d1-80b4-00c04fd430c8' }, page());
+  assert.equal(s.calls.tabMessages.at(-1).m.kind, 'clipped');
 });
+
 
 test('Close under a failure that was already reported still closes the window', async () => {
   const s = setup();
