@@ -34,7 +34,7 @@ ON A YOUTUBE VIDEO
 
 ON ANY PAGE
 • Select some words, then Jot it, Explain, Make a card or Ask Heddy. Or right-click the words and choose "Jot it with Heddy".
-• Clip this page: keeps the readable part of a page as a source in your Jotter.
+• Save page to Jotters: keeps the readable part of a page as a source in your Jotters.
 • Snap a picture: draw a box round a diagram, chart or photo and jot it. Keep up to four pictures from the same page in one jot, or Copy picture to paste it somewhere else. Right-click a picture and choose "Jot this picture with Heddy", or press Ctrl Shift K (twice for the whole screen).
 
 AFTER YOU SAVE
@@ -42,7 +42,7 @@ A small note on the page says what was kept and shows the words. Undo takes it b
 
 YOU ARE IN CHARGE
 • Nothing is kept until you tap Keep on aitutors.me, under your own account.
-• Heddy reads a page only when you ask it to: the popup, the right-click menu or your shortcut.
+• Heddy reads a page only when you ask it to: its icon, the right-click menu or your shortcut.
 • Heddy holds no account, password, key or token.
 • Heddy makes no network call of its own. It has no analytics and no error reporting.
 • It keeps only a few preferences on your device, such as your language.

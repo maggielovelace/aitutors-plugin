@@ -105,3 +105,50 @@ test('a junk saved state loads as empty', () => {
   store.load(undefined);
   assert.equal(store.size(), 0);
 });
+
+test('a capture opened as a tab is claimed only from that tab, and survives a reload', () => {
+  const { store, clock } = setup();
+  store.setTab(CID, 900, 1);
+  assert.equal(store.claim(CID, { origin: ORIGIN, windowId: 1, tabId: 555 }), null, 'another tab');
+  assert.equal(store.claim(CID, { origin: ORIGIN, windowId: 2, tabId: 900 }), null, 'another window');
+  const reloaded = createCidStore({ now: clock.now });
+  reloaded.load(JSON.parse(JSON.stringify(store.toJSON())));
+  assert.deepEqual(reloaded.claim(CID, { origin: ORIGIN, windowId: 1, tabId: 900 }), PAYLOAD);
+  assert.equal(reloaded.takeResult(CID, { origin: ORIGIN, windowId: 1, tabId: 555 }), null);
+  assert.equal(reloaded.takeResult(CID, { origin: ORIGIN, windowId: 1, tabId: 900 }).captureTabId, 900);
+});
+
+test('dropTab forgets the cids of a closed capture tab, held or claimed, and no other', () => {
+  const { store } = setup();
+  store.setTab(CID, 900, 1);
+  const OTHER = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
+  store.put(OTHER, { payload: { ...PAYLOAD, cid: OTHER }, origin: ORIGIN, tabId: 7 });
+  store.setWindow(OTHER, 42);
+  assert.equal(store.dropTab(7), 0, 'the YouTube tab is not a capture tab');
+  assert.equal(store.dropTab(900), 1);
+  assert.equal(store.claim(CID, { origin: ORIGIN, windowId: 1, tabId: 900 }), null);
+  assert.ok(store.claim(OTHER, { origin: ORIGIN, windowId: 42 }), 'a window capture is untouched');
+  const s2 = setup().store;
+  s2.setTab(CID, 900, 1);
+  s2.claim(CID, { origin: ORIGIN, windowId: 1, tabId: 900 });
+  assert.equal(s2.dropTab(900), 1, 'a claimed one too');
+});
+
+test('after its result a cid keeps only where its page is, for one Cancel, and that survives a reload', () => {
+  const { store, clock } = setup();
+  store.claim(CID, { origin: ORIGIN, windowId: 42 });
+  store.takeResult(CID, { origin: ORIGIN, windowId: 42 });
+  assert.equal(store.takeResult(CID, { origin: ORIGIN, windowId: 42 }), null);
+  const reloaded = createCidStore({ now: clock.now });
+  reloaded.load(JSON.parse(JSON.stringify(store.toJSON())));
+  assert.equal(reloaded.takeDone(CID, { origin: ORIGIN, windowId: 7 }), null);
+  const spot = reloaded.takeDone(CID, { origin: ORIGIN, windowId: 42 });
+  assert.equal(spot.windowId, 42);
+  assert.equal(spot.payload, undefined);
+  assert.equal(reloaded.takeDone(CID, { origin: ORIGIN, windowId: 42 }), null, 'once');
+  const late = setup();
+  late.store.claim(CID, { origin: ORIGIN, windowId: 42 });
+  late.store.takeResult(CID, { origin: ORIGIN, windowId: 42 });
+  late.clock.advance(RESULT_MS);
+  assert.equal(late.store.takeDone(CID, { origin: ORIGIN, windowId: 42 }), null, 'forgotten after 30 minutes');
+});

@@ -5,18 +5,61 @@
 //   YouTube watch   the video row, Whole video / From m:ss, Watch with Heddy
 //                   (primary), Add to My Clips (outlined), the H row
 //   aitutors.me     one line of help, no primary, no footer
-//   words selected  the quote, Jot it (primary), "Clip the whole page instead"
-//   nothing selected the page, Clip this page (primary), the shortcut row
+//   words selected  the quote, Jot it (primary), "Save the whole page instead"
+//   nothing selected the page, Save page to Jotters (primary), the shortcut row
 //                   (the child's binding, else "Set a shortcut")
 //   can't read      a page Heddy may not script (chrome://, the Web Store)
 // Phase 3 adds Explain, Make a card and Ask Heddy after Jot it, from
 // lib/tray-tools.js. Every string from a page (the video's title and channel,
 // the selection, the page's title) is set as text.
+//
+// Where it is drawn (owner, 2026-10-30; lib/panel.js): ?host=panel is the
+// frame content/panel.js puts in the page, ?host=window the small window on a
+// page Chrome keeps from extensions. Both stay until closed (✕, Esc, or the
+// toolbar icon again), and ?tab= names the tab the popup acts on. Where the
+// toolbar popup closed itself after an action, closeUi() closes either.
 (function () {
   var P = HeddyProtocol, C = HeddyConfig, I = HeddyI18n, M = HeddyMarks, SEL = HeddyYouTube.SELECTORS;
   var tr = I.translator('en');
 
   var $ = function (id) { return document.getElementById(id); };
+
+  var params = new URLSearchParams(location.search);
+  var HOST = params.get('host') === 'panel' || params.get('host') === 'window' ? params.get('host') : 'popup';
+  var TAB_ID = /^\d+$/.test(params.get('tab') || '') ? Number(params.get('tab')) : null;
+
+  /** Close the panel (its host page removes the frame) or the window. */
+  function closeUi() {
+    if (HOST === 'panel') window.parent.postMessage({ heddyPanel: 'close' }, '*');
+    else window.close();
+  }
+
+  /** The panel's frame is as tall as its content; the window is too. */
+  function reportSize() {
+    var h = Math.ceil(document.getElementById('pop').getBoundingClientRect().height);
+    if (!h) return;
+    if (HOST === 'panel') {
+      window.parent.postMessage({ heddyPanel: 'size', h: h }, '*');
+    } else if (HOST === 'window' && chrome.windows && chrome.windows.getCurrent) {
+      chrome.windows.getCurrent().then(function (w) {
+        var chromeH = (w && typeof w.height === 'number') ? w.height - window.innerHeight : 0;
+        return chrome.windows.update(w.id, { height: Math.min(h + Math.max(chromeH, 0), 900) });
+      }).catch(function () {});
+    }
+  }
+
+  function watchSize() {
+    var last = 0;
+    var ro = new ResizeObserver(function () {
+      var h = Math.ceil($('pop').getBoundingClientRect().height);
+      if (h !== last) { last = h; reportSize(); }
+    });
+    ro.observe($('pop'));
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeUi(); }
+  });
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -46,7 +89,7 @@
   }
 
   function openSite(url) {
-    chrome.tabs.create({ url: url }).then(function () { window.close(); }, function () {});
+    chrome.tabs.create({ url: url }).then(closeUi, function () {});
   }
 
   function drawChrome() {
@@ -57,7 +100,12 @@
     cog.innerHTML = M.use('h-cog', 21);
     cog.title = tr('settings');
     cog.setAttribute('aria-label', tr('settings'));
-    cog.addEventListener('click', function () { chrome.runtime.openOptionsPage(); window.close(); });
+    cog.addEventListener('click', function () { chrome.runtime.openOptionsPage(); closeUi(); });
+    var x = $('close');
+    x.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    x.title = tr('close');
+    x.setAttribute('aria-label', tr('close'));
+    x.addEventListener('click', closeUi);
   }
 
   // ─── states ────────────────────────────────────────────────────────────────
@@ -114,7 +162,7 @@
     var a = el('button', 'lk', tr('setShortcut'));
     a.type = 'button';
     a.addEventListener('click', function () {
-      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }).then(function () { window.close(); }, function () {});
+      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }).then(closeUi, function () {});
     });
     return a;
   }
@@ -124,7 +172,7 @@
     err.hidden = false;
   }
 
-  /** Clip this page: the readable Markdown, made in the tab (content/extract.js).
+  /** Save page to Jotters: the readable Markdown, made in the tab (content/extract.js).
    *  A page past 200 KB is cut by the courier, and the toast after the save says so. */
   function clipPage(tab, btn, err) {
     btn.setAttribute('aria-busy', 'true');
@@ -135,7 +183,7 @@
         return chrome.runtime.sendMessage({ type: 'heddy-ui:page', url: tab.url, title: page.title || tab.title || '', markdown: page.markdown, tabId: tab.id, windowId: tab.windowId });
       })
       .then(function (reply) {
-        if (reply && reply.ok) return window.close();
+        if (reply && reply.ok) return closeUi();
         throw new Error((reply && reply.error) || 'no window');
       })
       .catch(function (e) {
@@ -156,7 +204,7 @@
       jot.setAttribute('aria-busy', 'true');
       chrome.runtime.sendMessage({ type: 'heddy-ui:jot', url: tab.url, title: sel.title, quote: sel.quote, before: sel.before, after: sel.after, tabId: tab.id, windowId: tab.windowId })
         .then(function (reply) {
-          if (reply && reply.ok) return window.close();
+          if (reply && reply.ok) return closeUi();
           throw new Error('no window');
         })
         .catch(function () { jot.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
@@ -195,7 +243,7 @@
         var c = P.contextOf(sel.before, sel.after);
         chrome.runtime.sendMessage({ type: 'heddy-ui:tool', tool: t.id, quote: sel.quote, context: c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after, tabId: tab.id })
           .then(function (reply) {
-            if (reply && reply.ok) return window.close();
+            if (reply && reply.ok) return closeUi();
             throw new Error('no window');
           })
           .catch(function () { b.removeAttribute('aria-busy'); fail(err, 'captureFailed'); });
@@ -244,16 +292,47 @@
     }
   }
 
-  /** Any other page: the popup opening is the gesture (activeTab), so Heddy
+  /** The page's selection, read in the tab (content/extract.js), or null. */
+  function readSelection(tab) {
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.selection(); } })
+      .then(function (res) {
+        var sel = res && res[0] && res[0].result;
+        return sel && sel.quote && sel.quote.trim() ? sel : null;
+      });
+  }
+
+  // What the page state shows, so a new selection redraws it (below).
+  var shown = null;
+
+  function drawPage(body, tab, sel) {
+    shown = { tab: tab, quote: sel ? sel.quote : null };
+    if (sel) return renderSelection(body, tab, sel);
+    return renderNothingSelected(body, tab);
+  }
+
+  /** Any other page: the icon click is the gesture (activeTab), so Heddy
    *  may now read the selection. Pages Chrome keeps from extensions refuse. */
   function renderPage(body, tab) {
     return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: HeddyCourier.PAGE_FILES })
-      .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.selection(); } }); })
-      .then(function (res) {
-        var sel = res && res[0] && res[0].result;
-        if (sel && sel.quote && sel.quote.trim()) return renderSelection(body, tab, sel);
-        return renderNothingSelected(body, tab);
-      }, function () { return renderCantRead(body); });
+      .then(function () { return readSelection(tab); })
+      .then(function (sel) { return drawPage(body, tab, sel); }, function () { return renderCantRead(body); });
+  }
+
+  /** The panel stays open while the child selects more (owner, 2026-10-30):
+   *  on the page's hint, read the selection again and redraw the words or
+   *  the nothing-selected state if it changed. Never while an action is on
+   *  its way, and only on the two page states. A cleared selection keeps the
+   *  quote until the next one, so clicking the panel never loses it. */
+  function refreshSelection() {
+    if (!shown || document.querySelector('[aria-busy="true"]')) return;
+    var tab = shown.tab;
+    readSelection(tab).then(function (sel) {
+      if (!shown || document.querySelector('[aria-busy="true"]')) return;
+      if (!sel || sel.quote === shown.quote) return;
+      var body = $('body');
+      body.textContent = '';
+      drawPage(body, tab, sel);
+    }, function () {});
   }
 
   function renderSite(body) {
@@ -336,7 +415,7 @@
         tabId: tab.id,
         windowId: tab.windowId,
       }).then(function (reply) {
-        if (reply && reply.ok) return window.close();
+        if (reply && reply.ok) return closeUi();
         throw new Error('no window');
       }).catch(function () {
         btn.removeAttribute('aria-busy');
@@ -357,9 +436,24 @@
 
   // ─── start ─────────────────────────────────────────────────────────────────
 
+  // Hints from the page that holds the panel (content/panel.js), and only
+  // from it: they carry no data, the popup reads the page itself.
+  window.addEventListener('message', function (e) {
+    if (HOST !== 'panel' || e.source !== window.parent || !e.data || typeof e.data !== 'object') return;
+    if (e.data.heddyPanel === 'selection') refreshSelection();
+    else if (e.data.heddyPanel === 'moved') location.reload();
+  });
+
+  function theTab() {
+    if (TAB_ID != null) return chrome.tabs.get(TAB_ID).then(function (t) { return t || null; }, function () { return null; });
+    return chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) { return tabs[0] || null; }, function () { return null; });
+  }
+
+  watchSize();
+
   Promise.all([
     I.currentLang(),
-    chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) { return tabs[0] || null; }, function () { return null; }),
+    theTab(),
     chrome.storage.local.get([C.DEV_KEY, C.START_KEY, C.FIRST_RUN_KEY]).catch(function () { return {}; }),
   ]).then(function (got) {
     var lang = got[0], tab = got[1], local = got[2] || {};
@@ -380,7 +474,7 @@
     }
     // Snap a picture (R3b · 05): every popup but the first-time one and
     // aitutors.me's, and only on a web page Heddy can draw box mode on.
-    if (url && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab });
+    if (url && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab, close: closeUi });
     var youtubeId = url ? P.youtubeIdFromUrl(url) : null;
     if (youtubeId) {
       return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info, local[C.START_KEY]); });

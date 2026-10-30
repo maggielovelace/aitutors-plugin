@@ -81,7 +81,8 @@
   }
 
   /** deps: {chrome, sender (lib/tools.js createSender), crop (HeddyCrop),
-   *  makers: {createImageBitmap, OffscreenCanvas, Blob}, later} */
+   *  makers: {createImageBitmap, OffscreenCanvas, Blob}, later,
+   *  hidePanel(tabId) → Promise: takes Heddy's panel off that page} */
   function createSnap(deps) {
     var chrome = deps.chrome;
     var K = deps.crop;
@@ -255,13 +256,20 @@
      *  Resolves to the reply, or undefined for a message that is not ours. */
     function internal(message, sender) {
       if (!message || typeof message !== 'object' || !sender || sender.id !== chrome.runtime.id) return undefined;
-      var tab = sender.tab;
+      // Heddy's own pages (the popup, now a frame in the page or a small
+      // window) carry a sender.tab too; like content scripts' it is not theirs.
+      var own = /^chrome-extension:/.test(String(sender.url || ''));
+      var tab = own ? null : sender.tab;
       switch (message.type) {
         case 'heddy-ui:snap': {
-          // From the popup, which has no tab of its own: it names the tab.
+          // From the popup, which names the tab. Its panel is taken off the
+          // page first, so it is in neither box mode nor the screenshot.
           if (tab) return Promise.resolve({ ok: false });
+          var hide = deps.hidePanel || function () { return Promise.resolve(); };
           return chrome.tabs.get(message.tabId).then(function (t) {
-            return message.mode === 'whole' ? whole(t) : start(t);
+            return Promise.resolve(hide(t.id)).catch(function () {}).then(function () {
+              return message.mode === 'whole' ? whole(t) : start(t);
+            });
           }, function () { return { ok: false }; });
         }
         case 'heddy-box:grab':

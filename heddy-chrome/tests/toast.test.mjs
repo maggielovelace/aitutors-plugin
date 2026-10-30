@@ -83,19 +83,19 @@ test('Jotted: the quote, Undo and Open in Jotter, 5 s', () => {
   assert.equal(T.model({ kind: 'note', jotId: JOT, jotterId: JOTTER, t: 1 }, 'en', en).undo.jotterId, undefined, 'an H jot’s Undo is jotId alone');
 });
 
-test('Clipped · title, Open in Jotter, no Undo; the cut line only when the page was cut', () => {
+test('Saved to Jotters · title, Open in Jotter, no Undo; the cut line only when the page was cut', () => {
   const whole = T.model({ kind: 'clipped', title: 'Understanding map scales', cut: false, href: 'https://aitutors.me/study/jotters' }, 'en', en);
-  assert.equal(whole.title, 'Clipped · Understanding map scales');
+  assert.equal(whole.title, 'Saved to Jotters · Understanding map scales');
   assert.equal(whole.line, null);
   assert.equal(whole.undo, undefined);
   assert.equal(whole.open.label, 'Open in Jotter');
   const cut = T.model({ kind: 'clipped', title: 'Long', cut: true }, 'en', en);
   assert.equal(cut.line, 'Heddy kept the first part of this page.');
-  assert.equal(T.model({ kind: 'clipped', title: ' ' }, 'en', en).title, 'Clipped');
+  assert.equal(T.model({ kind: 'clipped', title: ' ' }, 'en', en).title, 'Saved to Jotters');
   assert.equal(T.model({ kind: 'clipped', title: 'Long', cut: true }, 'zh_CN', zh).line, 'Heddy 只保留了这一页的前一部分。');
 });
 
-test('the page tray shows the toasts after Jot it and Clip this page, except where the YouTube script already does', () => {
+test('the page tray shows the toasts after Jot it and Save page to Jotters, except where the YouTube script already does', () => {
   const src = read('content/page-tray.js');
   assert.match(src, /msg\.type === 'heddy-ui:toast'/);
   assert.match(src, /if \(globalThis\.__heddyYouTube\) return undefined;/);

@@ -11,6 +11,12 @@
 
   var SESSION_KEY = 'heddyCids';
   var SAVED_MS = 2000;
+  // Watch with Heddy and Add to My Clips open /capture/clip in a tab next to
+  // the video (owner, 2026-10-30). Heddy closes it this long after an ok
+  // result: after the kid sign-in redirect the page cannot close itself.
+  var TAB_CLOSE_MS = 1000;
+  // heddy:result's error when the child taps Cancel or Close on a capture page.
+  var CANCELLED = 'cancelled';
   var ICONS = {
     idle: { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' },
     ready: { 16: 'icons/toolbar-ready-16.png', 32: 'icons/toolbar-ready-32.png' },
@@ -20,12 +26,20 @@
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
   var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
-  // What a gesture injects into any page for Jot it and Clip this page (Phase 2).
+  // What a gesture injects into any page for Jot it and Save page to Jotters (Phase 2).
   var PAGE_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js'];
   var MENU_ID = 'heddy-jot';
   // manifest.json "commands": jot the selected words. No default key (owner,
   // 2026-10-29); the child binds one at chrome://extensions/shortcuts.
   var COMMAND = 'jot-selection';
+
+  /** The tab of a content script, or null for Heddy's own pages. The popup
+   *  now lives in a frame inside the page (or a small window of its own), so
+   *  it has a sender.tab too, but like the old toolbar popup it names the tab
+   *  it acts on, and its frame's URL is not that page's. */
+  function contentTab(sender) {
+    return /^chrome-extension:/.test(String(sender.url || '')) ? null : sender.tab || null;
+  }
 
   function createCourier(deps) {
     var chrome = deps.chrome;
@@ -73,10 +87,21 @@
         .catch(function () {});
     }
 
+    /** The capture tab, straight after the tab it came from. A tab Chrome
+     *  can no longer find still gets the capture, at the end of the strip. */
+    function openTab(url, fromTabId) {
+      return (fromTabId != null ? chrome.tabs.get(fromTabId) : Promise.reject(new Error('no tab')))
+        .then(
+          function (t) { return chrome.tabs.create({ url: url, openerTabId: t.id, index: t.index + 1, windowId: t.windowId, active: true }); },
+          function () { return chrome.tabs.create({ url: url, active: true }); }
+        );
+    }
+
     /** Hold a payload for a /capture window and open it. `spec`:
-     *  { page: 'clip'|'jot'|'page', kind, build(cid) → payload, meta, windowId, focused }.
+     *  { page: 'clip'|'jot'|'page', kind, build(cid) → payload, meta, windowId, focused, asTab }.
      *  A J's window and an Undo's do not take focus (D18): the child keeps
-     *  watching while the site saves. */
+     *  watching while the site saves. `asTab` (the YouTube tab's id) opens
+     *  the page in a new tab beside it instead of a window. */
     function openCapture(spec) {
       var payload;
       var cid = String(randomUUID()).toLowerCase();
@@ -86,12 +111,21 @@
           payload = spec.build(cid);
           var origin = C.captureOrigin(dev);
           store.put(cid, Object.assign({ payload: payload, origin: origin, kind: spec.kind }, spec.meta));
+          var url = C.captureUrl(origin, spec.page, cid);
+          if (spec.asTab !== undefined) {
+            return persist()
+              .then(function () { return openTab(url, spec.asTab); })
+              .then(function (created) {
+                if (created && created.id != null) store.setTab(cid, created.id, created.windowId);
+                return persist().then(function () { return { ok: true, cid: cid }; });
+              });
+          }
           return persist()
             .then(function () {
               return (spec.windowId != null ? chrome.windows.get(spec.windowId) : chrome.windows.getLastFocused()).catch(function () { return null; });
             })
             .then(function (win) {
-              var created = Object.assign({ url: C.captureUrl(origin, spec.page, cid), type: 'popup', focused: spec.focused !== false }, C.windowBounds(win));
+              var created = Object.assign({ url: url, type: 'popup', focused: spec.focused !== false }, C.windowBounds(win));
               return chrome.windows.create(created);
             })
             .then(function (created) {
@@ -106,12 +140,13 @@
         });
     }
 
-    /** Add to My Clips / Watch with Heddy. */
+    /** Add to My Clips / Watch with Heddy: in a new tab beside the video. */
     function capture(input) {
       return openCapture({
         page: 'clip',
         kind: 'clip',
         windowId: input.windowId,
+        asTab: input.tabId == null ? null : input.tabId,
         build: function (cid) { return P.buildAdd({ cid: cid, youtubeId: input.youtubeId, startSec: input.startSec, then: input.then }); },
         meta: { tabId: input.tabId, then: input.then, youtubeId: input.youtubeId, startSec: input.startSec == null ? null : Math.floor(input.startSec) },
       });
@@ -122,6 +157,10 @@
      *  that is not listed here, its window explains itself and stays open. */
     function deliverResult(result, meta, origin) {
       var kind = meta.kind || 'clip';
+      // Cancel or Close on any capture page (owner, 2026-10-30): the page
+      // cannot always close itself (a tab after the sign-in redirect), so
+      // Heddy closes what it opened, at once, and shows nothing.
+      if (!result.ok && result.error === CANCELLED) return closeCapture(meta);
       if (kind === 'card_undo') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'card_undone' : 'card_undo_failed' });
       }
@@ -150,7 +189,7 @@
           href: C.jotterUrl(origin, meta.youtubeId),
         });
       }
-      // The Jot it and Clip this page windows close about 1 s after an ok
+      // The Jot it and Save page to Jotters windows close about 1 s after an ok
       // result (owner, 2026-10-29), so the page shows what was kept.
       if (kind === 'jot') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
@@ -188,10 +227,58 @@
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
       }
       if (kind !== 'clip') return Promise.resolve();
-      var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
-      var steps = [tellTab(meta.tabId, toast)];
-      if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
-      return Promise.all(steps);
+      // "from m:ss" is where the site says the kept clip starts (its `t`):
+      // the child may choose another start there, or Part of it. Heddy's own
+      // start stands in when the site sends none.
+      var startSec = result.t != null ? result.t : meta.startSec;
+      var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
+      function clipToast() {
+        var steps = [tellTab(meta.tabId, toast)];
+        if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
+        return Promise.all(steps);
+      }
+      if (meta.captureTabId == null) return clipToast();
+      // The capture tab: Heddy closes it about 1 s later and the toast shows
+      // on the video once the child is back on it. The reply to the site is
+      // not held for that.
+      later(function () { closeCaptureTab(meta).then(clipToast); }, TAB_CLOSE_MS);
+      return Promise.resolve();
+    }
+
+    /** Close a capture tab after its ok result. The YouTube tab comes back to
+     *  the front only if the capture tab is still the one in front: Keep and
+     *  watch has by then opened the Classroom in a tab of its own, and the
+     *  child may have moved on, so neither is taken away from them. */
+    function closeCaptureTab(meta) {
+      var id = meta.captureTabId;
+      return Promise.resolve()
+        .then(function () { return chrome.tabs.get(id); })
+        .then(function (cap) {
+          if (!cap || !cap.active || meta.tabId == null) return null;
+          return chrome.tabs.update(meta.tabId, { active: true });
+        })
+        .catch(function () {})
+        .then(function () { return chrome.tabs.remove(id); })
+        .catch(function () {});
+    }
+
+    /** Close the tab or window Heddy opened for a cid. A capture tab follows
+     *  closeCaptureTab's rule; a window is removed. A tab capture's windowId
+     *  is the YouTube window, so it is never the one removed. */
+    function closeCapture(meta) {
+      if (meta.captureTabId != null) return closeCaptureTab(meta);
+      if (meta.windowId == null) return Promise.resolve();
+      return Promise.resolve()
+        .then(function () { return chrome.windows.remove(meta.windowId); })
+        .catch(function () {});
+    }
+
+    /** chrome.tabs.onRemoved: a capture tab the child closed takes its cid
+     *  with it, quietly (nothing is shown on the video). */
+    function tabRemoved(tabId) {
+      return ready.then(function () {
+        if (store.dropTab(tabId)) return persist();
+      });
     }
 
     /** J: one heddy:moment, in a window that does not take focus. */
@@ -229,7 +316,7 @@
       });
     }
 
-    /** Clip this page: heddy:page. Past 200 KB of UTF-8 it keeps the first
+    /** Save page to Jotters: heddy:page. Past 200 KB of UTF-8 it keeps the first
      *  part (`cut: true`), and the toast after the save says so. */
     function page(input) {
       var meta = { tabId: input.tabId, title: null, cut: false };
@@ -312,12 +399,20 @@
         if (isPing(message)) return { type: 'heddy:pong', v: P.PROTOCOL_VERSION, version: chrome.runtime.getManifest().version };
         var m = P.parseExternal(message);
         if (!m) return null;
-        var who = { origin: origin, windowId: sender.tab ? sender.tab.windowId : null };
+        var who = { origin: origin, windowId: sender.tab ? sender.tab.windowId : null, tabId: sender.tab ? sender.tab.id : null };
         if (m.kind === 'ready') {
           var payload = store.claim(m.cid, who);
           return persist().then(function () { return payload; });
         }
         var meta = store.takeResult(m.cid, who);
+        // The site sends 'cancelled' on Cancel or Close even after an earlier
+        // result for the same cid (a duplicate's ok, a failure): still close.
+        if (!meta && !m.ok && m.error === CANCELLED) {
+          var spot = store.takeDone(m.cid, who);
+          return persist().then(function () {
+            return spot ? closeCapture(spot).then(function () { return { ok: true }; }) : null;
+          });
+        }
         return persist().then(function () {
           if (!meta) return null;
           return deliverResult(m, meta, origin).then(function () { return { ok: true }; });
@@ -328,7 +423,7 @@
     /** chrome.runtime.onMessage: Heddy's own popup and content script. */
     function internal(message, sender) {
       if (!message || typeof message !== 'object' || !sender || sender.id !== chrome.runtime.id) return Promise.resolve(null);
-      var tab = sender.tab;
+      var tab = contentTab(sender);
       switch (message.type) {
         case 'heddy-ui:capture': {
           if (!P.isYoutubeId(message.youtubeId) || (message.then !== 'keep' && message.then !== 'classroom')) return Promise.resolve({ ok: false });
@@ -394,10 +489,10 @@
         .then(function () { return setIcon(tabId, 'ready'); });
     }
 
-    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
+    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

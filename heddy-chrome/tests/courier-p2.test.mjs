@@ -1,6 +1,6 @@
 // Phase 2's courier, against a fake Chrome: J opens /capture/jot without focus
 // and the result becomes "Note saved" with Undo; Undo opens its own window
-// without focus; Jot it and Clip this page carry the tab's own page; the menu
+// without focus; Jot it and Save page to Jotters carry the tab's own page; the menu
 // item and Ctrl Shift J inject the tray only on that gesture.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,8 +20,8 @@ const PROD = 'https://aitutors.me';
 const WATCH = `https://www.youtube.com/watch?v=${VIDEO}`;
 const ARTICLE = 'https://www.ordnancesurvey.co.uk/map-scales';
 
-function setup({ tabReply = { ok: true } } = {}) {
-  const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [] };
+function setup({ tabReply = { ok: true }, store = createCidStore() } = {}) {
+  const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [], tabsCreated: [], windowsRemoved: [] };
   const session = {};
   const chrome = {
     runtime: { id: 'heddy' },
@@ -33,13 +33,14 @@ function setup({ tabReply = { ok: true } } = {}) {
       get: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
       getLastFocused: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
       create: async (spec) => { calls.windows.push(spec); return { id: 42 }; },
+      remove: async (id) => { calls.windowsRemoved.push(id); },
     },
     action: { setIcon: async (o) => { calls.icons.push(o); } },
     tabs: {
       get: async (id) => ({ id, url: WATCH }),
       query: async () => [{ id: 9, windowId: 1, url: ARTICLE }],
       sendMessage: async (tabId, m) => { calls.tabMessages.push({ tabId, m }); return tabReply; },
-      create: async () => {},
+      create: async (o) => { calls.tabsCreated.push(o); },
     },
     scripting: { executeScript: async (o) => { calls.injected.push(o); } },
     contextMenus: {
@@ -48,7 +49,7 @@ function setup({ tabReply = { ok: true } } = {}) {
       create: (o) => { calls.menus.push(o); },
     },
   };
-  const courier = createCourier({ chrome, store: createCidStore(), randomUUID: () => CID, setTimeout: () => {} });
+  const courier = createCourier({ chrome, store, randomUUID: () => CID, setTimeout: () => {} });
   return { chrome, calls, courier };
 }
 
@@ -60,12 +61,14 @@ async function claim(s) {
   return s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
 }
 
-test('J opens /capture/jot in a window that does not take focus, with heddy:moment', async () => {
+test('H opens /capture/jot in a window that does not take focus, with heddy:moment — still a window, never a tab (owner, 2026-10-30)', async () => {
   const s = setup();
   const r = await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
   assert.deepEqual(r, { ok: true, cid: CID });
   assert.equal(s.calls.windows[0].url, `${PROD}/capture/jot?cid=${CID}`);
+  assert.equal(s.calls.windows[0].type, 'popup');
   assert.equal(s.calls.windows[0].focused, false);
+  assert.equal(s.calls.tabsCreated.length, 0, 'a tab would flash on every press');
   assert.deepEqual(await claim(s), { type: 'heddy:moment', v: 1, cid: CID, youtubeId: VIDEO, t: 168, tEnd: 171 });
 });
 
@@ -144,7 +147,7 @@ test('a page can only jot or clip itself; the popup names its tab', async () => 
   assert.equal(r.ok, true);
 });
 
-test('Clip this page: heddy:page to /capture/page; past 200 KB, the first part with cut: true', async () => {
+test('Save page to Jotters: heddy:page to /capture/page; past 200 KB, the first part with cut: true', async () => {
   const s = setup();
   const r = await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales\n\nOn a 1:50 000 map…' }, fromArticle);
   assert.equal(r.ok, true);
@@ -216,7 +219,7 @@ test('Open in Jotter without a valid jotterId goes to the Jotters shelf', async 
   }
 });
 
-test('Clip this page saved: "Clipped · title", Open in Jotter, and the cut line only when cut', async () => {
+test('Save page to Jotters saved: "Saved to Jotters · title", Open in Jotter, and the cut line only when cut', async () => {
   for (const [markdown, cut] of [['# Short', false], ['a'.repeat(10) + '\n\n' + 'b'.repeat(200 * 1024), true]]) {
     const s = setup();
     await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Understanding map scales', markdown }, fromArticle);
@@ -226,7 +229,7 @@ test('Clip this page saved: "Clipped · title", Open in Jotter, and the cut line
   }
 });
 
-test('a refused Jot it or Clip this page stays in its window: no toast', async () => {
+test('a refused Jot it or Save page to Jotters stays in its window: no toast', async () => {
   const s = setup();
   await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle);
   await claim(s);
@@ -244,4 +247,50 @@ test('Undo of a web jot names its Jotter; Undo of an H jot sends jotId alone; a 
   const bad = setup();
   assert.deepEqual(await bad.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: '../admin' }, fromArticle), { ok: false });
   assert.equal(bad.calls.windows.length, 0);
+});
+
+test('Cancel or Close in a capture window (heddy:result cancelled): Heddy closes that window, no toast, cid dropped', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await claim(s);
+  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+  assert.deepEqual(s.calls.windowsRemoved, [42]);
+  assert.equal(s.calls.tabMessages.length, 0);
+  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'dropped');
+});
+
+test('a Save page to Jotters the site refuses after its file check (not_study, too_long, unreadable, failed): no Saved to Jotters toast, the window stays; Close then closes it', async () => {
+  for (const error of ['not_study', 'too_long', 'unreadable', 'failed']) {
+    const s = setup();
+    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
+    await claim(s);
+    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error }, page()), { ok: true }, error);
+    assert.equal(s.calls.tabMessages.length, 0, `${error}: no toast`);
+    assert.deepEqual(s.calls.windowsRemoved, [], `${error}: the window stays`);
+    assert.equal(s.calls.icons.length, 0, `${error}: no tick`);
+    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+    assert.deepEqual(s.calls.windowsRemoved, [42], `${error}: Close afterwards closes it`);
+  }
+});
+
+test('a Save page to Jotters ok that comes ~30 s after the tap (the site waited for its file check) still gets the Saved to Jotters toast', async () => {
+  let now = 1_000_000;
+  const s = setup({ store: createCidStore({ now: () => now }) });
+  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
+  await claim(s);
+  now += 30_000;
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: '6ba7b810-9dad-41d1-80b4-00c04fd430c8' }, page());
+  assert.equal(s.calls.tabMessages.at(-1).m.kind, 'clipped');
+});
+
+
+test('Close under a failure that was already reported still closes the window', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await claim(s);
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'save_failed' }, page());
+  assert.deepEqual(s.calls.windowsRemoved, [], 'a failure leaves it open');
+  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page(77)), null, 'not from another window');
+  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+  assert.deepEqual(s.calls.windowsRemoved, [42]);
 });

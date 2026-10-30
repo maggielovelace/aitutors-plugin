@@ -1,11 +1,23 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js');
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/panel.js');
 
 var courier = HeddyCourier.createCourier({
   chrome: chrome,
   store: HeddyCidStore.createCidStore(),
   randomUUID: function () { return crypto.randomUUID(); },
+});
+
+// The toolbar icon opens Heddy's panel in the page (lib/panel.js), or a small
+// window where Chrome keeps extensions out; it stays until it is closed.
+var panel = HeddyPanel.createPanel({ chrome: chrome });
+
+chrome.action.onClicked.addListener(function (tab) {
+  panel.clicked(tab);
+});
+
+chrome.windows.onRemoved.addListener(function (windowId) {
+  panel.windowRemoved(windowId);
 });
 
 // Snap a picture and the three tools (lib/snap.js, lib/tools.js). They open
@@ -20,6 +32,8 @@ var snap = HeddySnap.createSnap({
     return HeddyI18n.currentLang(chrome).then(function (lang) { return HeddyI18n.t(lang, 'boxDropped'); });
   },
   sender: HeddyTools.createSender({ openCapture: courier.openCapture }),
+  // The panel leaves the page before box mode or a screenshot.
+  hidePanel: panel.hide,
 });
 
 // The /capture window asks for its payload (heddy:ready) and reports
@@ -60,6 +74,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, change, tab) {
 
 chrome.tabs.onRemoved.addListener(function (tabId) {
   snap.tabGone(tabId);
+  courier.tabRemoved(tabId);
 });
 
 // Right-click an image → "Jot this picture with Heddy" (D30). The menu's

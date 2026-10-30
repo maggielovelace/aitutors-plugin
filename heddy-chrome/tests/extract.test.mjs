@@ -1,4 +1,4 @@
-// Clip this page (D5, D20, Must 6): the readable article as Markdown, images as
+// Save page to Jotters (D5, D20, Must 6): the readable article as Markdown, images as
 // links, scripts, styles, menus and hidden things left out. Driven with a tiny
 // DOM-like tree, so no browser is needed.
 import { test } from 'node:test';

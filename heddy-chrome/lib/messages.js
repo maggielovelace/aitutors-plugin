@@ -38,6 +38,9 @@
       "settings": {
         "message": "Settings"
       },
+      "close": {
+        "message": "Close"
+      },
       "ctxFirstTime": {
         "message": "first time"
       },
@@ -78,7 +81,7 @@
         "message": "Select the whole paragraph"
       },
       "menuClipPage": {
-        "message": "Clip the whole page"
+        "message": "Save page to Jotters"
       },
       "imageLabel": {
         "message": "Image"
@@ -90,10 +93,10 @@
         "message": "Jot it"
       },
       "clipWholePageInstead": {
-        "message": "Clip the whole page instead"
+        "message": "Save the whole page instead"
       },
       "clipThisPage": {
-        "message": "Clip this page"
+        "message": "Save page to Jotters"
       },
       "selectSomeWords": {
         "message": "Select some words"
@@ -108,13 +111,13 @@
         "message": "New video? It's added first."
       },
       "firstTimePage": {
-        "message": "Jot a line, or clip a page, as a source for your Jotter"
+        "message": "Jot a line, or save a page to Jotters as a source"
       },
       "cantReadPage": {
         "message": "Heddy can't read this page. Try it on a web page or a YouTube video."
       },
       "pageEmpty": {
-        "message": "This page has no text to clip."
+        "message": "This page has no text to save."
       },
       "toastNoteSaved": {
         "message": "Note saved · $TIME$ — $TITLE$",
@@ -163,7 +166,7 @@
         "message": "Jotted"
       },
       "toastClipped": {
-        "message": "Clipped · $TITLE$",
+        "message": "Saved to Jotters · $TITLE$",
         "placeholders": {
           "title": {
             "content": "$1",
@@ -172,7 +175,7 @@
         }
       },
       "toastClippedNoTitle": {
-        "message": "Clipped"
+        "message": "Saved to Jotters"
       },
       "toastPageCut": {
         "message": "Heddy kept the first part of this page."
@@ -368,6 +371,9 @@
       "settings": {
         "message": "设置"
       },
+      "close": {
+        "message": "关闭"
+      },
       "ctxFirstTime": {
         "message": "第一次"
       },
@@ -408,7 +414,7 @@
         "message": "选中整段"
       },
       "menuClipPage": {
-        "message": "剪下整页"
+        "message": "存到 Jotters"
       },
       "imageLabel": {
         "message": "图片"
@@ -420,10 +426,10 @@
         "message": "写批注"
       },
       "clipWholePageInstead": {
-        "message": "改为剪下整页"
+        "message": "改为保存整页"
       },
       "clipThisPage": {
-        "message": "剪下这一页"
+        "message": "存到 Jotters"
       },
       "selectSomeWords": {
         "message": "选中一些文字"
@@ -438,13 +444,13 @@
         "message": "新视频？会先收下它。"
       },
       "firstTimePage": {
-        "message": "批注一句话，或剪下一页，作为批注本的来源"
+        "message": "批注一句话，或把一页存到 Jotters，作为来源"
       },
       "cantReadPage": {
         "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。"
       },
       "pageEmpty": {
-        "message": "这一页没有可以剪下的文字。"
+        "message": "这一页没有可以保存的文字。"
       },
       "toastNoteSaved": {
         "message": "已记下 · $TIME$ — $TITLE$",
@@ -493,7 +499,7 @@
         "message": "批注已保存"
       },
       "toastClipped": {
-        "message": "已剪下 · $TITLE$",
+        "message": "已存到 Jotters · $TITLE$",
         "placeholders": {
           "title": {
             "content": "$1",
@@ -502,7 +508,7 @@
         }
       },
       "toastClippedNoTitle": {
-        "message": "已剪下"
+        "message": "已存到 Jotters"
       },
       "toastPageCut": {
         "message": "Heddy 只保留了这一页的前一部分。"

@@ -23,7 +23,7 @@
   ]);
 
   // The › menu (artifact R3 · Fix 4): Copy · Select the whole paragraph · a rule ·
-  // Clip the whole page.
+  // Save the whole page.
   var MENU = Object.freeze([
     Object.freeze({ id: 'copy', label: 'menuCopy', kbd: true }),
     Object.freeze({ id: 'paragraph', label: 'menuParagraph' }),

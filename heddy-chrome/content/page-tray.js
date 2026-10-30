@@ -39,7 +39,7 @@
   }
 
   // The toasts after Jot it ("Jotted", the quote, Undo, Open in Jotter) and
-  // Clip this page ("Clipped · title", Open in Jotter): the windows on
+  // Save page to Jotters ("Saved to Jotters · title", Open in Jotter): the windows on
   // aitutors.me close once they have saved, and the page says what was kept.
   var toaster = T.createToaster({
     document: document,

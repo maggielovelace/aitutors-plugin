@@ -16,7 +16,7 @@
     'h-lock': { viewBox: '0 0 24 24', body: '<rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 10.5 V8 a3.5 3.5 0 0 1 7 0 V10.5" fill="none" stroke="currentColor" stroke-width="1.8"/>' },
     'h-open': { viewBox: '0 0 24 24', body: '<path d="M14 5 H19 V10 M19 5 L11 13 M17 14 V19 H5 V7 H10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' },
     // Phase 2 (artifact round 2 and Round 3 · A): the tray's pen, the popup's
-    // quill for Jot it, the page for Clip this page, the › menu's chevron.
+    // quill for Jot it, the page for Save page to Jotters, the › menu's chevron.
     'h-pen': { viewBox: '0 0 24 24', body: '<path d="M5 19 L6 15 L15.5 5.5 a2 2 0 0 1 3 3 L9 18 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13.5 7.5 l3 3" stroke="currentColor" stroke-width="1.8"/>' },
     'h-quill': { viewBox: '0 0 24 24', body: '<path d="M19.5 4.5c-6 .5-10.5 4-12.5 10l-1.5 5 5-1.5c6-2 9-7 9-13.5z" fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5.5 19.5 14 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="15.4" cy="9.2" r="1.1" fill="currentColor"/>' },
     'h-page': { viewBox: '0 0 24 24', body: '<path d="M6 3.5 H14 L18.5 8 V20.5 H6 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3.5 V8 H18.5 M9 12 H15.5 M9 15.5 H15.5" stroke="currentColor" stroke-width="1.6" fill="none"/>' },

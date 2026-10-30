@@ -18,10 +18,13 @@
     var now = opts.now || Date.now;
     var holdMs = opts.holdMs || HOLD_MS;
     var resultMs = opts.resultMs || RESULT_MS;
-    // cid → { payload, createdAt, origin, windowId, tabId, then, youtubeId, startSec, kind, title, cut }
+    // cid → { payload, createdAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut }
     var held = {};
-    // cid → { claimedAt, origin, windowId, tabId, then, youtubeId, startSec, kind, title, cut }
+    // cid → { claimedAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut }
     var claimed = {};
+    // cid → { doneAt, origin, windowId, captureTabId, tabId } after its result:
+    // only so a later Cancel or Close on the same page can still close it.
+    var done = {};
 
     function sweep() {
       var t = now();
@@ -31,15 +34,21 @@
       Object.keys(claimed).forEach(function (cid) {
         if (t - claimed[cid].claimedAt >= resultMs) delete claimed[cid];
       });
+      Object.keys(done).forEach(function (cid) {
+        if (t - done[cid].doneAt >= resultMs) delete done[cid];
+      });
     }
 
     function key(cid) {
       return typeof cid === 'string' ? cid.toLowerCase() : '';
     }
 
-    /** The window must be the one Heddy opened for this cid, when both are known. */
-    function sameWindow(entry, windowId) {
-      return entry.windowId == null || windowId == null || entry.windowId === windowId;
+    /** The window must be the one Heddy opened for this cid, when both are
+     *  known; a capture opened as a tab (Watch with Heddy, Add to My Clips)
+     *  must also be that tab. */
+    function sameWindow(entry, sender) {
+      if (entry.windowId != null && sender.windowId != null && entry.windowId !== sender.windowId) return false;
+      return entry.captureTabId == null || sender.tabId == null || entry.captureTabId === sender.tabId;
     }
 
     return {
@@ -51,6 +60,7 @@
           createdAt: now(),
           origin: entry.origin,
           windowId: entry.windowId == null ? null : entry.windowId,
+          captureTabId: null,
           tabId: entry.tabId == null ? null : entry.tabId,
           then: entry.then,
           youtubeId: entry.youtubeId,
@@ -69,6 +79,26 @@
         if (e) e.windowId = windowId;
       },
 
+      /** Record the tab Chrome opened for a cid, and the window it is in. */
+      setTab: function (cid, tabId, windowId) {
+        var e = held[key(cid)];
+        if (!e) return;
+        e.captureTabId = tabId;
+        if (windowId != null) e.windowId = windowId;
+      },
+
+      /** The child closed a capture tab: forget its cid, held or claimed.
+       *  Returns how many were dropped. */
+      dropTab: function (tabId) {
+        var n = 0;
+        [held, claimed, done].forEach(function (m) {
+          Object.keys(m).forEach(function (cid) {
+            if (m[cid].captureTabId != null && m[cid].captureTabId === tabId) { delete m[cid]; n++; }
+          });
+        });
+        return n;
+      },
+
       /** Forget a payload whose window never opened. */
       drop: function (cid) {
         delete held[key(cid)];
@@ -80,9 +110,9 @@
         sweep();
         var k = key(cid);
         var e = held[k];
-        if (!e || e.origin !== sender.origin || !sameWindow(e, sender.windowId)) return null;
+        if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
         delete held[k];
-        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true };
+        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true };
         return e.payload;
       },
 
@@ -92,8 +122,21 @@
         sweep();
         var k = key(cid);
         var e = claimed[k];
-        if (!e || e.origin !== sender.origin || !sameWindow(e, sender.windowId)) return null;
+        if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
         delete claimed[k];
+        done[k] = { doneAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId };
+        return e;
+      },
+
+      /** Cancel or Close after the page already reported (the site sends
+       *  'cancelled' then): where its tab or window is, once, from the same
+       *  page only. Null otherwise. Carries nothing a toast could use. */
+      takeDone: function (cid, sender) {
+        sweep();
+        var k = key(cid);
+        var e = done[k];
+        if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
+        delete done[k];
         return e;
       },
 
@@ -111,13 +154,14 @@
 
       toJSON: function () {
         sweep();
-        return { held: held, claimed: claimed };
+        return { held: held, claimed: claimed, done: done };
       },
 
       /** Replace the state with one saved by toJSON (a worker restart). */
       load: function (data) {
         held = (data && data.held && typeof data.held === 'object') ? data.held : {};
         claimed = (data && data.claimed && typeof data.claimed === 'object') ? data.claimed : {};
+        done = (data && data.done && typeof data.done === 'object') ? data.done : {};
         sweep();
       },
     };

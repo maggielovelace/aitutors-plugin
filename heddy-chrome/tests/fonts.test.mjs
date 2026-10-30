@@ -1,7 +1,8 @@
 // Manrope ships inside the extension (SIL OFL 1.1). The popup and options
 // page load it from fonts/ with @font-face; the page surfaces register the
-// same bytes with new FontFace(bytes), so no page can probe for a font URL
-// and the manifest still declares no web_accessible_resources.
+// same bytes with new FontFace(bytes), so no page can probe for a font URL.
+// The popup's own two files are web accessible only because the popup is now
+// a frame in the page (lib/panel.js), and only at a per-session dynamic URL.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -84,8 +85,13 @@ test('the dropped-pictures line gets the fonts injected before it shows', () => 
   assert.match(before, /files:\s*FONT_FILES/);
 });
 
-test('fonts need no web_accessible_resources', () => {
-  assert.equal(manifest().web_accessible_resources, undefined);
+test('the page surfaces need no web-accessible font: only the panel’s frame, at a dynamic URL', () => {
+  const war = manifest().web_accessible_resources;
+  assert.equal(war.length, 1);
+  assert.equal(war[0].use_dynamic_url, true);
+  const fonts = war[0].resources.filter((r) => r.startsWith('fonts/'));
+  assert.deepEqual(fonts.sort(), [...WOFF2].sort(), 'the two the popup’s @font-face names, nothing else');
+  for (const f of PAGE_SURFACES) assert.doesNotMatch(read(f), /getURL\(['"]fonts\//, `${f} loads a font URL`);
 });
 
 /** A document with a FontFaceSet, and a FontFace that records what it was given. */

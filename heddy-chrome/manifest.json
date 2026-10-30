@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "Heddy",
   "description": "__MSG_extDescription__",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "default_locale": "en",
   "minimum_chrome_version": "116",
   "homepage_url": "https://aitutors.me",
@@ -15,7 +15,6 @@
   },
   "action": {
     "default_title": "__MSG_actionTitle__",
-    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/toolbar-16.png",
       "32": "icons/toolbar-32.png"
@@ -57,6 +56,28 @@
       "description": "__MSG_cmdSnap__"
     }
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup/popup.html",
+        "popup/popup.css",
+        "popup/popup.js",
+        "lib/messages.js",
+        "lib/i18n.js",
+        "lib/protocol.js",
+        "lib/config.js",
+        "lib/marks.js",
+        "lib/courier.js",
+        "lib/tray-tools.js",
+        "lib/snap.js",
+        "content/youtube-selectors.js",
+        "fonts/manrope-latin.woff2",
+        "fonts/manrope-latin-ext.woff2"
+      ],
+      "matches": ["<all_urls>"],
+      "use_dynamic_url": true
+    }
+  ],
   "externally_connectable": {
     "matches": ["https://aitutors.me/*", "http://localhost:3000/*"]
   },

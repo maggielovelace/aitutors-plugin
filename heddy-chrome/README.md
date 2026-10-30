@@ -10,13 +10,19 @@ Heddy puts two buttons on every YouTube video page, straight after Share:
   Classroom on aitutors.me, with the professor for that subject.
 - **Add to My Clips** keeps it for later.
 
-The same two buttons are in Heddy's toolbar popup, with a choice of
-*Whole video* or *From m:ss*, so they work even if YouTube changes its page.
+The same two buttons are in Heddy's panel, with a choice of *Whole video* or
+*From m:ss*, so they work even if YouTube changes its page. Click Heddy's
+toolbar icon and the panel opens at the top right of the page. It stays there
+while you scroll, select or click the page, and closes on its ✕, on Esc, or
+on a second click of the icon. On pages Chrome keeps extensions out of
+(`chrome://` pages, the Web Store) it opens as a small window instead.
 
 Heddy is a courier. It keeps no account, key or token and makes no network
-call of its own: every tap opens a small window on aitutors.me, and that page
-checks the video and saves it under the child's own account, with one tap
-there. **Reads a page only when you ask it to** — see [PRIVACY.md](PRIVACY.md).
+call of its own: every tap opens a page on aitutors.me, and that page checks
+the video and saves it under the child's own account, with one tap there.
+Watch with Heddy and Add to My Clips open it in a new tab beside the video,
+which Heddy closes once the video is kept, bringing you back to it; the
+other captures open a small window. **Reads a page only when you ask it to** — see [PRIVACY.md](PRIVACY.md).
 
 And on any page:
 
@@ -24,11 +30,11 @@ And on any page:
   Jotter. Press H twice quickly to take the line before as well. YouTube's
   own keys, J included, keep doing what they always did.
 - **Jot it** keeps words you select on any page, with where they came from.
-  Right-click a selection → *Jot it with Heddy*, or open Heddy's popup. You
+  Right-click a selection → *Jot it with Heddy*, or click Heddy's icon. You
   can also give it a shortcut of your own at `chrome://extensions/shortcuts`
   (Heddy sets none, so it never takes one of Chrome's).
-- **Clip this page** keeps the readable part of a page as a source for your
-  Jotter. A very long page keeps its first part, and Heddy tells you so.
+- **Save page to Jotters** keeps the readable part of a page as a source in
+  your Jotters. A very long page keeps its first part, and Heddy tells you so.
 
 ## Install
 
@@ -44,11 +50,11 @@ published.
 4. Pin Heddy from the puzzle-piece menu, then open any YouTube video.
 
 Sign in to aitutors.me as the child in the same Chrome. If you aren't signed
-in, the window asks you to first and then carries on.
+in, the aitutors.me tab or window asks you to first and then carries on.
 
 ## Settings
 
-Right-click Heddy's icon → **Options**, or the cog in the popup:
+Right-click Heddy's icon → **Options**, or the cog in Heddy's panel:
 
 - **Language** — English or 简体中文. It starts as Chrome's language. The
   windows on aitutors.me follow the language chosen on the site.
@@ -76,15 +82,18 @@ YouTube page ──tap──▶ Heddy ──opens──▶ aitutors.me/capture/c
                        ── heddy:add (once) ─────▶│
                                                  │  check · topic · Keep, as the child
                        ◀── heddy:result ─────────┘
-            toast "In My Clips", tick on the icon
+   Heddy closes the tab · toast "In My Clips", tick on the icon
 ```
 
-- `background.js` + `lib/courier.js` — opens the window, answers each `cid`
+- `background.js` + `lib/courier.js` — opens the tab or window, answers each `cid`
   once, drops an unclaimed one after 10 minutes, shows the result.
 - `content/youtube.js` — the two buttons and the toast, in a closed shadow
   root. **Every YouTube selector is in `content/youtube-selectors.js`**: when
   YouTube changes its page, that is the one file to fix.
-- `popup/`, `options/` — the toolbar popup and the settings page.
+- `lib/panel.js` + `content/panel.js` — the panel: a click on the icon draws
+  `popup/popup.html` in a frame at the top right of the page (a closed shadow
+  root), or opens it in a small window where Chrome forbids that.
+- `popup/`, `options/` — the panel's content and the settings page.
 - `lib/protocol.js` — the messages; they mirror `lib/capture/protocol.ts` on
   aitutors.me.
 - `_locales/` — English and 简体中文. After editing them, run

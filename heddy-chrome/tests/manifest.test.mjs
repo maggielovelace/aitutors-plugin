@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT, load, manifest } from './helpers.mjs';
+import { ROOT, load, read, manifest } from './helpers.mjs';
 
 // D3, verbatim.
 const D3_ALLOWED = ['activeTab', 'scripting', 'contextMenus', 'commands', 'storage'];
@@ -27,7 +27,10 @@ test('nothing D3 lists as not requested appears anywhere in the manifest', () =>
   for (const p of D3_NOT_REQUESTED) assert.ok(!all.includes(p), `${p} is requested`);
   assert.ok(!all.some((h) => /^\*:\/\/|^https?:\/\/\*\/|^<all_urls>$/.test(h)), 'a wildcard host is requested');
   assert.equal(m.side_panel, undefined, 'side_panel is declared');
-  assert.equal(m.web_accessible_resources, undefined, 'pages can load extension files');
+  // The panel (owner, 2026-10-30) is popup.html in a frame in the page, so
+  // exactly the popup's own files are web accessible, at a dynamic URL.
+  assert.equal(m.web_accessible_resources.length, 1);
+  assert.equal(m.web_accessible_resources[0].use_dynamic_url, true, 'a page cannot probe for Heddy by URL');
   assert.equal(m.optional_permissions, undefined);
   assert.equal(m.optional_host_permissions, undefined);
 });
@@ -61,8 +64,8 @@ test('every file the manifest names exists', () => {
   const m = manifest();
   const files = [
     m.background.service_worker,
-    m.action.default_popup,
     m.options_ui.page,
+    ...m.web_accessible_resources.flatMap((w) => w.resources),
     ...Object.values(m.icons),
     ...Object.values(m.action.default_icon),
     ...m.content_scripts.flatMap((c) => c.js),
@@ -109,3 +112,27 @@ test('box mode’s files are injected, never declared as content scripts on ever
   for (const c of m.content_scripts) assert.ok(!c.js.includes('content/box-mode.js'));
   for (const f of BOX_FILES) assert.ok(existsSync(join(ROOT, f)), `${f} is missing`);
 });
+
+test('the toolbar icon has no default_popup: a click opens the panel, which Chrome does not close on blur (owner, 2026-10-30)', () => {
+  const m = manifest();
+  assert.equal(m.action.default_popup, undefined);
+  const bg = read('background.js');
+  assert.match(bg, /chrome\.action\.onClicked\.addListener\(function \(tab\) \{\s*panel\.clicked\(tab\);/);
+  assert.match(bg, /'lib\/panel\.js'/);
+});
+
+test('the web-accessible files are exactly the popup page and what it loads, nothing else', () => {
+  const war = manifest().web_accessible_resources[0];
+  const html = read('popup/popup.html');
+  const css = read('popup/popup.css');
+  const fromPopup = (rel) => join('popup', rel).replace(/\\/g, '/');
+  const loads = [
+    'popup/popup.html',
+    ...[...html.matchAll(/<(?:script src|link rel="stylesheet" href)="([^"]+)"/g)].map((x) => fromPopup(x[1])),
+    ...[...css.matchAll(/url\("([^"]+)"\)/g)].map((x) => fromPopup(x[1])),
+  ].map((f) => f.replace(/^popup\/\.\.\//, ''));
+  assert.deepEqual([...war.resources].sort(), [...new Set(loads)].sort());
+  assert.deepEqual(war.matches, ['<all_urls>']);
+  assert.ok(!war.resources.some((r) => r.startsWith('content/') && r !== 'content/youtube-selectors.js'), 'no content script is web accessible');
+});
+
