@@ -11,6 +11,10 @@
 
   var SESSION_KEY = 'heddyCids';
   var SAVED_MS = 2000;
+  // Watch with Heddy and Add to My Clips open /capture/clip in a tab next to
+  // the video (owner, 2026-10-30). Heddy closes it this long after an ok
+  // result: after the kid sign-in redirect the page cannot close itself.
+  var TAB_CLOSE_MS = 1000;
   var ICONS = {
     idle: { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' },
     ready: { 16: 'icons/toolbar-ready-16.png', 32: 'icons/toolbar-ready-32.png' },
@@ -73,10 +77,21 @@
         .catch(function () {});
     }
 
+    /** The capture tab, straight after the tab it came from. A tab Chrome
+     *  can no longer find still gets the capture, at the end of the strip. */
+    function openTab(url, fromTabId) {
+      return (fromTabId != null ? chrome.tabs.get(fromTabId) : Promise.reject(new Error('no tab')))
+        .then(
+          function (t) { return chrome.tabs.create({ url: url, openerTabId: t.id, index: t.index + 1, windowId: t.windowId, active: true }); },
+          function () { return chrome.tabs.create({ url: url, active: true }); }
+        );
+    }
+
     /** Hold a payload for a /capture window and open it. `spec`:
-     *  { page: 'clip'|'jot'|'page', kind, build(cid) → payload, meta, windowId, focused }.
+     *  { page: 'clip'|'jot'|'page', kind, build(cid) → payload, meta, windowId, focused, asTab }.
      *  A J's window and an Undo's do not take focus (D18): the child keeps
-     *  watching while the site saves. */
+     *  watching while the site saves. `asTab` (the YouTube tab's id) opens
+     *  the page in a new tab beside it instead of a window. */
     function openCapture(spec) {
       var payload;
       var cid = String(randomUUID()).toLowerCase();
@@ -86,12 +101,21 @@
           payload = spec.build(cid);
           var origin = C.captureOrigin(dev);
           store.put(cid, Object.assign({ payload: payload, origin: origin, kind: spec.kind }, spec.meta));
+          var url = C.captureUrl(origin, spec.page, cid);
+          if (spec.asTab !== undefined) {
+            return persist()
+              .then(function () { return openTab(url, spec.asTab); })
+              .then(function (created) {
+                if (created && created.id != null) store.setTab(cid, created.id, created.windowId);
+                return persist().then(function () { return { ok: true, cid: cid }; });
+              });
+          }
           return persist()
             .then(function () {
               return (spec.windowId != null ? chrome.windows.get(spec.windowId) : chrome.windows.getLastFocused()).catch(function () { return null; });
             })
             .then(function (win) {
-              var created = Object.assign({ url: C.captureUrl(origin, spec.page, cid), type: 'popup', focused: spec.focused !== false }, C.windowBounds(win));
+              var created = Object.assign({ url: url, type: 'popup', focused: spec.focused !== false }, C.windowBounds(win));
               return chrome.windows.create(created);
             })
             .then(function (created) {
@@ -106,12 +130,13 @@
         });
     }
 
-    /** Add to My Clips / Watch with Heddy. */
+    /** Add to My Clips / Watch with Heddy: in a new tab beside the video. */
     function capture(input) {
       return openCapture({
         page: 'clip',
         kind: 'clip',
         windowId: input.windowId,
+        asTab: input.tabId == null ? null : input.tabId,
         build: function (cid) { return P.buildAdd({ cid: cid, youtubeId: input.youtubeId, startSec: input.startSec, then: input.then }); },
         meta: { tabId: input.tabId, then: input.then, youtubeId: input.youtubeId, startSec: input.startSec == null ? null : Math.floor(input.startSec) },
       });
@@ -189,9 +214,42 @@
       }
       if (kind !== 'clip') return Promise.resolve();
       var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
-      var steps = [tellTab(meta.tabId, toast)];
-      if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
-      return Promise.all(steps);
+      function clipToast() {
+        var steps = [tellTab(meta.tabId, toast)];
+        if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
+        return Promise.all(steps);
+      }
+      if (meta.captureTabId == null) return clipToast();
+      // The capture tab: Heddy closes it about 1 s later and the toast shows
+      // on the video once the child is back on it. The reply to the site is
+      // not held for that.
+      later(function () { closeCaptureTab(meta).then(clipToast); }, TAB_CLOSE_MS);
+      return Promise.resolve();
+    }
+
+    /** Close a capture tab after its ok result. The YouTube tab comes back to
+     *  the front only if the capture tab is still the one in front: Keep and
+     *  watch has by then opened the Classroom in a tab of its own, and the
+     *  child may have moved on, so neither is taken away from them. */
+    function closeCaptureTab(meta) {
+      var id = meta.captureTabId;
+      return Promise.resolve()
+        .then(function () { return chrome.tabs.get(id); })
+        .then(function (cap) {
+          if (!cap || !cap.active || meta.tabId == null) return null;
+          return chrome.tabs.update(meta.tabId, { active: true });
+        })
+        .catch(function () {})
+        .then(function () { return chrome.tabs.remove(id); })
+        .catch(function () {});
+    }
+
+    /** chrome.tabs.onRemoved: a capture tab the child closed takes its cid
+     *  with it, quietly (nothing is shown on the video). */
+    function tabRemoved(tabId) {
+      return ready.then(function () {
+        if (store.dropTab(tabId)) return persist();
+      });
     }
 
     /** J: one heddy:moment, in a window that does not take focus. */
@@ -312,7 +370,7 @@
         if (isPing(message)) return { type: 'heddy:pong', v: P.PROTOCOL_VERSION, version: chrome.runtime.getManifest().version };
         var m = P.parseExternal(message);
         if (!m) return null;
-        var who = { origin: origin, windowId: sender.tab ? sender.tab.windowId : null };
+        var who = { origin: origin, windowId: sender.tab ? sender.tab.windowId : null, tabId: sender.tab ? sender.tab.id : null };
         if (m.kind === 'ready') {
           var payload = store.claim(m.cid, who);
           return persist().then(function () { return payload; });
@@ -394,10 +452,10 @@
         .then(function () { return setIcon(tabId, 'ready'); });
     }
 
-    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
+    return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

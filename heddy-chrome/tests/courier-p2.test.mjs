@@ -21,7 +21,7 @@ const WATCH = `https://www.youtube.com/watch?v=${VIDEO}`;
 const ARTICLE = 'https://www.ordnancesurvey.co.uk/map-scales';
 
 function setup({ tabReply = { ok: true } } = {}) {
-  const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [] };
+  const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [], tabsCreated: [] };
   const session = {};
   const chrome = {
     runtime: { id: 'heddy' },
@@ -39,7 +39,7 @@ function setup({ tabReply = { ok: true } } = {}) {
       get: async (id) => ({ id, url: WATCH }),
       query: async () => [{ id: 9, windowId: 1, url: ARTICLE }],
       sendMessage: async (tabId, m) => { calls.tabMessages.push({ tabId, m }); return tabReply; },
-      create: async () => {},
+      create: async (o) => { calls.tabsCreated.push(o); },
     },
     scripting: { executeScript: async (o) => { calls.injected.push(o); } },
     contextMenus: {
@@ -60,12 +60,14 @@ async function claim(s) {
   return s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
 }
 
-test('J opens /capture/jot in a window that does not take focus, with heddy:moment', async () => {
+test('H opens /capture/jot in a window that does not take focus, with heddy:moment — still a window, never a tab (owner, 2026-10-30)', async () => {
   const s = setup();
   const r = await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
   assert.deepEqual(r, { ok: true, cid: CID });
   assert.equal(s.calls.windows[0].url, `${PROD}/capture/jot?cid=${CID}`);
+  assert.equal(s.calls.windows[0].type, 'popup');
   assert.equal(s.calls.windows[0].focused, false);
+  assert.equal(s.calls.tabsCreated.length, 0, 'a tab would flash on every press');
   assert.deepEqual(await claim(s), { type: 'heddy:moment', v: 1, cid: CID, youtubeId: VIDEO, t: 168, tEnd: 171 });
 });
 

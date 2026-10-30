@@ -60,6 +60,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, change, tab) {
 
 chrome.tabs.onRemoved.addListener(function (tabId) {
   snap.tabGone(tabId);
+  courier.tabRemoved(tabId);
 });
 
 // Right-click an image → "Jot this picture with Heddy" (D30). The menu's
