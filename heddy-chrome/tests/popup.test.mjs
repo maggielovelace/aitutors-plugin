@@ -21,6 +21,6 @@ test('the YouTube state’s row is "Jot the line being spoken · H"', () => {
   assert.match(src, /keyRow\('h-quill', tr\('jotLineSpoken'\), tr\('jotLineSpokenSub'\), 'H'\)/);
 });
 
-test('Clip this page is never refused for length in the popup (the courier cuts it)', () => {
+test('Save page to Jotters is never refused for length in the popup (the courier cuts it)', () => {
   assert.doesNotMatch(src, /too_long|pageTooLong|MAX_PAGE_BYTES/);
 });

@@ -1,7 +1,7 @@
-// content/extract.js — Clip this page: the readable part of a page as Markdown
+// content/extract.js — Save page to Jotters: the readable part of a page as Markdown
 // (PRD-v0.96.0 D5, D20, D21; Must 6).
 //
-// Runs only when the child asks (the popup's Clip this page, or Clip the whole
+// Runs only when the child asks (the popup's Save page to Jotters, or Clip the whole
 // page in the tray's › menu), in the tab activeTab opened to Heddy. Nothing is
 // downloaded: images become links ([Image: alt](url)), and the window on
 // aitutors.me does the saving. Scripts, styles, forms, navigation, sidebars,

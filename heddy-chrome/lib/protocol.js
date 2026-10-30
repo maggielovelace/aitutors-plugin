@@ -8,7 +8,7 @@
 //   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, tEnd?}        J on YouTube
 //   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId, jotterId?}            Undo on the toast
 //   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
-//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Clip this page
+//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Save page to Jotters
 //   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?}
 //
 // `tEnd` on heddy:moment is the player time of the LAST J in a chain of
@@ -39,7 +39,7 @@
   var MAX_FIELD = 20000;
   var MAX_TITLE = 300;
   var MAX_URL = 2048;
-  // Clip this page (D20, Must 6): at most 200 KB of UTF-8, as the site counts it
+  // Save page to Jotters (D20, Must 6): at most 200 KB of UTF-8, as the site counts it
   // (lib/jotters/storage.ts MAX_PAGE_BYTES).
   var MAX_PAGE_BYTES = 200 * 1024;
   // heddy:moment's tEnd may be at most this many seconds after t (site rule).

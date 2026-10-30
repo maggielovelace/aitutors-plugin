@@ -26,7 +26,7 @@
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
   var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
-  // What a gesture injects into any page for Jot it and Clip this page (Phase 2).
+  // What a gesture injects into any page for Jot it and Save page to Jotters (Phase 2).
   var PAGE_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js'];
   var MENU_ID = 'heddy-jot';
   // manifest.json "commands": jot the selected words. No default key (owner,
@@ -189,7 +189,7 @@
           href: C.jotterUrl(origin, meta.youtubeId),
         });
       }
-      // The Jot it and Clip this page windows close about 1 s after an ok
+      // The Jot it and Save page to Jotters windows close about 1 s after an ok
       // result (owner, 2026-10-29), so the page shows what was kept.
       if (kind === 'jot') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
@@ -316,7 +316,7 @@
       });
     }
 
-    /** Clip this page: heddy:page. Past 200 KB of UTF-8 it keeps the first
+    /** Save page to Jotters: heddy:page. Past 200 KB of UTF-8 it keeps the first
      *  part (`cut: true`), and the toast after the save says so. */
     function page(input) {
       var meta = { tabId: input.tabId, title: null, cut: false };

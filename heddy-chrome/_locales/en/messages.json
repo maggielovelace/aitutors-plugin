@@ -29,21 +29,21 @@
   "trayMore": { "message": "More" },
   "menuCopy": { "message": "Copy" },
   "menuParagraph": { "message": "Select the whole paragraph" },
-  "menuClipPage": { "message": "Clip the whole page" },
+  "menuClipPage": { "message": "Save page to Jotters" },
   "imageLabel": { "message": "Image" },
 
   "jHint": { "message": "jots the line being spoken" },
 
   "popupJotIt": { "message": "Jot it" },
-  "clipWholePageInstead": { "message": "Clip the whole page instead" },
-  "clipThisPage": { "message": "Clip this page" },
+  "clipWholePageInstead": { "message": "Save the whole page instead" },
+  "clipThisPage": { "message": "Save page to Jotters" },
   "selectSomeWords": { "message": "Select some words" },
   "selectSomeWordsFor": { "message": "for Jot it" },
   "jotLineSpoken": { "message": "Jot the line being spoken" },
   "jotLineSpokenSub": { "message": "New video? It's added first." },
-  "firstTimePage": { "message": "Jot a line, or clip a page, as a source for your Jotter" },
+  "firstTimePage": { "message": "Jot a line, or save a page to Jotters as a source" },
   "cantReadPage": { "message": "Heddy can't read this page. Try it on a web page or a YouTube video." },
-  "pageEmpty": { "message": "This page has no text to clip." },
+  "pageEmpty": { "message": "This page has no text to save." },
 
   "toastNoteSaved": {
     "message": "Note saved · $TIME$ — $TITLE$",
@@ -63,10 +63,10 @@
   "toastUndoFailed": { "message": "Couldn't undo that note." },
   "toastJotted": { "message": "Jotted" },
   "toastClipped": {
-    "message": "Clipped · $TITLE$",
+    "message": "Saved to Jotters · $TITLE$",
     "placeholders": { "title": { "content": "$1", "example": "Understanding map scales" } }
   },
-  "toastClippedNoTitle": { "message": "Clipped" },
+  "toastClippedNoTitle": { "message": "Saved to Jotters" },
   "toastPageCut": { "message": "Heddy kept the first part of this page." },
   "setShortcut": { "message": "Set a shortcut" },
 

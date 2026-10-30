@@ -51,7 +51,7 @@
     return origin + '/study/jotters/v/' + encodeURIComponent(youtubeId);
   }
 
-  /** Open in Jotter after Jot it or Clip this page: the Jotter the site named
+  /** Open in Jotter after Jot it or Save page to Jotters: the Jotter the site named
    *  (a UUID, checked by the protocol), else the Jotters shelf. */
   function jotterById(origin, jotterId) {
     return jotterId ? origin + '/study/jotters/' + encodeURIComponent(jotterId) : origin + '/study/jotters';

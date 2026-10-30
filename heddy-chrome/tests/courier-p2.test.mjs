@@ -1,6 +1,6 @@
 // Phase 2's courier, against a fake Chrome: J opens /capture/jot without focus
 // and the result becomes "Note saved" with Undo; Undo opens its own window
-// without focus; Jot it and Clip this page carry the tab's own page; the menu
+// without focus; Jot it and Save page to Jotters carry the tab's own page; the menu
 // item and Ctrl Shift J inject the tray only on that gesture.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -147,7 +147,7 @@ test('a page can only jot or clip itself; the popup names its tab', async () => 
   assert.equal(r.ok, true);
 });
 
-test('Clip this page: heddy:page to /capture/page; past 200 KB, the first part with cut: true', async () => {
+test('Save page to Jotters: heddy:page to /capture/page; past 200 KB, the first part with cut: true', async () => {
   const s = setup();
   const r = await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales\n\nOn a 1:50 000 map…' }, fromArticle);
   assert.equal(r.ok, true);
@@ -219,7 +219,7 @@ test('Open in Jotter without a valid jotterId goes to the Jotters shelf', async 
   }
 });
 
-test('Clip this page saved: "Clipped · title", Open in Jotter, and the cut line only when cut', async () => {
+test('Save page to Jotters saved: "Saved to Jotters · title", Open in Jotter, and the cut line only when cut', async () => {
   for (const [markdown, cut] of [['# Short', false], ['a'.repeat(10) + '\n\n' + 'b'.repeat(200 * 1024), true]]) {
     const s = setup();
     await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Understanding map scales', markdown }, fromArticle);
@@ -229,7 +229,7 @@ test('Clip this page saved: "Clipped · title", Open in Jotter, and the cut line
   }
 });
 
-test('a refused Jot it or Clip this page stays in its window: no toast', async () => {
+test('a refused Jot it or Save page to Jotters stays in its window: no toast', async () => {
   const s = setup();
   await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle);
   await claim(s);
@@ -259,7 +259,7 @@ test('Cancel or Close in a capture window (heddy:result cancelled): Heddy closes
   assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'dropped');
 });
 
-test('a Clip this page the site refuses after its file check (not_study, too_long, unreadable, failed): no Clipped toast, the window stays; Close then closes it', async () => {
+test('a Save page to Jotters the site refuses after its file check (not_study, too_long, unreadable, failed): no Saved to Jotters toast, the window stays; Close then closes it', async () => {
   for (const error of ['not_study', 'too_long', 'unreadable', 'failed']) {
     const s = setup();
     await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
@@ -273,7 +273,7 @@ test('a Clip this page the site refuses after its file check (not_study, too_lon
   }
 });
 
-test('a Clip this page ok that comes ~30 s after the tap (the site waited for its file check) still gets the Clipped toast', async () => {
+test('a Save page to Jotters ok that comes ~30 s after the tap (the site waited for its file check) still gets the Saved to Jotters toast', async () => {
   let now = 1_000_000;
   const s = setup({ store: createCidStore({ now: () => now }) });
   await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);

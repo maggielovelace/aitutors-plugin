@@ -5,8 +5,8 @@
 //   YouTube watch   the video row, Whole video / From m:ss, Watch with Heddy
 //                   (primary), Add to My Clips (outlined), the H row
 //   aitutors.me     one line of help, no primary, no footer
-//   words selected  the quote, Jot it (primary), "Clip the whole page instead"
-//   nothing selected the page, Clip this page (primary), the shortcut row
+//   words selected  the quote, Jot it (primary), "Save the whole page instead"
+//   nothing selected the page, Save page to Jotters (primary), the shortcut row
 //                   (the child's binding, else "Set a shortcut")
 //   can't read      a page Heddy may not script (chrome://, the Web Store)
 // Phase 3 adds Explain, Make a card and Ask Heddy after Jot it, from
@@ -172,7 +172,7 @@
     err.hidden = false;
   }
 
-  /** Clip this page: the readable Markdown, made in the tab (content/extract.js).
+  /** Save page to Jotters: the readable Markdown, made in the tab (content/extract.js).
    *  A page past 200 KB is cut by the courier, and the toast after the save says so. */
   function clipPage(tab, btn, err) {
     btn.setAttribute('aria-busy', 'true');

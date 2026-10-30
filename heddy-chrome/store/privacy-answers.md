@@ -52,7 +52,7 @@ What the dashboard asks, and the answer to each.
 | Website content | **Yes** |
 
 Website content (owner ruling, 2026-10-30): **Yes**, and only on the
-student's own action: Jot it, Clip this page, Snap a picture, or Explain /
+student's own action: Jot it, Save page to Jotters, Snap a picture, or Explain /
 Make a card / Ask Heddy. Heddy then reads the words, page or picture they
 chose and hands it, inside Chrome, to the aitutors.me window in front of
 them; it goes only to aitutors.me, under the student's own account. It is

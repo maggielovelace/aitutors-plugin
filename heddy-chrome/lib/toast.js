@@ -5,7 +5,7 @@
 // My Clips (Phase 1); after H on YouTube "Note saved · 2:48 — Map scales", the
 // quote, Undo and Open in Jotter (Phase 2, the same layout as the desk's
 // JotToast); after Jot it "Jotted", the quote, Undo and Open in Jotter; after
-// Clip this page "Clipped · {title}" and Open in Jotter, with the cut line.
+// Save page to Jotters "Saved to Jotters · {title}" and Open in Jotter, with the cut line.
 // It lives in a closed shadow root at the top right, so neither page can
 // restyle the other. Every string from a page or a result is set as text.
 //

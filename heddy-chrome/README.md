@@ -33,8 +33,8 @@ And on any page:
   Right-click a selection → *Jot it with Heddy*, or click Heddy's icon. You
   can also give it a shortcut of your own at `chrome://extensions/shortcuts`
   (Heddy sets none, so it never takes one of Chrome's).
-- **Clip this page** keeps the readable part of a page as a source for your
-  Jotter. A very long page keeps its first part, and Heddy tells you so.
+- **Save page to Jotters** keeps the readable part of a page as a source in
+  your Jotters. A very long page keeps its first part, and Heddy tells you so.
 
 ## Install
 

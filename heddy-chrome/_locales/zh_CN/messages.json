@@ -29,21 +29,21 @@
   "trayMore": { "message": "更多" },
   "menuCopy": { "message": "复制" },
   "menuParagraph": { "message": "选中整段" },
-  "menuClipPage": { "message": "剪下整页" },
+  "menuClipPage": { "message": "存到 Jotters" },
   "imageLabel": { "message": "图片" },
 
   "jHint": { "message": "批注正在说的这一句" },
 
   "popupJotIt": { "message": "写批注" },
-  "clipWholePageInstead": { "message": "改为剪下整页" },
-  "clipThisPage": { "message": "剪下这一页" },
+  "clipWholePageInstead": { "message": "改为保存整页" },
+  "clipThisPage": { "message": "存到 Jotters" },
   "selectSomeWords": { "message": "选中一些文字" },
   "selectSomeWordsFor": { "message": "用来写批注" },
   "jotLineSpoken": { "message": "批注正在说的这一句" },
   "jotLineSpokenSub": { "message": "新视频？会先收下它。" },
-  "firstTimePage": { "message": "批注一句话，或剪下一页，作为批注本的来源" },
+  "firstTimePage": { "message": "批注一句话，或把一页存到 Jotters，作为来源" },
   "cantReadPage": { "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。" },
-  "pageEmpty": { "message": "这一页没有可以剪下的文字。" },
+  "pageEmpty": { "message": "这一页没有可以保存的文字。" },
 
   "toastNoteSaved": {
     "message": "已记下 · $TIME$ — $TITLE$",
@@ -63,10 +63,10 @@
   "toastUndoFailed": { "message": "没能撤销这条批注。" },
   "toastJotted": { "message": "批注已保存" },
   "toastClipped": {
-    "message": "已剪下 · $TITLE$",
+    "message": "已存到 Jotters · $TITLE$",
     "placeholders": { "title": { "content": "$1", "example": "Understanding map scales" } }
   },
-  "toastClippedNoTitle": { "message": "已剪下" },
+  "toastClippedNoTitle": { "message": "已存到 Jotters" },
   "toastPageCut": { "message": "Heddy 只保留了这一页的前一部分。" },
   "setShortcut": { "message": "设置快捷键" },
 

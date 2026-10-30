@@ -34,7 +34,7 @@ ON A YOUTUBE VIDEO
 
 ON ANY PAGE
 • Select some words, then Jot it, Explain, Make a card or Ask Heddy. Or right-click the words and choose "Jot it with Heddy".
-• Clip this page: keeps the readable part of a page as a source in your Jotter.
+• Save page to Jotters: keeps the readable part of a page as a source in your Jotters.
 • Snap a picture: draw a box round a diagram, chart or photo and jot it. Keep up to four pictures from the same page in one jot, or Copy picture to paste it somewhere else. Right-click a picture and choose "Jot this picture with Heddy", or press Ctrl Shift K (twice for the whole screen).
 
 AFTER YOU SAVE

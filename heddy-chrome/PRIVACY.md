@@ -20,7 +20,7 @@ preferences on your device.
   *Jot it with Heddy* from the right-click menu, or press a shortcut you set
   yourself, Heddy reads the words you selected, at most 300 characters either
   side of them, the page's title and its address (without the part after `#`).
-  When you choose *Clip this page*, it reads the page's readable text, with
+  When you choose *Save page to Jotters*, it reads the page's readable text, with
   its pictures as links (it downloads no picture). When you choose *Explain*,
   *Make a card* or *Ask Heddy* on selected words, it reads the same words and
   the same 300 characters either side.
@@ -48,7 +48,7 @@ What happens there is covered by the aitutors.me privacy policy
 (<https://aitutors.me/privacy>).
 
 On the Chrome Web Store this is declared as **website content**: collected
-only when you ask (Jot it, Clip this page, Snap a picture, Explain, Make a
+only when you ask (Jot it, Save page to Jotters, Snap a picture, Explain, Make a
 card or Ask Heddy), sent only to aitutors.me under your own account, never
 sold, never used for advertising or credit decisions, and not shared with
 anyone else beyond aitutors.me's own processing.
