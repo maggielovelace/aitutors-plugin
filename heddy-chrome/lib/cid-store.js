@@ -22,6 +22,9 @@
     var held = {};
     // cid → { claimedAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut }
     var claimed = {};
+    // cid → { doneAt, origin, windowId, captureTabId, tabId } after its result:
+    // only so a later Cancel or Close on the same page can still close it.
+    var done = {};
 
     function sweep() {
       var t = now();
@@ -30,6 +33,9 @@
       });
       Object.keys(claimed).forEach(function (cid) {
         if (t - claimed[cid].claimedAt >= resultMs) delete claimed[cid];
+      });
+      Object.keys(done).forEach(function (cid) {
+        if (t - done[cid].doneAt >= resultMs) delete done[cid];
       });
     }
 
@@ -85,7 +91,7 @@
        *  Returns how many were dropped. */
       dropTab: function (tabId) {
         var n = 0;
-        [held, claimed].forEach(function (m) {
+        [held, claimed, done].forEach(function (m) {
           Object.keys(m).forEach(function (cid) {
             if (m[cid].captureTabId != null && m[cid].captureTabId === tabId) { delete m[cid]; n++; }
           });
@@ -118,6 +124,19 @@
         var e = claimed[k];
         if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
         delete claimed[k];
+        done[k] = { doneAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId };
+        return e;
+      },
+
+      /** Cancel or Close after the page already reported (the site sends
+       *  'cancelled' then): where its tab or window is, once, from the same
+       *  page only. Null otherwise. Carries nothing a toast could use. */
+      takeDone: function (cid, sender) {
+        sweep();
+        var k = key(cid);
+        var e = done[k];
+        if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
+        delete done[k];
         return e;
       },
 
@@ -135,13 +154,14 @@
 
       toJSON: function () {
         sweep();
-        return { held: held, claimed: claimed };
+        return { held: held, claimed: claimed, done: done };
       },
 
       /** Replace the state with one saved by toJSON (a worker restart). */
       load: function (data) {
         held = (data && data.held && typeof data.held === 'object') ? data.held : {};
         claimed = (data && data.claimed && typeof data.claimed === 'object') ? data.claimed : {};
+        done = (data && data.done && typeof data.done === 'object') ? data.done : {};
         sweep();
       },
     };

@@ -338,3 +338,17 @@ test('Cancel or Close in the capture tab (heddy:result cancelled): Heddy closes 
     assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null);
   }
 });
+
+test('Cancel or Close AFTER an earlier result (the duplicate screen’s ok) still closes the tab, once, from that tab only', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, momentId: '6ba7b810-9dad-41d1-80b4-00c04fd430c8' }, page());
+  const cancel = { type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' };
+  assert.equal(await s.courier.external(cancel, page(PROD, 1, 555)), null, 'not from another tab');
+  assert.equal(await s.courier.external(cancel, page('https://evil.example')), null, 'not from another origin');
+  assert.deepEqual(await s.courier.external(cancel, page()), { ok: true });
+  assert.deepEqual(s.calls.removed, [900], 'closed now, not after the 1 s');
+  assert.equal(await s.courier.external(cancel, page()), null, 'once');
+  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'x' }, page()), null, 'only a cancel reaches a finished cid');
+});

@@ -405,6 +405,14 @@
           return persist().then(function () { return payload; });
         }
         var meta = store.takeResult(m.cid, who);
+        // The site sends 'cancelled' on Cancel or Close even after an earlier
+        // result for the same cid (a duplicate's ok, a failure): still close.
+        if (!meta && !m.ok && m.error === CANCELLED) {
+          var spot = store.takeDone(m.cid, who);
+          return persist().then(function () {
+            return spot ? closeCapture(spot).then(function () { return { ok: true }; }) : null;
+          });
+        }
         return persist().then(function () {
           if (!meta) return null;
           return deliverResult(m, meta, origin).then(function () { return { ok: true }; });

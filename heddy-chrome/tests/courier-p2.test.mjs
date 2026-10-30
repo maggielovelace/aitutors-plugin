@@ -268,3 +268,14 @@ test('a Clip this page the site refuses as not study (not_study): no Clipped toa
   assert.deepEqual(s.calls.windowsRemoved, [], 'the window stays');
   assert.equal(s.calls.icons.length, 0, 'no tick');
 });
+
+test('Close under a failure that was already reported still closes the window', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await claim(s);
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'save_failed' }, page());
+  assert.deepEqual(s.calls.windowsRemoved, [], 'a failure leaves it open');
+  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page(77)), null, 'not from another window');
+  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+  assert.deepEqual(s.calls.windowsRemoved, [42]);
+});

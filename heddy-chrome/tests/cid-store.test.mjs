@@ -133,3 +133,22 @@ test('dropTab forgets the cids of a closed capture tab, held or claimed, and no 
   s2.claim(CID, { origin: ORIGIN, windowId: 1, tabId: 900 });
   assert.equal(s2.dropTab(900), 1, 'a claimed one too');
 });
+
+test('after its result a cid keeps only where its page is, for one Cancel, and that survives a reload', () => {
+  const { store, clock } = setup();
+  store.claim(CID, { origin: ORIGIN, windowId: 42 });
+  store.takeResult(CID, { origin: ORIGIN, windowId: 42 });
+  assert.equal(store.takeResult(CID, { origin: ORIGIN, windowId: 42 }), null);
+  const reloaded = createCidStore({ now: clock.now });
+  reloaded.load(JSON.parse(JSON.stringify(store.toJSON())));
+  assert.equal(reloaded.takeDone(CID, { origin: ORIGIN, windowId: 7 }), null);
+  const spot = reloaded.takeDone(CID, { origin: ORIGIN, windowId: 42 });
+  assert.equal(spot.windowId, 42);
+  assert.equal(spot.payload, undefined);
+  assert.equal(reloaded.takeDone(CID, { origin: ORIGIN, windowId: 42 }), null, 'once');
+  const late = setup();
+  late.store.claim(CID, { origin: ORIGIN, windowId: 42 });
+  late.store.takeResult(CID, { origin: ORIGIN, windowId: 42 });
+  late.clock.advance(RESULT_MS);
+  assert.equal(late.store.takeDone(CID, { origin: ORIGIN, windowId: 42 }), null, 'forgotten after 30 minutes');
+});
