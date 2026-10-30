@@ -310,3 +310,12 @@ test('reaching a watch page by YouTube’s own navigation injects the content sc
   await s.courier.tabUpdated(8, { url: 'https://www.youtube.com/shorts/x' }, { url: 'https://www.youtube.com/shorts/x' });
   assert.equal(s.calls.injected.length, 1);
 });
+
+test('the clip toast’s "from m:ss" is the start the site kept (Part of it, or another start chosen there)', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 112, then: 'keep' }, fromYouTube);
+  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
+  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, t: 140 }, page());
+  await closeTab(s);
+  assert.equal(s.calls.tabMessages[0].m.startSec, 140);
+});

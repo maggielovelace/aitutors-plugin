@@ -221,7 +221,11 @@
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
       }
       if (kind !== 'clip') return Promise.resolve();
-      var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: meta.startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
+      // "from m:ss" is where the site says the kept clip starts (its `t`):
+      // the child may choose another start there, or Part of it. Heddy's own
+      // start stands in when the site sends none.
+      var startSec = result.t != null ? result.t : meta.startSec;
+      var toast = { type: 'heddy-ui:toast', kind: 'clip', topic: result.topic, topicLang: result.lang, startSec: startSec, href: C.clipsUrl(origin, { momentId: result.momentId, topicId: result.topicId, youtubeId: meta.youtubeId }) };
       function clipToast() {
         var steps = [tellTab(meta.tabId, toast)];
         if (meta.then === 'classroom') steps.push(tellTab(meta.tabId, { type: 'heddy-ui:pause' }));
