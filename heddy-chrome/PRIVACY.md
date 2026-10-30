@@ -47,6 +47,12 @@ checks the video and asks you to keep it, under your own aitutors.me account.
 What happens there is covered by the aitutors.me privacy policy
 (<https://aitutors.me/privacy>).
 
+On the Chrome Web Store this is declared as **website content**: collected
+only when you ask (Jot it, Clip this page, Snap a picture, Explain, Make a
+card or Ask Heddy), sent only to aitutors.me under your own account, never
+sold, never used for advertising or credit decisions, and not shared with
+anyone else beyond aitutors.me's own processing.
+
 Heddy itself sends nothing to aitutors.me, to us, or to anyone else. It has
 no analytics and no error reporting.
 

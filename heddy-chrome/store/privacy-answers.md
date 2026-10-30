@@ -49,19 +49,18 @@ What the dashboard asks, and the answer to each.
 | Location | No |
 | Web history | No |
 | User activity | No |
-| Website content | No |
+| Website content | **Yes** |
 
-Why "No" to website content: Heddy does not collect it. When the student
-asks, Heddy reads the words, page or picture they chose and hands it, inside
-Chrome, to the aitutors.me window that the student is looking at. Heddy
-itself sends nothing to any server, keeps no copy after the hand-over, and
-has no analytics or error reporting. What the student keeps on aitutors.me is
-covered by https://aitutors.me/privacy.
-
-> If the reviewer counts the hand-over to aitutors.me as collection, tick
-> **Website content** and **User activity** (the student's taps) instead, and
-> keep every certification below; the description of the flow does not
-> change.
+Website content (owner ruling, 2026-10-30): **Yes**, and only on the
+student's own action: Jot it, Clip this page, Snap a picture, or Explain /
+Make a card / Ask Heddy. Heddy then reads the words, page or picture they
+chose and hands it, inside Chrome, to the aitutors.me window in front of
+them; it goes only to aitutors.me, under the student's own account. It is
+never sold, never used for advertising or to decide creditworthiness, and not
+shared with third parties beyond aitutors.me's own processing. Heddy itself
+sends nothing to any server, keeps no copy after the hand-over, and has no
+analytics or error reporting. What is kept on aitutors.me is covered by
+https://aitutors.me/privacy.
 
 ### Certifications (all three ticked)
 

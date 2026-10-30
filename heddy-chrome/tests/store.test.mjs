@@ -83,3 +83,12 @@ test('three to five 1280 × 800 screenshots and a 440 × 280 promo tile', () => 
 test('store/ is never part of the package', () => {
   assert.ok(!shippedFiles().some((f) => f.startsWith('store/')));
 });
+
+test('website content is declared Yes (owner, 2026-10-30), with no fallback, and PRIVACY.md says the same', () => {
+  const src = read('store/privacy-answers.md');
+  assert.match(src, /^\| Website content \| \*\*Yes\*\* \|$/m);
+  assert.doesNotMatch(src, /If the reviewer/);
+  for (const k of ['Jot it', 'Clip this page', 'Snap a picture', 'Ask Heddy', 'only to aitutors.me', 'never sold']) assert.ok(src.includes(k), k);
+  assert.match(read('PRIVACY.md'), /declared as \*\*website content\*\*/);
+  assert.match(read('README.zh-CN.md'), /申报为「网站内容」/);
+});
