@@ -14,6 +14,7 @@
 
   "footerLock": { "message": "只有你让它读，它才会读页面。" },
   "settings": { "message": "设置" },
+  "close": { "message": "关闭" },
   "ctxFirstTime": { "message": "第一次" },
   "firstTimeLead": { "message": "Heddy 把你找到的东西带给 aitutors.me 上的教授们。" },
   "firstTimeYouTube": { "message": "放进一个 YouTube 视频，或和 Heddy 一起看" },

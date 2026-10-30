@@ -31,6 +31,14 @@
   // 2026-10-29); the child binds one at chrome://extensions/shortcuts.
   var COMMAND = 'jot-selection';
 
+  /** The tab of a content script, or null for Heddy's own pages. The popup
+   *  now lives in a frame inside the page (or a small window of its own), so
+   *  it has a sender.tab too, but like the old toolbar popup it names the tab
+   *  it acts on, and its frame's URL is not that page's. */
+  function contentTab(sender) {
+    return /^chrome-extension:/.test(String(sender.url || '')) ? null : sender.tab || null;
+  }
+
   function createCourier(deps) {
     var chrome = deps.chrome;
     var store = deps.store;
@@ -386,7 +394,7 @@
     /** chrome.runtime.onMessage: Heddy's own popup and content script. */
     function internal(message, sender) {
       if (!message || typeof message !== 'object' || !sender || sender.id !== chrome.runtime.id) return Promise.resolve(null);
-      var tab = sender.tab;
+      var tab = contentTab(sender);
       switch (message.type) {
         case 'heddy-ui:capture': {
           if (!P.isYoutubeId(message.youtubeId) || (message.then !== 'keep' && message.then !== 'classroom')) return Promise.resolve({ ok: false });
@@ -455,7 +463,7 @@
     return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

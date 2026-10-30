@@ -14,6 +14,7 @@
 
   "footerLock": { "message": "Reads a page only when you ask it to." },
   "settings": { "message": "Settings" },
+  "close": { "message": "Close" },
   "ctxFirstTime": { "message": "first time" },
   "firstTimeLead": { "message": "Heddy brings what you find to your professors on aitutors.me." },
   "firstTimeYouTube": { "message": "Add a YouTube video, or watch it with Heddy" },

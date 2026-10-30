@@ -38,6 +38,9 @@
       "settings": {
         "message": "Settings"
       },
+      "close": {
+        "message": "Close"
+      },
       "ctxFirstTime": {
         "message": "first time"
       },
@@ -367,6 +370,9 @@
       },
       "settings": {
         "message": "设置"
+      },
+      "close": {
+        "message": "关闭"
       },
       "ctxFirstTime": {
         "message": "第一次"
