@@ -6,8 +6,9 @@
 //                   (primary), Add to My Clips (outlined), the H row
 //   aitutors.me     one line of help, no primary, no footer
 //   any other page  the numbered cards (Round 5, D54, D55): "In this save ·
-//                   2 snippets · 1 picture", the cards with ✕, + Text and
-//                   + Picture, Save to Jotters (primary) and Save and jot now,
+//                   2 snippets · 1 picture", the cards with ⠿, ↑ / ↓ and ✕
+//                   in the child's order (Round 7, D62), the + Text / + Picture
+//                   switch (D64), Save to Jotters (primary) and Save and jot now,
 //                   the line naming the Jotter, Explain · Make a card · Ask
 //                   Heddy on card 1, and Save the whole page too. With no
 //                   card: the page, + Text and + Picture, and Save page to
@@ -262,16 +263,20 @@
       });
   }
 
-  // ─── the page: numbered cards (D54, D55; R4 · B, R5 · Chrome, R5b) ────────
+  // ─── the page: numbered cards (D54, D55, D62, D64, D65) ───────────────────
   //
-  // One numbered list of snippets and pictures from this page, each with ✕;
-  // + Text keeps the words selected now, + Picture starts box mode beside the
-  // panel. Save to Jotters sends them all to the left page of this page's
-  // Jotter; Save and jot now opens the notebook at them. Explain, Make a card
-  // and Ask Heddy act on card 1. With no card, the page itself is the thing
-  // to save. The list lives in the background (lib/cards.js); this draws it.
+  // One numbered list of snippets and pictures from this page, each with ✕,
+  // in the order the child sets: drag a card by ⠿, or use ↑ / ↓ (Alt+↑ /
+  // Alt+↓ on a focused card). + Text and + Picture are a switch: Text is the
+  // page as it is, where selected words add themselves (content/panel.js);
+  // Picture is box mode beside the panel. Tapping + Text with words selected
+  // adds them too. Save to Jotters sends them all, in that order, to the left
+  // page of this page's Jotter; Save and jot now opens the notebook at them.
+  // Explain, Make a card and Ask Heddy act on card 1. With no card, the page
+  // itself is the thing to save. The list lives in the background
+  // (lib/cards.js); this draws it.
 
-  var view = null; // { tab, state } while the page state shows
+  var view = null; // { tab, state, mode, err, focus } while the page state shows
 
   function cardsCall(message, tab) {
     return Promise.resolve()
@@ -291,8 +296,81 @@
     return !!document.querySelector('[aria-busy="true"]');
   }
 
-  function cardRow(card, tab) {
+  var CHEVRON = {
+    up: '<svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 8.5L7 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    down: '<svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 5.5L7 9l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  };
+
+  /** Card `card` to index `to` (D62); the panel and the page renumber. The
+   *  focus goes back to `focus` ('row', 'up' or 'down') on the moved card. */
+  function moveTo(card, to, focus) {
+    var list = document.querySelector('.cards');
+    if (list) list.setAttribute('aria-busy', 'true');
+    view.focus = { id: card.id, what: focus || 'row' };
+    cardsCall({ type: 'heddy-cards:move', id: card.id, to: to }, view.tab).then(function (r) {
+      if (list) list.removeAttribute('aria-busy');
+      if (r.ok) setState(r);
+    });
+  }
+
+  /** ⠿: the card follows the pointer from slot to slot inside the list, and
+   *  lands where it is let go. The list scrolls near its edges. */
+  function dragFrom(e, row, card, list) {
+    if (e.button !== 0 || busyNow()) return;
+    e.preventDefault();
+    var from = Array.prototype.indexOf.call(list.children, row);
+    var handle = e.currentTarget;
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+    row.classList.add('drag');
+    list.setAttribute('aria-busy', 'true');
+    function others() {
+      return Array.prototype.filter.call(list.children, function (r) { return r !== row; });
+    }
+    function onMove(ev) {
+      var box = list.getBoundingClientRect();
+      if (ev.clientY < box.top + 24) list.scrollTop -= 8;
+      else if (ev.clientY > box.bottom - 24) list.scrollTop += 8;
+      var rest = others();
+      var mids = rest.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; });
+      var at = HeddyCards.dropIndex(mids, ev.clientY);
+      var before = rest[at] || null;
+      if (row.nextSibling !== before) list.insertBefore(row, before);
+      // The numbers follow while it moves.
+      Array.prototype.forEach.call(list.children, function (r, i) { r.querySelector('b').textContent = String(i + 1); });
+    }
+    function onUp() {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+      row.classList.remove('drag');
+      list.removeAttribute('aria-busy');
+      var to = Array.prototype.indexOf.call(list.children, row);
+      if (to !== from) moveTo(card, to, 'row');
+    }
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  }
+
+  function cardRow(card, tab, i, total) {
     var row = el('div', 'c');
+    row.setAttribute('data-id', card.id);
+    var many = total > 1;
+    if (many) {
+      // Alt+↑ / Alt+↓ on a focused card, for children who cannot drag (D62).
+      row.tabIndex = 0;
+      row.addEventListener('keydown', function (e) {
+        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || busyNow()) return;
+        e.preventDefault();
+        var to = i + (e.key === 'ArrowUp' ? -1 : 1);
+        if (to >= 0 && to < total) moveTo(card, to, 'row');
+      });
+      var dh = el('span', 'dh', '⠿');
+      dh.title = tr('cardDrag');
+      dh.setAttribute('aria-hidden', 'true');
+      dh.addEventListener('pointerdown', function (e) { dragFrom(e, row, card, row.parentNode); });
+      row.appendChild(dh);
+    }
     row.appendChild(el('b', null, String(card.n)));
     if (card.kind === 'image') {
       var th = el('img', 'th');
@@ -303,6 +381,22 @@
       row.appendChild(el('span', 'pl', tr('cardPictureLabel')));
     } else {
       row.appendChild(el('q', null, card.quote.replace(/\s+/g, ' ').trim()));
+    }
+    if (many) {
+      [['up', -1, 'cardMoveUp'], ['down', 1, 'cardMoveDown']].forEach(function (m) {
+        var b = el('button', 'cm');
+        b.type = 'button';
+        b.setAttribute('data-move', m[0]);
+        b.setAttribute('aria-label', tr(m[2]));
+        b.title = tr(m[2]);
+        b.insertAdjacentHTML('beforeend', CHEVRON[m[0]]);
+        var to = i + m[1];
+        b.disabled = to < 0 || to >= total;
+        // At the top (or the bottom) the focus moves to the other arrow.
+        var then = to === 0 ? 'down' : to === total - 1 ? 'up' : m[0];
+        b.addEventListener('click', function () { if (!b.disabled && !busyNow()) moveTo(card, to, then); });
+        row.appendChild(b);
+      });
     }
     var x = el('button', 'cx');
     x.type = 'button';
@@ -342,7 +436,7 @@
     if (cards.length) {
       body.appendChild(el('span', 'cnt', countLine(c)));
       var list = el('div', 'cards');
-      cards.forEach(function (card) { list.appendChild(cardRow(card, tab)); });
+      cards.forEach(function (card, i) { list.appendChild(cardRow(card, tab, i, cards.length)); });
       body.appendChild(list);
     } else {
       var pg = el('div', 'pg');
@@ -353,14 +447,23 @@
 
     var err = el('p', 'err');
     err.hidden = true;
+    view.err = err;
 
-    // + Text · + Picture (R5b's dashed pair).
+    // + Text · + Picture (R5b's dashed pair), now the Text / Picture switch
+    // (D64): the one that is on is filled.
     var adds = el('div', 'adds');
+    adds.setAttribute('role', 'group');
+    adds.setAttribute('aria-label', tr('modeSwitchLabel'));
+    var picture = view.mode === 'picture';
     var addText = el('button', null, tr('addText'));
     addText.type = 'button';
+    addText.setAttribute('aria-pressed', String(!picture));
     var addPic = el('button', null, tr('addPicture'));
     addPic.type = 'button';
+    addPic.setAttribute('aria-pressed', String(picture));
     addText.addEventListener('click', function () {
+      // In Picture mode: back to Text. Box mode ends; its pictures stay.
+      if (view.mode === 'picture') return toTextMode(tab);
       if (c.text >= HeddyCards.MAX_TEXT) return fail(err, 'cardsFullText');
       addText.setAttribute('aria-busy', 'true');
       cardsCall({ type: 'heddy-cards:add-text' }, tab).then(function (r) {
@@ -373,13 +476,17 @@
       });
     });
     addPic.addEventListener('click', function () {
+      if (view.mode === 'picture') return;
       if (c.image >= HeddyCards.MAX_IMAGES) return fail(err, 'cardsFullPictures');
       // Box mode beside the panel; its + Picture adds the cards here.
       cardsCall({ type: 'heddy-ui:snap', mode: 'box' }, tab);
+      setMode('picture');
     });
     adds.appendChild(addText);
     adds.appendChild(addPic);
     body.appendChild(adds);
+    // With nothing collected yet: selecting words is how to add them (D65).
+    if (!cards.length && !picture) body.appendChild(el('p', 'fine hint', tr('cardsEmptyHint')));
     body.appendChild(err);
 
     var title = (tab.title || '').replace(/\s+/g, ' ').trim();
@@ -429,8 +536,54 @@
 
   function setState(st) {
     if (!view || !st || !Array.isArray(st.cards)) return;
+    // A redraw keeps the focus where it was: on the card that moved, or on
+    // the card (or its arrow) that had it.
+    var keep = view.focus || focusNow();
     view.state = st;
     drawCards();
+    view.focus = keep;
+    refocus();
+  }
+
+  function focusNow() {
+    var a = document.activeElement;
+    var row = a && a.closest && a.closest('.c[data-id]');
+    if (!row) return null;
+    return { id: row.getAttribute('data-id'), what: a === row ? 'row' : a.getAttribute('data-move') || 'row' };
+  }
+
+  /** After a move, the focus goes back to the card that moved. */
+  function refocus() {
+    var f = view.focus;
+    view.focus = null;
+    if (!f) return;
+    var row = document.querySelector('.c[data-id="' + f.id + '"]');
+    if (!row) return;
+    var target = f.what === 'row' ? row : row.querySelector('[data-move="' + f.what + '"]');
+    (target && !target.disabled ? target : row).focus();
+  }
+
+  function setMode(m) {
+    if (!view || view.mode === m) return;
+    view.mode = m;
+    if (!busyNow()) drawCards();
+  }
+
+  /** The page's mode: 'picture' while box mode draws there, else 'text'. */
+  function readMode(tab) {
+    return chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: function () { var b = globalThis.__heddyBoxMode; return b && b.mode ? b.mode() : 'text'; },
+    }).then(function (res) { return res && res[0] && res[0].result === 'picture' ? 'picture' : 'text'; }, function () { return 'text'; });
+  }
+
+  /** + Text in Picture mode: box mode ends and leaves its small Text bar. */
+  function toTextMode(tab) {
+    setMode('text');
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: function () { var b = globalThis.__heddyBoxMode; if (b && b.stop) b.stop(); return true; },
+    }).catch(function () {});
   }
 
   /** Any other page: the icon click is the gesture (activeTab), so Heddy
@@ -448,20 +601,27 @@
         }, function () { return st; });
       })
       .then(function (st) {
-        view = { tab: tab, state: st };
-        drawCards();
+        return readMode(tab).then(function (mode) {
+          view = { tab: tab, state: st, mode: mode, err: null, focus: null };
+          drawCards();
+        });
       }, function () { return renderCantSave(body, null); });
   }
 
-  /** The background changed the list (box mode kept a picture, the site
-   *  saved some): draw it again, unless an action is on its way. */
-  function refreshCards() {
+  /** The background changed the list (box mode kept a picture, selected
+   *  words added themselves, the site saved some): draw it again, unless an
+   *  action is on its way. `note` 'full_text': ten snippets, said once. */
+  function refreshCards(note) {
     if (!view || busyNow()) return;
-    cardsCall({ type: 'heddy-cards:get' }, view.tab).then(function (st) { if (st.ok && !busyNow()) setState(st); });
+    cardsCall({ type: 'heddy-cards:get' }, view.tab).then(function (st) {
+      if (!st.ok || busyNow()) return;
+      setState(st);
+      if (note === 'full_text' && view.err) fail(view.err, 'cardsFullText');
+    });
   }
 
   chrome.runtime.onMessage.addListener(function (m) {
-    if (m && m.type === 'heddy-cards:changed' && view && m.tabId === view.tab.id) refreshCards();
+    if (m && m.type === 'heddy-cards:changed' && view && m.tabId === view.tab.id) refreshCards(m.note);
   });
 
   function renderSite(body) {
@@ -571,6 +731,8 @@
   window.addEventListener('message', function (e) {
     if (HOST !== 'panel' || e.source !== window.parent || !e.data || typeof e.data !== 'object') return;
     if (e.data.heddyPanel === 'moved') location.reload();
+    // Box mode started or ended in the page (D64): the switch follows.
+    if (e.data.heddyPanel === 'mode') setMode(e.data.mode === 'picture' ? 'picture' : 'text');
   });
 
   function theTab() {

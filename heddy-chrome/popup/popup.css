@@ -118,11 +118,26 @@ button { font: inherit; }
 .c .pl { flex: 1; min-width: 0; font: 500 12.5px var(--serif); color: var(--pi); }
 .cx { all: unset; flex: none; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; color: #80868b; cursor: pointer; }
 .cx:hover { background: var(--pr); color: var(--pd); }
+/* Round 7 (D62): the child's order. ⠿ drags a card; ↑ / ↓ move it one place. */
+.c:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.c.drag { border-color: var(--pacc); box-shadow: 0 6px 16px rgba(0, 33, 71, .18); position: relative; z-index: 1; }
+.dh { flex: none; width: 12px; margin: 0 -2px 0 -3px; text-align: center; font: 700 14px/1 var(--sans); color: #a39d90; cursor: grab; touch-action: none; user-select: none; }
+.c.drag .dh { cursor: grabbing; color: var(--pd); }
+.cm { all: unset; flex: none; width: 20px; height: 22px; border-radius: 6px; display: grid; place-items: center; color: #80868b; cursor: pointer; }
+.cm:hover { background: var(--pr); color: var(--pd); }
+.cm:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
+.cm:disabled { opacity: .3; cursor: default; background: transparent; }
+.c > .cm + .cm { margin-left: -6px; }
+.c > .cm + .cx { margin-left: -4px; }
 .cx:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
 .cx[aria-busy="true"] { opacity: .5; cursor: progress; }
 .adds { display: flex; gap: 8px; }
 .adds button { all: unset; box-sizing: border-box; flex: 1; text-align: center; border: 1px dashed #b9b2a3; border-radius: 9px; padding: 7px 0; font: 700 12.5px var(--sans); color: #1f6a40; cursor: pointer; }
 .adds button:hover { background: var(--pr); }
+/* Round 7 (D64): the pair is the Text / Picture switch; the mode that is on
+   is filled, the other keeps R5b's dashed outline. */
+.adds button[aria-pressed="true"] { border: 1px solid #b9d8c4; background: #f1f8f3; cursor: default; }
+.fine.hint { color: #4b5b73; }
 .adds button:focus-visible { outline: 2px solid var(--pd); outline-offset: 1px; }
 .adds button[aria-busy="true"] { opacity: .7; cursor: progress; }
 .cardsv .btn.wide { margin-top: 4px; }

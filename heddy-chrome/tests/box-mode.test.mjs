@@ -1,7 +1,7 @@
-// The bar under a cropped picture (D58; artifact R5b · C, the owner's pick):
-// Save to Jotters (gold) · + Picture · Heddy ▾, and the Heddy menu. Its
-// states as pure rules, plus source pins for what needs a page to see. The
-// rendered bar was compared with R5b · C in a headless Chrome (see the PR).
+// The bar under a cropped picture (D58 as Round 7's D64 has it): the
+// [Text | Picture] switch · + Picture (gold) · Heddy ▾, the Heddy menu, and
+// the small bar Text mode leaves. Its states as pure rules, plus source pins
+// for what needs a page to see.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, read } from './helpers.mjs';
@@ -12,12 +12,15 @@ const zh = JSON.parse(read('_locales/zh_CN/messages.json'));
 const src = read('content/box-mode.js');
 const BOX = { x: 0, y: 0, w: 300, h: 100 };
 
+const pick = (m) => ({ showPlus: m.showPlus, canDraw: m.canDraw, showBar: m.showBar, collecting: m.collecting });
+
 test('a box drawn, nothing kept: the bar shows, with + Picture', () => {
-  assert.deepEqual(B.barModel(0, BOX), { showPlus: true, canDraw: true, showBar: true, collecting: false });
+  assert.deepEqual(pick(B.barModel(0, BOX)), { showPlus: true, canDraw: true, showBar: true, collecting: false });
+  assert.equal(B.barModel(0, BOX).mode, 'picture', 'box mode is Picture mode');
 });
 
 test('one kept and a second box drawn (R5b’s frame): + Picture, and the "1 kept" pill', () => {
-  assert.deepEqual(B.barModel(1, BOX), { showPlus: true, canDraw: true, showBar: true, collecting: true });
+  assert.deepEqual(pick(B.barModel(1, BOX)), { showPlus: true, canDraw: true, showBar: true, collecting: true });
 });
 
 test('three kept and a fourth drawn: + Picture still keeps it as the 4th', () => {
@@ -25,14 +28,36 @@ test('three kept and a fourth drawn: + Picture still keeps it as the 4th', () =>
 });
 
 test('four pictures kept: + Picture is hidden and no fifth box is drawn', () => {
-  assert.deepEqual(B.barModel(4, null), { showPlus: false, canDraw: false, showBar: true, collecting: true });
+  assert.deepEqual(pick(B.barModel(4, null)), { showPlus: false, canDraw: false, showBar: true, collecting: true });
   assert.equal(B.barModel(4, BOX).showPlus, false);
   assert.equal(B.MAX_PICTURES, 4);
 });
 
 test('kept pictures and nothing drawn: the bar stays under the last one, without + Picture', () => {
-  assert.deepEqual(B.barModel(2, null), { showPlus: false, canDraw: true, showBar: true, collecting: true });
-  assert.equal(B.barModel(0, null).showBar, false, 'nothing yet: the hint alone');
+  assert.deepEqual(pick(B.barModel(2, null)), { showPlus: false, canDraw: true, showBar: true, collecting: true });
+  assert.equal(B.barModel(0, null).showBar, false, 'nothing yet: no bar under a box');
+});
+
+// ─── Round 7 (D64): the Text | Picture switch ───────────────────────────────
+
+test('Picture mode with nothing drawn: the small bar holds the switch and the hint; once a bar is under a box, it goes', () => {
+  assert.deepEqual([B.barModel(0, null, 'picture').showDock, B.barModel(0, null, 'picture').line], [true, 'boxHintBefore']);
+  assert.equal(B.barModel(0, BOX, 'picture').showDock, false, 'the bar under the box carries the switch');
+  assert.equal(B.barModel(2, null, 'picture').showDock, false, 'the bar under the last kept one');
+});
+
+test('Text mode: only the small bar, "Select words: each one is added"; nothing is drawn, nothing is kept', () => {
+  const m = B.barModel(3, BOX, 'text');
+  assert.deepEqual(m, { mode: 'text', showPlus: false, canDraw: false, showBar: false, showDock: true, collecting: false, line: 'textModeLine' });
+  assert.equal(en.textModeLine.message, 'Select words: each one is added');
+  assert.equal(zh.textModeLine.message, '选中文字：每段都会加进来');
+});
+
+test('the switch: Text then Picture, the one that is on pressed', () => {
+  assert.deepEqual(B.switchModel('text').map((b) => [b.mode, b.pressed]), [['text', true], ['picture', false]]);
+  assert.deepEqual(B.switchModel('picture').map((b) => [b.mode, b.pressed]), [['text', false], ['picture', true]]);
+  assert.deepEqual(B.switchModel('text').map((b) => en[b.label].message), ['Text', 'Picture']);
+  assert.deepEqual(B.switchModel('text').map((b) => zh[b.label].message), ['文字', '图片']);
 });
 
 test('the Heddy menu: Explain this picture, Make a card, Ask Heddy about it, a rule, Copy picture, Whole visible page', () => {
@@ -50,22 +75,23 @@ test('the menu with nothing to act on, and with four pictures kept', () => {
   assert.equal(B.menuRows(3, null).find((r) => r.act === 'whole').disabled, false);
 });
 
-test('the bar is three buttons in R5b · C’s order: gold Save to Jotters, + Picture, a rule, Heddy with the eyes', () => {
+test('the bar is the switch, then gold + Picture, a rule, Heddy with the eyes; no Save to Jotters (D64)', () => {
   const tray = src.slice(src.indexOf("'<div class=\"tray\""), src.indexOf("'<div class=\"menu\""));
   const acts = [...tray.matchAll(/data-act="(\w+)"/g)].map((m) => m[1]);
-  assert.deepEqual(acts, ['save', 'plus', 'heddy']);
-  assert.match(tray, /class="pri" data-act="save">' \+ icon\('save'\)/);
-  assert.match(tray, /data-act="plus">' \+ icon\('crop'\)/);
+  assert.deepEqual(acts, ['plus', 'heddy']);
+  assert.match(tray, /'<div class="tray" role="toolbar" hidden>' \+ switchHtml\(\) \+\s*'<button type="button" class="pri" data-act="plus">' \+ icon\('crop'\)/);
+  assert.match(src, /'<div class="dock" role="toolbar" hidden>' \+ switchHtml\(\)/, 'the small bar has the same switch');
+  assert.doesNotMatch(src, /saveToJotters|heddy-box:save|saveAll|icon\('save'\)/, 'saving happens only in the panel');
   assert.match(tray, /<i><\/i><button type="button" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="hf">' \+ M\.use\('h-eyes', 16\)/);
   assert.match(src, /\.tray>button\.pri\{background:#DC9400;color:#002147\}/, 'gold');
 });
 
-test('the bar’s words, in both languages (D58)', () => {
-  assert.match(src, /b\.save\.querySelector\('span'\)\.textContent = tr\('saveToJotters'\)/);
+test('the bar’s words, in both languages (D64)', () => {
   assert.match(src, /b\.plus\.querySelector\('span'\)\.textContent = tr\('addPicture'\)/);
   assert.match(src, /b\.heddy\.querySelector\('span:last-child'\)\.textContent = tr\('barHeddy'\)/);
-  assert.deepEqual(['saveToJotters', 'addPicture', 'barHeddy'].map((k) => en[k].message), ['Save to Jotters', '+ Picture', 'Heddy ▾']);
-  assert.deepEqual(['saveToJotters', 'addPicture', 'barHeddy'].map((k) => zh[k].message), ['存到 Jotters', '+ 图片', 'Heddy ▾']);
+  assert.match(src, /sw\.setAttribute\('aria-label', tr\('modeSwitchLabel'\)\)/);
+  assert.deepEqual(['modeText', 'modePicture', 'addPicture', 'barHeddy'].map((k) => en[k].message), ['Text', 'Picture', '+ Picture', 'Heddy ▾']);
+  assert.deepEqual(['modeText', 'modePicture', 'addPicture', 'barHeddy'].map((k) => zh[k].message), ['文字', '图片', '+ 图片', 'Heddy ▾']);
 });
 
 test('+ Picture is hidden by the model; the pill reads "Box mode · N kept · Esc to stop"', () => {
@@ -92,7 +118,29 @@ test('box mode sits just under the panel, so the panel stays usable beside it (R
   assert.match(src, /de\.insertBefore\(host, panel && panel\.parentNode === de \? panel : null\);/);
 });
 
-test('Esc leaves box mode and keeps the cards; the menu closes first if it is open', () => {
-  assert.match(src, /if \(els && !els\.menu\.hidden\) return closeMenu\(\);\s*close\(\);/);
+test('Esc in Picture mode switches to Text and keeps the cards; the menu closes first if it is open', () => {
+  assert.match(src, /if \(e\.key !== 'Escape' \|\| state !== 'picture'\) return;[^]*if \(els && !els\.menu\.hidden\) return closeMenu\(\);\s*toText\(\);/);
   assert.doesNotMatch(src, /heddy-box:cancel/);
+  const panel = read('content/panel.js');
+  assert.match(panel, /if \(e\.key !== 'Escape' \|\| e\.defaultPrevented \|\| mode\(\) === 'picture'\) return;/, 'the panel stays open on that Esc');
+});
+
+test('switching to Text leaves the small bar only while the panel is open, and it goes when the panel closes', () => {
+  assert.match(src, /function toText\(\) \{\s*close\(\);\s*if \(panelOpen\(\)\) \{\s*build\(\);\s*state = 'text';/);
+  assert.match(src, /function panelClosed\(\) \{\s*if \(state === 'text'\) close\(\);/);
+  assert.match(read('content/panel.js'), /root\.__heddyBoxMode\.panelClosed\(\)/);
+  assert.match(src, /:host\(\.text\)\{pointer-events:none\}/, 'the page under it stays the page');
+});
+
+test('the switch’s class does not collide with the box’s corner handles (nw, ne, sw, se)', () => {
+  const classes = [...src.matchAll(/class="([\w ]+)"/g)].flatMap((m) => m[1].split(' '));
+  assert.ok(classes.includes('msw'));
+  const switchCss = [...src.matchAll(/'\.(\w+)[{ ]/g)].map((m) => m[1]);
+  for (const corner of ['nw', 'ne', 'sw', 'se']) assert.ok(!switchCss.includes(corner), `no top-level .${corner} rule`);
+});
+
+test('the panel is told which mode is on, both ways', () => {
+  assert.match(src, /state = 'picture';\s*tellMode\('picture'\);/);
+  assert.match(src, /if \(was === 'picture'\) tellMode\('text'\);/);
+  assert.match(read('content/panel.js'), /tell\(\{ heddyPanel: 'mode', mode: m === 'picture' \? 'picture' : 'text' \}\)/);
 });

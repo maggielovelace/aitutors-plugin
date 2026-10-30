@@ -65,11 +65,43 @@
     return el || document.body;
   }
 
-  /** An ancestor with enough words around the selection for its context. */
+  /** An ancestor with enough words around the selection for its context
+   *  (the fallback below only: it reads textContent up the tree). */
   function contextRoot(range) {
     var el = blockOf(range.commonAncestorContainer);
     while (el && el !== document.body && (el.textContent || '').length < range.toString().length + 2 * CONTEXT_SIDE) el = el.parentElement;
     return el || document.body;
+  }
+
+  /** How the page's CSS sets elements apart, for the words around a quote
+   *  (lib/pos.js wordsBefore / wordsAfter): links laid out as boxes, list items and
+   *  blocks are read with a space between them, never run together. */
+  function readerKind() {
+    var POS = globalThis.HeddyPos;
+    return POS && POS.styleKind(function (el) { return getComputedStyle(el); });
+  }
+
+  /** The words either side of the selection, apart where the page sets them
+   *  apart, nav, header, footer and aside left out. Each side walks outward
+   *  from the selection and stops at 600 characters, so it costs the same
+   *  on any page: auto-add (D65) runs it on every selection. */
+  function contextOf(range) {
+    var POS = globalThis.HeddyPos;
+    var side = CONTEXT_SIDE * 2;
+    var body = document.body || document.documentElement;
+    if (POS && POS.wordsBefore) {
+      var kind = readerKind();
+      return {
+        before: POS.wordsBefore(body, { node: range.startContainer, offset: range.startOffset }, side, kind),
+        after: POS.wordsAfter(body, { node: range.endContainer, offset: range.endOffset }, side, kind),
+      };
+    }
+    // lib/pos.js is in every injection with this file; this is a fallback.
+    var rootEl = contextRoot(range);
+    return {
+      before: slice(rootEl, 0, range.startContainer, range.startOffset).slice(-side),
+      after: slice(range.endContainer, range.endOffset, rootEl, rootEl.childNodes.length).slice(0, side),
+    };
   }
 
   function slice(startNode, startOffset, endNode, endOffset) {
@@ -91,13 +123,11 @@
     var range = sel.getRangeAt(0);
     var quote = sel.toString();
     if (!quote.trim()) return null;
-    var rootEl = contextRoot(range);
-    var before = slice(rootEl, 0, range.startContainer, range.startOffset);
-    var after = slice(range.endContainer, range.endOffset, rootEl, rootEl.childNodes.length);
+    var around = contextOf(range);
     return {
       quote: quote,
-      before: before.slice(-CONTEXT_SIDE * 2),
-      after: after.slice(0, CONTEXT_SIDE * 2),
+      before: around.before,
+      after: around.after,
       title: document.title || '',
       url: location.href,
       rect: range.getBoundingClientRect(),

@@ -1,13 +1,21 @@
 // lib/cards.js — the numbered cards in Heddy's panel, and Save to Jotters
-// (PRD-v0.96.0 D54, D55, D58; artifact R4 · B without drag, R5 · Chrome,
-// R5b · C).
+// (PRD-v0.96.0 D54, D55, D62, D63, D65; artifact R4 · B, R5 · Chrome, R5b · C).
 //
 // Collecting (D55): each snippet and picture the child keeps from a page is a
 // card in one numbered list, up to 10 snippets and 4 pictures, all from the
 // same page. The panel draws the list (popup/popup.js), the page draws the
 // same numbers beside each highlight and box (content/cards-layer.js), and
 // box mode's + Picture adds to it (content/box-mode.js). Going to another
-// page clears it. There is no reordering: the site draws saves in page order.
+// page clears it.
+//
+// The child orders the list (Round 7, D62): heddy-cards:move {id, to} puts a
+// card at index `to`, and every number follows. heddy:save sends the items in
+// that order and the site draws them so (D63).
+//
+// Selected words add themselves (D65): while the panel is open in Text mode,
+// content/panel.js sends heddy-cards:auto for a finished selection, naming
+// the card it may replace (lib/auto-add.js decides that in the page). The
+// same words as a card are ignored without a word; a full list says so once.
 //
 // Saving (D54): Save to Jotters sends every card, and optionally the whole
 // page, in one heddy:save to /capture/save, where the child's own session
@@ -70,6 +78,51 @@
       if (c.kind === 'text' && c.quote === card.quote && c.pos.block === card.pos.block && c.pos.offset === card.pos.offset) return i + 1;
     }
     return 0;
+  }
+
+  /** The words of a quote with their spacing folded, to tell the same words. */
+  function wordsOf(quote) {
+    return String(quote || '').replace(/\s+/g, ' ').trim();
+  }
+
+  /** The card `id` moved to index `to` (clamped), the others in their order.
+   *  A new array; the same list when nothing moves. */
+  function moveCard(cards, id, to) {
+    var from = -1;
+    for (var i = 0; i < cards.length; i++) if (cards[i].id === id) from = i;
+    if (from < 0 || typeof to !== 'number' || !isFinite(to)) return cards;
+    var at = Math.max(0, Math.min(cards.length - 1, Math.round(to)));
+    if (at === from) return cards;
+    var out = cards.slice();
+    var c = out.splice(from, 1)[0];
+    out.splice(at, 0, c);
+    return out;
+  }
+
+  /** Where a dragged card lands: `mids` are the vertical middles of the
+   *  other cards, top to bottom; it goes before the first one below y. */
+  function dropIndex(mids, y) {
+    for (var i = 0; i < mids.length; i++) if (y < mids[i]) return i;
+    return mids.length;
+  }
+
+  /** What an auto-added selection does to the list (D65):
+   *    'same'     the same words as a card already there: nothing, silently
+   *    'replace'  the child stretched or shrank the card just added: it
+   *               takes that card's place and number (index)
+   *    'full'     ten snippets already
+   *    'add'      the next card
+   *  replaceId is the card the page says this selection may replace. */
+  function autoPlan(cards, card, replaceId) {
+    var at = -1;
+    if (replaceId) for (var i = 0; i < cards.length; i++) if (cards[i].id === replaceId && cards[i].kind === 'text') at = i;
+    var words = wordsOf(card.quote);
+    for (var j = 0; j < cards.length; j++) {
+      if (cards[j].kind === 'text' && wordsOf(cards[j].quote) === words) return { act: 'same', n: j + 1 };
+    }
+    if (at >= 0) return { act: 'replace', index: at };
+    if (!room(cards, 'text')) return { act: 'full' };
+    return { act: 'add' };
   }
 
   /** The quote as heddy:save sends it: its line breaks kept (they are the
@@ -186,10 +239,11 @@
 
   // ─── the background's side ─────────────────────────────────────────────────
 
-  /** Runs in the page: keep the selection as card `id` (content/cards-layer.js). */
-  function takeInPage(id) {
+  /** Runs in the page: keep the selection as card `id` (content/cards-layer.js);
+   *  with `keepSelection` the words stay selected (auto-add, D65). */
+  function takeInPage(id, keepSelection) {
     var layer = globalThis.__heddyCards;
-    return layer ? layer.take(id) : null;
+    return layer ? layer.take(id, keepSelection === true) : null;
   }
 
   /** Runs in the page: draw these numbers (content/cards-layer.js). */
@@ -273,13 +327,16 @@
       return chrome.scripting.executeScript({ target: { tabId: tabId }, files: deps.pageFiles });
     }
 
-    /** The page's numbers, and the panel told to draw the list again. */
-    function changed(tabId, s) {
+    /** The page's numbers, and the panel told to draw the list again; with
+     *  `note`, a line for the panel to show (an auto-add into a full list). */
+    function changed(tabId, s, note) {
       var list = marks(s.cards);
+      var told = { type: 'heddy-cards:changed', tabId: tabId };
+      if (note) told.note = note;
       return Promise.resolve()
         .then(function () { return chrome.scripting.executeScript({ target: { tabId: tabId }, func: syncInPage, args: [list] }); })
         .catch(function () {})
-        .then(function () { return Promise.resolve(chrome.runtime.sendMessage({ type: 'heddy-cards:changed', tabId: tabId })).catch(function () {}); })
+        .then(function () { return Promise.resolve(chrome.runtime.sendMessage(told)).catch(function () {}); })
         .catch(function () {});
     }
 
@@ -298,7 +355,7 @@
         var id = newId();
         return Promise.resolve()
           .then(function () { return inject(tab.id); })
-          .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: takeInPage, args: [id] }); })
+          .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: takeInPage, args: [id, false] }); })
           .then(function (res) {
             var got = res && res[0] && res[0].result;
             var card = got && T.cleanUrl(got.url) === s.url ? textCard(id, got) : null;
@@ -309,6 +366,55 @@
             s.cards.push(card);
             return store(tab.id, s).then(function () { return changed(tab.id, s); }).then(function () { return reply(s, { n: s.cards.length }); });
           }, function () { return reply(s, { ok: false, error: 'page' }); });
+      });
+    }
+
+    /** A finished selection while the panel is open in Text mode (D65,
+     *  content/panel.js): the next card, or the card it replaces. The words
+     *  stay selected. A full list is told once, until there is room again. */
+    function auto(tab, replaceId) {
+      return current(tab).then(function (s) {
+        var id = newId();
+        return Promise.resolve()
+          .then(function () { return inject(tab.id); })
+          .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: takeInPage, args: [id, true] }); })
+          .then(function (res) {
+            var got = res && res[0] && res[0].result;
+            var card = got && T.cleanUrl(got.url) === s.url ? textCard(id, got) : null;
+            if (!card) return changed(tab.id, s).then(function () { return { ok: false, error: 'no_selection' }; });
+            var plan = autoPlan(s.cards, card, replaceId);
+            if (plan.act === 'same') return changed(tab.id, s).then(function () { return { ok: false, error: 'same', n: plan.n }; });
+            if (plan.act === 'full') {
+              var first = !s.toldFull;
+              s.toldFull = true;
+              return store(tab.id, s)
+                .then(function () { return changed(tab.id, s, first ? 'full_text' : null); })
+                .then(function () { return { ok: false, error: 'full_text' }; });
+            }
+            if (!s.cards.length) s.title = T.cleanText(tab.title, MAX_TITLE);
+            if (plan.act === 'replace') s.cards[plan.index] = card;
+            else s.cards.push(card);
+            var n = plan.act === 'replace' ? plan.index + 1 : s.cards.length;
+            return store(tab.id, s)
+              .then(function () { return changed(tab.id, s); })
+              .then(function () { return { ok: true, act: plan.act, id: id, n: n }; });
+          }, function () { return { ok: false, error: 'page' }; });
+      });
+    }
+
+    /** Room again after a full list: the next full one is told again. */
+    function roomAgain(s) {
+      if (s.toldFull && room(s.cards, 'text')) delete s.toldFull;
+    }
+
+    /** ⠿, ↑ / ↓ and Alt+↑ / Alt+↓ in the panel (D62): card `id` to index
+     *  `to`; the numbers follow on the page too. */
+    function move(tab, id, to) {
+      return current(tab).then(function (s) {
+        var next = moveCard(s.cards, id, to);
+        if (next === s.cards) return reply(s);
+        s.cards = next;
+        return store(tab.id, s).then(function () { return changed(tab.id, s); }).then(function () { return reply(s); });
       });
     }
 
@@ -344,6 +450,7 @@
     function remove(tab, id) {
       return current(tab).then(function (s) {
         s.cards = s.cards.filter(function (c) { return c.id !== id; });
+        roomAgain(s);
         return store(tab.id, s).then(function () { return changed(tab.id, s); }).then(function () { return reply(s); });
       });
     }
@@ -390,6 +497,7 @@
         var before = s.cards.length;
         s.cards = s.cards.filter(function (c) { return meta.cards.indexOf(c.id) < 0; });
         if (s.cards.length === before) return null;
+        roomAgain(s);
         return store(meta.tabId, s).then(function () { return changed(meta.tabId, s); });
       });
     }
@@ -443,9 +551,10 @@
         .catch(function () { return null; });
     }
 
-    var FROM_PANEL = { 'heddy-cards:get': 1, 'heddy-cards:add-text': 1, 'heddy-cards:remove': 1, 'heddy-cards:save': 1, 'heddy-cards:tool': 1 };
-    // From the page itself (box mode, the page tray): its own top frame only.
-    var FROM_BOX = { 'heddy-box:state': 1, 'heddy-box:keep': 1, 'heddy-box:save': 1, 'heddy-box:tool': 1, 'heddy-cards:collect': 1 };
+    var FROM_PANEL = { 'heddy-cards:get': 1, 'heddy-cards:add-text': 1, 'heddy-cards:remove': 1, 'heddy-cards:move': 1, 'heddy-cards:save': 1, 'heddy-cards:tool': 1 };
+    // From the page itself (box mode, the page tray, the panel's selection
+    // watcher in content/panel.js): its own top frame only.
+    var FROM_BOX = { 'heddy-box:state': 1, 'heddy-box:keep': 1, 'heddy-box:tool': 1, 'heddy-cards:collect': 1, 'heddy-cards:auto': 1 };
 
     /** chrome.runtime.onMessage. Resolves to the reply, or undefined for a
      *  message that is not the cards'. The panel (Heddy's own page) names
@@ -462,19 +571,13 @@
           case 'heddy-cards:get': return get(tab);
           case 'heddy-cards:add-text': return addText(tab);
           case 'heddy-cards:remove': return remove(tab, String(message.id || ''));
+          case 'heddy-cards:move': return move(tab, String(message.id || ''), message.to);
           case 'heddy-cards:save': return save(tab, message.then, message.page === true);
           case 'heddy-cards:tool': return tool(tab, message);
           case 'heddy-cards:collect': return collect(tab);
+          case 'heddy-cards:auto': return auto(tab, typeof message.replace === 'string' ? message.replace : null);
           case 'heddy-box:state': return state(tab);
           case 'heddy-box:keep': return addImage(tab, message);
-          case 'heddy-box:save': {
-            // Save to Jotters on the bar: every card, plus the box being drawn.
-            var keep = message.box ? addImage(tab, message.box) : Promise.resolve({ ok: true });
-            return keep.then(function (r) {
-              if (!r.ok && r.error !== 'full_images') return r;
-              return save(tab, 'save', false);
-            });
-          }
           case 'heddy-box:tool':
             return message.box ? toolOnBox(tab, Object.assign({ tool: message.tool }, message.box)) : tool(tab, message);
           default: return { ok: false };
@@ -522,6 +625,9 @@
     room: room,
     numberOf: numberOf,
     sameText: sameText,
+    moveCard: moveCard,
+    dropIndex: dropIndex,
+    autoPlan: autoPlan,
     textCard: textCard,
     imageCard: imageCard,
     marks: marks,

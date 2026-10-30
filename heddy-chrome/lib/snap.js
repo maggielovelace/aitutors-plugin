@@ -177,7 +177,8 @@
       }
     }
 
-    /** chrome.commands.onCommand: once = box mode, twice in 0.4 s = whole tab. */
+    /** chrome.commands.onCommand: once = box mode, twice in 0.4 s = whole
+     *  tab; either way with the panel open beside it. */
     function command(name, tab) {
       if (name !== COMMAND || !tab || tab.id == null) return false;
       var g = pressGate[tab.id];
@@ -186,7 +187,8 @@
           waitMs: DOUBLE_PRESS_MS,
           later: later,
           clear: deps.clear || clearTimeout,
-          onSingle: function () { delete pressGate[tab.id]; start(tab); },
+          // Picture mode always opens the panel (D64): Save to Jotters is there.
+          onSingle: function () { delete pressGate[tab.id]; withPanel(tab); },
           onDouble: function () { delete pressGate[tab.id]; whole(tab); },
         });
       }

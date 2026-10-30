@@ -131,12 +131,20 @@
   },
   "addText": { "message": "+ Text" },
   "addPicture": { "message": "+ Picture" },
+  "modeSwitchLabel": { "message": "Add words or pictures" },
+  "modeText": { "message": "Text" },
+  "modePicture": { "message": "Picture" },
+  "textModeLine": { "message": "Select words: each one is added" },
+  "cardMoveUp": { "message": "Move up" },
+  "cardMoveDown": { "message": "Move down" },
+  "cardDrag": { "message": "Drag to change the order" },
+  "cardsEmptyHint": { "message": "Select words on the page: each one is added here." },
   "cardPictureLabel": { "message": "Picture" },
   "cardRemove": {
     "message": "Remove card $N$",
     "placeholders": { "n": { "content": "$1", "example": "2" } }
   },
-  "cardsSelectFirst": { "message": "Select some words on the page, then tap + Text." },
+  "cardsSelectFirst": { "message": "Select some words on the page: each one is added." },
   "cardsSame": {
     "message": "Those words are already card $N$.",
     "placeholders": { "n": { "content": "$1", "example": "2" } }

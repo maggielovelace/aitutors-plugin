@@ -336,6 +336,30 @@
       "addPicture": {
         "message": "+ Picture"
       },
+      "modeSwitchLabel": {
+        "message": "Add words or pictures"
+      },
+      "modeText": {
+        "message": "Text"
+      },
+      "modePicture": {
+        "message": "Picture"
+      },
+      "textModeLine": {
+        "message": "Select words: each one is added"
+      },
+      "cardMoveUp": {
+        "message": "Move up"
+      },
+      "cardMoveDown": {
+        "message": "Move down"
+      },
+      "cardDrag": {
+        "message": "Drag to change the order"
+      },
+      "cardsEmptyHint": {
+        "message": "Select words on the page: each one is added here."
+      },
       "cardPictureLabel": {
         "message": "Picture"
       },
@@ -349,7 +373,7 @@
         }
       },
       "cardsSelectFirst": {
-        "message": "Select some words on the page, then tap + Text."
+        "message": "Select some words on the page: each one is added."
       },
       "cardsSame": {
         "message": "Those words are already card $N$.",
@@ -885,6 +909,30 @@
       "addPicture": {
         "message": "+ 图片"
       },
+      "modeSwitchLabel": {
+        "message": "加文字还是图片"
+      },
+      "modeText": {
+        "message": "文字"
+      },
+      "modePicture": {
+        "message": "图片"
+      },
+      "textModeLine": {
+        "message": "选中文字：每段都会加进来"
+      },
+      "cardMoveUp": {
+        "message": "上移"
+      },
+      "cardMoveDown": {
+        "message": "下移"
+      },
+      "cardDrag": {
+        "message": "拖动来调整顺序"
+      },
+      "cardsEmptyHint": {
+        "message": "在页面上选中文字，每段都会加到这里。"
+      },
       "cardPictureLabel": {
         "message": "图片"
       },
@@ -898,7 +946,7 @@
         }
       },
       "cardsSelectFirst": {
-        "message": "先在页面上选中一些文字，再点「+ 文字」。"
+        "message": "先在页面上选中一些文字，每段都会加进来。"
       },
       "cardsSame": {
         "message": "这段文字已经是第 $N$ 张卡片了。",
