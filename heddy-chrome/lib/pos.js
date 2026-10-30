@@ -141,8 +141,8 @@
   //
   // Range.toString() and textContent run neighbouring elements together:
   // a nav of links read as "HomeSystems Our storyThe teamBlog" (owner's real
-  // test, 2026-10-30). wordsBetween reads the text between two points with a
-  // space wherever an element starts or ends that the reader sees as apart
+  // test, 2026-10-30). wordsBefore / wordsAfter read the words either side
+  // of a quote with a space wherever an element starts or ends that the reader sees as apart
   // (a block, a list item, a link laid out as a box), and nowhere else, so a
   // word split by inline markup (im<b>port</b>ant) stays one word. Nav,
   // header, footer and aside are left out, as textBlocks leaves them out,
@@ -186,60 +186,135 @@
     };
   }
 
+  // The walk goes OUTWARD from the quote and stops once it has `max`
+  // characters, or after MAX_VISITS nodes, so it never grows with the page:
+  // auto-add (D65) runs it on every selection, and kind() may ask the page
+  // for an element's style. kind() is asked once per element it reaches.
+  var MAX_VISITS = 2000;
+
   function ancestorsOf(node) {
     var out = [];
     for (var n = node; n; n = n.parentNode) out.push(n);
     return out;
   }
 
-  /**
-   * The words between two points under rootEl ({node, offset}, as a Range's
-   * boundaries; a missing start is rootEl's start, a missing end its end),
-   * one space where elements stand apart, white space folded. kind(el) as
-   * tagKind (the default) or styleKind. A skipped element that holds either
-   * point is read all the same.
-   */
-  function wordsBetween(rootEl, start, end, kind) {
-    var classify = kind || tagKind;
-    var holds = ancestorsOf(start && start.node).concat(ancestorsOf(end && end.node));
-    var parts = [];
-    var on = !start;
-    var done = false;
-
-    (function walk(n) {
-      var list = kids(n);
-      for (var i = 0; i <= list.length && !done; i++) {
-        if (start && n === start.node && !isText(n) && i === start.offset) on = true;
-        if (end && n === end.node && !isText(n) && i === end.offset) { done = true; return; }
-        if (i === list.length) break;
-        var k = list[i];
-        if (isText(k)) {
-          var v = String(k.nodeValue || '');
-          var from = 0;
-          if (start && k === start.node) { on = true; from = start.offset; }
-          if (end && k === end.node) {
-            if (on) parts.push(v.slice(from, end.offset));
-            done = true;
-            return;
-          }
-          if (on) parts.push(v.slice(from));
-          continue;
-        }
-        if (k.nodeType !== 1) continue;
-        var c = classify(k);
-        if (c === 'skip' && holds.indexOf(k) < 0) continue;
-        if (c === 'break' && on) parts.push(' ');
-        walk(k);
-        if (c === 'break' && on) parts.push(' ');
-      }
-    })(rootEl);
-
-    return parts.join('').replace(/\s+/g, ' ').trim();
+  function childAt(n, i) {
+    var list = kids(n);
+    return i >= 0 && i < list.length ? list[i] : null;
   }
 
-  /** An element's words, as wordsBetween reads them. */
-  function wordsOf(el, kind) {
-    return el ? wordsBetween(el, null, null, kind) : '';
+  // The page's own sibling links; by index for a DOM-like tree without them.
+  function sibling(n, step) {
+    var own = step > 0 ? n.nextSibling : n.previousSibling;
+    if (own !== undefined) return own;
+    var p = n.parentNode;
+    if (!p) return null;
+    var list = kids(p);
+    for (var i = 0; i < list.length; i++) if (list[i] === n) return childAt(p, i + step);
+    return null;
+  }
+
+  /**
+   * One walk from a point, forwards (dir 1, the words after it) or
+   * backwards (dir -1, the words before it), inside rootEl. point: {node,
+   * offset} as a Range boundary, or null for rootEl's start (forwards) or
+   * end (backwards). A space wherever an element stands apart, white space
+   * folded; at most `max` characters, the ones nearest the point.
+   * stats, if given, counts {visits, kinds}.
+   */
+  function wordsFrom(rootEl, point, dir, max, kind, stats) {
+    var classify = kind || tagKind;
+    var holds = point ? ancestorsOf(point.node) : [];
+    var parts = [];
+    var have = 0;
+    var visits = 0;
+    var seen = typeof Map === 'function' ? new Map() : null;
+    var st = stats || {};
+    st.visits = 0;
+    st.kinds = 0;
+
+    function kindOf(el) {
+      if (seen && seen.has(el)) return seen.get(el);
+      st.kinds += 1;
+      var c = classify(el);
+      if (c === 'skip' && holds.indexOf(el) >= 0) c = '';
+      if (seen) seen.set(el, c);
+      return c;
+    }
+
+    function add(t) {
+      if (!t) return;
+      parts.push(t);
+      have += t.replace(/\s+/g, ' ').length;
+    }
+
+    // The cursor: a node, and whether the walk is entering it or has left it.
+    var n, entering;
+    if (!point) {
+      n = rootEl;
+      entering = false;
+      var first = childAt(rootEl, dir > 0 ? 0 : kids(rootEl).length - 1);
+      if (first) { n = first; entering = true; }
+    } else if (isText(point.node)) {
+      var v = String(point.node.nodeValue || '');
+      add(dir > 0 ? v.slice(point.offset) : v.slice(0, point.offset));
+      n = point.node;
+      entering = false;
+    } else {
+      var next = childAt(point.node, dir > 0 ? point.offset : point.offset - 1);
+      if (next) { n = next; entering = true; } else { n = point.node; entering = false; }
+    }
+
+    while (n && have < max && visits < MAX_VISITS) {
+      visits += 1;
+      if (entering) {
+        if (isText(n)) {
+          add(String(n.nodeValue || ''));
+          entering = false;
+          continue;
+        }
+        if (n.nodeType === 1) {
+          var c = kindOf(n);
+          if (c === 'skip') { entering = false; continue; }
+          if (c === 'break') add(' ');
+          var inner = childAt(n, dir > 0 ? 0 : kids(n).length - 1);
+          if (inner) { n = inner; continue; }
+        }
+        entering = false;
+        continue;
+      }
+      // Leaving n.
+      if (n.nodeType === 1 && n !== rootEl && kindOf(n) === 'break') add(' ');
+      if (n === rootEl) break;
+      var sib = sibling(n, dir);
+      if (sib) { n = sib; entering = true; } else { n = n.parentNode; entering = false; }
+    }
+    st.visits = visits;
+
+    var text = (dir > 0 ? parts : parts.reverse()).join('').replace(/\s+/g, ' ').trim();
+    if (text.length <= max) return text;
+    return dir > 0 ? text.slice(0, max).trim() : text.slice(text.length - max).trim();
+  }
+
+  /** The words after a point (a quote's end), at most `max` characters. */
+  function wordsAfter(rootEl, point, max, kind, stats) {
+    return wordsFrom(rootEl, point, 1, max, kind, stats);
+  }
+
+  /** The words before a point (a quote's start), at most `max` characters. */
+  function wordsBefore(rootEl, point, max, kind, stats) {
+    return wordsFrom(rootEl, point, -1, max, kind, stats);
+  }
+
+  /** An element's first `max` characters of words. */
+  function wordsOf(el, kind, max) {
+    return el ? wordsFrom(el, null, 1, max || 300, kind) : '';
+  }
+
+  /** An element's last `max` characters of words (its last sentence lives
+   *  there). */
+  function lastWordsOf(el, kind, max) {
+    return el ? wordsFrom(el, null, -1, max || 300, kind) : '';
   }
 
   /** pos is two whole numbers ≥ 0. */
@@ -249,7 +324,7 @@
       typeof p.offset === 'number' && Number.isInteger(p.offset) && p.offset >= 0;
   }
 
-  var api = { BLOCK: BLOCK, OUTSIDE: OUTSIDE, tagKind: tagKind, styleKind: styleKind, wordsBetween: wordsBetween, wordsOf: wordsOf, textBlocks: textBlocks, textPos: textPos, imageBlock: imageBlock, imageAfterIndex: imageAfterIndex, isPos: isPos };
+  var api = { BLOCK: BLOCK, OUTSIDE: OUTSIDE, tagKind: tagKind, styleKind: styleKind, MAX_VISITS: MAX_VISITS, wordsBefore: wordsBefore, wordsAfter: wordsAfter, wordsOf: wordsOf, lastWordsOf: lastWordsOf, textBlocks: textBlocks, textPos: textPos, imageBlock: imageBlock, imageAfterIndex: imageAfterIndex, isPos: isPos };
   root.HeddyPos = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

@@ -395,11 +395,17 @@
 
   // ─── the context sent with the cover ───────────────────────────────────────
 
-  /** An element's words: blocks, list items and links laid out as boxes
-   *  apart, nav, header, footer and aside left out (lib/pos.js wordsOf),
-   *  never textContent's run-together "HomeSystems Our story". */
+  /** An element's last words (where its last sentence is): blocks, list
+   *  items and links laid out as boxes apart, nav, header, footer and aside
+   *  left out (lib/pos.js lastWordsOf), never textContent's run-together
+   *  "HomeSystems Our story". Bounded, however big the element is. */
   function textOf(el) {
-    return el ? POS.wordsOf(el, readerKind) : '';
+    return el ? POS.lastWordsOf(el, readerKind, MAX_CONTEXT * 2) : '';
+  }
+
+  /** An element's first words, the same way (lib/pos.js wordsOf). */
+  function firstTextOf(el) {
+    return el ? POS.wordsOf(el, readerKind, MAX_CONTEXT) : '';
   }
   var readerKind = POS.styleKind(function (el) { return getComputedStyle(el); });
 
@@ -441,7 +447,7 @@
     return {
       pos: { block: POS.imageBlock(tops, pageRect.y), offset: 0 },
       before: el && el.isConnected ? contextFor(el) : contextAt(viewRect),
-      after: next >= 0 ? firstWords(textOf(blocks[next]), MAX_CONTEXT) : '',
+      after: next >= 0 ? firstWords(firstTextOf(blocks[next]), MAX_CONTEXT) : '',
     };
   }
 
