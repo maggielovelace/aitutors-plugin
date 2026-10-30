@@ -15,6 +15,8 @@
   // the video (owner, 2026-10-30). Heddy closes it this long after an ok
   // result: after the kid sign-in redirect the page cannot close itself.
   var TAB_CLOSE_MS = 1000;
+  // heddy:result's error when the child taps Cancel or Close on a capture page.
+  var CANCELLED = 'cancelled';
   var ICONS = {
     idle: { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' },
     ready: { 16: 'icons/toolbar-ready-16.png', 32: 'icons/toolbar-ready-32.png' },
@@ -155,6 +157,10 @@
      *  that is not listed here, its window explains itself and stays open. */
     function deliverResult(result, meta, origin) {
       var kind = meta.kind || 'clip';
+      // Cancel or Close on any capture page (owner, 2026-10-30): the page
+      // cannot always close itself (a tab after the sign-in redirect), so
+      // Heddy closes what it opened, at once, and shows nothing.
+      if (!result.ok && result.error === CANCELLED) return closeCapture(meta);
       if (kind === 'card_undo') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'card_undone' : 'card_undo_failed' });
       }
@@ -253,6 +259,17 @@
         })
         .catch(function () {})
         .then(function () { return chrome.tabs.remove(id); })
+        .catch(function () {});
+    }
+
+    /** Close the tab or window Heddy opened for a cid. A capture tab follows
+     *  closeCaptureTab's rule; a window is removed. A tab capture's windowId
+     *  is the YouTube window, so it is never the one removed. */
+    function closeCapture(meta) {
+      if (meta.captureTabId != null) return closeCaptureTab(meta);
+      if (meta.windowId == null) return Promise.resolve();
+      return Promise.resolve()
+        .then(function () { return chrome.windows.remove(meta.windowId); })
         .catch(function () {});
     }
 
@@ -467,7 +484,7 @@
     return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

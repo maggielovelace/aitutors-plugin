@@ -21,7 +21,7 @@ const WATCH = `https://www.youtube.com/watch?v=${VIDEO}`;
 const ARTICLE = 'https://www.ordnancesurvey.co.uk/map-scales';
 
 function setup({ tabReply = { ok: true } } = {}) {
-  const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [], tabsCreated: [] };
+  const calls = { windows: [], tabMessages: [], injected: [], menus: [], icons: [], tabsCreated: [], windowsRemoved: [] };
   const session = {};
   const chrome = {
     runtime: { id: 'heddy' },
@@ -33,6 +33,7 @@ function setup({ tabReply = { ok: true } } = {}) {
       get: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
       getLastFocused: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
       create: async (spec) => { calls.windows.push(spec); return { id: 42 }; },
+      remove: async (id) => { calls.windowsRemoved.push(id); },
     },
     action: { setIcon: async (o) => { calls.icons.push(o); } },
     tabs: {
@@ -246,4 +247,24 @@ test('Undo of a web jot names its Jotter; Undo of an H jot sends jotId alone; a 
   const bad = setup();
   assert.deepEqual(await bad.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: '../admin' }, fromArticle), { ok: false });
   assert.equal(bad.calls.windows.length, 0);
+});
+
+test('Cancel or Close in a capture window (heddy:result cancelled): Heddy closes that window, no toast, cid dropped', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await claim(s);
+  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+  assert.deepEqual(s.calls.windowsRemoved, [42]);
+  assert.equal(s.calls.tabMessages.length, 0);
+  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'dropped');
+});
+
+test('a Clip this page the site refuses as not study (not_study): no Clipped toast, the window stays open with its reason', async () => {
+  const s = setup();
+  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
+  await claim(s);
+  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'not_study' }, page()), { ok: true });
+  assert.equal(s.calls.tabMessages.length, 0, 'no toast');
+  assert.deepEqual(s.calls.windowsRemoved, [], 'the window stays');
+  assert.equal(s.calls.icons.length, 0, 'no tick');
 });

@@ -6,7 +6,7 @@ import { load } from './helpers.mjs';
 
 globalThis.HeddyProtocol = load('./lib/protocol.js');
 globalThis.HeddyConfig = load('./lib/config.js');
-const { createCourier, SAVED_MS, TAB_CLOSE_MS } = load('./lib/courier.js');
+const { createCourier, SAVED_MS, TAB_CLOSE_MS, CANCELLED } = load('./lib/courier.js');
 const { createCidStore } = load('./lib/cid-store.js');
 
 const CID = '0f8fad5b-d9cb-469f-a165-70867728950e';
@@ -16,7 +16,7 @@ const DEV = 'http://localhost:3000';
 
 function fakeChrome({ dev = false } = {}) {
   const local = { devOrigin: dev };
-  const calls = { windows: [], icons: [], tabMessages: [], tabsCreated: [], injected: [], updated: [], removed: [] };
+  const calls = { windows: [], icons: [], tabMessages: [], tabsCreated: [], injected: [], updated: [], removed: [], windowsRemoved: [] };
   // The YouTube tab (7) and, once opened, the capture tab (900) beside it.
   const tabs = { 7: { id: 7, index: 3, windowId: 1, active: true, url: `https://www.youtube.com/watch?v=${VIDEO}` } };
   const session = {};
@@ -30,6 +30,7 @@ function fakeChrome({ dev = false } = {}) {
       get: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
       getLastFocused: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
       create: async (spec) => { calls.windows.push(spec); return { id: 42 }; },
+      remove: async (id) => { calls.windowsRemoved.push(id); },
     },
     action: { setIcon: async (o) => { calls.icons.push(o); } },
     tabs: {
@@ -318,4 +319,22 @@ test('the clip toast’s "from m:ss" is the start the site kept (Part of it, or 
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, t: 140 }, page());
   await closeTab(s);
   assert.equal(s.calls.tabMessages[0].m.startSec, 140);
+});
+
+test('Cancel or Close in the capture tab (heddy:result cancelled): Heddy closes the tab at once, no toast; the video comes back only if the tab was in front', async () => {
+  assert.equal(CANCELLED, 'cancelled');
+  for (const front of [true, false]) {
+    const s = setup();
+    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+    await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
+    s.tabs[900].active = front;
+    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
+    assert.deepEqual(s.calls.removed, [900], 'closed without waiting');
+    assert.deepEqual(s.calls.updated, front ? [{ id: 7, o: { active: true } }] : []);
+    assert.equal(s.calls.tabMessages.length, 0, 'no toast');
+    assert.equal(s.calls.icons.length, 0, 'no tick');
+    assert.deepEqual(s.calls.windowsRemoved, [], 'the YouTube window is never closed');
+    assert.equal(s.session.heddyCids.claimed[CID], undefined, 'the cid is dropped');
+    assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null);
+  }
 });
