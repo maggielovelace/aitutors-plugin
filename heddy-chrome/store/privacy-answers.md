@@ -41,7 +41,7 @@ What the dashboard asks, and the answer to each.
 
 | Data type | Collected? |
 |---|---|
-| Personally identifiable information | No |
+| Personally identifiable information | **Yes**: the child's first name (and year group), shown in Heddy's settings and panel, never stored or sent on |
 | Health information | No |
 | Financial and payment information | No |
 | Authentication information | No |
@@ -65,9 +65,8 @@ Who is signed in (D60): the settings page and the panel on a page Heddy
 can't save from send one `GET https://aitutors.me/api/learn/heddy/me`, with
 the browser's own aitutors.me cookie and no body. The answer (a child's first
 name, year group and subjects, or only "a grown-up is signed in") is shown
-and never stored or sent on. ⚠️ Owner to decide before the next submission
-whether this counts as "Personally identifiable information" in the table
-above; it is left at its current answer until then. What is kept on aitutors.me is covered by
+and never stored or sent on. The owner ruled on 2026-10-30 that this counts as
+"Personally identifiable information", so the table above answers Yes. What is kept on aitutors.me is covered by
 https://aitutors.me/privacy.
 
 ### Certifications (all three ticked)
