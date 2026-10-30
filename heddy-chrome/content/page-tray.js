@@ -1,16 +1,16 @@
-// content/page-tray.js — Jot it on any page (PRD-v0.96.0 D5, D7 as amended by
-// D17, D16, D25; artifact Round 3 · Direction A "Selection · Phase 2").
+// content/page-tray.js — the tray under a selection on any page (PRD-v0.96.0
+// D5, D7 as amended by D17, D16, D25, D54, D55; artifact Round 3 · Direction A).
 //
-// Injected only on a gesture: the context-menu item "Jot it with Heddy", the
-// jot-selection command (no default key; the child binds one), or the toolbar popup. That is activeTab
+// Injected only on a gesture: the jot-selection command (no default key; the
+// child binds one), the selection's "Save to Jotters" menu item, or the panel. That is activeTab
 // (D3): Heddy may run on a page only after the child asks, so there is no
 // bubble waiting over a selection before that first gesture. Round 1's
 // always-on bubble (D7) is a deliberate casualty of D3, not an omission.
 //
 // Once here it reads the selection (the quote, at most 300 characters of the
 // words either side, the page's title and address) and draws the tray under
-// it: Jot it (filled amber) and › (Copy · Select the whole paragraph · Clip the
-// whole page). The tools come from lib/tray-tools.js, which Phase 3 extends.
+// it: + Add (filled amber; Round 5, it was Jot it), Explain, Make a card, Ask
+// Heddy, and › (Copy · Select the whole paragraph · Save page to Jotters). The tools come from lib/tray-tools.js, which Phase 3 extends.
 // Everything from the page is read as text and only ever set as textContent.
 (function () {
   if (globalThis.__heddyPage) return;
@@ -38,7 +38,8 @@
     }
   }
 
-  // The toasts after Jot it ("Jotted", the quote, Undo, Open in Jotter) and
+  // The toasts after a save ("Saved to Jotters · title", Open in Jotter), a
+  // room's "Jot it with this" ("Jotted", the quote, Undo, Open in Jotter) and
   // Save page to Jotters ("Saved to Jotters · title", Open in Jotter): the windows on
   // aitutors.me close once they have saved, and the page says what was kept.
   var toaster = T.createToaster({
@@ -82,7 +83,7 @@
     }
   }
 
-  /** What Jot it sends, or null with nothing selected. The courier caps it
+  /** The selection the tray acts on, or null with nothing selected. The courier caps it
    *  again (lib/protocol.js buildJot). */
   function readSelection() {
     var sel = window.getSelection();
@@ -110,12 +111,18 @@
 
   // ─── the actions ───────────────────────────────────────────────────────────
 
-  function jot(s) {
+  /** + Add (D55): the words become the next card in the panel, which opens
+   *  on them. The selection is put back first: the background reads it from
+   *  the page (content/cards-layer.js). */
+  function add(s) {
     hideTray();
     if (!s) return Promise.resolve({ ok: false });
-    var p = payloadOf(s);
-    p.type = 'heddy-ui:jot';
-    return send(p);
+    try {
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(s.range);
+    } catch (e) { /* the words may have left the page */ }
+    return send({ type: 'heddy-cards:collect' });
   }
 
   /** Explain, Make a card or Ask Heddy on the words (lib/tools.js). */
@@ -263,7 +270,7 @@
   }
 
   function run(id, s) {
-    if (id === 'jot') return jot(s);
+    if (id === 'add') return add(s);
     if (id === 'explain' || id === 'card' || id === 'ask') return tool(id, s);
     if (id === 'copy') return copy(s);
     if (id === 'paragraph') return selectParagraph(s);
@@ -291,10 +298,6 @@
       if (globalThis.__heddyYouTube) return undefined;
       langReady.then(function () { toaster.show(T.model(msg, lang, tr)); });
       return undefined;
-    }
-    if (msg.type === 'heddy-ui:jot-selection') {
-      jot(readSelection()).then(function (r) { reply(r || { ok: false }); });
-      return true;
     }
     return undefined;
   });

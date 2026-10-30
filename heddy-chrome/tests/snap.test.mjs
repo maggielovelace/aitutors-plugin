@@ -1,6 +1,7 @@
-// Snap a picture (D30, D33; R3b · 01, R3b · 04, R3b · 05): telling one click
-// or press from two, box mode's rules, and the background collecting up to
-// four pictures from one page and sending them.
+// Snap a picture (D30, D33; R3b · 01, R3b · 05): telling one click or press
+// from two, box mode's geometry, and the background starting box mode and
+// cutting a box. The pictures box mode keeps are cards: tests/cards.test.mjs.
+// The bar under a box (D58): tests/box-mode.test.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './helpers.mjs';
@@ -71,24 +72,6 @@ test('two clicks further apart than the wait are two singles', () => {
 
 // ─── box mode's rules ────────────────────────────────────────────────────────
 
-test('the tray: one box → Jot it, Add, Explain and Make a card live', () => {
-  assert.deepEqual(B.trayModel(0, true), { n: 1, count: null, showAdd: true, single: true, collecting: false });
-});
-
-test('the tray: two kept and a third drawn → Jot it · 3, Add, Explain and Make a card dimmed', () => {
-  assert.deepEqual(B.trayModel(2, true), { n: 3, count: 3, showAdd: true, single: false, collecting: true });
-});
-
-test('the 4th box hides Add to this jot', () => {
-  assert.equal(B.trayModel(3, true).showAdd, false);
-  assert.equal(B.trayModel(3, true).count, 4);
-  assert.equal(B.trayModel(2, false).showAdd, false, 'nothing drawn: nothing to add');
-});
-
-test('one kept and nothing drawn is still a single picture', () => {
-  assert.deepEqual(B.trayModel(1, false), { n: 1, count: null, showAdd: false, single: true, collecting: true });
-});
-
 test('boxes from a drag, in any direction; under 24 × 24 ignored', () => {
   assert.deepEqual(B.rectFrom(300, 200, 100, 50), { x: 100, y: 50, w: 200, h: 150 });
   assert.equal(B.bigEnough({ x: 0, y: 0, w: 23, h: 300 }), false);
@@ -146,7 +129,7 @@ function fakeSession(data = {}) {
 
 function setup(session = fakeSession()) {
   const c = clock();
-  const calls = { captures: [], injected: [], tabMessages: [], boxes: [], tools: [], menus: [] };
+  const calls = { captures: [], injected: [], tabMessages: [], boxes: [], tools: [], menus: [], shown: [] };
   const tab = { id: 7, windowId: 3, url: PAGE + '#top', title: 'Understanding map scales' };
   const chrome = {
     runtime: { id: 'heddy' },
@@ -172,128 +155,33 @@ function setup(session = fakeSession()) {
     ...K,
     cropShot: async (shot, rects, vw, vh) => rects.map((r) => ({ png: PNG, box: K.webBox(r, vw, vh) })),
   };
-  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID });
+  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID, showPanel: async (t) => { calls.shown.push(t.id); } });
   const fromPage = { id: 'heddy', frameId: 0, tab };
   return { snap, calls, tab, fromPage, clock: c, chrome, session };
 }
 
-const grab = (s, rect = { x: 200, y: 166, w: 270, h: 136 }, extra = {}) =>
-  s.snap.internal({ type: 'heddy-box:grab', id: ID, rect, vw: 1280, vh: 800, context: 'Scales are written three ways.', ...extra }, s.fromPage);
-
-test('a kept box is cut from captureVisibleTab of the tab’s window, as PNG', async () => {
-  const s = setup();
-  assert.deepEqual(await grab(s), { ok: true, n: 1 });
-  assert.deepEqual(s.calls.captures, [{ windowId: 3, o: { format: 'png' } }]);
-});
-
-test('Jot it sends heddy:box with every kept picture, from the tab’s own address', async () => {
-  const s = setup();
-  await grab(s);
-  await grab(s, { x: 500, y: 100, w: 200, h: 100 });
-  const r = await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'jot' }, s.fromPage);
-  assert.deepEqual(r, { ok: true });
-  assert.equal(s.calls.boxes.length, 1);
-  const { input, where } = s.calls.boxes[0];
-  assert.equal(input.images.length, 2);
-  assert.equal(input.url, PAGE, 'the tab’s address, without #');
-  assert.equal(input.context, 'Scales are written three ways.', 'the cover’s caption');
-  assert.deepEqual(where, { tabId: 7, windowId: 3 });
-  assert.equal(await s.snap.kept(7, ID), 0, 'sent, so forgotten');
-});
-
-test('at most 4 pictures for one jot', async () => {
-  const s = setup();
-  for (let i = 0; i < 4; i++) assert.equal((await grab(s)).ok, true);
-  assert.deepEqual(await grab(s), { ok: false, error: 'full' });
-  assert.equal(s.calls.captures.length, 4, 'no fifth screenshot');
-});
-
-test('same page only: a different address drops what was kept', async () => {
-  const s = setup();
-  await grab(s);
-  await grab(s);
-  s.tab.url = 'https://www.ordnancesurvey.co.uk/blog/other';
-  assert.deepEqual(await grab(s), { ok: false, error: 'page_changed' });
-  assert.equal(await s.snap.kept(7, ID), 0);
-  // a #fragment change is the same page
-  const t = setup();
-  await grab(t);
-  t.tab.url = PAGE + '#further-down';
-  assert.equal((await grab(t)).n, 2);
-});
-
-test('a navigation while collecting drops the pictures, and the new page gets one line', async () => {
-  const s = setup();
-  await grab(s);
-  await s.snap.tabUpdated(7, { url: 'https://www.ordnancesurvey.co.uk/blog/other' });
-  assert.equal(await s.snap.kept(7, ID), 0);
-  await s.snap.tabUpdated(7, { status: 'complete' });
-  const line = s.calls.injected.find((o) => o.func && o.func.name === 'showDroppedLine');
-  assert.ok(line, 'the notice is injected');
-  // a navigation with nothing kept says nothing
-  const t = setup();
-  await t.snap.tabUpdated(7, { url: 'https://x.example/' });
-  await t.snap.tabUpdated(7, { status: 'complete' });
-  assert.equal(t.calls.injected.length, 0);
-});
-
-test('Explain and Make a card refuse two pictures; Ask takes them', async () => {
-  for (const action of ['explain', 'card']) {
-    const s = setup();
-    await grab(s);
-    await grab(s);
-    assert.deepEqual(await s.snap.internal({ type: 'heddy-box:send', id: ID, action }, s.fromPage), { ok: false });
-    assert.equal(s.calls.tools.length, 0);
-  }
-  const s = setup();
-  await grab(s);
-  await grab(s);
-  await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'ask' }, s.fromPage);
-  assert.equal(s.calls.tools[0].input.tool, 'ask');
-  assert.equal(s.calls.tools[0].input.images.length, 2);
-  assert.equal(s.calls.tools[0].input.quote, '');
-});
-
-test('Explain on one picture sends heddy:tool with it', async () => {
-  const s = setup();
-  await grab(s);
-  await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'explain' }, s.fromPage);
-  assert.equal(s.calls.tools[0].input.tool, 'explain');
-  assert.equal(s.calls.tools[0].input.images.length, 1);
-});
-
-test('a box under 24 × 24 takes no screenshot', async () => {
-  const s = setup();
-  assert.deepEqual(await grab(s, { x: 10, y: 10, w: 20, h: 300 }), { ok: false, error: 'too_small' });
-  assert.equal(s.calls.captures.length, 0);
-});
-
-test('Esc keeps none', async () => {
-  const s = setup();
-  await grab(s);
-  await s.snap.internal({ type: 'heddy-box:cancel', id: ID }, s.fromPage);
-  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:send', id: ID, action: 'jot' }, s.fromPage), { ok: false });
-});
 
 test('a frame, another extension or a page cannot drive box mode', async () => {
   const s = setup();
-  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:grab' }, { ...s.fromPage, frameId: 2 }), { ok: false });
-  assert.equal(s.snap.internal({ type: 'heddy-box:grab' }, { ...s.fromPage, id: 'other' }), undefined);
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 0, y: 0, w: 99, h: 99 }, vw: 1280, vh: 800 }, { ...s.fromPage, frameId: 2 }), { ok: false });
+  assert.equal(s.snap.internal({ type: 'heddy-box:crop' }, { ...s.fromPage, id: 'other' }), undefined);
+  assert.equal(s.snap.internal({ type: 'heddy-box:keep' }, s.fromPage), undefined, 'not ours: the cards’ (lib/cards.js)');
   assert.equal(s.snap.internal({ type: 'heddy-ui:capture' }, s.fromPage), undefined, 'not ours: the courier’s');
   // the popup's message must not come from a tab
   assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:snap', mode: 'whole', tabId: 7 }, s.fromPage), { ok: false });
 });
 
-test('the popup icon: box mode injects box-mode.js and starts it; whole crops the full viewport', async () => {
+test('the panel’s icon: box mode injects box-mode.js and starts it; a double click keeps the whole tab as a card, writing no jot', async () => {
   const s = setup();
   await s.snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 7 }, { id: 'heddy' });
   assert.deepEqual(s.calls.injected[0], { target: { tabId: 7 }, files: S.BOX_FILES });
-  assert.equal(s.calls.tabMessages[0].m.type, 'heddy-box:start');
+  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start' });
 
   const t = setup();
   await t.snap.internal({ type: 'heddy-ui:snap', mode: 'whole', tabId: 7 }, { id: 'heddy' });
-  assert.equal(t.calls.boxes.length, 1);
-  assert.deepEqual(t.calls.boxes[0].input.images[0].box, { kind: 'web', vw: 1440, vh: 900, x: 0, y: 0, w: 1440, h: 900 });
+  assert.deepEqual(t.calls.tabMessages[0].m, { type: 'heddy-box:start', whole: true, keep: true });
+  assert.equal(t.calls.boxes.length, 0, 'no heddy:box');
+  assert.equal(t.calls.captures.length, 0, 'box mode takes the screenshot, as a card');
 });
 
 test('Ctrl Shift K: once → box mode after 0.4 s; twice within 0.4 s → the whole tab', async () => {
@@ -311,8 +199,9 @@ test('Ctrl Shift K: once → box mode after 0.4 s; twice within 0.4 s → the wh
   t.snap.command(S.COMMAND, t.tab);
   await new Promise((r) => setImmediate(r));
   for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
-  assert.equal(t.calls.boxes.length, 1, 'the whole tab');
-  assert.ok(!t.calls.injected.some((o) => o.files), 'box mode never started');
+  assert.deepEqual(t.calls.tabMessages.map((x) => x.m), [{ type: 'heddy-box:start', whole: true, keep: true }], 'the whole tab, as a card');
+  assert.deepEqual(t.calls.shown, [7], 'the panel opens to show it');
+  assert.equal(t.calls.boxes.length, 0, 'no heddy:box');
   assert.equal(t.snap.command('other-command', t.tab), false);
 });
 
@@ -320,19 +209,23 @@ test('right-click an image: box mode with the box on that image; inside a frame,
   const s = setup();
   s.snap.menuClicked({ menuItemId: S.MENU_ID, srcUrl: 'https://x.example/map.png', frameId: 0 }, s.tab);
   for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r));
-  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start', srcUrl: 'https://x.example/map.png', id: ID });
+  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start', srcUrl: 'https://x.example/map.png', keep: true }, 'Add picture to Heddy: kept as a card at once');
+  assert.deepEqual(s.calls.shown, [7], 'with the panel open beside it');
 
   const t = setup();
   t.snap.menuClicked({ menuItemId: S.MENU_ID, srcUrl: 'https://x.example/map.png', frameId: 5 }, t.tab);
   for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r));
-  assert.deepEqual(t.calls.tabMessages[0].m, { type: 'heddy-box:start', id: ID });
+  assert.deepEqual(t.calls.tabMessages[0].m, { type: 'heddy-box:start' });
   assert.equal(t.snap.menuClicked({ menuItemId: 'someone-else' }, t.tab), false);
 });
 
-test('the menu item is on images only, titled “Jot this picture with Heddy”', async () => {
+test('the menu item is on images only, titled “Add picture to Heddy”', async () => {
   const s = setup();
-  await s.snap.installMenu('Jot this picture with Heddy');
-  assert.deepEqual(s.calls.menus, [{ id: S.MENU_ID, title: 'Jot this picture with Heddy', contexts: ['image'] }]);
+  const msgs = (await import('./helpers.mjs')).read('_locales/en/messages.json');
+  assert.equal(JSON.parse(msgs).menuAddPicture.message, 'Add picture to Heddy');
+  assert.match((await import('./helpers.mjs')).read('background.js'), /snap\.installMenu\(HeddyI18n\.t\(lang, 'menuAddPicture'\)\)/);
+  await s.snap.installMenu('Add picture to Heddy');
+  assert.deepEqual(s.calls.menus, [{ id: S.MENU_ID, title: 'Add picture to Heddy', contexts: ['image'] }]);
 });
 
 test('the words tray’s Explain takes the address and title from the tab, not the page', async () => {
@@ -357,90 +250,8 @@ test('the tooltip shows the shortcut Chrome has, or none', () => {
   assert.equal(S.shortcutLabel([]), null);
 });
 
-// ─── surviving a service-worker restart ──────────────────────────────────────
 
-const boxKeys = (session) => Object.keys(session.data).filter((k) => k.startsWith(S.BOX_PREFIX));
-
-test('kept pictures live in storage.session under the tab and the collection id', async () => {
-  const s = setup();
-  await grab(s);
-  assert.deepEqual(boxKeys(s.session), [`${S.BOX_PREFIX}7:${ID}`]);
-  assert.equal(s.session.data[`${S.BOX_PREFIX}7:${ID}`].images.length, 1);
-});
-
-test('a worker restart mid-collection loses nothing: the next one carries on and sends all', async () => {
-  const session = fakeSession();
-  const before = setup(session);
-  await grab(before);
-  await grab(before, { x: 500, y: 100, w: 200, h: 100 });
-  // The worker stops: a new snap with an empty memory, the same storage.session.
-  const after = setup(session);
-  assert.equal(await after.snap.kept(7, ID), 2);
-  assert.deepEqual(await grab(after), { ok: true, n: 3 });
-  await after.snap.internal({ type: 'heddy-box:send', id: ID, action: 'jot' }, after.fromPage);
-  assert.equal(after.calls.boxes[0].input.images.length, 3);
-  assert.equal(after.calls.boxes[0].input.context, 'Scales are written three ways.');
-  assert.deepEqual(boxKeys(session), [], 'cleared on send');
-});
-
-test('the 4-picture cap holds across a restart', async () => {
-  const session = fakeSession();
-  const before = setup(session);
-  for (let i = 0; i < 4; i++) await grab(before);
-  const after = setup(session);
-  assert.deepEqual(await grab(after), { ok: false, error: 'full' });
-});
-
-test('cleared on Esc, on a navigation away and on closing the tab, after a restart too', async () => {
-  for (const end of ['esc', 'navigate', 'close']) {
-    const session = fakeSession();
-    await grab(setup(session));
-    const after = setup(session);
-    if (end === 'esc') await after.snap.internal({ type: 'heddy-box:cancel', id: ID }, after.fromPage);
-    if (end === 'navigate') await after.snap.tabUpdated(7, { url: 'https://elsewhere.example/' });
-    if (end === 'close') await after.snap.tabGone(7);
-    assert.deepEqual(boxKeys(session), [], end);
-  }
-});
-
-test('a #fragment change is no navigation: the pictures stay', async () => {
-  const s = setup();
-  await grab(s);
-  await s.snap.tabUpdated(7, { url: PAGE + '#further' });
-  assert.equal(boxKeys(s.session).length, 1);
-});
-
-test('another box mode’s id reads nothing, and a late Esc from an old box mode keeps the new one', async () => {
-  const s = setup();
-  await grab(s);
-  assert.equal(await s.snap.kept(7, 'c0ffee00-0000-4000-8000-0000000000ff'), 0);
-  await s.snap.internal({ type: 'heddy-box:cancel', id: 'c0ffee00-0000-4000-8000-0000000000ff' }, s.fromPage);
-  assert.equal(await s.snap.kept(7, ID), 1);
-  assert.deepEqual(await grab(s, undefined, { id: 'not an id' }), { ok: false, error: 'page' });
-});
-
-test('box mode is started with its collection id', async () => {
-  const s = setup();
-  await s.snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 7 }, { id: 'heddy' });
-  assert.equal(s.calls.tabMessages[0].m.id, ID);
-});
-
-test('a stored record that does not match its key is ignored', async () => {
-  const key = `${S.BOX_PREFIX}7:${ID}`;
-  for (const bad of [{ id: 'someone-else-0001', tabId: 7, images: [{}] }, { id: ID, tabId: 8, images: [{}] }, { id: ID, tabId: 7, images: 'x' }]) {
-    const s = setup(fakeSession({ [key]: { url: PAGE, ...bad } }));
-    assert.equal(await s.snap.kept(7, ID), 0, JSON.stringify(bad));
-  }
-});
-
-// ─── › Copy picture (owner ruling, 2026-10-29) ──────────────────────────────
-
-test('the › menu holds exactly two rows: the whole screen instead, then Copy picture', () => {
-  assert.deepEqual(B.menuRows(1, null).map((r) => r.act), ['whole', 'copy']);
-  assert.deepEqual(B.menuRows(1, null).map((r) => r.label), ['menuWholeScreen', 'menuCopyPicture']);
-  assert.equal(B.menuRows(0, { x: 0, y: 0, w: 30, h: 30 })[1].disabled, false);
-  assert.equal(B.menuRows(0, null)[1].disabled, true, 'nothing to copy');
-});
+// ─── Copy picture, in the Heddy menu (owner ruling, 2026-10-29; D58) ────────
 
 test('Copy picture copies the current box, else the latest kept one', () => {
   const a = { x: 1, y: 1, w: 30, h: 30 }, b = { x: 2, y: 2, w: 30, h: 30 }, c = { x: 3, y: 3, w: 30, h: 30 };
@@ -482,8 +293,7 @@ test('heddy-box:crop returns the same crop the tools send, and keeps nothing', a
   const s = setup();
   const r = await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 200, y: 166, w: 270, h: 136 }, vw: 1280, vh: 800 }, s.fromPage);
   assert.deepEqual(r, { ok: true, png: PNG });
-  assert.equal(await s.snap.kept(7, ID), 0);
-  assert.deepEqual(boxKeys(s.session), []);
+  assert.deepEqual(s.session.data, {}, 'nothing stored');
   assert.deepEqual(await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 0, y: 0, w: 10, h: 10 }, vw: 1280, vh: 800 }, s.fromPage), { ok: false }, 'under 24 × 24');
   assert.deepEqual(await s.snap.internal({ type: 'heddy-box:crop', rect: { x: 0, y: 0, w: 99, h: 99 }, vw: 1280, vh: 800 }, { ...s.fromPage, frameId: 3 }), { ok: false });
 });

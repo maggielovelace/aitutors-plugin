@@ -17,6 +17,8 @@
   var TAB_CLOSE_MS = 1000;
   // heddy:result's error when the child taps Cancel or Close on a capture page.
   var CANCELLED = 'cancelled';
+  // /capture/clip's refusal of a video with no captions (D59).
+  var NO_CAPTIONS = 'no_captions';
   var ICONS = {
     idle: { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' },
     ready: { 16: 'icons/toolbar-ready-16.png', 32: 'icons/toolbar-ready-32.png' },
@@ -26,8 +28,10 @@
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
   var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
-  // What a gesture injects into any page for Jot it and Save page to Jotters (Phase 2).
-  var PAGE_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js'];
+  // What a gesture injects into any page for Jot it and Save page to Jotters
+  // (Phase 2), and for the panel's cards: lib/pos.js places a snippet on its
+  // page, content/cards-layer.js draws the cards' numbers (Round 5).
+  var PAGE_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/tray-tools.js', 'lib/tools.js', 'content/extract.js', 'content/page-tray.js', 'lib/pos.js', 'content/cards-layer.js'];
   var MENU_ID = 'heddy-jot';
   // manifest.json "commands": jot the selected words. No default key (owner,
   // 2026-10-29); the child binds one at chrome://extensions/shortcuts.
@@ -167,6 +171,14 @@
       if (kind === 'undo') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'undone' : 'undo_failed' });
       }
+      // A video with no captions is not kept (D59): the page says so, then
+      // Heddy closes its tab and says the same on the video.
+      if (!result.ok && result.error === NO_CAPTIONS && kind === 'clip') {
+        var none = { type: 'heddy-ui:toast', kind: 'no_captions' };
+        if (meta.captureTabId == null) return tellTab(meta.tabId, none);
+        later(function () { closeCaptureTab(meta).then(function () { return tellTab(meta.tabId, none); }); }, TAB_CLOSE_MS);
+        return Promise.resolve();
+      }
       if (!result.ok) {
         // J's refusals (Keep and jot, cant_keep, "We don't have this video
         // yet") stay in the site's window, with Close. Only a clip's refusal
@@ -189,23 +201,8 @@
           href: C.jotterUrl(origin, meta.youtubeId),
         });
       }
-      // The Jot it and Save page to Jotters windows close about 1 s after an ok
-      // result (owner, 2026-10-29), so the page shows what was kept.
-      if (kind === 'jot') {
-        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
-      }
-      // A picture jot (lib/tools.js): the same toast as Jot it, with no quote
-      // (a picture has none). Its Undo names the Jotter, which deletes the
-      // jot with its crops through the Jotters route. Box mode is no tray, so the toaster is put in
-      // the tab first (it ignores a second injection).
-      if (kind === 'box') {
-        return Promise.resolve()
-          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
-          .catch(function () {})
-          .then(function () {
-            return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
-          });
-      }
+      // (Round 5: Heddy no longer opens a Jot it or picture-jot window, so no
+      // 'jot' or 'box' result comes back; the site still answers older installs.)
       // Tool windows (lib/tools.js; owner, 2026-10-29). Make a card closes
       // after Keep card: "Card made", Undo (its cards), Open in Jotter. The
       // room (Explain, Ask Heddy) stays open and says nothing on the page,
@@ -225,6 +222,20 @@
       }
       if (kind === 'page') {
         return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
+      }
+      // Save to Jotters (Round 5, D54): the cards it carried leave the panel,
+      // and the page says "Saved to Jotters · {title}". The site closes its
+      // window; with Save and jot now its tab has become the notebook and
+      // stays, so there is no Open in Jotter. The heddy:save result names
+      // saves, not a jot, so there is no Undo to offer.
+      if (kind === 'save') {
+        var done = deps.saved ? Promise.resolve().then(function () { return deps.saved(meta, result); }).catch(function () {}) : Promise.resolve();
+        var saved = { type: 'heddy-ui:toast', kind: 'saved', title: result.title || meta.title };
+        if (meta.then !== 'jot') saved.href = C.jotterById(origin, result.jotterId);
+        return done
+          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
+          .catch(function () {})
+          .then(function () { return tellTab(meta.tabId, saved); });
       }
       if (kind !== 'clip') return Promise.resolve();
       // "from m:ss" is where the site says the kept clip starts (its `t`):
@@ -305,17 +316,6 @@
       });
     }
 
-    /** Jot it: heddy:jot, in a window that takes focus (the child adds a thought there). */
-    function jot(input) {
-      return openCapture({
-        page: 'jot',
-        kind: 'jot',
-        windowId: input.windowId,
-        build: function (cid) { return P.buildJot({ cid: cid, url: input.url, title: input.title, quote: input.quote, before: input.before, after: input.after }); },
-        meta: { tabId: input.tabId },
-      });
-    }
-
     /** Save page to Jotters: heddy:page. Past 200 KB of UTF-8 it keeps the first
      *  part (`cut: true`), and the toast after the save says so. */
     function page(input) {
@@ -339,32 +339,34 @@
       return chrome.scripting.executeScript({ target: { tabId: tabId }, files: PAGE_FILES });
     }
 
-    /** The context menu (selection) and the jot-selection command: inject the
-     *  tray into the tab the gesture came from. The menu item is already the
-     *  child's choice of Jot it, so it jots; the command shows the tray. */
-    function gesture(what, tab) {
+    /** The jot-selection command: inject the tray into the tab the gesture
+     *  came from and show it under the selection. */
+    function showTray(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
       return Promise.resolve()
         .then(function () { return injectPage(tab.id); })
-        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: what === 'menu' ? 'heddy-ui:jot-selection' : 'heddy-ui:tray' }); })
+        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: 'heddy-ui:tray' }); })
         .then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; });
     }
 
+    /** "Save to Jotters" on a selection (D54, D55): the words become a card
+     *  and the panel opens on them (lib/cards.js collect). It writes no jot. */
     function menuClicked(info, tab) {
       if (!info || info.menuItemId !== MENU_ID) return Promise.resolve(null);
-      return gesture('menu', tab);
+      if (!tab || tab.id == null || !deps.collect) return Promise.resolve({ ok: false });
+      return Promise.resolve(deps.collect(tab)).then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; });
     }
 
     function command(name, tab) {
       if (name !== COMMAND) return Promise.resolve(null);
       var t = tab ? Promise.resolve(tab) : chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) { return tabs[0]; }, function () { return null; });
-      return t.then(function (x) { return gesture('command', x); });
+      return t.then(showTray);
     }
 
-    /** Heddy's "Jot it with Heddy" item, in Heddy's language (D36). Only this
-     *  id is replaced, never removeAll: Phase 3 adds its own items. */
+    /** Heddy's "Save to Jotters" item on a selection, in Heddy's language
+     *  (D36). Only this id is replaced, never removeAll: snap adds its own. */
     function installMenus(lang) {
-      var title = I.t(lang, 'menuJotIt');
+      var title = I.t(lang, 'saveToJotters');
       return Promise.resolve()
         .then(function () { return chrome.contextMenus.remove(MENU_ID); })
         .catch(function () {})
@@ -453,12 +455,12 @@
         case 'heddy-ui:undo':
           // buildUndo refuses anything but a jot id, so a bad one opens nothing.
           return undo({ jotId: message.jotId, jotterId: message.jotterId == null ? null : message.jotterId, tabId: tab ? tab.id : null, windowId: tab ? tab.windowId : message.windowId });
-        case 'heddy-ui:jot':
         case 'heddy-ui:page': {
-          // From a page, only that page's own address; the popup names its tab.
+          // The page tray's Save page to Jotters. From a page, only that
+          // page's own address; the popup names its tab. (heddy-ui:jot is
+          // gone: since Round 5 nothing in Heddy writes a jot from a page.)
           if (tab && P.pageUrl(message.url) !== P.pageUrl(sender.url || tab.url)) return Promise.resolve({ ok: false });
-          var input = Object.assign({}, message, { tabId: tab ? tab.id : message.tabId, windowId: tab ? tab.windowId : message.windowId });
-          return message.type === 'heddy-ui:jot' ? jot(input) : page(input);
+          return page(Object.assign({}, message, { tabId: tab ? tab.id : message.tabId, windowId: tab ? tab.windowId : message.windowId }));
         }
         case 'heddy-ui:watch-page':
           return setIcon(tab && tab.id, message.on ? 'ready' : 'idle').then(function () { return { ok: true }; });
@@ -492,7 +494,7 @@
     return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, NO_CAPTIONS: NO_CAPTIONS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

@@ -60,16 +60,10 @@
         "message": "Heddy couldn't open aitutors.me. Try again."
       },
       "commandJot": {
-        "message": "Jot the words you selected"
-      },
-      "menuJotIt": {
-        "message": "Jot it with Heddy"
+        "message": "Show Heddy's buttons for the words you selected"
       },
       "trayLabel": {
         "message": "Heddy: what to do with these words"
-      },
-      "trayJotIt": {
-        "message": "Jot it"
       },
       "trayMore": {
         "message": "More"
@@ -89,20 +83,8 @@
       "jHint": {
         "message": "jots the line being spoken"
       },
-      "popupJotIt": {
-        "message": "Jot it"
-      },
-      "clipWholePageInstead": {
-        "message": "Save the whole page instead"
-      },
       "clipThisPage": {
         "message": "Save page to Jotters"
-      },
-      "selectSomeWords": {
-        "message": "Select some words"
-      },
-      "selectSomeWordsFor": {
-        "message": "for Jot it"
       },
       "jotLineSpoken": {
         "message": "Jot the line being spoken"
@@ -111,10 +93,7 @@
         "message": "New video? It's added first."
       },
       "firstTimePage": {
-        "message": "Jot a line, or save a page to Jotters as a source"
-      },
-      "cantReadPage": {
-        "message": "Heddy can't read this page. Try it on a web page or a YouTube video."
+        "message": "Save words, pictures or a whole page to Jotters"
       },
       "pageEmpty": {
         "message": "This page has no text to save."
@@ -180,9 +159,6 @@
       "toastPageCut": {
         "message": "Heddy kept the first part of this page."
       },
-      "setShortcut": {
-        "message": "Set a shortcut"
-      },
       "toastInMyClips": {
         "message": "In My Clips"
       },
@@ -208,7 +184,7 @@
         "message": "Language"
       },
       "optionsLanguageHint": {
-        "message": "For Heddy's buttons, popup and messages. The windows on aitutors.me follow the language you chose there."
+        "message": "For Heddy's buttons, panel and messages. Pages on aitutors.me follow the language you chose there."
       },
       "optionsDevHeading": {
         "message": "For developers"
@@ -243,9 +219,6 @@
       "cmdSnap": {
         "message": "Snap a picture (twice for the whole screen)"
       },
-      "menuJotPicture": {
-        "message": "Jot this picture with Heddy"
-      },
       "boxHintBefore": {
         "message": "Drag over a picture ·"
       },
@@ -253,7 +226,7 @@
         "message": "to stop"
       },
       "boxCollecting": {
-        "message": "Collecting for one jot ·"
+        "message": "Box mode ·"
       },
       "boxKept": {
         "message": "$N$ kept",
@@ -263,9 +236,6 @@
             "example": "2"
           }
         }
-      },
-      "boxEscNone": {
-        "message": "· Esc keeps none"
       },
       "boxWholePicture": {
         "message": "Whole picture · click to keep"
@@ -280,25 +250,10 @@
         }
       },
       "boxDropped": {
-        "message": "The page changed, so the pictures you kept were dropped."
+        "message": "The page changed, so the cards you collected were cleared."
       },
       "boxFailed": {
         "message": "Heddy couldn't take that picture. Try again."
-      },
-      "trayJot": {
-        "message": "Jot it"
-      },
-      "trayJotN": {
-        "message": "Jot it · $N$",
-        "placeholders": {
-          "n": {
-            "content": "$1",
-            "example": "3"
-          }
-        }
-      },
-      "trayAdd": {
-        "message": "Add to this jot"
       },
       "trayExplain": {
         "message": "Explain"
@@ -308,12 +263,6 @@
       },
       "trayAsk": {
         "message": "Ask Heddy"
-      },
-      "trayOnePicture": {
-        "message": "Explain and Make a card take one picture"
-      },
-      "menuWholeScreen": {
-        "message": "Snap the whole screen instead"
       },
       "menuCopyPicture": {
         "message": "Copy picture"
@@ -332,6 +281,273 @@
       },
       "toastCardUndoFailed": {
         "message": "Couldn't undo that card."
+      },
+      "saveToJotters": {
+        "message": "Save to Jotters"
+      },
+      "saveAndJot": {
+        "message": "Save and jot now"
+      },
+      "saveGoesTo": {
+        "message": "Goes to the left page of your \"$TITLE$\" Jotter. You can jot it there.",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Sparx Science – Home"
+          }
+        }
+      },
+      "saveGoesToNoTitle": {
+        "message": "Goes to the left page of this page's Jotter. You can jot it there."
+      },
+      "savePageToo": {
+        "message": "Save the whole page too"
+      },
+      "cardsHeading": {
+        "message": "In this save"
+      },
+      "cardsSnippet": {
+        "message": "1 snippet"
+      },
+      "cardsSnippets": {
+        "message": "$N$ snippets",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "cardsPicture": {
+        "message": "1 picture"
+      },
+      "cardsPictures": {
+        "message": "$N$ pictures",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "addText": {
+        "message": "+ Text"
+      },
+      "addPicture": {
+        "message": "+ Picture"
+      },
+      "cardPictureLabel": {
+        "message": "Picture"
+      },
+      "cardRemove": {
+        "message": "Remove card $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "cardsSelectFirst": {
+        "message": "Select some words on the page, then tap + Text."
+      },
+      "cardsSame": {
+        "message": "Those words are already card $N$.",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "cardsFullText": {
+        "message": "Heddy keeps up to 10 snippets from one page."
+      },
+      "cardsFullPictures": {
+        "message": "Heddy keeps up to 4 pictures from one page."
+      },
+      "toolsOnCard1": {
+        "message": "On card 1"
+      },
+      "barHeddy": {
+        "message": "Heddy ▾"
+      },
+      "menuExplainPicture": {
+        "message": "Explain this picture"
+      },
+      "menuAskAbout": {
+        "message": "Ask Heddy about it"
+      },
+      "menuWholePage": {
+        "message": "Whole visible page"
+      },
+      "boxEscDone": {
+        "message": "· Esc to stop"
+      },
+      "toastNoCaptions": {
+        "message": "Heddy needs captions to help with this video, and this one has none."
+      },
+      "kindChrome": {
+        "message": "Chrome page"
+      },
+      "kindNewTab": {
+        "message": "New tab"
+      },
+      "kindSettings": {
+        "message": "Chrome settings"
+      },
+      "kindExtensions": {
+        "message": "Extensions"
+      },
+      "kindExtension": {
+        "message": "Another extension"
+      },
+      "kindChromeLine": {
+        "message": "Nothing to read here."
+      },
+      "kindChromeSub": {
+        "message": "Open a web page or a YouTube video, then click me."
+      },
+      "kindStore": {
+        "message": "Chrome Web Store"
+      },
+      "kindStoreLine": {
+        "message": "Chrome keeps Heddy out of the Web Store."
+      },
+      "kindStoreSub": {
+        "message": "Heddy can't read or save this page. Try another page."
+      },
+      "kindHeddy": {
+        "message": "Heddy page"
+      },
+      "kindHeddySettings": {
+        "message": "Heddy settings"
+      },
+      "kindHeddyLine": {
+        "message": "This is one of Heddy's own pages."
+      },
+      "kindHeddySub": {
+        "message": "Open a web page or a YouTube video, then click me."
+      },
+      "kindSource": {
+        "message": "Page source"
+      },
+      "kindSourceLine": {
+        "message": "Heddy can't save a page's source code."
+      },
+      "kindSourceSub": {
+        "message": "Open the page itself, then click me."
+      },
+      "kindFile": {
+        "message": "PDF file"
+      },
+      "kindFileLine": {
+        "message": "Heddy can't save this PDF yet."
+      },
+      "kindFileSub": {
+        "message": "Upload it to Jotters instead: My Jotters › Add a PDF."
+      },
+      "kindLocalFile": {
+        "message": "File on this computer"
+      },
+      "kindLocalLine": {
+        "message": "Heddy can't read files on this computer."
+      },
+      "kindLocalSub": {
+        "message": "Open it on the web, or upload a PDF to Jotters."
+      },
+      "kindOther": {
+        "message": "This page"
+      },
+      "kindOtherLine": {
+        "message": "Heddy can't read this page."
+      },
+      "kindOtherSub": {
+        "message": "Try another web page or a YouTube video."
+      },
+      "whoYear": {
+        "message": "Year $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "8"
+          }
+        }
+      },
+      "whoOpenStudy": {
+        "message": "Open my Study"
+      },
+      "whoSignInToSave": {
+        "message": "Sign in to save with Heddy"
+      },
+      "whoSignIn": {
+        "message": "Sign in"
+      },
+      "whoImNew": {
+        "message": "I'm new"
+      },
+      "whoGrownUp": {
+        "message": "Signed in as a grown-up"
+      },
+      "whoOpenDashboard": {
+        "message": "Open my dashboard"
+      },
+      "tileJotters": {
+        "message": "My Jotters"
+      },
+      "tileClips": {
+        "message": "My Clips"
+      },
+      "tileStudy": {
+        "message": "My Study"
+      },
+      "passEyebrow": {
+        "message": "aitutors.me · Study pass"
+      },
+      "passNotSignedIn": {
+        "message": "Not signed in"
+      },
+      "passSavesTo": {
+        "message": "Heddy saves to your Jotters and My Clips on aitutors.me."
+      },
+      "passGrownUpLine": {
+        "message": "Heddy saves for a child's account. On your child's computer, sign them in to use it."
+      },
+      "passSwitch": {
+        "message": "Not you? Switch"
+      },
+      "passMakeAccount": {
+        "message": "I'm new: make my account"
+      },
+      "passParent": {
+        "message": "I'm a parent"
+      },
+      "aboutHeading": {
+        "message": "About Heddy"
+      },
+      "aboutVersion": {
+        "message": "Version"
+      },
+      "aboutId": {
+        "message": "Extension ID"
+      },
+      "aboutCopy": {
+        "message": "Copy"
+      },
+      "aboutCopied": {
+        "message": "Copied"
+      },
+      "aboutPrivacy": {
+        "message": "Privacy"
+      },
+      "aboutPrivacyLink": {
+        "message": "What Heddy reads, and when"
+      },
+      "trayAddCard": {
+        "message": "+ Add"
+      },
+      "menuAddPicture": {
+        "message": "Add picture to Heddy"
       }
     },
     "zh_CN": {
@@ -393,16 +609,10 @@
         "message": "Heddy 没能打开 aitutors.me，再试一次。"
       },
       "commandJot": {
-        "message": "批注你选中的文字"
-      },
-      "menuJotIt": {
-        "message": "用 Heddy 写批注"
+        "message": "为选中的文字显示 Heddy 的按钮"
       },
       "trayLabel": {
         "message": "Heddy：怎么处理这段文字"
-      },
-      "trayJotIt": {
-        "message": "写批注"
       },
       "trayMore": {
         "message": "更多"
@@ -422,20 +632,8 @@
       "jHint": {
         "message": "批注正在说的这一句"
       },
-      "popupJotIt": {
-        "message": "写批注"
-      },
-      "clipWholePageInstead": {
-        "message": "改为保存整页"
-      },
       "clipThisPage": {
         "message": "存到 Jotters"
-      },
-      "selectSomeWords": {
-        "message": "选中一些文字"
-      },
-      "selectSomeWordsFor": {
-        "message": "用来写批注"
       },
       "jotLineSpoken": {
         "message": "批注正在说的这一句"
@@ -444,10 +642,7 @@
         "message": "新视频？会先收下它。"
       },
       "firstTimePage": {
-        "message": "批注一句话，或把一页存到 Jotters，作为来源"
-      },
-      "cantReadPage": {
-        "message": "Heddy 读不了这个页面。请在网页或 YouTube 视频上试试。"
+        "message": "把文字、图片或整页存到 Jotters"
       },
       "pageEmpty": {
         "message": "这一页没有可以保存的文字。"
@@ -513,9 +708,6 @@
       "toastPageCut": {
         "message": "Heddy 只保留了这一页的前一部分。"
       },
-      "setShortcut": {
-        "message": "设置快捷键"
-      },
       "toastInMyClips": {
         "message": "已放进「我的短片」"
       },
@@ -541,7 +733,7 @@
         "message": "语言"
       },
       "optionsLanguageHint": {
-        "message": "用于 Heddy 的按钮、弹出框和提示。aitutors.me 上的窗口跟随你在网站上选的语言。"
+        "message": "用于 Heddy 的按钮、面板和提示。aitutors.me 上的页面跟随你在网站上选的语言。"
       },
       "optionsDevHeading": {
         "message": "开发者选项"
@@ -576,9 +768,6 @@
       "cmdSnap": {
         "message": "截一张图（按两下截整个屏幕）"
       },
-      "menuJotPicture": {
-        "message": "用 Heddy 批注这张图"
-      },
       "boxHintBefore": {
         "message": "在图片上拖出一个框 · 按"
       },
@@ -586,7 +775,7 @@
         "message": "退出"
       },
       "boxCollecting": {
-        "message": "正在收进同一条批注 ·"
+        "message": "框选模式 ·"
       },
       "boxKept": {
         "message": "已留 $N$ 张",
@@ -596,9 +785,6 @@
             "example": "2"
           }
         }
-      },
-      "boxEscNone": {
-        "message": "· 按 Esc 一张都不留"
       },
       "boxWholePicture": {
         "message": "整张图 · 单击留下"
@@ -613,25 +799,10 @@
         }
       },
       "boxDropped": {
-        "message": "页面变了，已留的图片都没有保存。"
+        "message": "页面变了，收集的卡片已清空。"
       },
       "boxFailed": {
         "message": "Heddy 没能截下这张图，再试一次。"
-      },
-      "trayJot": {
-        "message": "写下批注"
-      },
-      "trayJotN": {
-        "message": "写下批注 · $N$",
-        "placeholders": {
-          "n": {
-            "content": "$1",
-            "example": "3"
-          }
-        }
-      },
-      "trayAdd": {
-        "message": "加进这条批注"
       },
       "trayExplain": {
         "message": "讲解"
@@ -641,12 +812,6 @@
       },
       "trayAsk": {
         "message": "问 Heddy"
-      },
-      "trayOnePicture": {
-        "message": "讲解和做成卡片只用一张图"
-      },
-      "menuWholeScreen": {
-        "message": "改成截整个屏幕"
       },
       "menuCopyPicture": {
         "message": "复制图片"
@@ -665,6 +830,273 @@
       },
       "toastCardUndoFailed": {
         "message": "没能撤销这张卡片。"
+      },
+      "saveToJotters": {
+        "message": "存到 Jotters"
+      },
+      "saveAndJot": {
+        "message": "存下，马上写批注"
+      },
+      "saveGoesTo": {
+        "message": "会放进「$TITLE$」这本 Jotter 的左页，你可以在那里写批注。",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Sparx Science – Home"
+          }
+        }
+      },
+      "saveGoesToNoTitle": {
+        "message": "会放进这一页的 Jotter 的左页，你可以在那里写批注。"
+      },
+      "savePageToo": {
+        "message": "连整页一起存"
+      },
+      "cardsHeading": {
+        "message": "这次保存"
+      },
+      "cardsSnippet": {
+        "message": "1 段文字"
+      },
+      "cardsSnippets": {
+        "message": "$N$ 段文字",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "cardsPicture": {
+        "message": "1 张图片"
+      },
+      "cardsPictures": {
+        "message": "$N$ 张图片",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "addText": {
+        "message": "+ 文字"
+      },
+      "addPicture": {
+        "message": "+ 图片"
+      },
+      "cardPictureLabel": {
+        "message": "图片"
+      },
+      "cardRemove": {
+        "message": "移除第 $N$ 张",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "cardsSelectFirst": {
+        "message": "先在页面上选中一些文字，再点「+ 文字」。"
+      },
+      "cardsSame": {
+        "message": "这段文字已经是第 $N$ 张卡片了。",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          }
+        }
+      },
+      "cardsFullText": {
+        "message": "同一页最多收 10 段文字。"
+      },
+      "cardsFullPictures": {
+        "message": "同一页最多收 4 张图片。"
+      },
+      "toolsOnCard1": {
+        "message": "用第 1 张"
+      },
+      "barHeddy": {
+        "message": "Heddy ▾"
+      },
+      "menuExplainPicture": {
+        "message": "讲解这张图"
+      },
+      "menuAskAbout": {
+        "message": "问 Heddy 这张图"
+      },
+      "menuWholePage": {
+        "message": "整个可见页面"
+      },
+      "boxEscDone": {
+        "message": "· 按 Esc 退出"
+      },
+      "toastNoCaptions": {
+        "message": "Heddy 需要字幕才能帮你看这个视频，可这个视频没有字幕。"
+      },
+      "kindChrome": {
+        "message": "Chrome 页面"
+      },
+      "kindNewTab": {
+        "message": "新标签页"
+      },
+      "kindSettings": {
+        "message": "Chrome 设置"
+      },
+      "kindExtensions": {
+        "message": "扩展程序"
+      },
+      "kindExtension": {
+        "message": "其他扩展程序"
+      },
+      "kindChromeLine": {
+        "message": "这里没有可以读的内容。"
+      },
+      "kindChromeSub": {
+        "message": "打开一个网页或 YouTube 视频，再点我。"
+      },
+      "kindStore": {
+        "message": "Chrome 网上应用店"
+      },
+      "kindStoreLine": {
+        "message": "Chrome 不让 Heddy 进入网上应用店。"
+      },
+      "kindStoreSub": {
+        "message": "Heddy 读不了也存不了这个页面，换一个页面试试。"
+      },
+      "kindHeddy": {
+        "message": "Heddy 页面"
+      },
+      "kindHeddySettings": {
+        "message": "Heddy 设置"
+      },
+      "kindHeddyLine": {
+        "message": "这是 Heddy 自己的页面。"
+      },
+      "kindHeddySub": {
+        "message": "打开一个网页或 YouTube 视频，再点我。"
+      },
+      "kindSource": {
+        "message": "网页源代码"
+      },
+      "kindSourceLine": {
+        "message": "Heddy 不能保存网页的源代码。"
+      },
+      "kindSourceSub": {
+        "message": "打开这个网页本身，再点我。"
+      },
+      "kindFile": {
+        "message": "PDF 文件"
+      },
+      "kindFileLine": {
+        "message": "Heddy 还不能保存这个 PDF。"
+      },
+      "kindFileSub": {
+        "message": "可以改为上传到 Jotters：我的 Jotters › 添加 PDF。"
+      },
+      "kindLocalFile": {
+        "message": "本机文件"
+      },
+      "kindLocalLine": {
+        "message": "Heddy 读不了这台电脑上的文件。"
+      },
+      "kindLocalSub": {
+        "message": "请在网上打开它，或把 PDF 上传到 Jotters。"
+      },
+      "kindOther": {
+        "message": "这个页面"
+      },
+      "kindOtherLine": {
+        "message": "Heddy 读不了这个页面。"
+      },
+      "kindOtherSub": {
+        "message": "换一个网页或 YouTube 视频试试。"
+      },
+      "whoYear": {
+        "message": "Year $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "8"
+          }
+        }
+      },
+      "whoOpenStudy": {
+        "message": "打开我的学习"
+      },
+      "whoSignInToSave": {
+        "message": "登录后才能用 Heddy 保存"
+      },
+      "whoSignIn": {
+        "message": "登录"
+      },
+      "whoImNew": {
+        "message": "我是新用户"
+      },
+      "whoGrownUp": {
+        "message": "已用家长账号登录"
+      },
+      "whoOpenDashboard": {
+        "message": "打开家长中心"
+      },
+      "tileJotters": {
+        "message": "我的 Jotters"
+      },
+      "tileClips": {
+        "message": "我的短片"
+      },
+      "tileStudy": {
+        "message": "我的学习"
+      },
+      "passEyebrow": {
+        "message": "aitutors.me · 学习通行证"
+      },
+      "passNotSignedIn": {
+        "message": "未登录"
+      },
+      "passSavesTo": {
+        "message": "Heddy 会把内容存进你在 aitutors.me 上的 Jotters 和「我的短片」。"
+      },
+      "passGrownUpLine": {
+        "message": "Heddy 为孩子的账号保存内容。请在孩子的电脑上用孩子的账号登录。"
+      },
+      "passSwitch": {
+        "message": "不是你？切换"
+      },
+      "passMakeAccount": {
+        "message": "我是新用户：创建账号"
+      },
+      "passParent": {
+        "message": "我是家长"
+      },
+      "aboutHeading": {
+        "message": "关于 Heddy"
+      },
+      "aboutVersion": {
+        "message": "版本"
+      },
+      "aboutId": {
+        "message": "扩展程序 ID"
+      },
+      "aboutCopy": {
+        "message": "复制"
+      },
+      "aboutCopied": {
+        "message": "已复制"
+      },
+      "aboutPrivacy": {
+        "message": "隐私"
+      },
+      "aboutPrivacyLink": {
+        "message": "Heddy 读什么、什么时候读"
+      },
+      "trayAddCard": {
+        "message": "+ 加入"
+      },
+      "menuAddPicture": {
+        "message": "把图片加到 Heddy"
       }
     }
   };

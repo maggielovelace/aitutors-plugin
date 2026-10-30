@@ -8,6 +8,9 @@
 // the child scrolls, selects or clicks the page, and goes only on its ✕, on
 // Esc (here or in the panel), or on a second click of the icon.
 //
+// Box mode (content/box-mode.js) runs beside it: it draws itself just under
+// this frame and hides the frame (away) only while a screenshot is taken.
+//
 // Between this script and the frame only hints travel, by postMessage: the
 // frame says how tall it is and when to close; this script says "the
 // selection changed" (the frame reads it again itself) and "the page moved
@@ -86,7 +89,9 @@
     frameOrigin = o ? o[0] : '*';
     shadow.appendChild(style);
     shadow.appendChild(frame);
-    (document.body || document.documentElement).appendChild(host);
+    // On <html>, last: box mode puts itself just before it, so the panel
+    // stays above box mode and usable beside it (R5b).
+    document.documentElement.appendChild(host);
     // Shown once it says how tall it is; this is the fallback.
     setTimeout(function () { if (frame) frame.classList.add('on'); }, 1500);
     lastUrl = location.href;
@@ -124,6 +129,11 @@
       reply({ open: !!host });
       return undefined;
     }
+    if (message.type === 'heddy-panel:open') {
+      if (!host) open(message.tabId);
+      reply({ open: !!host });
+      return undefined;
+    }
     if (message.type === 'heddy-panel:close') {
       var was = !!host;
       close();
@@ -133,5 +143,12 @@
     return undefined;
   });
 
-  root.__heddyPanel = { open: open, close: close, isOpen: function () { return !!host; } };
+  /** Off the screen for a screenshot (box mode), then back. Made
+   *  transparent, not removed: a frame moved or removed would load again,
+   *  and the frame sets its own visibility, which would win over the host's. */
+  function away(on) {
+    if (host) host.style.setProperty('opacity', on ? '0' : '1', 'important');
+  }
+
+  root.__heddyPanel = { open: open, close: close, away: away, host: function () { return host; }, isOpen: function () { return !!host; } };
 })(globalThis);

@@ -12,6 +12,7 @@
 //
 // Chrome passed in, so the tests drive it with a fake (background.js wires it).
 (function (root) {
+  var K = root.HeddyPageKind || (typeof require === 'function' && require('./page-kind.js'));
   var PANEL_FILES = ['content/panel.js'];
   var PAGE = 'popup/popup.html';
   // chrome.storage.session: tab id → the fallback window open for it.
@@ -20,9 +21,11 @@
   // resizes it to its content once drawn (popup.js).
   var WINDOW = { width: 376, height: 520, right: 16, top: 80 };
 
-  /** popup.html?tab=<id>&host=panel|window: the tab it acts on, and where it is drawn. */
-  function pageUrl(getURL, tabId, host) {
-    return getURL(PAGE) + '?tab=' + encodeURIComponent(String(tabId)) + '&host=' + host;
+  /** popup.html?tab=<id>&host=panel|window: the tab it acts on, and where
+   *  it is drawn. `kind` (lib/page-kind.js) names the page for the window,
+   *  which may not be told the address of a page Chrome keeps to itself. */
+  function pageUrl(getURL, tabId, host, kind) {
+    return getURL(PAGE) + '?tab=' + encodeURIComponent(String(tabId)) + '&host=' + host + (kind ? '&kind=' + encodeURIComponent(kind) : '');
   }
 
   function windowBounds(win) {
@@ -67,7 +70,8 @@
             return (tab.windowId != null ? chrome.windows.get(tab.windowId) : chrome.windows.getLastFocused())
               .catch(function () { return null; })
               .then(function (win) {
-                return chrome.windows.create(Object.assign({ url: pageUrl(chrome.runtime.getURL, tab.id, 'window'), type: 'popup', focused: true }, windowBounds(win)));
+                var kind = tab.url ? K.kindOf(tab.url, chrome.runtime.id) : 'other';
+                return chrome.windows.create(Object.assign({ url: pageUrl(chrome.runtime.getURL, tab.id, 'window', kind), type: 'popup', focused: true }, windowBounds(win)));
               })
               .then(function (created) {
                 if (created && created.id != null) map[tab.id] = created.id;
@@ -95,6 +99,18 @@
         .catch(function () { return toggleWindow(tab); });
     }
 
+    /** Open the panel on a page if it is not open already (never closes it):
+     *  after something was added to the cards from the page's own menu or
+     *  tray, so the child sees the card and can save or keep collecting. A
+     *  page Chrome keeps from extensions has nothing to add, so no window. */
+    function show(tab) {
+      if (!tab || tab.id == null) return Promise.resolve({ ok: false });
+      return Promise.resolve()
+        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: PANEL_FILES }); })
+        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: 'heddy-panel:open', tabId: tab.id }); })
+        .then(function (r) { return { ok: !!(r && r.open) }; }, function () { return { ok: false }; });
+    }
+
     /** Take the panel off a page (before Snap a picture), and resolve once
      *  it is gone from the screen. Nothing to do resolves too. */
     function hide(tabId) {
@@ -114,7 +130,7 @@
       });
     }
 
-    return { clicked: clicked, hide: hide, windowRemoved: windowRemoved };
+    return { clicked: clicked, show: show, hide: hide, windowRemoved: windowRemoved };
   }
 
   var api = { PANEL_FILES: PANEL_FILES, PAGE: PAGE, WINDOWS_KEY: WINDOWS_KEY, WINDOW: WINDOW, pageUrl: pageUrl, windowBounds: windowBounds, createPanel: createPanel };

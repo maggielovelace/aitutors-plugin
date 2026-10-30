@@ -69,7 +69,7 @@ test('on a page Chrome keeps from extensions, the popup opens in a small window 
   const panel = createPanel({ chrome: f.chrome });
   assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'window', open: true });
   const w = f.calls.windows[0];
-  assert.equal(w.url, `${EXT}/popup/popup.html?tab=11&host=window`);
+  assert.equal(w.url, `${EXT}/popup/popup.html?tab=11&host=window&kind=store`, 'the window is told the kind of page (D61)');
   assert.equal(w.type, 'popup');
   assert.equal(w.focused, true);
   assert.equal(w.width, WINDOW.width);
@@ -106,21 +106,26 @@ test('hide takes the panel off a page and resolves; a page without one resolves 
   await panel.hide(9);
 });
 
-test('Snap a picture from the panel: the panel leaves the page BEFORE box mode is drawn', async () => {
+test('+ Picture from the panel: box mode is drawn BESIDE the panel (R5b); so is the whole tab, kept as a picture card', async () => {
   const order = [];
   const chrome = {
     runtime: { id: 'heddy' },
     storage: { session: { get: async () => ({}), set: async () => {}, remove: async () => {} } },
-    tabs: { get: async (id) => ({ ...ARTICLE, id }), sendMessage: async (tabId, m) => { order.push(m.type); return { ok: true }; } },
-    scripting: { executeScript: async (o) => { order.push(o.files ? 'inject' : 'func'); } },
+    tabs: { get: async (id) => ({ ...ARTICLE, id }), sendMessage: async (tabId, m) => { order.push(m.type); return { ok: true }; }, captureVisibleTab: async () => { throw new Error('stop'); } },
+    scripting: { executeScript: async (o) => { order.push(o.files ? 'inject' : 'func'); return [{ result: { vw: 1280, vh: 800 } }]; } },
   };
-  const snap = createSnap({ chrome, crop: {}, tools: {}, makers: {}, sender: {}, hidePanel: async (tabId) => { order.push(`hide:${tabId}`); } });
+  const sent = [];
+  chrome.tabs.sendMessage = async (tabId, m) => { order.push(m.type); sent.push(m); return { ok: true }; };
+  const snap = createSnap({ chrome, crop: { clampBox: (r) => r }, tools: {}, makers: {}, sender: {}, later: (fn) => fn(), showPanel: async (tab) => { order.push(`show:${tab.id}`); } });
   // The panel's frame has a sender.tab (the page it sits in) and an extension URL.
   const frame = { id: 'heddy', url: `${EXT}/popup/popup.html?tab=9&host=panel`, tab: ARTICLE, frameId: 3 };
   const r = await snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 9 }, frame);
   assert.deepEqual(r, { ok: true });
-  assert.deepEqual(order.slice(0, 2), ['hide:9', 'inject']);
-  assert.ok(order.includes('heddy-box:start'));
+  assert.deepEqual(order, ['inject', 'heddy-box:start'], 'the panel stays: box mode hides it only for each screenshot');
+  order.length = 0;
+  await snap.internal({ type: 'heddy-ui:snap', mode: 'whole', tabId: 9 }, frame);
+  assert.deepEqual(order, ['inject', 'heddy-box:start'], 'the panel is already open; box mode keeps the whole tab');
+  assert.deepEqual(sent.at(-1), { type: 'heddy-box:start', whole: true, keep: true });
 });
 
 test('the panel’s frame names its tab like the old popup: a capture from it is not refused for its own URL', async () => {
@@ -140,8 +145,8 @@ test('the panel’s frame names its tab like the old popup: a capture from it is
   const r = await courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep', tabId: 7, windowId: 1 }, frame);
   assert.equal(r.ok, true);
   assert.equal(calls[0].openerTabId, 7);
-  const jot = await courier.internal({ type: 'heddy-ui:jot', url: ARTICLE.url, quote: 'q', tabId: 9, windowId: 1 }, { ...frame, tab: ARTICLE });
-  assert.equal(jot.ok, true, 'Jot it from the panel on an article');
+  const page = await courier.internal({ type: 'heddy-ui:page', url: ARTICLE.url, markdown: '# m', tabId: 9, windowId: 1 }, { ...frame, tab: ARTICLE });
+  assert.equal(page.ok, true, 'Save page to Jotters from the panel on an article');
 });
 
 // ─── content/panel.js, in the page ──────────────────────────────────────────
@@ -156,7 +161,7 @@ function page() {
   let onMessage = null;
   function el(tag) {
     const e = {
-      tag, attrs: {}, style: {}, children: [], className: '', title: '',
+      tag, attrs: {}, style: { setProperty(k, v, prio) { this[k] = `${v} !${prio}`; } }, children: [], className: '', title: '',
       classList: { set: new Set(), add(c) { this.set.add(c); }, contains(c) { return this.set.has(c); } },
       setAttribute(k, v) { this.attrs[k] = v; },
       appendChild(c) { this.children.push(c); return c; },
@@ -174,7 +179,7 @@ function page() {
     document: {
       createElement: el,
       body: { appendChild: (c) => { appended.push(c); return c; } },
-      documentElement: {},
+      documentElement: { appendChild: (c) => { appended.push(c); return c; } },
       addEventListener: on('doc'),
       removeEventListener: off('doc'),
     },
@@ -260,6 +265,23 @@ test('a new selection in the page is a hint to the frame (no data), sent to the 
   assert.deepEqual(JSON.parse(JSON.stringify(p.posted)), [{ m: { heddyPanel: 'selection' }, origin: EXT }]);
 });
 
+test('heddy-panel:open opens the panel only if it is closed (after something was added from the page’s own menu)', async () => {
+  const p = page();
+  assert.deepEqual(await p.send({ type: 'heddy-panel:open', tabId: 9 }), { open: true });
+  assert.deepEqual(await p.send({ type: 'heddy-panel:open', tabId: 9 }), { open: true }, 'never a toggle');
+  assert.equal(p.appended.length, 1);
+});
+
+test('panel.show injects the panel and opens it; a page Chrome keeps out opens nothing', async () => {
+  const f = fakeChrome({ forbidden: [11] });
+  const panel = createPanel({ chrome: f.chrome });
+  f.chrome.tabs.sendMessage = async (tabId, m) => { f.calls.sent.push({ tabId, m }); return { open: true }; };
+  assert.deepEqual(await panel.show(ARTICLE), { ok: true });
+  assert.deepEqual(f.calls.sent.at(-1), { tabId: 9, m: { type: 'heddy-panel:open', tabId: 9 } });
+  assert.deepEqual(await panel.show(STORE), { ok: false });
+  assert.equal(f.calls.windows.length, 0);
+});
+
 test('heddy-panel:close (before Snap a picture) answers only once the panel is off the screen', async () => {
   const p = page();
   await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
@@ -307,7 +329,20 @@ test('the popup acts on the tab it is given (?tab=), not on its own window’s a
   assert.match(popup, /HOST !== 'panel' \|\| e\.source !== window\.parent/, 'hints only from the page that holds it');
 });
 
-test('a changed selection redraws the words, never during an action', () => {
-  assert.match(popup, /if \(e\.data\.heddyPanel === 'selection'\) refreshSelection\(\);/);
-  assert.match(popup, /if \(!shown \|\| document\.querySelector\('\[aria-busy="true"\]'\)\) return;/);
+test('a new selection changes nothing until + Text; the background’s "changed" redraws the cards, never during an action', () => {
+  assert.doesNotMatch(popup, /heddyPanel === 'selection'/);
+  assert.match(popup, /if \(m && m\.type === 'heddy-cards:changed' && view && m\.tabId === view\.tab\.id\) refreshCards\(\);/);
+  assert.match(popup, /if \(!view \|\| busyNow\(\)\) return;/);
+});
+
+test('the panel is put on <html>, last, so box mode can sit just under it; away() hides it for a screenshot without reloading it', async () => {
+  const p = page();
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  assert.equal(p.ctx.__heddyPanel.host(), p.host());
+  p.ctx.__heddyPanel.away(true);
+  assert.equal(p.host().style.opacity, '0 !important');
+  assert.equal(p.appended.length, 1, 'still in the page: a frame removed would load again');
+  p.ctx.__heddyPanel.away(false);
+  assert.equal(p.host().style.opacity, '1 !important');
+  assert.match(read('content/panel.js'), /document\.documentElement\.appendChild\(host\);/);
 });

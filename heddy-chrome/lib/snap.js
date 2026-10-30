@@ -3,15 +3,15 @@
 //
 // Three parts, one file, because they share the timing rules:
 //   createGate      tells one click/press from two (pure, clock injected)
-//   createSnap      the background's side: starts box mode in the tab, takes
-//                   each kept box from a screenshot, sends heddy:box or
-//                   heddy:tool, and the whole-tab snap
+//   createSnap      the background's side: starts box mode in the tab, cuts
+//                   a box from a screenshot (for the cards, lib/cards.js, and
+//                   Copy picture), and the whole-tab snap
 //   mountButton     the popup footer's Snap a picture icon
 //
-// The ways in (D30): the popup icon (click = box mode, double-click within
-// ~250 ms = the whole visible tab), right-click an image → "Jot this picture
-// with Heddy" (box mode with the box on the image), and Ctrl Shift K (twice
-// within 0.4 s = the whole visible tab). Every one is a user gesture, which is
+// The ways in (D30, as Round 5 has them): the panel's icon (click = box mode,
+// double-click within ~250 ms = the whole visible tab as a picture card),
+// right-click an image → "Add picture to Heddy" (that picture as a card), and
+// Ctrl Shift K (twice within 0.4 s = the whole visible tab as a card). Every one is a user gesture, which is
 // what lets activeTab allow captureVisibleTab and the box-mode script.
 (function (root) {
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
@@ -21,13 +21,11 @@
   var MENU_ID = 'heddy-snap-image';
   // Manrope for the shadow-root UI (lib/fonts.js); first in every injection.
   var FONT_FILES = ['lib/font-data.js', 'lib/fonts.js'];
-  // What box mode needs in the page, injected on the gesture (activeTab).
-  var BOX_FILES = FONT_FILES.concat(['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'content/box-mode.js']);
+  // What box mode needs in the page, injected on the gesture (activeTab):
+  // its own script, and the layer that numbers the cards on the page.
+  var BOX_FILES = FONT_FILES.concat(['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'lib/pos.js', 'content/cards-layer.js', 'content/box-mode.js']);
   // captureVisibleTab allows two calls a second; one retry after this.
   var CAPTURE_RETRY_MS = 600;
-  // chrome.storage.session keys of kept pictures: heddyBox:<tabId>:<collection id>.
-  var BOX_PREFIX = 'heddyBox:';
-  var COLLECTION_ID = /^[a-z0-9-]{8,64}$/;
   // The crop-corners glyph (Jotters' Select area; the owner's ruling 29 Oct).
   var SNAP_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 2.5 V17 H21.5 M2.5 7 H17 V21.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -57,13 +55,8 @@
 
   // ─── the background's side ─────────────────────────────────────────────────
 
-  /** Runs in the page: the viewport, for the whole-tab snap. */
-  function readViewport() {
-    return { vw: window.innerWidth, vh: window.innerHeight };
-  }
-
-  /** Runs in the page: the one-line notice after a navigation dropped the
-   *  kept pictures. Text only; gone after 4 s. */
+  /** Runs in the page: the one-line notice after a navigation cleared the
+   *  cards. Text only; gone after 4 s. */
   function showDroppedLine(text) {
     if (!text || document.querySelector('heddy-box-mode')) return;
     var host = document.createElement('heddy-note');
@@ -82,80 +75,13 @@
 
   /** deps: {chrome, sender (lib/tools.js createSender), crop (HeddyCrop),
    *  makers: {createImageBitmap, OffscreenCanvas, Blob}, later,
-   *  hidePanel(tabId) → Promise: takes Heddy's panel off that page} */
+   *  showPanel(tab) → Promise: opens Heddy's panel on that page if closed} */
   function createSnap(deps) {
     var chrome = deps.chrome;
     var K = deps.crop;
     var T = deps.tools;
     var later = deps.later || setTimeout;
-    // The pictures kept for one jot: { id, tabId, url, title, images:
-    // [{png, box}], context }, one collection per box mode, under
-    // heddyBox:<tabId>:<collection id> in chrome.storage.session, so a
-    // service-worker restart mid-collection loses nothing (four 1 MB PNGs as
-    // base64 fit its 10 MB). `cache` mirrors it. One page only (D33): a
-    // different address drops them; so do sending, Esc and closing the tab.
-    var session = chrome.storage && chrome.storage.session;
-    var cache = {};
     var pressGate = {};
-    // Tabs whose kept pictures were dropped by a navigation, until it loads.
-    var droppedOn = {};
-
-    function keyOf(tabId, id) {
-      return BOX_PREFIX + tabId + ':' + id;
-    }
-
-    function newId() {
-      return String(deps.randomUUID ? deps.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).toLowerCase();
-    }
-
-    /** The collection, from the cache or (after a restart) from storage. */
-    function load(tabId, id) {
-      if (!COLLECTION_ID.test(String(id))) return Promise.resolve(null);
-      var k = keyOf(tabId, id);
-      if (Object.prototype.hasOwnProperty.call(cache, k)) return Promise.resolve(cache[k]);
-      return Promise.resolve()
-        .then(function () { return session.get(k); })
-        .then(function (got) {
-          var c = got && got[k];
-          c = c && c.id === id && c.tabId === tabId && Array.isArray(c.images) ? c : null;
-          cache[k] = c;
-          return c;
-        }, function () { return null; });
-    }
-
-    function save(c) {
-      var k = keyOf(c.tabId, c.id);
-      cache[k] = c;
-      var o = {};
-      o[k] = c;
-      return Promise.resolve().then(function () { return session.set(o); }).catch(function () {});
-    }
-
-    /** Forget every collection of a tab. Resolves to the ones forgotten. */
-    function dropTab(tabId, keep) {
-      var prefix = BOX_PREFIX + tabId + ':';
-      var dropped = [];
-      Object.keys(cache).forEach(function (k) {
-        if (k.indexOf(prefix) !== 0 || (keep && cache[k] && keep(cache[k]))) return;
-        if (cache[k]) dropped.push(cache[k]);
-        delete cache[k];
-      });
-      return Promise.resolve()
-        .then(function () { return session.get(null); })
-        .then(function (all) {
-          var keys = Object.keys(all || {}).filter(function (k) { return k.indexOf(prefix) === 0 && !(keep && keep(all[k])); });
-          keys.forEach(function (k) {
-            if (all[k] && !dropped.some(function (d) { return d.id === all[k].id; })) dropped.push(all[k]);
-          });
-          return keys.length ? session.remove(keys) : null;
-        })
-        .catch(function () {})
-        .then(function () { return dropped; });
-    }
-
-    function pageUrl(href) {
-      return T.cleanUrl(href);
-    }
 
     function capture(windowId) {
       function once() { return chrome.tabs.captureVisibleTab(windowId, { format: 'png' }); }
@@ -164,6 +90,8 @@
       });
     }
 
+    /** One box cut from a screenshot of the visible tab: {png, box}. Box
+     *  mode hides itself, the panel and the page's numbers first. */
     function cropOne(tab, rect, vw, vh) {
       var r = K.clampBox(rect, vw, vh);
       if (!r) return Promise.reject(new Error('too_small'));
@@ -173,73 +101,31 @@
     }
 
     /** Box mode in the tab, optionally with the box drawn on the image the
-     *  child right-clicked. */
+     *  child right-clicked. The pictures it keeps are cards (lib/cards.js). */
     function start(tab, opts) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
-      var id = newId();
-      return dropTab(tab.id)
+      return Promise.resolve()
         .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: BOX_FILES }); })
         .then(function () {
-          return chrome.tabs.sendMessage(tab.id, Object.assign({ type: 'heddy-box:start' }, opts || {}, { id: id }));
+          return chrome.tabs.sendMessage(tab.id, Object.assign({ type: 'heddy-box:start' }, opts || {}));
         })
         .then(function () { return { ok: true }; }, function () { return { ok: false }; });
     }
 
-    /** The whole visible tab, straight to the Jot it window. */
+    /** The panel opened (if it is closed), then box mode: what box mode
+     *  keeps lands as a card the child can see (D55). */
+    function withPanel(tab, opts) {
+      return Promise.resolve(deps.showPanel ? deps.showPanel(tab) : null)
+        .catch(function () {})
+        .then(function () { return start(tab, opts); });
+    }
+
+    /** The whole visible tab as the next picture card (a double click on the
+     *  snap icon, or Ctrl Shift K twice), as the Heddy menu's Whole visible
+     *  page does. Box mode stays on, so the child can save or add another. */
     function whole(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
-      return dropTab(tab.id)
-        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readViewport }); })
-        .then(function (res) {
-          var v = res && res[0] && res[0].result;
-          if (!v) throw new Error('no viewport');
-          return cropOne(tab, { x: 0, y: 0, w: v.vw, h: v.vh }, v.vw, v.vh);
-        })
-        .then(function (img) {
-          return deps.sender.box({ url: tab.url, title: tab.title, images: [img], context: '' }, { tabId: tab.id, windowId: tab.windowId });
-        })
-        .catch(function () { return { ok: false }; });
-    }
-
-    /** heddy-box:grab: keep one more box for this jot (or the only one). */
-    function grab(tab, m) {
-      var url = pageUrl(tab.url);
-      if (!url || !COLLECTION_ID.test(String(m.id))) return Promise.resolve({ ok: false, error: 'page' });
-      return load(tab.id, m.id).then(function (s) {
-        if (s && s.url !== url) {
-          // The page changed while collecting: drop everything (D33).
-          return dropTab(tab.id).then(function () { return { ok: false, error: 'page_changed' }; });
-        }
-        if (s && s.images.length >= K.MAX_IMAGES) return { ok: false, error: 'full' };
-        return cropOne(tab, m.rect, m.vw, m.vh).then(
-          function (img) {
-            var cur = s || { id: m.id, tabId: tab.id, url: url, title: tab.title, images: [], context: '' };
-            cur.images.push(img);
-            // The cover's caption is the jot's context.
-            if (cur.images.length === 1) cur.context = T.cleanText(m.context, T.MAX_CONTEXT);
-            return save(cur).then(function () { return { ok: true, n: cur.images.length }; });
-          },
-          function (e) { return { ok: false, error: e && (e.message === 'too_big' || e.message === 'too_small') ? e.message : 'capture' }; }
-        );
-      });
-    }
-
-    /** heddy-box:send: Jot it, Explain, Make a card or Ask Heddy on the
-     *  pictures kept. Explain and Make a card take one picture (D33). */
-    function send(tab, action, id) {
-      return load(tab.id, id).then(function (s) {
-        return dropTab(tab.id).then(function () { return sendCollection(tab, action, s); });
-      });
-    }
-
-    function sendCollection(tab, action, s) {
-      if (!s || !s.images.length) return Promise.resolve({ ok: false });
-      if (pageUrl(tab.url) !== s.url) return Promise.resolve({ ok: false, error: 'page_changed' });
-      var where = { tabId: tab.id, windowId: tab.windowId };
-      var input = { url: s.url, title: s.title, images: s.images, context: s.context };
-      if (action === 'jot') return deps.sender.box(input, where);
-      if (T.TOOLS.indexOf(action) < 0 || s.images.length > T.MAX_PICTURES[action]) return Promise.resolve({ ok: false });
-      return deps.sender.tool(Object.assign({ tool: action, quote: '' }, input), where);
+      return withPanel(tab, { whole: true, keep: true });
     }
 
     /** heddy-ui:tool from the words tray (lib/tools.js sendTool). The address
@@ -262,36 +148,22 @@
       var tab = own ? null : sender.tab;
       switch (message.type) {
         case 'heddy-ui:snap': {
-          // From the popup, which names the tab. Its panel is taken off the
-          // page first, so it is in neither box mode nor the screenshot.
+          // From the panel, which names the tab. Box mode leaves the panel
+          // open beside it (R5b): its cards fill as pictures are kept, and
+          // box mode hides it only for each screenshot. The whole tab takes
+          // the panel off the page first, so it is not in the picture.
           if (tab) return Promise.resolve({ ok: false });
-          var hide = deps.hidePanel || function () { return Promise.resolve(); };
           return chrome.tabs.get(message.tabId).then(function (t) {
-            return Promise.resolve(hide(t.id)).catch(function () {}).then(function () {
-              return message.mode === 'whole' ? whole(t) : start(t);
-            });
+            return message.mode === 'whole' ? start(t, { whole: true, keep: true }) : start(t);
           }, function () { return { ok: false }; });
         }
-        case 'heddy-box:grab':
-          if (!tab || sender.frameId) return Promise.resolve({ ok: false });
-          return grab(tab, message);
-        case 'heddy-box:send':
-          if (!tab || sender.frameId) return Promise.resolve({ ok: false });
-          return send(tab, message.action, message.id);
         case 'heddy-box:crop':
-          // Copy picture (› menu): the crop only, kept nowhere.
+          // Copy picture (the Heddy menu): the crop only, kept nowhere.
           if (!tab || sender.frameId) return Promise.resolve({ ok: false });
           return cropOne(tab, message.rect, message.vw, message.vh).then(
             function (img) { return { ok: true, png: img.png }; },
             function () { return { ok: false }; }
           );
-        case 'heddy-box:whole':
-          if (!tab || sender.frameId) return Promise.resolve({ ok: false });
-          return whole(tab);
-        case 'heddy-box:cancel':
-          // Only this box mode's pictures: a late Esc can't empty a newer one.
-          if (!tab) return Promise.resolve({ ok: true });
-          return dropTab(tab.id, function (c) { return c.id !== message.id; }).then(function () { return { ok: true }; });
         case 'heddy-ui:undo-card':
           // The "Card made" toast's Undo, from the page it showed on.
           if (!tab || !P.cardIdsOf(message.cardIds)) return Promise.resolve({ ok: false });
@@ -322,12 +194,14 @@
       return true;
     }
 
-    /** chrome.contextMenus.onClicked on an image. A picture inside a frame
-     *  starts box mode without a box: box mode runs in the top page only. */
+    /** chrome.contextMenus.onClicked on an image: "Add picture to Heddy".
+     *  The picture becomes the next card and box mode stays on beside the
+     *  panel. A picture inside a frame starts box mode without a box: box
+     *  mode runs in the top page only. */
     function menuClicked(info, tab) {
       if (!info || info.menuItemId !== MENU_ID || !tab) return false;
-      var opts = info.frameId ? {} : { srcUrl: typeof info.srcUrl === 'string' ? info.srcUrl : '' };
-      start(tab, opts);
+      var opts = info.frameId ? {} : { srcUrl: typeof info.srcUrl === 'string' ? info.srcUrl : '', keep: true };
+      withPanel(tab, opts);
       return true;
     }
 
@@ -340,55 +214,24 @@
         .catch(function () {});
     }
 
-    /** A tab that navigated or closed loses what it was collecting. */
-    function tabGone(tabId) {
-      delete droppedOn[tabId];
-      return dropTab(tabId);
-    }
-
-    /** The page navigated away while collecting: the kept pictures are
-     *  dropped (D33), and the new page says so in one line once it has
-     *  loaded. A same-page navigation (history.pushState) leaves box mode
-     *  running, and box mode says it itself. The line is best effort:
-     *  activeTab may not reach the new page. */
-    function tabUpdated(tabId, change) {
-      var first = Promise.resolve();
-      if (change && change.url) {
-        var to = pageUrl(change.url);
-        first = dropTab(tabId, function (c) { return c.url === to; }).then(function (gone) {
-          if (gone.some(function (c) { return c.images && c.images.length; })) droppedOn[tabId] = true;
-        });
-      }
-      return first.then(function () { return afterLoad(tabId, change); });
-    }
-
-    function afterLoad(tabId, change) {
-      if (droppedOn[tabId] && change && change.status === 'complete') {
-        delete droppedOn[tabId];
-        return Promise.resolve(deps.droppedText ? deps.droppedText() : '')
-          .then(function (text) {
-            return chrome.scripting.executeScript({ target: { tabId: tabId }, files: FONT_FILES })
-              .catch(function () {})
-              .then(function () { return chrome.scripting.executeScript({ target: { tabId: tabId }, func: showDroppedLine, args: [String(text || '')] }); });
-          })
-          .catch(function () {});
-      }
-      return Promise.resolve();
+    /** One line at the top of a page (the cards a navigation cleared).
+     *  Best effort: activeTab may not reach the new page. */
+    function showLine(tabId, text) {
+      return chrome.scripting.executeScript({ target: { tabId: tabId }, files: FONT_FILES })
+        .catch(function () {})
+        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tabId }, func: showDroppedLine, args: [String(text || '')] }); })
+        .catch(function () {});
     }
 
     return {
       start: start,
       whole: whole,
-      grab: grab,
-      send: send,
+      cropOne: cropOne,
+      showLine: showLine,
       internal: internal,
       command: command,
       menuClicked: menuClicked,
       installMenu: installMenu,
-      tabGone: tabGone,
-      tabUpdated: tabUpdated,
-      /** How many pictures a collection holds (resolves). */
-      kept: function (tabId, id) { return load(tabId, id).then(function (c) { return c ? c.images.length : 0; }); },
     };
   }
 
@@ -432,13 +275,13 @@
       }, function () {});
     }
 
-    // The popup closes once the background has the tab (box mode drawn, or
-    // the Jot it window opened), so the message is never cut off.
+    // Both leave the panel open beside box mode (R5b): its cards fill as
+    // pictures are kept, the whole tab among them.
     function go(mode) {
-      var close = opts.close || function () { root.close(); };
+      var done = function () { btn.removeAttribute('aria-pressed'); };
       Promise.resolve()
         .then(function () { return chromeApi.runtime.sendMessage({ type: 'heddy-ui:snap', mode: mode, tabId: opts.tab.id }); })
-        .then(close, close);
+        .then(done, done);
     }
     var gate = createGate({
       waitMs: DOUBLE_CLICK_MS,
@@ -460,7 +303,7 @@
     DOUBLE_PRESS_MS: DOUBLE_PRESS_MS,
     COMMAND: COMMAND,
     MENU_ID: MENU_ID,
-    BOX_PREFIX: BOX_PREFIX,
+    showDroppedLine: showDroppedLine,
     BOX_FILES: BOX_FILES,
     FONT_FILES: FONT_FILES,
     SNAP_ICON: SNAP_ICON,

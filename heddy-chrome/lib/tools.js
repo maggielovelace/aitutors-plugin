@@ -2,6 +2,8 @@
 // (PRD-v0.96.0 D15, D20 tool, D32, D33; artifact R3b · 03, R2 · 05b).
 //
 //   heddy:box  {v:1, cid, url, title, images:[{png, box}], context}   1–4 images → /capture/jot
+//              (the builder only: since Round 5 Heddy sends pictures as cards
+//              in heddy:save, lib/cards.js; the site keeps heddy:box for older installs)
 //   heddy:tool {v:1, cid, tool, url, title, quote, context, images?}
 //              explain → /capture/room, ask → /capture/room, card → /capture/card
 //              images: exactly 1 for explain and card, 1–4 for ask; quote is ''
@@ -134,17 +136,6 @@
    *  deps: {openCapture} */
   function createSender(deps) {
     return {
-      /** heddy:box → /capture/jot. */
-      box: function (input, where) {
-        var w = where || {};
-        return deps.openCapture({
-          page: pageFor('jot'),
-          kind: 'box',
-          windowId: w.windowId,
-          build: function (cid) { return buildBox(Object.assign({}, input, { cid: cid })); },
-          meta: { tabId: w.tabId, title: cleanText(input && input.title, MAX_TITLE) },
-        });
-      },
       /** Undo on the "Card made" toast: heddy:undo {cardIds} in a window
        *  that does not take focus (the owner's ruling, 2026-10-29). */
       undoCards: function (cardIds, where) {

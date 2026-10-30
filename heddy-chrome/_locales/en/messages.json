@@ -22,10 +22,8 @@
   "sitePageLine": { "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages." },
   "captureFailed": { "message": "Heddy couldn't open aitutors.me. Try again." },
 
-  "commandJot": { "message": "Jot the words you selected" },
-  "menuJotIt": { "message": "Jot it with Heddy" },
+  "commandJot": { "message": "Show Heddy's buttons for the words you selected" },
   "trayLabel": { "message": "Heddy: what to do with these words" },
-  "trayJotIt": { "message": "Jot it" },
   "trayMore": { "message": "More" },
   "menuCopy": { "message": "Copy" },
   "menuParagraph": { "message": "Select the whole paragraph" },
@@ -34,15 +32,10 @@
 
   "jHint": { "message": "jots the line being spoken" },
 
-  "popupJotIt": { "message": "Jot it" },
-  "clipWholePageInstead": { "message": "Save the whole page instead" },
   "clipThisPage": { "message": "Save page to Jotters" },
-  "selectSomeWords": { "message": "Select some words" },
-  "selectSomeWordsFor": { "message": "for Jot it" },
   "jotLineSpoken": { "message": "Jot the line being spoken" },
   "jotLineSpokenSub": { "message": "New video? It's added first." },
-  "firstTimePage": { "message": "Jot a line, or save a page to Jotters as a source" },
-  "cantReadPage": { "message": "Heddy can't read this page. Try it on a web page or a YouTube video." },
+  "firstTimePage": { "message": "Save words, pictures or a whole page to Jotters" },
   "pageEmpty": { "message": "This page has no text to save." },
 
   "toastNoteSaved": {
@@ -68,7 +61,6 @@
   },
   "toastClippedNoTitle": { "message": "Saved to Jotters" },
   "toastPageCut": { "message": "Heddy kept the first part of this page." },
-  "setShortcut": { "message": "Set a shortcut" },
 
   "toastInMyClips": { "message": "In My Clips" },
   "toastFrom": {
@@ -80,7 +72,7 @@
 
   "optionsTitle": { "message": "Heddy settings" },
   "optionsLanguage": { "message": "Language" },
-  "optionsLanguageHint": { "message": "For Heddy's buttons, popup and messages. The windows on aitutors.me follow the language you chose there." },
+  "optionsLanguageHint": { "message": "For Heddy's buttons, panel and messages. Pages on aitutors.me follow the language you chose there." },
   "optionsDevHeading": { "message": "For developers" },
   "optionsDevToggle": { "message": "Send captures to http://localhost:3000 instead of aitutors.me" },
   "optionsDevHint": { "message": "Only for building aitutors.me on your own computer. Leave this off." },
@@ -94,37 +86,124 @@
     "placeholders": { "key": { "content": "$1", "example": "Ctrl Shift K" } }
   },
   "cmdSnap": { "message": "Snap a picture (twice for the whole screen)" },
-  "menuJotPicture": { "message": "Jot this picture with Heddy" },
   "boxHintBefore": { "message": "Drag over a picture ·" },
   "boxHintAfter": { "message": "to stop" },
-  "boxCollecting": { "message": "Collecting for one jot ·" },
+  "boxCollecting": { "message": "Box mode ·" },
   "boxKept": {
     "message": "$N$ kept",
     "placeholders": { "n": { "content": "$1", "example": "2" } }
   },
-  "boxEscNone": { "message": "· Esc keeps none" },
   "boxWholePicture": { "message": "Whole picture · click to keep" },
   "boxKeptLabel": {
     "message": "$N$ · kept",
     "placeholders": { "n": { "content": "$1", "example": "1" } }
   },
-  "boxDropped": { "message": "The page changed, so the pictures you kept were dropped." },
+  "boxDropped": { "message": "The page changed, so the cards you collected were cleared." },
   "boxFailed": { "message": "Heddy couldn't take that picture. Try again." },
-  "trayJot": { "message": "Jot it" },
-  "trayJotN": {
-    "message": "Jot it · $N$",
-    "placeholders": { "n": { "content": "$1", "example": "3" } }
-  },
-  "trayAdd": { "message": "Add to this jot" },
   "trayExplain": { "message": "Explain" },
   "trayCard": { "message": "Make a card" },
   "trayAsk": { "message": "Ask Heddy" },
-  "trayOnePicture": { "message": "Explain and Make a card take one picture" },
-  "menuWholeScreen": { "message": "Snap the whole screen instead" },
   "menuCopyPicture": { "message": "Copy picture" },
   "menuCopied": { "message": "Copied" },
   "copyFailed": { "message": "Couldn't copy the picture." },
   "toastCardMade": { "message": "Card made" },
   "toastCardDeleted": { "message": "Card deleted." },
-  "toastCardUndoFailed": { "message": "Couldn't undo that card." }
+  "toastCardUndoFailed": { "message": "Couldn't undo that card." },
+
+  "saveToJotters": { "message": "Save to Jotters" },
+  "saveAndJot": { "message": "Save and jot now" },
+  "saveGoesTo": {
+    "message": "Goes to the left page of your \"$TITLE$\" Jotter. You can jot it there.",
+    "placeholders": { "title": { "content": "$1", "example": "Sparx Science – Home" } }
+  },
+  "saveGoesToNoTitle": { "message": "Goes to the left page of this page's Jotter. You can jot it there." },
+  "savePageToo": { "message": "Save the whole page too" },
+  "cardsHeading": { "message": "In this save" },
+  "cardsSnippet": { "message": "1 snippet" },
+  "cardsSnippets": {
+    "message": "$N$ snippets",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "cardsPicture": { "message": "1 picture" },
+  "cardsPictures": {
+    "message": "$N$ pictures",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "addText": { "message": "+ Text" },
+  "addPicture": { "message": "+ Picture" },
+  "cardPictureLabel": { "message": "Picture" },
+  "cardRemove": {
+    "message": "Remove card $N$",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "cardsSelectFirst": { "message": "Select some words on the page, then tap + Text." },
+  "cardsSame": {
+    "message": "Those words are already card $N$.",
+    "placeholders": { "n": { "content": "$1", "example": "2" } }
+  },
+  "cardsFullText": { "message": "Heddy keeps up to 10 snippets from one page." },
+  "cardsFullPictures": { "message": "Heddy keeps up to 4 pictures from one page." },
+  "toolsOnCard1": { "message": "On card 1" },
+  "barHeddy": { "message": "Heddy ▾" },
+  "menuExplainPicture": { "message": "Explain this picture" },
+  "menuAskAbout": { "message": "Ask Heddy about it" },
+  "menuWholePage": { "message": "Whole visible page" },
+  "boxEscDone": { "message": "· Esc to stop" },
+  "toastNoCaptions": { "message": "Heddy needs captions to help with this video, and this one has none." },
+
+  "kindChrome": { "message": "Chrome page" },
+  "kindNewTab": { "message": "New tab" },
+  "kindSettings": { "message": "Chrome settings" },
+  "kindExtensions": { "message": "Extensions" },
+  "kindExtension": { "message": "Another extension" },
+  "kindChromeLine": { "message": "Nothing to read here." },
+  "kindChromeSub": { "message": "Open a web page or a YouTube video, then click me." },
+  "kindStore": { "message": "Chrome Web Store" },
+  "kindStoreLine": { "message": "Chrome keeps Heddy out of the Web Store." },
+  "kindStoreSub": { "message": "Heddy can't read or save this page. Try another page." },
+  "kindHeddy": { "message": "Heddy page" },
+  "kindHeddySettings": { "message": "Heddy settings" },
+  "kindHeddyLine": { "message": "This is one of Heddy's own pages." },
+  "kindHeddySub": { "message": "Open a web page or a YouTube video, then click me." },
+  "kindSource": { "message": "Page source" },
+  "kindSourceLine": { "message": "Heddy can't save a page's source code." },
+  "kindSourceSub": { "message": "Open the page itself, then click me." },
+  "kindFile": { "message": "PDF file" },
+  "kindFileLine": { "message": "Heddy can't save this PDF yet." },
+  "kindFileSub": { "message": "Upload it to Jotters instead: My Jotters › Add a PDF." },
+  "kindLocalFile": { "message": "File on this computer" },
+  "kindLocalLine": { "message": "Heddy can't read files on this computer." },
+  "kindLocalSub": { "message": "Open it on the web, or upload a PDF to Jotters." },
+  "kindOther": { "message": "This page" },
+  "kindOtherLine": { "message": "Heddy can't read this page." },
+  "kindOtherSub": { "message": "Try another web page or a YouTube video." },
+  "whoYear": {
+    "message": "Year $N$",
+    "placeholders": { "n": { "content": "$1", "example": "8" } }
+  },
+  "whoOpenStudy": { "message": "Open my Study" },
+  "whoSignInToSave": { "message": "Sign in to save with Heddy" },
+  "whoSignIn": { "message": "Sign in" },
+  "whoImNew": { "message": "I'm new" },
+  "whoGrownUp": { "message": "Signed in as a grown-up" },
+  "whoOpenDashboard": { "message": "Open my dashboard" },
+  "tileJotters": { "message": "My Jotters" },
+  "tileClips": { "message": "My Clips" },
+  "tileStudy": { "message": "My Study" },
+  "passEyebrow": { "message": "aitutors.me · Study pass" },
+  "passNotSignedIn": { "message": "Not signed in" },
+  "passSavesTo": { "message": "Heddy saves to your Jotters and My Clips on aitutors.me." },
+  "passGrownUpLine": { "message": "Heddy saves for a child's account. On your child's computer, sign them in to use it." },
+  "passSwitch": { "message": "Not you? Switch" },
+  "passMakeAccount": { "message": "I'm new: make my account" },
+  "passParent": { "message": "I'm a parent" },
+  "aboutHeading": { "message": "About Heddy" },
+  "aboutVersion": { "message": "Version" },
+  "aboutId": { "message": "Extension ID" },
+  "aboutCopy": { "message": "Copy" },
+  "aboutCopied": { "message": "Copied" },
+  "aboutPrivacy": { "message": "Privacy" },
+  "aboutPrivacyLink": { "message": "What Heddy reads, and when" },
+  "trayAddCard": { "message": "+ Add" },
+  "menuAddPicture": { "message": "Add picture to Heddy" }
 }

@@ -8,8 +8,12 @@
 //   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, tEnd?}        J on YouTube
 //   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId, jotterId?}            Undo on the toast
 //   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
-//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Save page to Jotters
-//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?}
+//   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Save page to Jotters (older builds)
+//   Heddy → page   {type:'heddy:save',   v:1, cid, url, title, then, items}     Save to Jotters (lib/cards.js)
+//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?, saveIds?, title?}
+//
+// heddy:save's result names the saves it made (`saveIds`) and the Jotter's
+// `title`; a refusal of a clip may be 'no_captions' (D59).
 //
 // `tEnd` on heddy:moment is the player time of the LAST J in a chain of
 // presses each within 2.5 s of the one before (PRD-v0.97.0 D11); `t` is the
@@ -235,6 +239,13 @@
     return x.map(function (id) { return id.toLowerCase(); });
   }
 
+  /** 1–15 save ids (UUIDs), lowercased, or null. */
+  var MAX_SAVE_IDS = 15;
+  function saveIdsOf(x) {
+    if (!Array.isArray(x) || x.length < 1 || x.length > MAX_SAVE_IDS || !x.every(isCaptureId)) return null;
+    return x.map(function (id) { return id.toLowerCase(); });
+  }
+
   function parseExternal(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
     if (data.v !== PROTOCOL_VERSION || !isCaptureId(data.cid)) return null;
@@ -257,6 +268,9 @@
         jotterId: isCaptureId(data.jotterId) ? data.jotterId.toLowerCase() : null,
         // Make a card (Phase 3): the cards Keep card made, for the toast's Undo.
         cardIds: cardIdsOf(data.cardIds),
+        // heddy:save (Round 5): the saves made, and the Jotter's title for the toast.
+        saveIds: saveIdsOf(data.saveIds),
+        title: typeof data.title === 'string' && flat(data.title) ? flat(data.title).slice(0, MAX_TITLE) : null,
       };
     }
     return null;
@@ -296,6 +310,7 @@
     pageUrl: pageUrl,
     contextOf: contextOf,
     cardIdsOf: cardIdsOf,
+    saveIdsOf: saveIdsOf,
     MAX_CARD_IDS: MAX_CARD_IDS,
     utf8Bytes: utf8Bytes,
     cutMarkdown: cutMarkdown,

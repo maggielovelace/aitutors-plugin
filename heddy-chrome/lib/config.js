@@ -11,6 +11,9 @@
   var DEV_KEY = 'devOrigin';
   var START_KEY = 'startChoice';
   var FIRST_RUN_KEY = 'seenFirstRun';
+  // About Heddy's privacy link (D60): PRIVACY.md in this public repository,
+  // the same page the Web Store listing names.
+  var PRIVACY_URL = 'https://github.com/maggielovelace/aitutors-plugin/blob/main/heddy-chrome/PRIVACY.md';
 
   // The capture window (artifact R2 · F1): a Chrome popup window, 420 × 576,
   // 44 px in from the right of the browser window and 150 px down from its top.
@@ -79,6 +82,7 @@
     DEV_KEY: DEV_KEY,
     START_KEY: START_KEY,
     FIRST_RUN_KEY: FIRST_RUN_KEY,
+    PRIVACY_URL: PRIVACY_URL,
     WINDOW: WINDOW,
     captureOrigin: captureOrigin,
     allowedOrigins: allowedOrigins,

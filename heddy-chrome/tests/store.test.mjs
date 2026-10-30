@@ -40,9 +40,10 @@ for (const { file, lead } of LISTINGS) {
 
 test('the English listing names every tool that shipped, and the for-schools line', () => {
   const d = between(read('store/listing.en.md'), 'description');
-  for (const s of ['Watch with Heddy', 'Add to My Clips', 'line being spoken', 'Jot it', 'Explain', 'Make a card', 'Ask Heddy', 'Save page to Jotters', 'Snap a picture', 'up to four pictures', 'Copy picture', 'Undo', 'Open in Jotter', 'until you tap Keep', 'no network call', 'only when you ask', 'FOR SCHOOLS']) {
+  for (const s of ['Watch with Heddy', 'Add to My Clips', 'line being spoken', 'Save to Jotters', 'Save and jot now', '+ Text', 'Add picture to Heddy', 'Explain', 'Make a card', 'Ask Heddy', 'Save page to Jotters', 'Snap a picture', 'up to four pictures', 'Copy picture', 'Undo', 'Open in Jotter', 'until you tap Keep', 'only request of its own', 'keeps nothing it hears', 'only when you ask', 'FOR SCHOOLS']) {
     assert.ok(d.includes(s), `missing: ${s}`);
   }
+  assert.doesNotMatch(d, /Jot it with Heddy|Jot this picture with Heddy/, 'Round 5: Heddy writes no jot from a page');
   assert.match(read('store/listing.en.md'), /\| Category \| Education \|/);
 });
 
@@ -88,7 +89,7 @@ test('website content is declared Yes (owner, 2026-10-30), with no fallback, and
   const src = read('store/privacy-answers.md');
   assert.match(src, /^\| Website content \| \*\*Yes\*\* \|$/m);
   assert.doesNotMatch(src, /If the reviewer/);
-  for (const k of ['Jot it', 'Save page to Jotters', 'Snap a picture', 'Ask Heddy', 'only to aitutors.me', 'never sold']) assert.ok(src.includes(k), k);
+  for (const k of ['Save to Jotters', 'Save page to Jotters', 'Snap a picture', 'Ask Heddy', 'only to aitutors.me', 'never sold']) assert.ok(src.includes(k), k);
   assert.match(read('PRIVACY.md'), /declared as \*\*website content\*\*/);
   assert.match(read('README.zh-CN.md'), /申报为「网站内容」/);
 });

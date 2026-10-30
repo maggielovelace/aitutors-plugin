@@ -1,23 +1,32 @@
-// content/box-mode.js — box mode on any page (PRD-v0.96.0 D30, D33; artifact
-// R3b · 00 P2 "snap, then tighten", R3b · 01, R3b · 04).
+// content/box-mode.js — box mode on any page (PRD-v0.96.0 D30, D33, D55, D58;
+// artifact R3b · 00 P2 "snap, then tighten", R3b · 01, R5b · C).
 //
-// Injected by the background on the child's gesture (activeTab): the popup's
-// Snap a picture icon, Ctrl Shift K, or "Jot this picture with Heddy" on an
-// image. The page dims; pictures under the pointer get an outline and one
-// click takes the whole picture; a drag draws a free box with four corner
-// handles, movable and resizable until a tool is tapped; under 24 × 24 is
-// ignored; Esc leaves keeping nothing. The tray under the box is the desk's:
-// Jot it (the one filled button), Explain, Make a card, Ask Heddy, ›.
+// Injected by the background on the child's gesture (activeTab): the panel's
+// + Picture or Snap a picture icon, Ctrl Shift K, or "Add picture to Heddy"
+// on an image (which keeps that picture as a card at once, as the whole-tab
+// press keeps the whole visible tab). The page dims; pictures under the pointer get an
+// outline and one click takes the whole picture; a drag draws a free box with
+// four corner handles, movable and resizable until a button is tapped; under
+// 24 × 24 is ignored; Esc leaves.
 //
-// Up to 4 pictures for one jot, from this page only (D33): "Add to this jot"
-// keeps the box (green, numbered, locked) and Jot it counts them; with two or
-// more, Explain and Make a card dim; if the page navigates, the kept boxes are
-// dropped with a one-line notice.
+// The bar under the box has three buttons (D58, R5b · C):
+//   Save to Jotters (gold)  every card in the panel, plus this box, to the
+//                           Jotter's left page (lib/cards.js, heddy:save)
+//   + Picture               keeps this box as the next numbered card and
+//                           leaves box mode on for another; hidden at 4
+//   Heddy ▾                 Explain this picture, Make a card, Ask Heddy
+//                           about it, then Copy picture and Whole visible page
 //
-// Nothing here reads pixels. Each kept box is cut by the background from a
-// screenshot of the visible tab, taken with this overlay hidden. Every string
-// from the page (a caption, alt text) is read as text and only ever sent as
-// the jot's context; nothing from the page is drawn here.
+// Kept boxes are cards: the page's card layer (content/cards-layer.js) draws
+// them green with their card number, and the panel stays open beside box
+// mode with the same numbers. Up to 4 pictures from one page (D33's limit,
+// Vercel's 4.5 MB request cap); another page clears them.
+//
+// Nothing here reads pixels. Each box is cut by the background from a
+// screenshot of the visible tab, taken with this overlay, the panel and the
+// page's numbers hidden. Every string from the page (a caption, alt text, the
+// words below) is read as text and only ever sent as a card's context; nothing
+// from the page is drawn here.
 (function (root) {
   var MIN_BOX = 24;
   var MIN_PICTURE = 48;
@@ -31,19 +40,17 @@
 
   // ─── pure rules (tested in tests/box-mode.test.mjs) ────────────────────────
 
-  /** What the tray shows. kept: boxes already kept; current: a box drawn and
-   *  not yet kept. n is what Jot it would save. */
-  function trayModel(kept, current) {
-    var n = kept + (current ? 1 : 0);
+  /** What the bar shows. images: picture cards already kept from this page;
+   *  current: a box drawn and not yet kept. */
+  function barModel(images, current) {
     return {
-      n: n,
-      // "Jot it · N" once there is more than one (R3b · 04); "Jot it" alone.
-      count: n >= 2 ? n : null,
-      // Add keeps the current box; the 4th box hides it (R3b · 04).
-      showAdd: !!current && kept < MAX_PICTURES - 1,
-      // Explain and Make a card are one picture each (D33).
-      single: n === 1,
-      collecting: kept > 0,
+      // + Picture keeps the current box; at 4 pictures it is hidden (D58).
+      showPlus: !!current && images < MAX_PICTURES,
+      // At 4 pictures no fifth box is drawn.
+      canDraw: images < MAX_PICTURES,
+      // The bar shows under the box, or under the last kept one.
+      showBar: !!current || images > 0,
+      collecting: images > 0,
     };
   }
 
@@ -95,22 +102,34 @@
     return s.length > max ? s.slice(s.length - max).trim() : s;
   }
 
+  /** The first `max` characters of a run of text, as one line. */
+  function firstWords(text, max) {
+    return String(text || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+  }
+
   /** The address without its #fragment: "the same page" (D33). */
   function samePageKey(href) {
     var i = String(href || '').indexOf('#');
     return i < 0 ? String(href || '') : String(href).slice(0, i);
   }
 
-  /** The › menu's rows (owner, 2026-10-29): the whole screen instead, and
-   *  Copy picture, which needs a box to copy. */
-  function menuRows(kept, current) {
+  /** The Heddy ▾ menu (D58, R5b · C): the three ways to understand the
+   *  picture, a rule, then Copy picture and Whole visible page. Copy needs a
+   *  box; Whole visible page needs room for one more picture. */
+  function menuRows(images, current) {
+    var any = !!current || images > 0;
     return [
-      { act: 'whole', label: 'menuWholeScreen' },
-      { act: 'copy', label: 'menuCopyPicture', disabled: !current && !kept },
+      { act: 'explain', label: 'menuExplainPicture', icon: 'search', disabled: !any },
+      { act: 'card', label: 'trayCard', icon: 'star', disabled: !any },
+      { act: 'ask', label: 'menuAskAbout', icon: 'quill', disabled: !any },
+      { sep: true },
+      { act: 'copy', label: 'menuCopyPicture', icon: 'page', disabled: !any },
+      { act: 'whole', label: 'menuWholePage', icon: 'crop', disabled: images >= MAX_PICTURES },
     ];
   }
 
-  /** What Copy picture copies: the box being drawn, else the latest kept. */
+  /** What Copy picture and the Heddy menu act on: the box being drawn, else
+   *  the last picture kept. `kept` are rects (page coordinates). */
   function copyTarget(kept, current) {
     return current || (kept && kept.length ? kept[kept.length - 1] : null);
   }
@@ -144,13 +163,14 @@
     MIN_BOX: MIN_BOX,
     MIN_PICTURE: MIN_PICTURE,
     MAX_PICTURES: MAX_PICTURES,
-    trayModel: trayModel,
+    barModel: barModel,
     rectFrom: rectFrom,
     bigEnough: bigEnough,
     resize: resize,
     moveWithin: moveWithin,
     isPicture: isPicture,
     lastSentence: lastSentence,
+    firstWords: firstWords,
     samePageKey: samePageKey,
     menuRows: menuRows,
     copyTarget: copyTarget,
@@ -169,15 +189,18 @@
 
   var I = root.HeddyI18n;
   var M = root.HeddyMarks;
+  var POS = root.HeddyPos;
   var tr = I.translator('en');
 
-  // The desk tray's line icons (the artifact's sprite), as constant SVG.
+  // The bar's line icons (the artifact's sprite: i-save, i-crop, i-search,
+  // i-star, i-quill, i-page), as constant SVG.
   var ICONS = {
-    pen: '<path d="M5 19 L6 15 L15.5 5.5 a2 2 0 0 1 3 3 L9 18 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13.5 7.5 l3 3" stroke="currentColor" stroke-width="1.8"/>',
+    save: '<path d="M4 7 H15 M4 12 H15 M4 17 H11 M18 13 V21 M14 17 H22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    crop: '<path d="M7 2.5 V17 H21.5 M2.5 7 H17 V21.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     search: '<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15 L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
     star: '<path d="M12 3.5 L14.6 9 L20.5 9.6 L16 13.6 L17.3 19.5 L12 16.5 L6.7 19.5 L8 13.6 L3.5 9.6 L9.4 9 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
-    save: '<path d="M4 7 H15 M4 12 H15 M4 17 H11 M18 13 V21 M14 17 H22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-    chev: '<path d="M8 10 L12 14 L16 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+    quill: '<path d="M19.5 4.5c-6 .5-10.5 4-12.5 10l-1.5 5 5-1.5c6-2 9-7 9-13.5z" fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5.5 19.5 14 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="15.4" cy="9.2" r="1.1" fill="currentColor"/>',
+    page: '<path d="M6 3.5 H14 L18.5 8 V20.5 H6 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3.5 V8 H18.5 M9 12 H15.5 M9 15.5 H15.5" stroke="currentColor" stroke-width="1.6" fill="none"/>',
   };
   function icon(name) {
     return '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONS[name] + '</svg>';
@@ -194,13 +217,10 @@
     '.o{position:absolute;box-sizing:border-box;border:2px dashed #5b5fd6;border-radius:6px;opacity:.55;pointer-events:none}' +
     '.snap{position:absolute;box-sizing:border-box;border:2px solid #5b5fd6;box-shadow:0 0 0 9999px rgba(0,20,45,.12);pointer-events:none}' +
     '.box{position:absolute;border:2px solid #5b5fd6;box-shadow:0 0 0 9999px rgba(0,20,45,.18);background:transparent;cursor:move}' +
-    '.box.free{box-shadow:none}' +
     '.box i{position:absolute;width:10px;height:10px;background:#fff;border:2px solid #5b5fd6;border-radius:2px}' +
     '.box i.nw{left:-6px;top:-6px;cursor:nwse-resize}.box i.ne{right:-6px;top:-6px;cursor:nesw-resize}' +
     '.box i.sw{left:-6px;bottom:-6px;cursor:nesw-resize}.box i.se{right:-6px;bottom:-6px;cursor:nwse-resize}' +
-    '.kept{position:absolute;border:2px solid #2f8a57;pointer-events:none}' +
     '.lbl{position:absolute;font:600 11px ' + MONO + ';color:#fff;background:#5b5fd6;border-radius:5px;padding:2px 6px;pointer-events:none;white-space:nowrap}' +
-    '.lbl.k{background:#2f8a57}' +
     '.hint{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:#002147;color:#fff;border-radius:999px;padding:7px 14px;font:600 12.5px ' + SANS + ';white-space:nowrap;pointer-events:none}' +
     '.hint b{font:700 11px ' + MONO + ';background:rgba(255,255,255,.18);border-radius:5px;padding:1px 6px}' +
     '.hint.bottom{bottom:14px}.hint.top{top:12px}' +
@@ -208,26 +228,26 @@
     '.tray>button{all:unset;box-sizing:border-box;display:grid;justify-items:center;align-content:center;gap:5px;min-width:76px;height:50px;padding:0 8px;border-radius:9px;font:700 11.5px ' + SANS + ';cursor:pointer}' +
     '.tray>button:hover,.tray>button[aria-expanded="true"]{background:rgba(255,255,255,.16)}' +
     '.tray>button.pri{background:#DC9400;color:#002147}.tray>button.pri:hover{filter:brightness(1.06)}' +
-    '.tray>button.more{min-width:36px}' +
     '.tray>button[aria-disabled="true"]{opacity:.45;cursor:default;background:transparent}' +
     '.tray>button:focus-visible{outline:2px solid #DC9400;outline-offset:1px}' +
     '.tray>i{width:1px;background:rgba(255,255,255,.3);margin:9px 2px}' +
     '.hf{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center}' +
-    '.menu{position:absolute;display:grid;min-width:220px;padding:5px;background:#fff;border:1px solid #d6d9de;border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.2)}' +
-    '.menu button{all:unset;display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:5px;font:500 13px ' + SANS + ';color:#202124;cursor:pointer}' +
-    '.menu button:hover,.menu button:focus-visible{background:#e8f0fe}' +
+    '.menu{position:absolute;display:grid;min-width:210px;padding:5px;background:#fff;border:1px solid #d6d9de;border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.2)}' +
+    '.menu button{all:unset;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:6px;font:500 13px ' + SANS + ';color:#202124;cursor:pointer}' +
+    '.menu button svg{color:#5d6878}' +
+    '.menu button:hover,.menu button:focus-visible{background:#eef0fb}' +
     '.menu button[aria-disabled="true"]{color:#9aa0a6;cursor:default;background:transparent}' +
+    '.menu hr{all:unset;display:block;height:1px;background:#e3e5e8;margin:3px 4px}' +
     '[hidden]{display:none!important}';
 
   var host = null, shadow = null, els = null;
   var lang = 'en';
-  var kept = []; // [{x, y, w, h}] in page (document) coordinates, locked
+  var kept = []; // [{id, n, rect}] picture cards from this page, rect in page coordinates
   var current = null; // the box being drawn, page coordinates
   var hover = null; // {el, rect (viewport)} the picture under the pointer
   var drag = null; // {mode, x0, y0, start, corner}
   var busy = false;
   var pageKey = '';
-  var collection = ''; // the background's id for this box mode's pictures
   var checkTimer = null, noteTimer = null, scanTimer = null;
 
   function send(message) {
@@ -254,6 +274,27 @@
     return new Promise(function (resolve) {
       (function step(k) { if (k <= 0) return resolve(); requestAnimationFrame(function () { step(k - 1); }); })(n);
     });
+  }
+
+  /** Box mode, the panel and the page's card numbers leave the screen for a
+   *  screenshot, and come back after it. */
+  function away(on) {
+    if (host) host.classList.toggle('away', on);
+    if (root.__heddyCards) root.__heddyCards.away(on);
+    if (root.__heddyPanel && root.__heddyPanel.away) root.__heddyPanel.away(on);
+  }
+
+  /** The right edge of the page left free: the panel's left edge while it
+   *  is open beside box mode, else the window's. The bar, its menu and the
+   *  pill keep left of it, so the panel never covers them. */
+  function freeRight() {
+    var panel = root.__heddyPanel && root.__heddyPanel.host && root.__heddyPanel.host();
+    var r = panel && panel.isConnected ? panel.getBoundingClientRect() : null;
+    return r && r.width > 0 && r.left > 240 ? r.left - 4 : vw();
+  }
+
+  function rects() {
+    return kept.map(function (k) { return k.rect; });
   }
 
   // ─── finding pictures ──────────────────────────────────────────────────────
@@ -342,31 +383,50 @@
     return list[0] ? contextFor(list[0]) : '';
   }
 
+  // ─── where a picture sits on the page (lib/pos.js) ─────────────────────────
+
+  /** A kept box's place: pos (the last text block starting above its top
+   *  edge, offset 0), the words before it (its caption, alt text, or the
+   *  sentence before) and after it (the first block below it). */
+  function placeOf(pageRect, el, viewRect) {
+    var body = document.body || document.documentElement;
+    var blocks = POS.textBlocks(body);
+    var sy = window.scrollY;
+    var tops = blocks.map(function (b) { return b.getBoundingClientRect().top + sy; });
+    var next = POS.imageAfterIndex(tops, pageRect.y + pageRect.h);
+    return {
+      pos: { block: POS.imageBlock(tops, pageRect.y), offset: 0 },
+      before: el && el.isConnected ? contextFor(el) : contextAt(viewRect),
+      after: next >= 0 ? firstWords(blocks[next].textContent, MAX_CONTEXT) : '',
+    };
+  }
+
   // ─── drawing ───────────────────────────────────────────────────────────────
 
   function build() {
     host = document.createElement('heddy-box-mode');
     shadow = host.attachShadow({ mode: 'closed' });
+    var menu = menuRows(0, null).map(function (row) {
+      if (row.sep) return '<hr>';
+      return '<button type="button" role="menuitem" data-act="' + row.act + '">' + icon(row.icon) + '<span></span></button>';
+    }).join('');
     shadow.innerHTML =
       '<style>' + CSS + '</style>' + M.sprite(['h-eyes']) +
-      '<div class="layer"></div><div class="dim"></div><div class="outs"></div><div class="keeps"></div>' +
+      '<div class="layer"></div><div class="dim"></div><div class="outs"></div>' +
       '<div class="snap" hidden></div><span class="lbl snaplbl" hidden></span>' +
       '<div class="box" hidden><i class="nw"></i><i class="ne"></i><i class="sw"></i><i class="se"></i></div>' +
       '<span class="lbl size" hidden></span>' +
       '<span class="hint bottom" role="status"></span>' +
       '<span class="hint top note" role="status" hidden></span>' +
       '<div class="tray" role="toolbar" hidden>' +
-      '<button type="button" class="pri" data-act="jot">' + icon('pen') + '<span></span></button>' +
-      '<button type="button" data-act="add">' + icon('save') + '<span></span></button>' +
-      '<button type="button" data-act="explain">' + icon('search') + '<span></span></button>' +
-      '<button type="button" data-act="card">' + icon('star') + '<span></span></button>' +
-      '<button type="button" data-act="ask"><span class="hf">' + M.use('h-eyes', 16) + '</span><span></span></button>' +
-      '<i></i><button type="button" class="more" data-act="more" aria-haspopup="menu" aria-expanded="false">' + icon('chev') + '</button>' +
+      '<button type="button" class="pri" data-act="save">' + icon('save') + '<span></span></button>' +
+      '<button type="button" data-act="plus">' + icon('crop') + '<span></span></button>' +
+      '<i></i><button type="button" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="hf">' + M.use('h-eyes', 16) + '</span><span></span></button>' +
       '</div>' +
-      '<div class="menu" role="menu" hidden><button type="button" role="menuitem" data-act="whole"></button><button type="button" role="menuitem" data-act="copy"></button></div>';
+      '<div class="menu" role="menu" hidden>' + menu + '</div>';
     var q = function (s) { return shadow.querySelector(s); };
     els = {
-      layer: q('.layer'), dim: q('.dim'), outs: q('.outs'), keeps: q('.keeps'),
+      layer: q('.layer'), dim: q('.dim'), outs: q('.outs'),
       snap: q('.snap'), snapLbl: q('.snaplbl'), box: q('.box'), size: q('.size'),
       hint: q('.hint.bottom'), note: q('.note'), tray: q('.tray'), menu: q('.menu'),
       btn: {},
@@ -380,18 +440,19 @@
     shadow.addEventListener('pointercancel', up);
     els.tray.addEventListener('click', trayClick);
     els.menu.addEventListener('click', trayClick);
-    document.documentElement.appendChild(host);
+    // Under the panel, so the panel stays usable beside box mode (R5b);
+    // above the page's card numbers, which it dims like the page.
+    var de = document.documentElement;
+    var panel = root.__heddyPanel && root.__heddyPanel.host && root.__heddyPanel.host();
+    de.insertBefore(host, panel && panel.parentNode === de ? panel : null);
   }
 
   function labels() {
     var b = els.btn;
-    b.jot.querySelector('span').textContent = tr('trayJot');
-    b.add.querySelector('span').textContent = tr('trayAdd');
-    b.explain.querySelector('span').textContent = tr('trayExplain');
-    b.card.querySelector('span').textContent = tr('trayCard');
-    b.ask.querySelector('span:last-child').textContent = tr('trayAsk');
-    b.more.setAttribute('aria-label', tr('trayMore'));
-    menuRows(0, null).forEach(function (row) { b[row.act].textContent = tr(row.label); });
+    b.save.querySelector('span').textContent = tr('saveToJotters');
+    b.plus.querySelector('span').textContent = tr('addPicture');
+    b.heddy.querySelector('span:last-child').textContent = tr('barHeddy');
+    menuRows(0, null).forEach(function (row) { if (!row.sep) b[row.act].querySelector('span').textContent = tr(row.label); });
   }
 
   /** A pill made of text and one key, e.g. "Drag over a picture · [Esc] to stop". */
@@ -406,48 +467,26 @@
 
   function draw() {
     if (!host) return;
-    var model = trayModel(kept.length, current);
-    var w = vw(), h = vh();
+    var model = barModel(kept.length, current);
+    var w = freeRight(), h = vh();
 
-    // The dim: everywhere until a box cuts it out; none while collecting (R3b · 04).
+    // The dim: everywhere until a box cuts it out (the box's own shadow
+    // dims around it); none while collecting with no box drawn.
     els.dim.hidden = !!current || model.collecting;
-    els.box.classList.toggle('free', model.collecting);
 
-    // Kept boxes, green and numbered.
-    els.keeps.textContent = '';
-    kept.forEach(function (r, i) {
-      var v = toView(r);
-      var d = document.createElement('div');
-      d.className = 'kept';
-      place(d, v);
-      var l = document.createElement('span');
-      l.className = 'lbl k';
-      l.textContent = tr('boxKeptLabel', String(i + 1));
-      l.style.left = v.x + 'px';
-      l.style.top = (v.y - 22) + 'px';
-      els.keeps.appendChild(d);
-      els.keeps.appendChild(l);
-    });
-
-    // The box being drawn.
+    // The box being drawn, with its size above it (R5b).
     els.box.hidden = !current;
     els.size.hidden = !current;
     if (current) {
       var c = toView(current);
       place(els.box, c);
-      if (model.collecting) {
-        els.size.textContent = String(model.n);
-        els.size.style.left = (c.x + c.w + 6) + 'px';
-        els.size.style.top = (c.y + c.h / 2 - 9) + 'px';
-      } else {
-        els.size.textContent = Math.round(c.w) + ' × ' + Math.round(c.h);
-        els.size.style.left = c.x + 'px';
-        els.size.style.top = (c.y - 22) + 'px';
-      }
+      els.size.textContent = Math.round(c.w) + ' × ' + Math.round(c.h);
+      els.size.style.left = c.x + 'px';
+      els.size.style.top = (c.y - 22) + 'px';
     }
 
     // The picture under the pointer (P2), while nothing is being dragged.
-    var showSnap = !!hover && !drag;
+    var showSnap = !!hover && !drag && model.canDraw;
     els.snap.hidden = !showSnap;
     els.snapLbl.hidden = !showSnap;
     if (showSnap) {
@@ -457,47 +496,48 @@
       els.snapLbl.style.top = Math.max(0, hover.rect.top - 22) + 'px';
     }
 
-    // The hint, or the collecting pill.
+    // The hint, or the collecting pill: "Box mode · [1 kept] · Esc to stop".
     els.hint.className = 'hint ' + (model.collecting ? 'top' : 'bottom');
-    if (model.collecting) pill(els.hint, tr('boxCollecting'), tr('boxKept', String(kept.length)), tr('boxEscNone'));
+    els.hint.style.left = (w / 2) + 'px';
+    if (model.collecting) pill(els.hint, tr('boxCollecting'), tr('boxKept', String(kept.length)), tr('boxEscDone'));
     else pill(els.hint, tr('boxHintBefore'), 'Esc', tr('boxHintAfter'));
     // The notice takes the top line while it shows.
     els.hint.hidden = model.collecting && !els.note.hidden;
 
-    // The tray under the box (or under the last kept one).
-    var anchor = current || kept[kept.length - 1];
+    // The bar under the box (or under the last kept one).
+    var anchor = current || (kept.length ? kept[kept.length - 1].rect : null);
     els.tray.hidden = !anchor || !!drag || busy;
     if (!els.tray.hidden) {
       var b = els.btn;
-      b.jot.querySelector('span').textContent = model.count ? tr('trayJotN', String(model.count)) : tr('trayJot');
-      b.add.hidden = !model.showAdd;
-      [b.explain, b.card].forEach(function (x) {
-        x.setAttribute('aria-disabled', String(!model.single));
-        x.title = model.single ? '' : tr('trayOnePicture');
-      });
+      b.plus.hidden = !model.showPlus;
       var a = toView(anchor);
-      var tw = els.tray.offsetWidth || 420, th = els.tray.offsetHeight || 58;
+      var tw = els.tray.offsetWidth || 260, th = els.tray.offsetHeight || 58;
       var left = Math.max(8, Math.min(w - tw - 8, a.x));
       var top = a.y + a.h + 10;
       if (top + th > h - 8) top = a.y - th - 10;
       if (top < 8) top = Math.max(8, h - th - 56);
       els.tray.style.left = left + 'px';
       els.tray.style.top = top + 'px';
-      var copyRow = menuRows(kept.length, current)[1];
-      b.copy.setAttribute('aria-disabled', String(!!copyRow.disabled));
+      menuRows(kept.length, current).forEach(function (row) {
+        if (!row.sep) b[row.act].setAttribute('aria-disabled', String(!!row.disabled));
+      });
       if (!els.menu.hidden) {
-        els.menu.style.left = Math.max(8, Math.min(w - 230, left + tw - 220)) + 'px';
-        els.menu.style.top = (top + th + 6 + 44 > h ? top - 50 : top + th + 6) + 'px';
+        // Under the Heddy button, its left edge on the button's (R5b · C).
+        var mh = els.menu.offsetHeight || 230, mw = els.menu.offsetWidth || 220;
+        var mx = left + b.heddy.offsetLeft;
+        els.menu.style.left = Math.max(8, Math.min(w - mw - 8, mx)) + 'px';
+        els.menu.style.top = (top + th + 6 + mh > h ? top - mh - 6 : top + th + 6) + 'px';
       }
     } else {
       els.menu.hidden = true;
-      els.btn.more.setAttribute('aria-expanded', 'false');
+      els.btn.heddy.setAttribute('aria-expanded', 'false');
     }
   }
 
   function outline() {
     if (!host) return;
     els.outs.textContent = '';
+    if (!barModel(kept.length, current).canDraw) return;
     visiblePictures().forEach(function (r) {
       var o = document.createElement('div');
       o.className = 'o';
@@ -508,6 +548,7 @@
 
   function note(text) {
     els.note.textContent = text;
+    els.note.style.left = (freeRight() / 2) + 'px';
     els.note.hidden = false;
     clearTimeout(noteTimer);
     noteTimer = setTimeout(function () { if (els) { els.note.hidden = true; draw(); } }, NOTE_MS);
@@ -527,6 +568,7 @@
     var c = viewRectOf(current);
     if (corner && c) drag = { mode: 'resize', corner: corner, x0: x, y0: y, start: c };
     else if (c && e.currentTarget === els.box) drag = { mode: 'move', x0: x, y0: y, start: c };
+    else if (!barModel(kept.length, current).canDraw) { note(tr('cardsFullPictures')); return; }
     else drag = { mode: 'pending', x0: x, y0: y };
     try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
     draw();
@@ -537,7 +579,7 @@
     if (!drag) {
       // Over the tray or its menu, nothing on the page is outlined.
       var path = e.composedPath ? e.composedPath() : [];
-      var p = path.indexOf(els.tray) >= 0 || path.indexOf(els.menu) >= 0 ? null : pictureAt(x, y);
+      var p = path.indexOf(els.tray) >= 0 || path.indexOf(els.menu) >= 0 || !barModel(kept.length, current).canDraw ? null : pictureAt(x, y);
       var same = hover && p && hover.el === p.el;
       hover = p;
       if (!same) draw();
@@ -597,12 +639,12 @@
     return { x: r.left, y: r.top, w: r.width, h: r.height };
   }
 
-  // ─── the tray ──────────────────────────────────────────────────────────────
+  // ─── the bar ───────────────────────────────────────────────────────────────
 
   function closeMenu() {
     if (!els) return;
     els.menu.hidden = true;
-    els.btn.more.setAttribute('aria-expanded', 'false');
+    els.btn.heddy.setAttribute('aria-expanded', 'false');
   }
 
   function trayClick(e) {
@@ -611,47 +653,138 @@
     e.stopPropagation();
     var act = b.getAttribute('data-act');
     if (b.getAttribute('aria-disabled') === 'true') return;
-    if (act === 'more') {
+    if (act === 'heddy') {
       var open = els.menu.hidden;
       els.menu.hidden = !open;
       b.setAttribute('aria-expanded', String(open));
       return draw();
     }
     if (act !== 'copy') closeMenu();
-    if (act === 'add') return addCurrent();
-    if (act === 'whole') return wholeScreen();
+    if (act === 'plus') return keepCurrent();
+    if (act === 'save') return saveAll();
+    if (act === 'whole') return wholePage();
     if (act === 'copy') return copyPicture();
     return useTool(act);
   }
 
-  /** Cut the current box from a screenshot, with this overlay hidden so the
-   *  dim and the outlines are not in the picture. */
-  /** › Copy picture: the same crop the tools would send (same caps), cut
-   *  with this overlay hidden, written to the clipboard from this click. */
+  /** The box being drawn, as box mode sends it: the viewport rect to cut,
+   *  its page rect, and where it sits on the page. Null if too small. */
+  function boxMessage() {
+    var v = clampView(toView(current));
+    if (!bigEnough(v)) return null;
+    var page = toPage(v);
+    var at = placeOf(page, currentEl, v);
+    return { rect: v, vw: vw(), vh: vh(), page: page, pos: at.pos, before: at.before, after: at.after, context: at.before };
+  }
+
+  /** Send a message that cuts a screenshot, with box mode, the panel and
+   *  the page's numbers off the screen while it is taken. */
+  function withShot(message) {
+    busy = true;
+    away(true);
+    return frames(2)
+      .then(function () { return send(message); })
+      .then(function (reply) {
+        busy = false;
+        away(false);
+        return reply || { ok: false };
+      });
+  }
+
+  function failed(reply) {
+    draw();
+    if (reply && reply.error === 'full_images') note(tr('cardsFullPictures'));
+    else note(tr('boxFailed'));
+  }
+
+  /** + Picture: this box becomes the next numbered card; box mode stays on. */
+  function keepCurrent() {
+    if (!current || kept.length >= MAX_PICTURES) return Promise.resolve();
+    var m = boxMessage();
+    if (!m) return Promise.resolve();
+    return withShot(Object.assign({ type: 'heddy-box:keep' }, m)).then(function (reply) {
+      if (!host) return;
+      if (!reply.ok) return failed(reply);
+      kept.push({ id: reply.id, n: reply.n, rect: m.page });
+      current = null;
+      currentEl = null;
+      draw();
+      outline();
+    });
+  }
+
+  /** Save to Jotters (gold): every card, plus this box, in one heddy:save.
+   *  Box mode leaves once the window is open; the panel clears when the
+   *  site says they are saved. */
+  function saveAll() {
+    var m = current ? boxMessage() : null;
+    var message = { type: 'heddy-box:save', box: m && kept.length < MAX_PICTURES ? m : null };
+    var go = message.box ? withShot(message) : send(message).then(function (r) { return r || { ok: false }; });
+    busy = true;
+    draw();
+    go.then(function (reply) {
+      busy = false;
+      if (!host) return;
+      if (reply.ok) return close();
+      failed(reply);
+    });
+  }
+
+  /** Explain this picture, Make a card, Ask Heddy about it: on the box being
+   *  drawn (cut now, kept nowhere), else on the last picture kept. */
+  function useTool(act) {
+    var m = current ? boxMessage() : null;
+    var last = kept[kept.length - 1];
+    if (!m && !last) return;
+    var message = { type: 'heddy-box:tool', tool: act, box: m, cardId: m ? null : last.id };
+    var go = m ? withShot(message) : send(message).then(function (r) { return r || { ok: false }; });
+    busy = true;
+    draw();
+    go.then(function (reply) {
+      busy = false;
+      if (!host) return;
+      if (reply.ok) return close();
+      failed(reply);
+    });
+  }
+
+  /** Whole visible page: the box becomes the whole visible tab, to keep,
+   *  save or ask about like any other. */
+  function wholePage() {
+    if (kept.length >= MAX_PICTURES) return;
+    current = toPage({ x: 0, y: 0, w: vw(), h: vh() });
+    currentEl = null;
+    hover = null;
+    draw();
+  }
+
+  /** Copy picture: the same crop the tools would send (same caps), cut
+   *  with box mode off the screen, written to the clipboard from this click. */
   function copyPicture() {
-    var target = copyTarget(kept, current);
+    var target = copyTarget(rects(), current);
     var v = target && clampView(toView(target));
     var btn = els.btn.copy;
+    var label = btn.querySelector('span');
     if (!v || !bigEnough(v) || btn.getAttribute('aria-disabled') === 'true') return failCopy();
     busy = true;
-    host.classList.add('away');
+    away(true);
     var png = frames(2)
       .then(function () { return send({ type: 'heddy-box:crop', rect: v, vw: vw(), vh: vh() }); })
       .then(function (reply) {
         busy = false;
-        if (host) host.classList.remove('away');
+        away(false);
         if (!reply || !reply.ok || typeof reply.png !== 'string') throw new Error('no crop');
         return pngBlob(reply.png);
       });
     copyPng(navigator.clipboard, root.ClipboardItem, png).then(function (ok) {
       busy = false;
+      away(false);
       if (!host) return;
-      host.classList.remove('away');
       if (!ok) return failCopy();
-      btn.textContent = tr('menuCopied');
+      label.textContent = tr('menuCopied');
       setTimeout(function () {
         if (!els) return;
-        btn.textContent = tr('menuCopyPicture');
+        label.textContent = tr('menuCopyPicture');
         closeMenu();
         draw();
       }, pure.COPIED_MS);
@@ -664,76 +797,17 @@
     note(tr('copyFailed'));
   }
 
-  function grabCurrent() {
-    var v = clampView(toView(current));
-    if (!bigEnough(v)) return Promise.resolve({ ok: false, error: 'too_small' });
-    var ctx = currentEl && currentEl.isConnected ? contextFor(currentEl) : contextAt(v);
-    busy = true;
-    host.classList.add('away');
-    return frames(2)
-      .then(function () { return send({ type: 'heddy-box:grab', id: collection, rect: v, vw: vw(), vh: vh(), context: ctx }); })
-      .then(function (reply) {
-        busy = false;
-        if (host) host.classList.remove('away');
-        if (reply && reply.error === 'page_changed') dropKept();
-        return reply || { ok: false };
-      });
-  }
-
-  function addCurrent() {
-    if (!current || kept.length >= MAX_PICTURES - 1) return;
-    grabCurrent().then(function (reply) {
-      if (!reply.ok) { draw(); if (reply.error !== 'page_changed') note(tr('boxFailed')); return; }
-      kept.push(current);
-      current = null;
-      currentEl = null;
-      draw();
-    });
-  }
-
-  function useTool(act) {
-    var model = trayModel(kept.length, current);
-    if (!model.n || ((act === 'explain' || act === 'card') && !model.single)) return;
-    var step = current ? grabCurrent() : Promise.resolve({ ok: true });
-    step.then(function (reply) {
-      if (!reply.ok) { draw(); if (reply.error !== 'page_changed') note(tr('boxFailed')); return null; }
-      busy = true;
-      draw();
-      return send({ type: 'heddy-box:send', id: collection, action: act }).then(function (sent) {
-        busy = false;
-        if (sent && sent.ok) return close(false);
-        // The kept pictures went with the failed send; start again cleanly.
-        kept = [];
-        current = null;
-        draw();
-        note(tr('boxFailed'));
-      });
-    });
-  }
-
-  /** › → the whole visible tab instead (the kept boxes are dropped). */
-  function wholeScreen() {
-    close(true);
-    frames(2).then(function () { send({ type: 'heddy-box:whole' }); });
-  }
-
-  // ─── the same page only (D33) ──────────────────────────────────────────────
-
-  function dropKept() {
-    var had = kept.length;
-    kept = [];
-    current = null;
-    currentEl = null;
-    send({ type: 'heddy-box:cancel', id: collection });
-    draw();
-    if (had) note(tr('boxDropped'));
-  }
+  // ─── the same page only (D33, D55) ─────────────────────────────────────────
 
   function checkPage() {
     var k = samePageKey(location.href);
     if (k === pageKey) return;
     pageKey = k;
-    if (kept.length) dropKept();
+    // The background clears the cards; box mode forgets the boxes it kept.
+    kept = [];
+    current = null;
+    currentEl = null;
+    draw();
   }
 
   // ─── open and close ────────────────────────────────────────────────────────
@@ -743,7 +817,7 @@
     e.preventDefault();
     e.stopPropagation();
     if (els && !els.menu.hidden) return closeMenu();
-    close(true);
+    close();
   }
 
   var rescan = function () {
@@ -753,14 +827,15 @@
     scanTimer = setTimeout(outline, 120);
   };
 
-  /** Leave box mode. cancel: Esc, keeping nothing. */
-  function close(cancel) {
-    if (cancel) send({ type: 'heddy-box:cancel', id: collection });
+  /** Leave box mode. The pictures kept are cards: they stay in the panel. */
+  function close() {
     if (host) host.remove();
     host = shadow = els = null;
     kept = [];
     current = currentEl = hover = drag = null;
     busy = false;
+    away(false);
+    if (root.__heddyCards) root.__heddyCards.boxMode(false);
     clearInterval(checkTimer);
     clearTimeout(noteTimer);
     clearTimeout(scanTimer);
@@ -768,9 +843,8 @@
     window.removeEventListener('scroll', rescan, true);
     window.removeEventListener('resize', rescan);
     window.removeEventListener('popstate', checkPage);
-    window.removeEventListener('pagehide', closeQuiet);
+    window.removeEventListener('pagehide', close);
   }
-  function closeQuiet() { close(false); }
 
   /** The image the child right-clicked, by its address: the most visible
    *  one when the page shows it more than once. */
@@ -787,29 +861,51 @@
   }
 
   function open(opts) {
-    if (host) close(true);
-    return I.currentLang().then(function (l) {
-      lang = l;
+    if (host) close();
+    return Promise.all([I.currentLang(), send({ type: 'heddy-box:state' })]).then(function (got) {
+      lang = got[0];
       tr = I.translator(lang);
+      var st = got[1] && got[1].ok ? got[1] : { images: [] };
+      kept = (st.images || []).map(function (x) { return { id: x.id, n: x.n, rect: x.rect }; });
       pageKey = samePageKey(location.href);
-      collection = (opts && opts.id) || '';
       build();
+      if (root.__heddyCards) root.__heddyCards.boxMode(true);
       window.addEventListener('keydown', onKey, true);
       window.addEventListener('scroll', rescan, true);
       window.addEventListener('resize', rescan);
       window.addEventListener('popstate', checkPage);
-      window.addEventListener('pagehide', closeQuiet);
+      window.addEventListener('pagehide', close);
       checkTimer = setInterval(checkPage, CHECK_MS);
       draw();
       outline();
+      // "Add picture to Heddy" on an image, and the whole-tab press: the box
+      // is drawn for the child, and with `keep` it is kept as a card at once.
+      var wants = opts && (opts.whole || opts.srcUrl);
+      if (wants && kept.length >= MAX_PICTURES) return note(tr('cardsFullPictures'));
+      if (opts && opts.whole) {
+        wholePage();
+        return opts.keep ? keepCurrent() : null;
+      }
       var img = opts && imageBySrc(opts.srcUrl);
-      if (img) return takePicture(img);
+      if (img) return takePicture(img).then(function () { if (opts.keep && current) return keepCurrent(); });
+    });
+  }
+
+  // The panel's ✕ on a picture card: box mode lets go of that box too.
+  if (root.__heddyCards && root.__heddyCards.onSync) {
+    root.__heddyCards.onSync(function (list) {
+      if (!host) return;
+      var ids = {};
+      list.forEach(function (c) { ids[c.id] = c.n; });
+      kept = kept.filter(function (k) { return ids[k.id]; }).map(function (k) { return { id: k.id, n: ids[k.id], rect: k.rect }; });
+      draw();
+      outline();
     });
   }
 
   chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (!message || message.type !== 'heddy-box:start' || sender.id !== chrome.runtime.id || sender.tab) return false;
-    open({ srcUrl: typeof message.srcUrl === 'string' ? message.srcUrl : '', id: typeof message.id === 'string' ? message.id : '' }).then(
+    open({ srcUrl: typeof message.srcUrl === 'string' ? message.srcUrl : '', whole: message.whole === true, keep: message.keep === true }).then(
       function () { sendResponse({ ok: true }); },
       function () { sendResponse({ ok: false }); }
     );

@@ -18,9 +18,9 @@
     var now = opts.now || Date.now;
     var holdMs = opts.holdMs || HOLD_MS;
     var resultMs = opts.resultMs || RESULT_MS;
-    // cid → { payload, createdAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut }
+    // cid → { payload, createdAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut, cards }
     var held = {};
-    // cid → { claimedAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut }
+    // cid → { claimedAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut, cards }
     var claimed = {};
     // cid → { doneAt, origin, windowId, captureTabId, tabId } after its result:
     // only so a later Cancel or Close on the same page can still close it.
@@ -37,6 +37,13 @@
       Object.keys(done).forEach(function (cid) {
         if (t - done[cid].doneAt >= resultMs) delete done[cid];
       });
+    }
+
+    /** At most 15 short ids (10 snippets, 4 pictures, 1 spare), else null. */
+    function cardIds(x) {
+      if (!Array.isArray(x)) return null;
+      var ids = x.filter(function (id) { return typeof id === 'string' && id.length <= 64; }).slice(0, 15);
+      return ids.length ? ids : null;
     }
 
     function key(cid) {
@@ -70,6 +77,9 @@
           kind: entry.kind || 'clip',
           title: typeof entry.title === 'string' ? entry.title : null,
           cut: entry.cut === true,
+          // Round 5: the card ids a heddy:save carried, cleared from the
+          // panel's list once the site says they are saved.
+          cards: cardIds(entry.cards),
         };
       },
 
@@ -112,7 +122,7 @@
         var e = held[k];
         if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
         delete held[k];
-        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true };
+        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true, cards: cardIds(e.cards) };
         return e.payload;
       },
 
