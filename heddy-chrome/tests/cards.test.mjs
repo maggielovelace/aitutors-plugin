@@ -170,6 +170,7 @@ function setup({ session = fakeSession(), selection = null, markdown = '# The pa
     sender: { tool: async (input, where) => { calls.tools.push({ input, where }); return { ok: true }; } },
     droppedText: async () => 'The page changed, so the cards you collected were cleared.',
     showLine: async (tabId, t) => { calls.lines.push({ tabId, t }); },
+    showPanel: async (t) => { calls.shown = (calls.shown || []).concat(t.id); },
   });
   const panel = { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html?tab=7&host=panel', tab, frameId: 4 };
   const box = { id: 'heddy', url: tab.url, tab, frameId: 0 };
@@ -369,4 +370,27 @@ test('who may ask: the panel (Heddy’s own page) names its tab; box mode is the
   const blocked = setup();
   blocked.tab.url = 'chrome://extensions/';
   assert.deepEqual(await blocked.ask({ type: 'heddy-cards:get' }), { ok: false });
+});
+
+test('"Save to Jotters" on a selection and the tray’s + Add collect: the words become a card, then the panel opens on it; nothing is saved', async () => {
+  const s = setup({ selection: SEL('Maps are models.') });
+  const r = await s.ask({ type: 'heddy-cards:collect' }, s.box);
+  assert.deepEqual([r.ok, r.n], [true, 1]);
+  assert.deepEqual(s.calls.shown, [7]);
+  assert.equal(s.calls.opened.length, 0, 'no capture window');
+  s.page.selection = null;
+  const none = await s.cards.collect(s.tab);
+  assert.equal(none.error, 'no_selection');
+  assert.deepEqual(s.calls.shown, [7, 7], 'the panel still opens, on the cards so far');
+  assert.deepEqual(await s.ask({ type: 'heddy-cards:collect' }, s.panel), { ok: false }, 'the page asks, not the panel');
+});
+
+test('no path a child can tap builds heddy:jot or heddy:box any more (the site keeps accepting both from older installs)', async () => {
+  const { shippedFiles, read: r } = await import('./helpers.mjs');
+  for (const f of shippedFiles().filter((x) => /\.js$/.test(x) && x !== 'lib/protocol.js' && x !== 'lib/tools.js')) {
+    const src = r(f);
+    assert.doesNotMatch(src, /\bbuildJot\(|\bbuildBox\(|sender\.box\(|type: 'heddy-ui:jot'/, f);
+  }
+  const tools = r('lib/tools.js');
+  assert.doesNotMatch(tools.slice(tools.indexOf('function createSender')), /buildBox\(/, 'the sender has no box');
 });

@@ -22,10 +22,8 @@
   "sitePageLine": { "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。" },
   "captureFailed": { "message": "Heddy 没能打开 aitutors.me，再试一次。" },
 
-  "commandJot": { "message": "批注你选中的文字" },
-  "menuJotIt": { "message": "用 Heddy 写批注" },
+  "commandJot": { "message": "为选中的文字显示 Heddy 的按钮" },
   "trayLabel": { "message": "Heddy：怎么处理这段文字" },
-  "trayJotIt": { "message": "写批注" },
   "trayMore": { "message": "更多" },
   "menuCopy": { "message": "复制" },
   "menuParagraph": { "message": "选中整段" },
@@ -88,7 +86,6 @@
     "placeholders": { "key": { "content": "$1", "example": "Ctrl Shift K" } }
   },
   "cmdSnap": { "message": "截一张图（按两下截整个屏幕）" },
-  "menuJotPicture": { "message": "用 Heddy 批注这张图" },
   "boxHintBefore": { "message": "在图片上拖出一个框 · 按" },
   "boxHintAfter": { "message": "退出" },
   "boxCollecting": { "message": "框选模式 ·" },
@@ -206,5 +203,7 @@
   "aboutCopy": { "message": "复制" },
   "aboutCopied": { "message": "已复制" },
   "aboutPrivacy": { "message": "隐私" },
-  "aboutPrivacyLink": { "message": "Heddy 读什么、什么时候读" }
+  "aboutPrivacyLink": { "message": "Heddy 读什么、什么时候读" },
+  "trayAddCard": { "message": "+ 加入" },
+  "menuAddPicture": { "message": "把图片加到 Heddy" }
 }

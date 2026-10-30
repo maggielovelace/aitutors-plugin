@@ -60,16 +60,10 @@
         "message": "Heddy couldn't open aitutors.me. Try again."
       },
       "commandJot": {
-        "message": "Jot the words you selected"
-      },
-      "menuJotIt": {
-        "message": "Jot it with Heddy"
+        "message": "Show Heddy's buttons for the words you selected"
       },
       "trayLabel": {
         "message": "Heddy: what to do with these words"
-      },
-      "trayJotIt": {
-        "message": "Jot it"
       },
       "trayMore": {
         "message": "More"
@@ -224,9 +218,6 @@
       },
       "cmdSnap": {
         "message": "Snap a picture (twice for the whole screen)"
-      },
-      "menuJotPicture": {
-        "message": "Jot this picture with Heddy"
       },
       "boxHintBefore": {
         "message": "Drag over a picture ·"
@@ -551,6 +542,12 @@
       },
       "aboutPrivacyLink": {
         "message": "What Heddy reads, and when"
+      },
+      "trayAddCard": {
+        "message": "+ Add"
+      },
+      "menuAddPicture": {
+        "message": "Add picture to Heddy"
       }
     },
     "zh_CN": {
@@ -612,16 +609,10 @@
         "message": "Heddy 没能打开 aitutors.me，再试一次。"
       },
       "commandJot": {
-        "message": "批注你选中的文字"
-      },
-      "menuJotIt": {
-        "message": "用 Heddy 写批注"
+        "message": "为选中的文字显示 Heddy 的按钮"
       },
       "trayLabel": {
         "message": "Heddy：怎么处理这段文字"
-      },
-      "trayJotIt": {
-        "message": "写批注"
       },
       "trayMore": {
         "message": "更多"
@@ -776,9 +767,6 @@
       },
       "cmdSnap": {
         "message": "截一张图（按两下截整个屏幕）"
-      },
-      "menuJotPicture": {
-        "message": "用 Heddy 批注这张图"
       },
       "boxHintBefore": {
         "message": "在图片上拖出一个框 · 按"
@@ -1103,6 +1091,12 @@
       },
       "aboutPrivacyLink": {
         "message": "Heddy 读什么、什么时候读"
+      },
+      "trayAddCard": {
+        "message": "+ 加入"
+      },
+      "menuAddPicture": {
+        "message": "把图片加到 Heddy"
       }
     }
   };

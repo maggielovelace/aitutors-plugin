@@ -8,10 +8,10 @@
 //                   Copy picture), and the whole-tab snap
 //   mountButton     the popup footer's Snap a picture icon
 //
-// The ways in (D30): the popup icon (click = box mode, double-click within
-// ~250 ms = the whole visible tab), right-click an image → "Jot this picture
-// with Heddy" (box mode with the box on the image), and Ctrl Shift K (twice
-// within 0.4 s = the whole visible tab). Every one is a user gesture, which is
+// The ways in (D30, as Round 5 has them): the panel's icon (click = box mode,
+// double-click within ~250 ms = the whole visible tab as a picture card),
+// right-click an image → "Add picture to Heddy" (that picture as a card), and
+// Ctrl Shift K (twice within 0.4 s = the whole visible tab as a card). Every one is a user gesture, which is
 // what lets activeTab allow captureVisibleTab and the box-mode script.
 (function (root) {
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
@@ -55,11 +55,6 @@
 
   // ─── the background's side ─────────────────────────────────────────────────
 
-  /** Runs in the page: the viewport, for the whole-tab snap. */
-  function readViewport() {
-    return { vw: window.innerWidth, vh: window.innerHeight };
-  }
-
   /** Runs in the page: the one-line notice after a navigation cleared the
    *  cards. Text only; gone after 4 s. */
   function showDroppedLine(text) {
@@ -80,7 +75,7 @@
 
   /** deps: {chrome, sender (lib/tools.js createSender), crop (HeddyCrop),
    *  makers: {createImageBitmap, OffscreenCanvas, Blob}, later,
-   *  hidePanel(tabId) → Promise: takes Heddy's panel off that page} */
+   *  showPanel(tab) → Promise: opens Heddy's panel on that page if closed} */
   function createSnap(deps) {
     var chrome = deps.chrome;
     var K = deps.crop;
@@ -117,22 +112,20 @@
         .then(function () { return { ok: true }; }, function () { return { ok: false }; });
     }
 
-    /** The whole visible tab, straight to the Jot it window (a double click
-     *  on the snap icon, or Ctrl Shift K twice). The panel leaves first. */
+    /** The panel opened (if it is closed), then box mode: what box mode
+     *  keeps lands as a card the child can see (D55). */
+    function withPanel(tab, opts) {
+      return Promise.resolve(deps.showPanel ? deps.showPanel(tab) : null)
+        .catch(function () {})
+        .then(function () { return start(tab, opts); });
+    }
+
+    /** The whole visible tab as the next picture card (a double click on the
+     *  snap icon, or Ctrl Shift K twice), as the Heddy menu's Whole visible
+     *  page does. Box mode stays on, so the child can save or add another. */
     function whole(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
-      var hide = deps.hidePanel || function () { return Promise.resolve(); };
-      return Promise.resolve(hide(tab.id)).catch(function () {})
-        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readViewport }); })
-        .then(function (res) {
-          var v = res && res[0] && res[0].result;
-          if (!v) throw new Error('no viewport');
-          return cropOne(tab, { x: 0, y: 0, w: v.vw, h: v.vh }, v.vw, v.vh);
-        })
-        .then(function (img) {
-          return deps.sender.box({ url: tab.url, title: tab.title, images: [img], context: '' }, { tabId: tab.id, windowId: tab.windowId });
-        })
-        .catch(function () { return { ok: false }; });
+      return withPanel(tab, { whole: true, keep: true });
     }
 
     /** heddy-ui:tool from the words tray (lib/tools.js sendTool). The address
@@ -161,7 +154,7 @@
           // the panel off the page first, so it is not in the picture.
           if (tab) return Promise.resolve({ ok: false });
           return chrome.tabs.get(message.tabId).then(function (t) {
-            return message.mode === 'whole' ? whole(t) : start(t);
+            return message.mode === 'whole' ? start(t, { whole: true, keep: true }) : start(t);
           }, function () { return { ok: false }; });
         }
         case 'heddy-box:crop':
@@ -201,12 +194,14 @@
       return true;
     }
 
-    /** chrome.contextMenus.onClicked on an image. A picture inside a frame
-     *  starts box mode without a box: box mode runs in the top page only. */
+    /** chrome.contextMenus.onClicked on an image: "Add picture to Heddy".
+     *  The picture becomes the next card and box mode stays on beside the
+     *  panel. A picture inside a frame starts box mode without a box: box
+     *  mode runs in the top page only. */
     function menuClicked(info, tab) {
       if (!info || info.menuItemId !== MENU_ID || !tab) return false;
-      var opts = info.frameId ? {} : { srcUrl: typeof info.srcUrl === 'string' ? info.srcUrl : '' };
-      start(tab, opts);
+      var opts = info.frameId ? {} : { srcUrl: typeof info.srcUrl === 'string' ? info.srcUrl : '', keep: true };
+      withPanel(tab, opts);
       return true;
     }
 
@@ -280,12 +275,10 @@
       }, function () {});
     }
 
-    // The whole tab closes the panel once the background has it (the Jot it
-    // window opened), so the message is never cut off. Box mode leaves the
-    // panel open beside it (R5b), its cards filling as pictures are kept.
+    // Both leave the panel open beside box mode (R5b): its cards fill as
+    // pictures are kept, the whole tab among them.
     function go(mode) {
-      var close = opts.close || function () { root.close(); };
-      var done = mode === 'box' ? function () { btn.removeAttribute('aria-pressed'); } : close;
+      var done = function () { btn.removeAttribute('aria-pressed'); };
       Promise.resolve()
         .then(function () { return chromeApi.runtime.sendMessage({ type: 'heddy-ui:snap', mode: mode, tabId: opts.tab.id }); })
         .then(done, done);

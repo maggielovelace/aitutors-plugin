@@ -19,8 +19,8 @@ justification here.
 | `activeTab` | Heddy reads the current tab only after the student asks: by opening the popup, choosing a right-click menu item, or pressing a shortcut. activeTab also lets Snap a picture take a screenshot of the visible tab (chrome.tabs.captureVisibleTab) at that moment, so the student can box a diagram. No tab is read without that gesture. |
 | `scripting` | Injects Heddy's own files into the tab the student asked about: to read the selected words (and up to 300 characters either side) or the page's readable text, to show the tray of tools beside a selection, to draw the box for Snap a picture, and to redraw the two buttons when YouTube moves to a new video without reloading the page. No remote code is injected. |
 | `storage` | Keeps a few preferences on the device: the language (English or 简体中文), the last Whole video / From m:ss choice, whether the first-time popup and the H hint have been seen, and a developer switch. chrome.storage.session holds a hand-over for the aitutors.me window (forgotten once taken, or after 10 minutes) and pictures boxed for one jot until they are sent. |
-| `contextMenus` | Adds "Jot it with Heddy" when the student right-clicks selected words, and "Jot this picture with Heddy" when they right-click a picture. |
-| `commands` | Ctrl Shift K starts Snap a picture (press it twice for the whole screen). Jot it has a command with no default key, so the student can set their own at chrome://extensions/shortcuts. |
+| `contextMenus` | Adds "Save to Jotters" when the student right-clicks selected words, and "Add picture to Heddy" when they right-click a picture; each adds a card to Heddy's panel. |
+| `commands` | Ctrl Shift K starts Snap a picture (press it twice for the whole screen). Heddy's buttons under a selection have a command with no default key, so the student can set their own at chrome://extensions/shortcuts. |
 | Host `https://www.youtube.com/watch*` | Draws Watch with Heddy and Add to My Clips on YouTube video pages, and takes H for the line being spoken. It reads the video id from the address, and the player's time and the video's title only when the student taps or presses H. Nothing else on YouTube. |
 | Host `https://aitutors.me/*`, `https://*.aitutors.me/*` | The windows Heddy opens on aitutors.me, where the student keeps what they found under their own account. Only these pages may ask Heddy for a hand-over (externally_connectable). The subdomains are aitutors.me's own preview sites. |
 
@@ -52,7 +52,7 @@ What the dashboard asks, and the answer to each.
 | Website content | **Yes** |
 
 Website content (owner ruling, 2026-10-30): **Yes**, and only on the
-student's own action: Jot it, Save page to Jotters, Snap a picture, or Explain /
+student's own action: Save to Jotters, + Text or + Add, Save page to Jotters, Snap a picture, or Explain /
 Make a card / Ask Heddy. Heddy then reads the words, page or picture they
 chose and hands it, inside Chrome, to the aitutors.me window in front of
 them; it goes only to aitutors.me, under the student's own account. It is

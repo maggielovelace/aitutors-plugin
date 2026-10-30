@@ -129,7 +129,7 @@ function fakeSession(data = {}) {
 
 function setup(session = fakeSession()) {
   const c = clock();
-  const calls = { captures: [], injected: [], tabMessages: [], boxes: [], tools: [], menus: [] };
+  const calls = { captures: [], injected: [], tabMessages: [], boxes: [], tools: [], menus: [], shown: [] };
   const tab = { id: 7, windowId: 3, url: PAGE + '#top', title: 'Understanding map scales' };
   const chrome = {
     runtime: { id: 'heddy' },
@@ -155,7 +155,7 @@ function setup(session = fakeSession()) {
     ...K,
     cropShot: async (shot, rects, vw, vh) => rects.map((r) => ({ png: PNG, box: K.webBox(r, vw, vh) })),
   };
-  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID });
+  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID, showPanel: async (t) => { calls.shown.push(t.id); } });
   const fromPage = { id: 'heddy', frameId: 0, tab };
   return { snap, calls, tab, fromPage, clock: c, chrome, session };
 }
@@ -171,16 +171,17 @@ test('a frame, another extension or a page cannot drive box mode', async () => {
   assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:snap', mode: 'whole', tabId: 7 }, s.fromPage), { ok: false });
 });
 
-test('the popup icon: box mode injects box-mode.js and starts it; whole crops the full viewport', async () => {
+test('the panel’s icon: box mode injects box-mode.js and starts it; a double click keeps the whole tab as a card, writing no jot', async () => {
   const s = setup();
   await s.snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 7 }, { id: 'heddy' });
   assert.deepEqual(s.calls.injected[0], { target: { tabId: 7 }, files: S.BOX_FILES });
-  assert.equal(s.calls.tabMessages[0].m.type, 'heddy-box:start');
+  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start' });
 
   const t = setup();
   await t.snap.internal({ type: 'heddy-ui:snap', mode: 'whole', tabId: 7 }, { id: 'heddy' });
-  assert.equal(t.calls.boxes.length, 1);
-  assert.deepEqual(t.calls.boxes[0].input.images[0].box, { kind: 'web', vw: 1440, vh: 900, x: 0, y: 0, w: 1440, h: 900 });
+  assert.deepEqual(t.calls.tabMessages[0].m, { type: 'heddy-box:start', whole: true, keep: true });
+  assert.equal(t.calls.boxes.length, 0, 'no heddy:box');
+  assert.equal(t.calls.captures.length, 0, 'box mode takes the screenshot, as a card');
 });
 
 test('Ctrl Shift K: once → box mode after 0.4 s; twice within 0.4 s → the whole tab', async () => {
@@ -198,8 +199,9 @@ test('Ctrl Shift K: once → box mode after 0.4 s; twice within 0.4 s → the wh
   t.snap.command(S.COMMAND, t.tab);
   await new Promise((r) => setImmediate(r));
   for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
-  assert.equal(t.calls.boxes.length, 1, 'the whole tab');
-  assert.ok(!t.calls.injected.some((o) => o.files), 'box mode never started');
+  assert.deepEqual(t.calls.tabMessages.map((x) => x.m), [{ type: 'heddy-box:start', whole: true, keep: true }], 'the whole tab, as a card');
+  assert.deepEqual(t.calls.shown, [7], 'the panel opens to show it');
+  assert.equal(t.calls.boxes.length, 0, 'no heddy:box');
   assert.equal(t.snap.command('other-command', t.tab), false);
 });
 
@@ -207,7 +209,8 @@ test('right-click an image: box mode with the box on that image; inside a frame,
   const s = setup();
   s.snap.menuClicked({ menuItemId: S.MENU_ID, srcUrl: 'https://x.example/map.png', frameId: 0 }, s.tab);
   for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r));
-  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start', srcUrl: 'https://x.example/map.png' });
+  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-box:start', srcUrl: 'https://x.example/map.png', keep: true }, 'Add picture to Heddy: kept as a card at once');
+  assert.deepEqual(s.calls.shown, [7], 'with the panel open beside it');
 
   const t = setup();
   t.snap.menuClicked({ menuItemId: S.MENU_ID, srcUrl: 'https://x.example/map.png', frameId: 5 }, t.tab);
@@ -216,10 +219,13 @@ test('right-click an image: box mode with the box on that image; inside a frame,
   assert.equal(t.snap.menuClicked({ menuItemId: 'someone-else' }, t.tab), false);
 });
 
-test('the menu item is on images only, titled “Jot this picture with Heddy”', async () => {
+test('the menu item is on images only, titled “Add picture to Heddy”', async () => {
   const s = setup();
-  await s.snap.installMenu('Jot this picture with Heddy');
-  assert.deepEqual(s.calls.menus, [{ id: S.MENU_ID, title: 'Jot this picture with Heddy', contexts: ['image'] }]);
+  const msgs = (await import('./helpers.mjs')).read('_locales/en/messages.json');
+  assert.equal(JSON.parse(msgs).menuAddPicture.message, 'Add picture to Heddy');
+  assert.match((await import('./helpers.mjs')).read('background.js'), /snap\.installMenu\(HeddyI18n\.t\(lang, 'menuAddPicture'\)\)/);
+  await s.snap.installMenu('Add picture to Heddy');
+  assert.deepEqual(s.calls.menus, [{ id: S.MENU_ID, title: 'Add picture to Heddy', contexts: ['image'] }]);
 });
 
 test('the words tray’s Explain takes the address and title from the tab, not the page', async () => {

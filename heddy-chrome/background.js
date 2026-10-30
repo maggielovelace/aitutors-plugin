@@ -5,6 +5,8 @@ importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.j
 var cards = null;
 var courier = HeddyCourier.createCourier({
   chrome: chrome,
+  // "Save to Jotters" on a selection: the words become a card (lib/cards.js).
+  collect: function (tab) { return cards.collect(tab); },
   store: HeddyCidStore.createCidStore(),
   randomUUID: function () { return crypto.randomUUID(); },
   // Save to Jotters saved: those cards leave the panel's list (lib/cards.js).
@@ -33,9 +35,9 @@ var snap = HeddySnap.createSnap({
   tools: HeddyTools,
   makers: { createImageBitmap: createImageBitmap.bind(self), OffscreenCanvas: OffscreenCanvas, Blob: Blob },
   sender: sender,
-  // The panel leaves the page before a whole-tab screenshot. Box mode keeps
-  // it open beside itself and hides it only for each screenshot.
-  hidePanel: panel.hide,
+  // A picture added from the page's own menu or the whole-tab press lands
+  // as a card, so the panel opens beside box mode to show it.
+  showPanel: panel.show,
 });
 
 // The panel's numbered cards and Save to Jotters (lib/cards.js, Round 5).
@@ -48,6 +50,7 @@ cards = HeddyCards.createCards({
   pageFiles: HeddyCourier.PAGE_FILES,
   capture: snap.cropOne,
   showLine: snap.showLine,
+  showPanel: panel.show,
   droppedText: function () {
     return HeddyI18n.currentLang(chrome).then(function (lang) { return HeddyI18n.t(lang, 'boxDropped'); });
   },
@@ -94,11 +97,11 @@ chrome.tabs.onRemoved.addListener(function (tabId) {
   courier.tabRemoved(tabId);
 });
 
-// Right-click an image → "Jot this picture with Heddy" (D30). The menu's
+// Right-click an image → "Add picture to Heddy" (D30, D55). The menu's
 // title follows Heddy's language when it is installed or the language changes.
 function installPictureMenu() {
   HeddyI18n.currentLang(chrome).then(function (lang) {
-    snap.installMenu(HeddyI18n.t(lang, 'menuJotPicture'));
+    snap.installMenu(HeddyI18n.t(lang, 'menuAddPicture'));
   });
 }
 chrome.runtime.onInstalled.addListener(installPictureMenu);
@@ -114,8 +117,9 @@ chrome.commands.onCommand.addListener(function (command, tab) {
   snap.command(command, tab);
 });
 
-// "Jot it with Heddy" on a selection, and the jot-selection command: both are
-// gestures, so activeTab lets Heddy inject the tray into that tab (D3, D7).
+// "Save to Jotters" on a selection (the words become a card, D55), and the
+// jot-selection command (the tray): both are gestures, so activeTab lets
+// Heddy into that tab (D3, D7).
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   courier.menuClicked(info, tab);
 });

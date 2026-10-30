@@ -201,23 +201,8 @@
           href: C.jotterUrl(origin, meta.youtubeId),
         });
       }
-      // The Jot it and Save page to Jotters windows close about 1 s after an ok
-      // result (owner, 2026-10-29), so the page shows what was kept.
-      if (kind === 'jot') {
-        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
-      }
-      // A picture jot (lib/tools.js): the same toast as Jot it, with no quote
-      // (a picture has none). Its Undo names the Jotter, which deletes the
-      // jot with its crops through the Jotters route. Box mode is no tray, so the toaster is put in
-      // the tab first (it ignores a second injection).
-      if (kind === 'box') {
-        return Promise.resolve()
-          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
-          .catch(function () {})
-          .then(function () {
-            return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'jotted', jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) });
-          });
-      }
+      // (Round 5: Heddy no longer opens a Jot it or picture-jot window, so no
+      // 'jot' or 'box' result comes back; the site still answers older installs.)
       // Tool windows (lib/tools.js; owner, 2026-10-29). Make a card closes
       // after Keep card: "Card made", Undo (its cards), Open in Jotter. The
       // room (Explain, Ask Heddy) stays open and says nothing on the page,
@@ -331,17 +316,6 @@
       });
     }
 
-    /** Jot it: heddy:jot, in a window that takes focus (the child adds a thought there). */
-    function jot(input) {
-      return openCapture({
-        page: 'jot',
-        kind: 'jot',
-        windowId: input.windowId,
-        build: function (cid) { return P.buildJot({ cid: cid, url: input.url, title: input.title, quote: input.quote, before: input.before, after: input.after }); },
-        meta: { tabId: input.tabId },
-      });
-    }
-
     /** Save page to Jotters: heddy:page. Past 200 KB of UTF-8 it keeps the first
      *  part (`cut: true`), and the toast after the save says so. */
     function page(input) {
@@ -365,32 +339,34 @@
       return chrome.scripting.executeScript({ target: { tabId: tabId }, files: PAGE_FILES });
     }
 
-    /** The context menu (selection) and the jot-selection command: inject the
-     *  tray into the tab the gesture came from. The menu item is already the
-     *  child's choice of Jot it, so it jots; the command shows the tray. */
-    function gesture(what, tab) {
+    /** The jot-selection command: inject the tray into the tab the gesture
+     *  came from and show it under the selection. */
+    function showTray(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
       return Promise.resolve()
         .then(function () { return injectPage(tab.id); })
-        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: what === 'menu' ? 'heddy-ui:jot-selection' : 'heddy-ui:tray' }); })
+        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: 'heddy-ui:tray' }); })
         .then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; });
     }
 
+    /** "Save to Jotters" on a selection (D54, D55): the words become a card
+     *  and the panel opens on them (lib/cards.js collect). It writes no jot. */
     function menuClicked(info, tab) {
       if (!info || info.menuItemId !== MENU_ID) return Promise.resolve(null);
-      return gesture('menu', tab);
+      if (!tab || tab.id == null || !deps.collect) return Promise.resolve({ ok: false });
+      return Promise.resolve(deps.collect(tab)).then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; });
     }
 
     function command(name, tab) {
       if (name !== COMMAND) return Promise.resolve(null);
       var t = tab ? Promise.resolve(tab) : chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) { return tabs[0]; }, function () { return null; });
-      return t.then(function (x) { return gesture('command', x); });
+      return t.then(showTray);
     }
 
-    /** Heddy's "Jot it with Heddy" item, in Heddy's language (D36). Only this
-     *  id is replaced, never removeAll: Phase 3 adds its own items. */
+    /** Heddy's "Save to Jotters" item on a selection, in Heddy's language
+     *  (D36). Only this id is replaced, never removeAll: snap adds its own. */
     function installMenus(lang) {
-      var title = I.t(lang, 'menuJotIt');
+      var title = I.t(lang, 'saveToJotters');
       return Promise.resolve()
         .then(function () { return chrome.contextMenus.remove(MENU_ID); })
         .catch(function () {})
@@ -479,12 +455,12 @@
         case 'heddy-ui:undo':
           // buildUndo refuses anything but a jot id, so a bad one opens nothing.
           return undo({ jotId: message.jotId, jotterId: message.jotterId == null ? null : message.jotterId, tabId: tab ? tab.id : null, windowId: tab ? tab.windowId : message.windowId });
-        case 'heddy-ui:jot':
         case 'heddy-ui:page': {
-          // From a page, only that page's own address; the popup names its tab.
+          // The page tray's Save page to Jotters. From a page, only that
+          // page's own address; the popup names its tab. (heddy-ui:jot is
+          // gone: since Round 5 nothing in Heddy writes a jot from a page.)
           if (tab && P.pageUrl(message.url) !== P.pageUrl(sender.url || tab.url)) return Promise.resolve({ ok: false });
-          var input = Object.assign({}, message, { tabId: tab ? tab.id : message.tabId, windowId: tab ? tab.windowId : message.windowId });
-          return message.type === 'heddy-ui:jot' ? jot(input) : page(input);
+          return page(Object.assign({}, message, { tabId: tab ? tab.id : message.tabId, windowId: tab ? tab.windowId : message.windowId }));
         }
         case 'heddy-ui:watch-page':
           return setIcon(tab && tab.id, message.on ? 'ready' : 'idle').then(function () { return { ok: true }; });

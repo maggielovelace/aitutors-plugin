@@ -129,6 +129,11 @@
       reply({ open: !!host });
       return undefined;
     }
+    if (message.type === 'heddy-panel:open') {
+      if (!host) open(message.tabId);
+      reply({ open: !!host });
+      return undefined;
+    }
     if (message.type === 'heddy-panel:close') {
       var was = !!host;
       close();

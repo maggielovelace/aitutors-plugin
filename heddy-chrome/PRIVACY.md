@@ -17,16 +17,16 @@ Heddy saves for*, below).
   time and the video's title (for the "Note saved" message).
 - **When you open Heddy's toolbar popup** on a YouTube video, it reads the
   video's title, channel, length and current time to show them to you.
-- **On any other page, only when you ask**: when you open the popup, choose
-  *Jot it with Heddy* from the right-click menu, or press a shortcut you set
-  yourself, Heddy reads the words you selected, at most 300 characters either
+- **On any other page, only when you ask**: when you open Heddy's panel, tap
+  *+ Text* or *+ Add*, choose *Save to Jotters* from the right-click menu, or
+  press a shortcut you set yourself, Heddy reads the words you selected, at most 300 characters either
   side of them, the page's title and its address (without the part after `#`).
   When you choose *Save page to Jotters*, it reads the page's readable text, with
   its pictures as links (it downloads no picture). When you choose *Explain*,
   *Make a card* or *Ask Heddy* on selected words, it reads the same words and
   the same 300 characters either side.
 - **When you snap a picture** (the popup's *Snap a picture*, right-click a
-  picture → *Jot this picture with Heddy*, or Ctrl Shift K), Heddy takes a
+  picture → *Add picture to Heddy*, or Ctrl Shift K), Heddy takes a
   screenshot of the part of the tab you can see, cuts out the box you draw,
   and keeps only that piece (a PNG, at most 1600 pixels on its longest side
   and 1 MB). It reads the sentence nearest the picture (at most 300
@@ -49,7 +49,7 @@ What happens there is covered by the aitutors.me privacy policy
 (<https://aitutors.me/privacy>).
 
 On the Chrome Web Store this is declared as **website content**: collected
-only when you ask (Jot it, Save page to Jotters, Snap a picture, Explain, Make a
+only when you ask (Save to Jotters, + Text or + Add, Save page to Jotters, Snap a picture, Explain, Make a
 card or Ask Heddy), sent only to aitutors.me under your own account, never
 sold, never used for advertising or credit decisions, and not shared with
 anyone else beyond aitutors.me's own processing.
@@ -88,8 +88,8 @@ This is the only request Heddy makes of its own.
 |---|---|
 | `activeTab` | Read a page, or take a picture of what is on screen, only after you ask: the popup, the right-click menu or a shortcut |
 | `scripting` | Draw the buttons when YouTube moves to a new video without reloading the page, read the selection or the page you asked about, and draw the box for Snap a picture |
-| `contextMenus` | *Jot it with Heddy* when you right-click a selection, and *Jot this picture with Heddy* when you right-click a picture |
-| `commands` | Ctrl Shift K for Snap a picture, and a shortcut for Jot it if you set one (Heddy sets none for it) |
+| `contextMenus` | *Save to Jotters* when you right-click a selection, and *Add picture to Heddy* when you right-click a picture |
+| `commands` | Ctrl Shift K for Snap a picture, and a shortcut for Heddy's buttons under a selection if you set one (Heddy sets none for it) |
 | `storage` | The preferences above |
 | `https://www.youtube.com/watch*` | YouTube video pages, and nothing else on YouTube |
 | `https://aitutors.me/*`, `https://*.aitutors.me/*` | The windows Heddy opens |

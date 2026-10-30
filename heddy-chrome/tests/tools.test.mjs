@@ -134,18 +134,10 @@ function setup() {
 
 const windowSender = (page) => ({ origin: 'https://aitutors.me', url: `https://aitutors.me/capture/${page}?cid=${CID}`, tab: { id: 900, windowId: 42 } });
 
-test('a box opens /capture/jot focused, and the courier hands the window heddy:box once', async () => {
+test('Round 5: the sender has no heddy:box (pictures go as cards in heddy:save); the builder stays for the protocol', () => {
   const s = setup();
-  const r = await s.sender.box({ url: URL_, title: 'Map scales', images: [IMG, IMG], context: 'c' }, { tabId: 7, windowId: 1 });
-  assert.deepEqual(r, { ok: true, cid: CID });
-  assert.equal(s.calls.windows.length, 1);
-  assert.equal(s.calls.windows[0].url, `https://aitutors.me/capture/jot?cid=${CID}`);
-  assert.equal(s.calls.windows[0].focused, true);
-  assert.ok(s.session.heddyCids.held[CID], 'held in the courier’s store, mirrored to storage.session');
-  const payload = await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('jot'));
-  assert.equal(payload.type, 'heddy:box');
-  assert.equal(payload.images.length, 2);
-  assert.equal(await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('jot')), null, 'once');
+  assert.equal(s.sender.box, undefined);
+  assert.equal(typeof T.buildBox, 'function');
 });
 
 test('Explain and Ask open /capture/room; Make a card opens /capture/card', async () => {
@@ -162,30 +154,6 @@ test('a payload the builder refuses opens no window and holds nothing', async ()
   assert.deepEqual(r, { ok: false });
   assert.equal(s.calls.windows.length, 0);
   assert.equal(Object.keys((s.session.heddyCids || { held: {} }).held).length, 0);
-});
-
-test('a picture jot’s result: the Jotted toast (no quote, Undo, Open in Jotter), with the toaster put in the tab', async () => {
-  const s = setup();
-  await s.sender.box({ url: URL_, title: 't', images: [IMG], context: '' }, { tabId: 7, windowId: 1 });
-  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('jot'));
-  const jotId = '6f1c2a3b-0000-4000-8000-00000000abcd';
-  const r = await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId, jotterId: '7a2b0000-0000-4000-8000-0000000000ee' }, windowSender('jot'));
-  assert.deepEqual(r, { ok: true });
-  assert.deepEqual(s.calls.injected.map((o) => o.files), [PAGE_FILES]);
-  assert.equal(s.calls.tabMessages.length, 1);
-  const { tabId, m } = s.calls.tabMessages[0];
-  assert.equal(tabId, 7);
-  assert.equal(m.type, 'heddy-ui:toast');
-  assert.equal(m.kind, 'jotted');
-  assert.equal(m.jotId, jotId);
-  assert.equal(m.quote, undefined, 'a picture has no quote');
-  assert.equal(m.jotterId, '7a2b0000-0000-4000-8000-0000000000ee', 'Undo needs the Jotter');
-  // The toast model gives it an Undo that sends {jotId, jotterId}.
-  globalThis.HeddyMarks = load('./lib/marks.js');
-  const Toast = load('./lib/toast.js');
-  const model = Toast.model(m, 'en', (k) => k);
-  assert.deepEqual(model.undo && { jotId: model.undo.jotId, jotterId: model.undo.jotterId }, { jotId, jotterId: '7a2b0000-0000-4000-8000-0000000000ee' });
-  assert.match(m.href, /\/study\/jotters\/7a2b0000-0000-4000-8000-0000000000ee$/);
 });
 
 test('a tool’s result puts nothing on the page (its window is the answer)', async () => {

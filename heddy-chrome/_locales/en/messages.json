@@ -22,10 +22,8 @@
   "sitePageLine": { "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages." },
   "captureFailed": { "message": "Heddy couldn't open aitutors.me. Try again." },
 
-  "commandJot": { "message": "Jot the words you selected" },
-  "menuJotIt": { "message": "Jot it with Heddy" },
+  "commandJot": { "message": "Show Heddy's buttons for the words you selected" },
   "trayLabel": { "message": "Heddy: what to do with these words" },
-  "trayJotIt": { "message": "Jot it" },
   "trayMore": { "message": "More" },
   "menuCopy": { "message": "Copy" },
   "menuParagraph": { "message": "Select the whole paragraph" },
@@ -88,7 +86,6 @@
     "placeholders": { "key": { "content": "$1", "example": "Ctrl Shift K" } }
   },
   "cmdSnap": { "message": "Snap a picture (twice for the whole screen)" },
-  "menuJotPicture": { "message": "Jot this picture with Heddy" },
   "boxHintBefore": { "message": "Drag over a picture ·" },
   "boxHintAfter": { "message": "to stop" },
   "boxCollecting": { "message": "Box mode ·" },
@@ -206,5 +203,7 @@
   "aboutCopy": { "message": "Copy" },
   "aboutCopied": { "message": "Copied" },
   "aboutPrivacy": { "message": "Privacy" },
-  "aboutPrivacyLink": { "message": "What Heddy reads, and when" }
+  "aboutPrivacyLink": { "message": "What Heddy reads, and when" },
+  "trayAddCard": { "message": "+ Add" },
+  "menuAddPicture": { "message": "Add picture to Heddy" }
 }

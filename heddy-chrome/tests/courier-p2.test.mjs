@@ -49,7 +49,8 @@ function setup({ tabReply = { ok: true }, store = createCidStore() } = {}) {
       create: (o) => { calls.menus.push(o); },
     },
   };
-  const courier = createCourier({ chrome, store, randomUUID: () => CID, setTimeout: () => {} });
+  calls.collected = [];
+  const courier = createCourier({ chrome, store, randomUUID: () => CID, setTimeout: () => {}, collect: async (tab) => { calls.collected.push(tab.id); return { ok: true, n: 1 }; } });
   return { chrome, calls, courier };
 }
 
@@ -127,23 +128,20 @@ test('Undo: heddy:undo in a window without focus; then "Jot deleted." or "Couldn
   assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:undo', jotId: 'nope' }, fromYouTube), { ok: false });
 });
 
-test('Jot it: heddy:jot to a focused /capture/jot window, with the page’s own address', async () => {
+test('Round 5: nothing writes a jot from a page any more; heddy-ui:jot opens nothing', async () => {
   const s = setup();
-  const r = await s.courier.internal({ type: 'heddy-ui:jot', url: `${ARTICLE}#grid`, title: 'Understanding map scales', quote: 'On a 1:50 000 map', before: 'The scale is printed in the margin.', after: 'Grid squares' }, fromArticle);
-  assert.equal(r.ok, true);
-  assert.equal(s.calls.windows[0].focused, true);
-  const payload = await claim(s);
-  assert.equal(payload.type, 'heddy:jot');
-  assert.equal(payload.url, ARTICLE);
-  assert.equal(payload.context, 'The scale is printed in the margin. … Grid squares');
+  assert.equal(await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle), null);
+  assert.equal(await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q', tabId: 9, windowId: 1 }, { id: 'heddy' }), null);
+  assert.equal(s.calls.windows.length, 0);
+  const src = (await import('node:fs')).readFileSync(new URL('../lib/courier.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /buildJot\(/, 'the courier never builds heddy:jot');
 });
 
-test('a page can only jot or clip itself; the popup names its tab', async () => {
+test('a page can only clip itself; the popup names its tab', async () => {
   const s = setup();
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:jot', url: 'https://evil.example/', quote: 'q' }, fromArticle), { ok: false });
   assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:page', url: 'https://evil.example/', markdown: 'm' }, fromArticle), { ok: false });
   assert.equal(s.calls.windows.length, 0);
-  const r = await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q', tabId: 9, windowId: 1 }, { id: 'heddy' });
+  const r = await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, markdown: '# m', tabId: 9, windowId: 1 }, { id: 'heddy' });
   assert.equal(r.ok, true);
 });
 
@@ -162,19 +160,20 @@ test('Save page to Jotters: heddy:page to /capture/page; past 200 KB, the first 
   assert.equal(payload.markdown, 'a'.repeat(1000));
 });
 
-test('the context menu jots the selection; Ctrl Shift J shows the tray; both inject only then', async () => {
+test('"Save to Jotters" on a selection adds it as a card (and the panel opens, lib/cards.js); the command shows the tray; neither writes a jot', async () => {
   const s = setup();
   assert.equal(s.calls.injected.length, 0);
-  await s.courier.menuClicked({ menuItemId: MENU_ID, selectionText: 'x' }, { id: 9, windowId: 1, url: ARTICLE });
-  assert.deepEqual(s.calls.injected[0], { target: { tabId: 9 }, files: PAGE_FILES });
-  assert.deepEqual(s.calls.tabMessages.at(-1), { tabId: 9, m: { type: 'heddy-ui:jot-selection' } });
+  assert.deepEqual(await s.courier.menuClicked({ menuItemId: MENU_ID, selectionText: 'x' }, { id: 9, windowId: 1, url: ARTICLE }), { ok: true, n: 1 });
+  assert.deepEqual(s.calls.collected, [9]);
+  assert.equal(s.calls.windows.length, 0, 'no capture window: collect, then save');
   await s.courier.command(COMMAND, { id: 9, windowId: 1, url: ARTICLE });
+  assert.deepEqual(s.calls.injected[0], { target: { tabId: 9 }, files: PAGE_FILES });
   assert.deepEqual(s.calls.tabMessages.at(-1), { tabId: 9, m: { type: 'heddy-ui:tray' } });
   await s.courier.command(COMMAND, undefined);
-  assert.equal(s.calls.injected.length, 3, 'with no tab given, the active tab');
+  assert.equal(s.calls.injected.length, 2, 'with no tab given, the active tab');
   assert.equal(await s.courier.command('something-else', { id: 9 }), null);
   assert.equal(await s.courier.menuClicked({ menuItemId: 'other' }, { id: 9 }), null);
-  assert.equal(s.calls.injected.length, 3);
+  assert.deepEqual(s.calls.collected, [9]);
 });
 
 test('a page Heddy may not script (chrome://, the Web Store) fails quietly', async () => {
@@ -186,10 +185,10 @@ test('a page Heddy may not script (chrome://, the Web Store) fails quietly', asy
 test('the menu item is on selections only, in Heddy’s language', async () => {
   const s = setup();
   await s.courier.installMenus('zh_CN');
-  assert.deepEqual(s.calls.menus, [`remove:${MENU_ID}`, { id: MENU_ID, title: '用 Heddy 写批注', contexts: ['selection'] }], 'a first install: nothing to remove, still created');
+  assert.deepEqual(s.calls.menus, [`remove:${MENU_ID}`, { id: MENU_ID, title: '存到 Jotters', contexts: ['selection'] }], 'a first install: nothing to remove, still created');
   assert.ok(!s.calls.menus.includes('removeAll'), 'never removes Phase 3’s items');
   await s.courier.installMenus('en');
-  assert.equal(s.calls.menus.at(-1).title, 'Jot it with Heddy');
+  assert.equal(s.calls.menus.at(-1).title, 'Save to Jotters');
 });
 
 test('Open goes to the child’s Jotter as well as My Clips, on the capture origin only', async () => {
@@ -201,18 +200,10 @@ test('Open goes to the child’s Jotter as well as My Clips, on the capture orig
 
 const JOTTER = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
 
-test('Jot it saved: the window closes on the site’s side, the page shows "Jotted", the quote, Undo, Open in Jotter', async () => {
-  const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
-  await claim(s);
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId: JOT, jotterId: JOTTER, quote: 'On a 1:50 000 map' }, page());
-  assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'jotted', quote: 'On a 1:50 000 map', jotId: JOT, jotterId: JOTTER, href: `${PROD}/study/jotters/${JOTTER}` } }]);
-});
-
 test('Open in Jotter without a valid jotterId goes to the Jotters shelf', async () => {
   for (const jotterId of [undefined, '../../admin', 'abc']) {
     const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle);
+    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
     await claim(s);
     await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId: JOT, jotterId }, page());
     assert.equal(s.calls.tabMessages[0].m.href, `${PROD}/study/jotters`, String(jotterId));
@@ -251,7 +242,7 @@ test('Undo of a web jot names its Jotter; Undo of an H jot sends jotId alone; a 
 
 test('Cancel or Close in a capture window (heddy:result cancelled): Heddy closes that window, no toast, cid dropped', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
   await claim(s);
   assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
   assert.deepEqual(s.calls.windowsRemoved, [42]);
@@ -286,7 +277,7 @@ test('a Save page to Jotters ok that comes ~30 s after the tap (the site waited 
 
 test('Close under a failure that was already reported still closes the window', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, title: 'Map scales', quote: 'On a 1:50 000 map' }, fromArticle);
+  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
   await claim(s);
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'save_failed' }, page());
   assert.deepEqual(s.calls.windowsRemoved, [], 'a failure leaves it open');

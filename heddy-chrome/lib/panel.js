@@ -99,6 +99,18 @@
         .catch(function () { return toggleWindow(tab); });
     }
 
+    /** Open the panel on a page if it is not open already (never closes it):
+     *  after something was added to the cards from the page's own menu or
+     *  tray, so the child sees the card and can save or keep collecting. A
+     *  page Chrome keeps from extensions has nothing to add, so no window. */
+    function show(tab) {
+      if (!tab || tab.id == null) return Promise.resolve({ ok: false });
+      return Promise.resolve()
+        .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: PANEL_FILES }); })
+        .then(function () { return chrome.tabs.sendMessage(tab.id, { type: 'heddy-panel:open', tabId: tab.id }); })
+        .then(function (r) { return { ok: !!(r && r.open) }; }, function () { return { ok: false }; });
+    }
+
     /** Take the panel off a page (before Snap a picture), and resolve once
      *  it is gone from the screen. Nothing to do resolves too. */
     function hide(tabId) {
@@ -118,7 +130,7 @@
       });
     }
 
-    return { clicked: clicked, hide: hide, windowRemoved: windowRemoved };
+    return { clicked: clicked, show: show, hide: hide, windowRemoved: windowRemoved };
   }
 
   var api = { PANEL_FILES: PANEL_FILES, PAGE: PAGE, WINDOWS_KEY: WINDOWS_KEY, WINDOW: WINDOW, pageUrl: pageUrl, windowBounds: windowBounds, createPanel: createPanel };

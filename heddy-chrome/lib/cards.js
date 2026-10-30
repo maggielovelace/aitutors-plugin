@@ -209,7 +209,7 @@
    * (lib/tools.js createSender), randomUUID, pageFiles (what the page needs
    * for taking words and drawing numbers), capture(tab, rect, vw, vh) →
    * Promise<{png, box}> (lib/snap.js's crop), droppedText() → Promise<string>,
-   * showLine(tabId, text) }
+   * showLine(tabId, text), showPanel(tab) → opens the panel if it is closed }
    */
   function createCards(deps) {
     var chrome = deps.chrome;
@@ -309,6 +309,18 @@
             s.cards.push(card);
             return store(tab.id, s).then(function () { return changed(tab.id, s); }).then(function () { return reply(s, { n: s.cards.length }); });
           }, function () { return reply(s, { ok: false, error: 'page' }); });
+      });
+    }
+
+    /** "Save to Jotters" on the selection's right-click menu, and the page
+     *  tray's + Add (D54, D55): the words become the next card and the panel
+     *  opens on them, so the child can save now or keep collecting. Nothing
+     *  is saved straight away and no jot is written. */
+    function collect(tab) {
+      return addText(tab).then(function (r) {
+        return Promise.resolve(deps.showPanel ? deps.showPanel(tab) : null)
+          .catch(function () {})
+          .then(function () { return r; });
       });
     }
 
@@ -432,7 +444,8 @@
     }
 
     var FROM_PANEL = { 'heddy-cards:get': 1, 'heddy-cards:add-text': 1, 'heddy-cards:remove': 1, 'heddy-cards:save': 1, 'heddy-cards:tool': 1 };
-    var FROM_BOX = { 'heddy-box:state': 1, 'heddy-box:keep': 1, 'heddy-box:save': 1, 'heddy-box:tool': 1 };
+    // From the page itself (box mode, the page tray): its own top frame only.
+    var FROM_BOX = { 'heddy-box:state': 1, 'heddy-box:keep': 1, 'heddy-box:save': 1, 'heddy-box:tool': 1, 'heddy-cards:collect': 1 };
 
     /** chrome.runtime.onMessage. Resolves to the reply, or undefined for a
      *  message that is not the cards'. The panel (Heddy's own page) names
@@ -451,6 +464,7 @@
           case 'heddy-cards:remove': return remove(tab, String(message.id || ''));
           case 'heddy-cards:save': return save(tab, message.then, message.page === true);
           case 'heddy-cards:tool': return tool(tab, message);
+          case 'heddy-cards:collect': return collect(tab);
           case 'heddy-box:state': return state(tab);
           case 'heddy-box:keep': return addImage(tab, message);
           case 'heddy-box:save': {
@@ -495,7 +509,7 @@
       return forget(tabId);
     }
 
-    return { internal: internal, saved: saved, tabUpdated: tabUpdated, tabGone: tabGone, load: load };
+    return { internal: internal, collect: collect, saved: saved, tabUpdated: tabUpdated, tabGone: tabGone, load: load };
   }
 
   var api = {

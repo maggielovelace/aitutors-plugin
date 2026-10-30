@@ -2,8 +2,9 @@
 // artifact R3b · 00 P2 "snap, then tighten", R3b · 01, R5b · C).
 //
 // Injected by the background on the child's gesture (activeTab): the panel's
-// + Picture or Snap a picture icon, Ctrl Shift K, or "Jot this picture with
-// Heddy" on an image. The page dims; pictures under the pointer get an
+// + Picture or Snap a picture icon, Ctrl Shift K, or "Add picture to Heddy"
+// on an image (which keeps that picture as a card at once, as the whole-tab
+// press keeps the whole visible tab). The page dims; pictures under the pointer get an
 // outline and one click takes the whole picture; a drag draws a free box with
 // four corner handles, movable and resizable until a button is tapped; under
 // 24 × 24 is ignored; Esc leaves.
@@ -698,10 +699,10 @@
 
   /** + Picture: this box becomes the next numbered card; box mode stays on. */
   function keepCurrent() {
-    if (!current || kept.length >= MAX_PICTURES) return;
+    if (!current || kept.length >= MAX_PICTURES) return Promise.resolve();
     var m = boxMessage();
-    if (!m) return;
-    withShot(Object.assign({ type: 'heddy-box:keep' }, m)).then(function (reply) {
+    if (!m) return Promise.resolve();
+    return withShot(Object.assign({ type: 'heddy-box:keep' }, m)).then(function (reply) {
       if (!host) return;
       if (!reply.ok) return failed(reply);
       kept.push({ id: reply.id, n: reply.n, rect: m.page });
@@ -877,8 +878,16 @@
       checkTimer = setInterval(checkPage, CHECK_MS);
       draw();
       outline();
-      var img = opts && kept.length < MAX_PICTURES && imageBySrc(opts.srcUrl);
-      if (img) return takePicture(img);
+      // "Add picture to Heddy" on an image, and the whole-tab press: the box
+      // is drawn for the child, and with `keep` it is kept as a card at once.
+      var wants = opts && (opts.whole || opts.srcUrl);
+      if (wants && kept.length >= MAX_PICTURES) return note(tr('cardsFullPictures'));
+      if (opts && opts.whole) {
+        wholePage();
+        return opts.keep ? keepCurrent() : null;
+      }
+      var img = opts && imageBySrc(opts.srcUrl);
+      if (img) return takePicture(img).then(function () { if (opts.keep && current) return keepCurrent(); });
     });
   }
 
@@ -896,7 +905,7 @@
 
   chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (!message || message.type !== 'heddy-box:start' || sender.id !== chrome.runtime.id || sender.tab) return false;
-    open({ srcUrl: typeof message.srcUrl === 'string' ? message.srcUrl : '' }).then(
+    open({ srcUrl: typeof message.srcUrl === 'string' ? message.srcUrl : '', whole: message.whole === true, keep: message.keep === true }).then(
       function () { sendResponse({ ok: true }); },
       function () { sendResponse({ ok: false }); }
     );

@@ -43,10 +43,13 @@ And on any page:
   **Save to Jotters** · **+ Picture** for another · **Heddy ▾** with Explain
   this picture, Make a card, Ask Heddy about it, Copy picture and Whole
   visible page.
-- **Jot it with Heddy** on the right-click menu still jots a selection at
-  once. You can give it a shortcut of your own at
-  `chrome://extensions/shortcuts` (Heddy sets none, so it never takes one of
-  Chrome's).
+- **Right-click** words → *Save to Jotters*, or a picture → *Add picture to
+  Heddy*: either becomes the next card, and the panel opens on it. Heddy's
+  buttons under a selection (+ Add, Explain, Make a card, Ask Heddy) come up
+  with a shortcut of your own at `chrome://extensions/shortcuts` (Heddy sets
+  none, so it never takes one of Chrome's). Ctrl Shift K pressed twice keeps
+  the whole visible tab as a card. Nothing Heddy does writes a jot: you jot
+  in the notebook, from the left page.
 - **Save page to Jotters** keeps the readable part of a page as a source in
   your Jotters. A very long page keeps its first part, and Heddy tells you so.
 
