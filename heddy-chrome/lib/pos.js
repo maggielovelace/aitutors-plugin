@@ -137,6 +137,111 @@
     return -1;
   }
 
+  // ─── the words around a quote (before / after) ─────────────────────────────
+  //
+  // Range.toString() and textContent run neighbouring elements together:
+  // a nav of links read as "HomeSystems Our storyThe teamBlog" (owner's real
+  // test, 2026-10-30). wordsBetween reads the text between two points with a
+  // space wherever an element starts or ends that the reader sees as apart
+  // (a block, a list item, a link laid out as a box), and nowhere else, so a
+  // word split by inline markup (im<b>port</b>ant) stays one word. Nav,
+  // header, footer and aside are left out, as textBlocks leaves them out,
+  // unless the quote itself is inside one.
+
+  var NEVER = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+  var APART = {
+    P: 1, DIV: 1, LI: 1, UL: 1, OL: 1, DL: 1, DT: 1, DD: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1,
+    SECTION: 1, ARTICLE: 1, MAIN: 1, NAV: 1, HEADER: 1, FOOTER: 1, ASIDE: 1, TABLE: 1, THEAD: 1,
+    TBODY: 1, TFOOT: 1, TR: 1, TD: 1, TH: 1, CAPTION: 1, BLOCKQUOTE: 1, PRE: 1, FIGURE: 1,
+    FIGCAPTION: 1, FORM: 1, FIELDSET: 1, BR: 1, HR: 1, IMG: 1, BUTTON: 1, OPTION: 1, ADDRESS: 1,
+    DETAILS: 1, SUMMARY: 1,
+  };
+
+  /** By tag alone: 'skip' (never read), 'break' (a space either side), or
+   *  '' (inline: no space). */
+  function tagKind(el) {
+    var n = name(el);
+    if (NEVER[n] || OUTSIDE[n]) return 'skip';
+    return APART[n] ? 'break' : '';
+  }
+
+  /** In the page: tagKind, plus what the page's CSS says. Hidden is skipped;
+   *  anything not laid out inline (a link as a block, a flex item, an
+   *  inline-block) is apart; an inline element with space beside it
+   *  (margin or padding left or right) is apart too. getStyle(el) →
+   *  {display, marginLeft, marginRight, paddingLeft, paddingRight} or null. */
+  function styleKind(getStyle) {
+    return function (el) {
+      var k = tagKind(el);
+      if (k === 'skip') return k;
+      var st = null;
+      try { st = getStyle(el); } catch (e) { st = null; }
+      if (!st) return k;
+      var d = String(st.display || '');
+      if (d === 'none') return 'skip';
+      if (k === 'break') return k;
+      if (d && d !== 'inline' && d !== 'contents') return 'break';
+      var room = [st.marginLeft, st.marginRight, st.paddingLeft, st.paddingRight].some(function (v) { return parseFloat(v) > 0; });
+      return room ? 'break' : '';
+    };
+  }
+
+  function ancestorsOf(node) {
+    var out = [];
+    for (var n = node; n; n = n.parentNode) out.push(n);
+    return out;
+  }
+
+  /**
+   * The words between two points under rootEl ({node, offset}, as a Range's
+   * boundaries; a missing start is rootEl's start, a missing end its end),
+   * one space where elements stand apart, white space folded. kind(el) as
+   * tagKind (the default) or styleKind. A skipped element that holds either
+   * point is read all the same.
+   */
+  function wordsBetween(rootEl, start, end, kind) {
+    var classify = kind || tagKind;
+    var holds = ancestorsOf(start && start.node).concat(ancestorsOf(end && end.node));
+    var parts = [];
+    var on = !start;
+    var done = false;
+
+    (function walk(n) {
+      var list = kids(n);
+      for (var i = 0; i <= list.length && !done; i++) {
+        if (start && n === start.node && !isText(n) && i === start.offset) on = true;
+        if (end && n === end.node && !isText(n) && i === end.offset) { done = true; return; }
+        if (i === list.length) break;
+        var k = list[i];
+        if (isText(k)) {
+          var v = String(k.nodeValue || '');
+          var from = 0;
+          if (start && k === start.node) { on = true; from = start.offset; }
+          if (end && k === end.node) {
+            if (on) parts.push(v.slice(from, end.offset));
+            done = true;
+            return;
+          }
+          if (on) parts.push(v.slice(from));
+          continue;
+        }
+        if (k.nodeType !== 1) continue;
+        var c = classify(k);
+        if (c === 'skip' && holds.indexOf(k) < 0) continue;
+        if (c === 'break' && on) parts.push(' ');
+        walk(k);
+        if (c === 'break' && on) parts.push(' ');
+      }
+    })(rootEl);
+
+    return parts.join('').replace(/\s+/g, ' ').trim();
+  }
+
+  /** An element's words, as wordsBetween reads them. */
+  function wordsOf(el, kind) {
+    return el ? wordsBetween(el, null, null, kind) : '';
+  }
+
   /** pos is two whole numbers ≥ 0. */
   function isPos(p) {
     return !!p && typeof p === 'object' &&
@@ -144,7 +249,7 @@
       typeof p.offset === 'number' && Number.isInteger(p.offset) && p.offset >= 0;
   }
 
-  var api = { BLOCK: BLOCK, OUTSIDE: OUTSIDE, textBlocks: textBlocks, textPos: textPos, imageBlock: imageBlock, imageAfterIndex: imageAfterIndex, isPos: isPos };
+  var api = { BLOCK: BLOCK, OUTSIDE: OUTSIDE, tagKind: tagKind, styleKind: styleKind, wordsBetween: wordsBetween, wordsOf: wordsOf, textBlocks: textBlocks, textPos: textPos, imageBlock: imageBlock, imageAfterIndex: imageAfterIndex, isPos: isPos };
   root.HeddyPos = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

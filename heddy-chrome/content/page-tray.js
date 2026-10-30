@@ -72,6 +72,23 @@
     return el || document.body;
   }
 
+  /** How the page's CSS sets elements apart, for the words around a quote
+   *  (lib/pos.js wordsBetween): links laid out as boxes, list items and
+   *  blocks are read with a space between them, never run together. */
+  function readerKind() {
+    var POS = globalThis.HeddyPos;
+    return POS && POS.styleKind(function (el) { return getComputedStyle(el); });
+  }
+
+  /** The words between two points, apart where the page sets them apart,
+   *  with nav, header, footer and aside left out. */
+  function wordsBetween(rootEl, start, end) {
+    var POS = globalThis.HeddyPos;
+    if (POS && POS.wordsBetween) return POS.wordsBetween(rootEl, start, end, readerKind());
+    // lib/pos.js is in every injection with this file; this is a fallback.
+    return slice(start ? start.node : rootEl, start ? start.offset : 0, end ? end.node : rootEl, end ? end.offset : rootEl.childNodes.length);
+  }
+
   function slice(startNode, startOffset, endNode, endOffset) {
     try {
       var r = document.createRange();
@@ -92,8 +109,8 @@
     var quote = sel.toString();
     if (!quote.trim()) return null;
     var rootEl = contextRoot(range);
-    var before = slice(rootEl, 0, range.startContainer, range.startOffset);
-    var after = slice(range.endContainer, range.endOffset, rootEl, rootEl.childNodes.length);
+    var before = wordsBetween(rootEl, null, { node: range.startContainer, offset: range.startOffset });
+    var after = wordsBetween(rootEl, { node: range.endContainer, offset: range.endOffset }, null);
     return {
       quote: quote,
       before: before.slice(-CONTEXT_SIDE * 2),

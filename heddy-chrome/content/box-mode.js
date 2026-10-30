@@ -395,9 +395,13 @@
 
   // ─── the context sent with the cover ───────────────────────────────────────
 
+  /** An element's words: blocks, list items and links laid out as boxes
+   *  apart, nav, header, footer and aside left out (lib/pos.js wordsOf),
+   *  never textContent's run-together "HomeSystems Our story". */
   function textOf(el) {
-    return el ? String(el.textContent || '') : '';
+    return el ? POS.wordsOf(el, readerKind) : '';
   }
+  var readerKind = POS.styleKind(function (el) { return getComputedStyle(el); });
 
   /** The caption, else the alt text, else the sentence before the picture. */
   function contextFor(el) {
@@ -437,7 +441,7 @@
     return {
       pos: { block: POS.imageBlock(tops, pageRect.y), offset: 0 },
       before: el && el.isConnected ? contextFor(el) : contextAt(viewRect),
-      after: next >= 0 ? firstWords(blocks[next].textContent, MAX_CONTEXT) : '',
+      after: next >= 0 ? firstWords(textOf(blocks[next]), MAX_CONTEXT) : '',
     };
   }
 
