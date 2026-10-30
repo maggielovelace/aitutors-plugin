@@ -10,9 +10,9 @@ export const load = createRequire(join(ROOT, 'package.json'));
 export const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 export const manifest = () => JSON.parse(read('manifest.json'));
 
-/** Every file a store build zips: the folder minus tests, scripts, docs and dev files. */
+/** Every file a store build zips: the folder minus tests, scripts, the store listing (store/), docs and dev files. */
 export function shippedFiles() {
-  const skip = new Set(['tests', 'scripts', 'node_modules', '.git']);
+  const skip = new Set(['tests', 'scripts', 'store', 'node_modules', '.git']);
   const out = [];
   (function walk(dir) {
     for (const name of readdirSync(dir)) {

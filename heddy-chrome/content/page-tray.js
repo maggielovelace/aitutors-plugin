@@ -173,9 +173,9 @@
   var CSS =
     ':host{all:initial;position:absolute;z-index:2147483647}' +
     '.bar{display:flex;align-items:stretch;gap:2px;padding:4px;border-radius:12px;background:#002147;color:#fff;' +
-    'box-shadow:0 10px 26px rgba(0,0,0,.22);white-space:nowrap;line-height:1;font-family:Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
+    'box-shadow:0 10px 26px rgba(0,0,0,.22);white-space:nowrap;line-height:1;font-family:"Heddy Manrope",Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
     '.bar button{all:unset;box-sizing:border-box;display:grid;justify-items:center;align-content:center;gap:5px;min-width:76px;height:50px;padding:0 8px;' +
-    'border-radius:9px;font:700 11.5px Manrope,Roboto,Arial,sans-serif;color:#fff;cursor:pointer}' +
+    'border-radius:9px;font:700 11.5px "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#fff;cursor:pointer}' +
     '.bar button.pri{background:#DC9400;color:#002147}' +
     '.bar button.more{min-width:36px}' +
     '.bar button.more[aria-expanded="true"],.bar button:not(.pri):hover{background:rgba(255,255,255,.16)}' +
@@ -184,7 +184,7 @@
     'svg{display:block;flex:none}' +
     '.hf{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center}' +
     '.menu{position:absolute;left:0;top:64px;display:grid;gap:1px;min-width:220px;padding:5px;border-radius:11px;background:#fdfcf8;' +
-    'border:1px solid #d9d2c3;box-shadow:0 12px 30px rgba(0,0,0,.18);font:600 13px/1.2 Manrope,Roboto,Arial,sans-serif;color:#002147}' +
+    'border:1px solid #d9d2c3;box-shadow:0 12px 30px rgba(0,0,0,.18);font:600 13px/1.2 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#002147}' +
     '.menu[hidden]{display:none}' +
     '.menu button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;cursor:pointer;font:inherit;color:inherit;white-space:nowrap}' +
     '.menu button:hover,.menu button:focus-visible{background:#efe9dc}' +

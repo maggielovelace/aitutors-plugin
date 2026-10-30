@@ -19,8 +19,10 @@
   var DOUBLE_PRESS_MS = 400;
   var COMMAND = 'snap-picture';
   var MENU_ID = 'heddy-snap-image';
+  // Manrope for the shadow-root UI (lib/fonts.js); first in every injection.
+  var FONT_FILES = ['lib/font-data.js', 'lib/fonts.js'];
   // What box mode needs in the page, injected on the gesture (activeTab).
-  var BOX_FILES = ['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'content/box-mode.js'];
+  var BOX_FILES = FONT_FILES.concat(['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'content/box-mode.js']);
   // captureVisibleTab allows two calls a second; one retry after this.
   var CAPTURE_RETRY_MS = 600;
   // chrome.storage.session keys of kept pictures: heddyBox:<tabId>:<collection id>.
@@ -68,7 +70,7 @@
     var shadow = host.attachShadow({ mode: 'closed' });
     var style = document.createElement('style');
     style.textContent = ':host{all:initial;position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647}' +
-      'span{display:block;background:#002147;color:#fff;border-radius:999px;padding:7px 14px;font:600 12.5px Manrope,Roboto,Arial,sans-serif;white-space:nowrap}';
+      'span{display:block;background:#002147;color:#fff;border-radius:999px;padding:7px 14px;font:600 12.5px "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;white-space:nowrap}';
     var line = document.createElement('span');
     line.setAttribute('role', 'status');
     line.textContent = text;
@@ -357,7 +359,9 @@
         delete droppedOn[tabId];
         return Promise.resolve(deps.droppedText ? deps.droppedText() : '')
           .then(function (text) {
-            return chrome.scripting.executeScript({ target: { tabId: tabId }, func: showDroppedLine, args: [String(text || '')] });
+            return chrome.scripting.executeScript({ target: { tabId: tabId }, files: FONT_FILES })
+              .catch(function () {})
+              .then(function () { return chrome.scripting.executeScript({ target: { tabId: tabId }, func: showDroppedLine, args: [String(text || '')] }); });
           })
           .catch(function () {});
       }
@@ -450,6 +454,7 @@
     MENU_ID: MENU_ID,
     BOX_PREFIX: BOX_PREFIX,
     BOX_FILES: BOX_FILES,
+    FONT_FILES: FONT_FILES,
     SNAP_ICON: SNAP_ICON,
     createGate: createGate,
     createSnap: createSnap,

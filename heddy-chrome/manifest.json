@@ -34,6 +34,8 @@
     {
       "matches": ["https://www.youtube.com/watch*"],
       "js": [
+        "lib/font-data.js",
+        "lib/fonts.js",
         "lib/messages.js",
         "lib/i18n.js",
         "lib/protocol.js",

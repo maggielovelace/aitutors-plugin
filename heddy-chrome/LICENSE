@@ -27,3 +27,8 @@ Marks excluded. This licence covers the code. It does not cover the names
 character and marks (the files in icons/ and the eyes mark drawn in
 lib/marks.js), which are brand IP of AI Tutors (aitutors.me). A fork must use
 its own name and icons.
+
+Fonts excluded. The Manrope typeface in fonts/ (and the same font data in
+lib/font-data.js) is not covered by this licence. It is Copyright 2018 The
+Manrope Project Authors and is licensed under the SIL Open Font License,
+Version 1.1; see fonts/OFL.txt.

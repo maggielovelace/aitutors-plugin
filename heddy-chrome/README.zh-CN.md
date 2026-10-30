@@ -71,7 +71,8 @@ aitutors.me 上没有任何功能依赖 Heddy：没有它，孩子照样可以�
 打开弹出框时，读视频的标题、频道和时长给你看。在其他网页上，只有你打开弹出框、
 右键「用 Heddy 写批注」或按你设的快捷键时，它才读你选中的文字和前后各最多
 300 个字符；点「剪下这一页」时，才读这一页的正文。它不读字幕、评论、浏览记录或 Cookie，不做统计，也不上报
-错误。完整说明见 [PRIVACY.md](PRIVACY.md)（英文）。
+错误。你点「截一张图」、右键图片或按 Ctrl Shift K 时，它才截下屏幕上能看到的部分，只保留你框出的那一块。
+在 Chrome 网上应用店里，这些都申报为「网站内容」：只在你让它读时（写批注、剪下这一页、截一张图、讲解、做成卡片、问 Heddy）才收集，只交给 aitutors.me、存在你自己的账号里；绝不出售，不用于广告或信用评估，除 aitutors.me 自己的处理外不与任何第三方分享。完整说明见 [PRIVACY.md](PRIVACY.md)（英文）。
 
 ## 测试
 
@@ -88,3 +89,8 @@ npm test
 
 代码采用 MIT 许可，见 [LICENSE](LICENSE)。Heddy 的名字、角色形象和图标
 不在许可范围内。
+
+`fonts/` 里的 Manrope 字体（以及 `lib/font-data.js` 里的同一份字体数据）
+版权归 The Manrope Project Authors，采用 SIL Open Font License 1.1 许可，
+见 [fonts/OFL.txt](fonts/OFL.txt)。字体随扩展程序打包，不从网上下载：扩展程序
+仍然不发出任何网络请求。

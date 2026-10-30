@@ -97,18 +97,18 @@
     ':host{all:initial;position:fixed;top:16px;right:24px;z-index:2147483647}' +
     '.toast{box-sizing:border-box;width:380px;display:flex;align-items:flex-start;gap:11px;padding:11px 13px;' +
     'background:#fdfcf8;border:1px solid #d9d2c3;border-radius:12px;color:#002147;box-shadow:0 12px 30px rgba(0,0,0,.28);' +
-    'font-family:Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
+    'font-family:"Heddy Manrope",Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
     '.toast.wide{width:400px}' +
     'svg{display:block;flex:none}' +
     '.t{display:grid;gap:1px;min-width:0;flex:1}' +
-    '.t b{font:700 14px/1.35 Manrope,Roboto,Arial,sans-serif}' +
-    '.t span{font:500 12px/1.35 Manrope,Roboto,Arial,sans-serif;color:#5d6878}' +
+    '.t b{font:700 14px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif}' +
+    '.t span{font:500 12px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#5d6878}' +
     '.t q{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;quotes:none;margin-top:4px;' +
     'font:500 13px/1.45 "Source Serif 4",Georgia,serif;color:#14253f;overflow-wrap:anywhere}' +
     '.o{display:flex;flex-direction:column;align-items:flex-end;gap:8px;align-self:center}' +
     '.toast.wide .o{align-self:flex-start}' +
-    '.o button{all:unset;cursor:pointer;font:700 13px/1.35 Manrope,Roboto,Arial,sans-serif;color:#1f6a40;white-space:nowrap}' +
-    '.o button.q{font:600 12px/1.35 Manrope,Roboto,Arial,sans-serif;color:#5d6878;text-decoration:underline;text-underline-offset:3px}' +
+    '.o button{all:unset;cursor:pointer;font:700 13px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#1f6a40;white-space:nowrap}' +
+    '.o button.q{font:600 12px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#5d6878;text-decoration:underline;text-underline-offset:3px}' +
     '.o button:hover{text-decoration:underline;text-underline-offset:3px}' +
     '.o button:focus-visible{outline:2px solid #1f6a40;outline-offset:2px;border-radius:4px}';
 
