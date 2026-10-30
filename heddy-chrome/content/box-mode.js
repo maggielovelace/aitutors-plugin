@@ -1,4 +1,4 @@
-// content/box-mode.js — box mode on any page (PRD-v0.96.0 D30, D33, D55, D58;
+// content/box-mode.js — box mode on any page (PRD-v0.96.0 D30, D33, D55, D64;
 // artifact R3b · 00 P2 "snap, then tighten", R3b · 01, R5b · C).
 //
 // Injected by the background on the child's gesture (activeTab): the panel's
@@ -7,15 +7,23 @@
 // press keeps the whole visible tab). The page dims; pictures under the pointer get an
 // outline and one click takes the whole picture; a drag draws a free box with
 // four corner handles, movable and resizable until a button is tapped; under
-// 24 × 24 is ignored; Esc leaves.
+// 24 × 24 is ignored.
 //
-// The bar under the box has three buttons (D58, R5b · C):
-//   Save to Jotters (gold)  every card in the panel, plus this box, to the
-//                           Jotter's left page (lib/cards.js, heddy:save)
-//   + Picture               keeps this box as the next numbered card and
+// Box mode is the panel's Picture mode (Round 7, D64); Text mode is the page
+// as it is, where selected words add themselves (D65, content/panel.js). The
+// bar under the box reads:
+//   [Text | Picture]        the switch: Text ends box mode (the pictures kept
+//                           stay as cards) and leaves a small bar at the
+//                           bottom with the switch on Text and "Select
+//                           words: each one is added"; Picture there starts
+//                           box mode again
+//   + Picture (gold)        keeps this box as the next numbered card and
 //                           leaves box mode on for another; hidden at 4
 //   Heddy ▾                 Explain this picture, Make a card, Ask Heddy
 //                           about it, then Copy picture and Whole visible page
+// Saving happens only in the panel, which picture mode always opens
+// (lib/snap.js). Esc in picture mode switches to Text. Before a box is drawn
+// the same small bar holds the switch and the hint.
 //
 // Kept boxes are cards: the page's card layer (content/cards-layer.js) draws
 // them green with their card number, and the panel stays open beside box
@@ -40,18 +48,35 @@
 
   // ─── pure rules (tested in tests/box-mode.test.mjs) ────────────────────────
 
-  /** What the bar shows. images: picture cards already kept from this page;
-   *  current: a box drawn and not yet kept. */
-  function barModel(images, current) {
+  /** What the bars show. images: picture cards already kept from this page;
+   *  current: a box drawn and not yet kept; mode: 'picture' (box mode) or
+   *  'text' (the small bar left after switching to Text, D64). */
+  function barModel(images, current, mode) {
+    if (mode === 'text') {
+      return { mode: 'text', showPlus: false, canDraw: false, showBar: false, showDock: true, collecting: false, line: 'textModeLine' };
+    }
+    // The bar shows under the box, or under the last kept one.
+    var showBar = !!current || images > 0;
     return {
+      mode: 'picture',
       // + Picture keeps the current box; at 4 pictures it is hidden (D58).
       showPlus: !!current && images < MAX_PICTURES,
       // At 4 pictures no fifth box is drawn.
       canDraw: images < MAX_PICTURES,
-      // The bar shows under the box, or under the last kept one.
-      showBar: !!current || images > 0,
+      showBar: showBar,
+      // With no bar yet, the small bar holds the switch and the hint.
+      showDock: !showBar,
       collecting: images > 0,
+      line: showBar ? null : 'boxHintBefore',
     };
+  }
+
+  /** The switch's two buttons, and which one is on. */
+  function switchModel(mode) {
+    return [
+      { mode: 'text', label: 'modeText', pressed: mode === 'text' },
+      { mode: 'picture', label: 'modePicture', pressed: mode !== 'text' },
+    ];
   }
 
   /** A rectangle from two corners, in either direction. */
@@ -164,6 +189,7 @@
     MIN_PICTURE: MIN_PICTURE,
     MAX_PICTURES: MAX_PICTURES,
     barModel: barModel,
+    switchModel: switchModel,
     rectFrom: rectFrom,
     bigEnough: bigEnough,
     resize: resize,
@@ -185,17 +211,17 @@
 
   // Injected again on every gesture: one listener, and a restart.
   if (root.__heddyBoxMode) return;
-  root.__heddyBoxMode = pure;
+  // What the panel's page script and the panel's frame ask of box mode.
+  root.__heddyBoxMode = Object.assign({}, pure, { mode: currentMode, stop: toText, start: toPicture, panelClosed: panelClosed });
 
   var I = root.HeddyI18n;
   var M = root.HeddyMarks;
   var POS = root.HeddyPos;
   var tr = I.translator('en');
 
-  // The bar's line icons (the artifact's sprite: i-save, i-crop, i-search,
-  // i-star, i-quill, i-page), as constant SVG.
+  // The bar's line icons (the artifact's sprite: i-crop, i-search, i-star,
+  // i-quill, i-page), as constant SVG.
   var ICONS = {
-    save: '<path d="M4 7 H15 M4 12 H15 M4 17 H11 M18 13 V21 M14 17 H22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     crop: '<path d="M7 2.5 V17 H21.5 M2.5 7 H17 V21.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     search: '<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15 L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
     star: '<path d="M12 3.5 L14.6 9 L20.5 9.6 L16 13.6 L17.3 19.5 L12 16.5 L6.7 19.5 L8 13.6 L3.5 9.6 L9.4 9 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
@@ -238,6 +264,19 @@
     '.menu button:hover,.menu button:focus-visible{background:#eef0fb}' +
     '.menu button[aria-disabled="true"]{color:#9aa0a6;cursor:default;background:transparent}' +
     '.menu hr{all:unset;display:block;height:1px;background:#e3e5e8;margin:3px 4px}' +
+    // The Text | Picture switch (D64), on the bar and on the small bar. Not
+    // .sw: that is the box's south-west handle.
+    '.msw{display:flex;align-items:center;gap:2px;padding:3px;margin:6px 4px;border-radius:9px;background:rgba(255,255,255,.14)}' +
+    '.msw button{all:unset;box-sizing:border-box;height:32px;padding:0 11px;border-radius:7px;display:grid;place-items:center;font:700 12px ' + SANS + ';color:#d5ddea;cursor:pointer}' +
+    '.msw button:hover{background:rgba(255,255,255,.12)}' +
+    '.msw button[aria-pressed="true"]{background:#fff;color:#002147;cursor:default}' +
+    '.msw button:focus-visible{outline:2px solid #DC9400;outline-offset:1px}' +
+    '.dock{position:absolute;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:0 16px 0 2px;border-radius:12px;background:#002147;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.22);font:600 12.5px ' + SANS + ';white-space:nowrap;pointer-events:auto}' +
+    '.dock .msw{margin:4px 2px}' +
+    '.dock .dl b{font:700 11px ' + MONO + ';background:rgba(255,255,255,.18);border-radius:5px;padding:1px 6px}' +
+    // Text mode: only the small bar, and the page under it is the page.
+    ':host(.text){pointer-events:none}' +
+    ':host(.text) .layer,:host(.text) .dim,:host(.text) .outs,:host(.text) .snap,:host(.text) .lbl,:host(.text) .box,:host(.text) .hint,:host(.text) .tray,:host(.text) .menu{display:none!important}' +
     '[hidden]{display:none!important}';
 
   var host = null, shadow = null, els = null;
@@ -247,6 +286,7 @@
   var hover = null; // {el, rect (viewport)} the picture under the pointer
   var drag = null; // {mode, x0, y0, start, corner}
   var busy = false;
+  var state = 'off'; // 'picture' (box mode), 'text' (the small bar only), 'off'
   var pageKey = '';
   var checkTimer = null, noteTimer = null, scanTimer = null;
 
@@ -403,6 +443,12 @@
 
   // ─── drawing ───────────────────────────────────────────────────────────────
 
+  function switchHtml() {
+    return '<span class="msw" role="group">' + switchModel('picture').map(function (b) {
+      return '<button type="button" data-mode="' + b.mode + '"></button>';
+    }).join('') + '</span>';
+  }
+
   function build() {
     host = document.createElement('heddy-box-mode');
     shadow = host.attachShadow({ mode: 'closed' });
@@ -416,11 +462,11 @@
       '<div class="snap" hidden></div><span class="lbl snaplbl" hidden></span>' +
       '<div class="box" hidden><i class="nw"></i><i class="ne"></i><i class="sw"></i><i class="se"></i></div>' +
       '<span class="lbl size" hidden></span>' +
-      '<span class="hint bottom" role="status"></span>' +
+      '<span class="hint top" role="status" hidden></span>' +
       '<span class="hint top note" role="status" hidden></span>' +
-      '<div class="tray" role="toolbar" hidden>' +
-      '<button type="button" class="pri" data-act="save">' + icon('save') + '<span></span></button>' +
-      '<button type="button" data-act="plus">' + icon('crop') + '<span></span></button>' +
+      '<div class="dock" role="toolbar" hidden>' + switchHtml() + '<span class="dl" role="status"></span></div>' +
+      '<div class="tray" role="toolbar" hidden>' + switchHtml() +
+      '<button type="button" class="pri" data-act="plus">' + icon('crop') + '<span></span></button>' +
       '<i></i><button type="button" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="hf">' + M.use('h-eyes', 16) + '</span><span></span></button>' +
       '</div>' +
       '<div class="menu" role="menu" hidden>' + menu + '</div>';
@@ -428,7 +474,8 @@
     els = {
       layer: q('.layer'), dim: q('.dim'), outs: q('.outs'),
       snap: q('.snap'), snapLbl: q('.snaplbl'), box: q('.box'), size: q('.size'),
-      hint: q('.hint.bottom'), note: q('.note'), tray: q('.tray'), menu: q('.menu'),
+      hint: q('.hint:not(.note)'), note: q('.note'), tray: q('.tray'), menu: q('.menu'),
+      dock: q('.dock'), dockLine: q('.dock .dl'),
       btn: {},
     };
     Array.prototype.forEach.call(shadow.querySelectorAll('[data-act]'), function (b) { els.btn[b.getAttribute('data-act')] = b; });
@@ -440,6 +487,7 @@
     shadow.addEventListener('pointercancel', up);
     els.tray.addEventListener('click', trayClick);
     els.menu.addEventListener('click', trayClick);
+    els.dock.addEventListener('click', trayClick);
     // Under the panel, so the panel stays usable beside box mode (R5b);
     // above the page's card numbers, which it dims like the page.
     var de = document.documentElement;
@@ -449,8 +497,11 @@
 
   function labels() {
     var b = els.btn;
-    b.save.querySelector('span').textContent = tr('saveToJotters');
     b.plus.querySelector('span').textContent = tr('addPicture');
+    Array.prototype.forEach.call(shadow.querySelectorAll('.msw'), function (sw) {
+      sw.setAttribute('aria-label', tr('modeSwitchLabel'));
+      switchModel('picture').forEach(function (m) { sw.querySelector('[data-mode="' + m.mode + '"]').textContent = tr(m.label); });
+    });
     b.heddy.querySelector('span:last-child').textContent = tr('barHeddy');
     menuRows(0, null).forEach(function (row) { if (!row.sep) b[row.act].querySelector('span').textContent = tr(row.label); });
   }
@@ -467,8 +518,23 @@
 
   function draw() {
     if (!host) return;
-    var model = barModel(kept.length, current);
+    var model = barModel(kept.length, current, state);
     var w = freeRight(), h = vh();
+
+    // The switch shows which mode is on, wherever it is drawn.
+    switchModel(model.mode).forEach(function (m) {
+      Array.prototype.forEach.call(shadow.querySelectorAll('.msw [data-mode="' + m.mode + '"]'), function (b) {
+        b.setAttribute('aria-pressed', String(m.pressed));
+      });
+    });
+
+    // The small bar: the switch and one line, at the bottom, left of the panel.
+    els.dock.hidden = !model.showDock || !!drag || busy;
+    els.dock.style.left = (w / 2) + 'px';
+    if (model.mode === 'text') els.dockLine.textContent = tr(model.line);
+    else pill(els.dockLine, tr('boxHintBefore'), 'Esc', tr('boxHintAfter'));
+    host.classList.toggle('text', model.mode === 'text');
+    if (model.mode === 'text') return;
 
     // The dim: everywhere until a box cuts it out (the box's own shadow
     // dims around it); none while collecting with no box drawn.
@@ -496,13 +562,12 @@
       els.snapLbl.style.top = Math.max(0, hover.rect.top - 22) + 'px';
     }
 
-    // The hint, or the collecting pill: "Box mode · [1 kept] · Esc to stop".
-    els.hint.className = 'hint ' + (model.collecting ? 'top' : 'bottom');
+    // The collecting pill: "Box mode · [1 kept] · Esc to stop". Before
+    // anything is kept, the small bar carries the hint instead.
     els.hint.style.left = (w / 2) + 'px';
     if (model.collecting) pill(els.hint, tr('boxCollecting'), tr('boxKept', String(kept.length)), tr('boxEscDone'));
-    else pill(els.hint, tr('boxHintBefore'), 'Esc', tr('boxHintAfter'));
     // The notice takes the top line while it shows.
-    els.hint.hidden = model.collecting && !els.note.hidden;
+    els.hint.hidden = !model.collecting || !els.note.hidden;
 
     // The bar under the box (or under the last kept one).
     var anchor = current || (kept.length ? kept[kept.length - 1].rect : null);
@@ -511,7 +576,7 @@
       var b = els.btn;
       b.plus.hidden = !model.showPlus;
       var a = toView(anchor);
-      var tw = els.tray.offsetWidth || 260, th = els.tray.offsetHeight || 58;
+      var tw = els.tray.offsetWidth || 300, th = els.tray.offsetHeight || 58;
       var left = Math.max(8, Math.min(w - tw - 8, a.x));
       var top = a.y + a.h + 10;
       if (top + th > h - 8) top = a.y - th - 10;
@@ -575,6 +640,7 @@
   }
 
   function moveEvt(e) {
+    if (state !== 'picture') return;
     var x = e.clientX, y = e.clientY;
     if (!drag) {
       // Over the tray or its menu, nothing on the page is outlined.
@@ -648,6 +714,12 @@
   }
 
   function trayClick(e) {
+    var sw = e.target.closest && e.target.closest('button[data-mode]');
+    if (sw && !busy) {
+      e.stopPropagation();
+      if (sw.getAttribute('aria-pressed') === 'true') return;
+      return sw.getAttribute('data-mode') === 'text' ? toText() : toPicture();
+    }
     var b = e.target.closest && e.target.closest('button[data-act]');
     if (!b || busy) return;
     e.stopPropagation();
@@ -661,7 +733,6 @@
     }
     if (act !== 'copy') closeMenu();
     if (act === 'plus') return keepCurrent();
-    if (act === 'save') return saveAll();
     if (act === 'whole') return wholePage();
     if (act === 'copy') return copyPicture();
     return useTool(act);
@@ -710,23 +781,6 @@
       currentEl = null;
       draw();
       outline();
-    });
-  }
-
-  /** Save to Jotters (gold): every card, plus this box, in one heddy:save.
-   *  Box mode leaves once the window is open; the panel clears when the
-   *  site says they are saved. */
-  function saveAll() {
-    var m = current ? boxMessage() : null;
-    var message = { type: 'heddy-box:save', box: m && kept.length < MAX_PICTURES ? m : null };
-    var go = message.box ? withShot(message) : send(message).then(function (r) { return r || { ok: false }; });
-    busy = true;
-    draw();
-    go.then(function (reply) {
-      busy = false;
-      if (!host) return;
-      if (reply.ok) return close();
-      failed(reply);
     });
   }
 
@@ -812,12 +866,13 @@
 
   // ─── open and close ────────────────────────────────────────────────────────
 
+  /** Esc in picture mode switches to Text (D64); the panel stays. */
   function onKey(e) {
-    if (e.key !== 'Escape') return;
+    if (e.key !== 'Escape' || state !== 'picture') return;
     e.preventDefault();
     e.stopPropagation();
     if (els && !els.menu.hidden) return closeMenu();
-    close();
+    toText();
   }
 
   var rescan = function () {
@@ -827,8 +882,46 @@
     scanTimer = setTimeout(outline, 120);
   };
 
-  /** Leave box mode. The pictures kept are cards: they stay in the panel. */
+  function panelOpen() {
+    return !!(root.__heddyPanel && root.__heddyPanel.isOpen && root.__heddyPanel.isOpen());
+  }
+
+  function tellMode(m) {
+    if (root.__heddyPanel && root.__heddyPanel.modeChanged) root.__heddyPanel.modeChanged(m);
+  }
+
+  function currentMode() {
+    return host && state === 'picture' ? 'picture' : 'text';
+  }
+
+  /** Switch to Text: box mode ends (the pictures kept stay as cards) and,
+   *  while the panel is open, the small bar stays with the switch on Text.
+   *  With the panel closed nothing would be added, so no bar says so. */
+  function toText() {
+    close();
+    if (panelOpen()) {
+      build();
+      state = 'text';
+      window.addEventListener('pagehide', close);
+      draw();
+    }
+  }
+
+  /** Switch to Picture from the small bar (or the panel): box mode again. */
+  function toPicture() {
+    return open({});
+  }
+
+  /** The panel closed: Text mode's small bar goes with it. */
+  function panelClosed() {
+    if (state === 'text') close();
+  }
+
+  /** Leave box mode, and the small bar. The pictures kept are cards: they
+   *  stay in the panel. */
   function close() {
+    var was = state;
+    state = 'off';
     if (host) host.remove();
     host = shadow = els = null;
     kept = [];
@@ -844,6 +937,7 @@
     window.removeEventListener('resize', rescan);
     window.removeEventListener('popstate', checkPage);
     window.removeEventListener('pagehide', close);
+    if (was === 'picture') tellMode('text');
   }
 
   /** The image the child right-clicked, by its address: the most visible
@@ -869,6 +963,8 @@
       kept = (st.images || []).map(function (x) { return { id: x.id, n: x.n, rect: x.rect }; });
       pageKey = samePageKey(location.href);
       build();
+      state = 'picture';
+      tellMode('picture');
       if (root.__heddyCards) root.__heddyCards.boxMode(true);
       window.addEventListener('keydown', onKey, true);
       window.addEventListener('scroll', rescan, true);
@@ -894,7 +990,8 @@
   // The panel's ✕ on a picture card: box mode lets go of that box too.
   if (root.__heddyCards && root.__heddyCards.onSync) {
     root.__heddyCards.onSync(function (list) {
-      if (!host) return;
+      // Text mode's small bar keeps no boxes: nothing to renumber or outline.
+      if (!host || state !== 'picture') return;
       var ids = {};
       list.forEach(function (c) { ids[c.id] = c.n; });
       kept = kept.filter(function (k) { return ids[k.id]; }).map(function (k) { return { id: k.id, n: ids[k.id], rect: k.rect }; });

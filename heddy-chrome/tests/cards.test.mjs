@@ -287,17 +287,11 @@ test('the site saved: the cards that save carried leave the list, any added sinc
   assert.deepEqual(s.calls.synced.at(-1).map((c) => c.n), [1]);
 });
 
-test('the crop bar’s Save to Jotters keeps the box being drawn as a card, then saves every card', async () => {
+test('the crop bar no longer saves (D64): heddy-box:save is not the cards’ message any more', async () => {
   const s = setup({ selection: SEL('one') });
   await s.ask({ type: 'heddy-cards:add-text' });
-  const r = await s.ask({ type: 'heddy-box:save', box: { rect: { x: 300, y: 150, w: 300, h: 104 }, vw: 1280, vh: 800, page: { x: 300, y: 150, w: 300, h: 104 }, pos: { block: 4, offset: 0 }, before: 'cap', after: '' } }, s.box);
-  assert.equal(r.ok, true);
-  assert.deepEqual(s.calls.opened[0].payload.items.map((i) => i.kind), ['text', 'image']);
-  assert.equal(s.calls.opened[0].payload.then, 'save');
-  const none = setup({ selection: SEL('one') });
-  await none.ask({ type: 'heddy-cards:add-text' });
-  await none.ask({ type: 'heddy-box:save', box: null }, none.box);
-  assert.deepEqual(none.calls.opened[0].payload.items.map((i) => i.kind), ['text'], 'no box drawn: the cards alone');
+  assert.equal(await s.ask({ type: 'heddy-box:save', box: null }, s.box), undefined);
+  assert.equal(s.calls.opened.length, 0);
 });
 
 test('Explain · Make a card · Ask Heddy act on card 1: words as words, a picture as a picture', async () => {

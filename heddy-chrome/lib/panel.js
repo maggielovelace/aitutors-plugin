@@ -13,7 +13,8 @@
 // Chrome passed in, so the tests drive it with a fake (background.js wires it).
 (function (root) {
   var K = root.HeddyPageKind || (typeof require === 'function' && require('./page-kind.js'));
-  var PANEL_FILES = ['content/panel.js'];
+  // lib/auto-add.js: the rules content/panel.js applies to a selection (D65).
+  var PANEL_FILES = ['lib/auto-add.js', 'content/panel.js'];
   var PAGE = 'popup/popup.html';
   // chrome.storage.session: tab id → the fallback window open for it.
   var WINDOWS_KEY = 'heddyPanelWindows';

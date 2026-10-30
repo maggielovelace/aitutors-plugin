@@ -10,13 +10,22 @@
 //
 // Box mode (content/box-mode.js) runs beside it: it draws itself just under
 // this frame and hides the frame (away) only while a screenshot is taken.
+// Box mode is the panel's Picture mode; without it the panel is in Text mode
+// (Round 7, D64), and Esc in Picture mode switches to Text rather than
+// closing the panel.
+//
+// In Text mode a finished selection on the page becomes the next card by
+// itself (D65, lib/auto-add.js): this script watches for it while the panel
+// is open, and only then, and asks the background to add it.
 //
 // Between this script and the frame only hints travel, by postMessage: the
 // frame says how tall it is and when to close; this script says "the
-// selection changed" (the frame reads it again itself) and "the page moved
-// on". A message is taken only from the frame's own window.
+// selection changed" (the frame reads it again itself), "the page moved on"
+// and which mode is on. A message is taken only from the frame's own window.
 (function (root) {
   if (root.__heddyPanel) return;
+
+  var A = root.HeddyAutoAdd;
 
   var INSET = 12;
   var WIDTH = 360;
@@ -29,6 +38,8 @@
   var selTimer = null;
   var urlTimer = null;
   var lastUrl = '';
+  var autoTimer = null;
+  var lastAuto = null; // {id, at}: the card auto-added most recently
 
   var CSS = [
     ':host { all: initial; }',
@@ -53,8 +64,83 @@
     }
   }
 
+  /** 'picture' while box mode is drawing, else 'text'. */
+  function mode() {
+    var b = root.__heddyBoxMode;
+    return b && b.mode ? b.mode() : 'text';
+  }
+
   function onKey(e) {
-    if (e.key === 'Escape') close();
+    // In Picture mode Esc is box mode's: it switches to Text (D64).
+    if (e.key !== 'Escape' || e.defaultPrevented || mode() === 'picture') return;
+    close();
+  }
+
+  // ─── selected words add themselves (D65) ──────────────────────────────────
+
+  function elementOf(node) {
+    return node && node.nodeType === 1 ? node : node && node.parentElement;
+  }
+
+  /** From an element up to the root: what lib/auto-add.js placeOf reads. */
+  function chainOf(node) {
+    var out = [];
+    for (var el = elementOf(node), k = 0; el && k < 60; el = el.parentElement, k++) {
+      out.push({ tag: el.tagName, editable: !!el.isContentEditable });
+    }
+    return out;
+  }
+
+  /** The selection as auto-add sees it, with a key that changes when it
+   *  does; null with nothing selected. */
+  function selectionNow() {
+    var sel = root.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    var range = sel.getRangeAt(0);
+    var where = A.placeOf(chainOf(range.startContainer).concat(chainOf(range.endContainer)));
+    var active = document.activeElement;
+    return {
+      range: range.cloneRange(),
+      text: sel.toString(),
+      inHeddy: where.inHeddy,
+      editable: where.editable,
+      activeTag: active && active !== document.body ? active.tagName : '',
+    };
+  }
+
+  function sameRange(a, b) {
+    return a.startContainer === b.startContainer && a.startOffset === b.startOffset && a.endContainer === b.endContainer && a.endOffset === b.endOffset;
+  }
+
+  /** The mouse or a key let go: if the selection then holds still for
+   *  400 ms, it is offered to the background as the next card. */
+  function onRelease(e) {
+    if (!host || !A) return;
+    var path = e.composedPath ? e.composedPath() : [];
+    if (path.some(function (n) { return n && n.tagName && /^HEDDY-/.test(n.tagName); })) return;
+    clearTimeout(autoTimer);
+    var first = selectionNow();
+    if (!first) return;
+    autoTimer = setTimeout(function () {
+      if (!host || mode() !== 'text') return;
+      var now = selectionNow();
+      if (!now || !sameRange(now.range, first.range) || !A.acceptable(now)) return;
+      var layer = root.__heddyCards;
+      var t = Date.now();
+      var replace = A.replaceTarget(lastAuto, t, !!(lastAuto && layer && layer.overlaps(lastAuto.id, now.range)));
+      Promise.resolve()
+        .then(function () { return chrome.runtime.sendMessage({ type: 'heddy-cards:auto', replace: replace }); })
+        .then(function (r) {
+          // A replaced card is the one just added, again: its 5 s start over.
+          if (r && r.ok && r.id) lastAuto = { id: r.id, at: Date.now() };
+        })
+        .catch(function () {});
+    }, A.STABLE_MS);
+  }
+
+  /** Box mode says which mode is on; the frame draws its switch from it. */
+  function modeChanged(m) {
+    tell({ heddyPanel: 'mode', mode: m === 'picture' ? 'picture' : 'text' });
   }
 
   function onSelection() {
@@ -98,6 +184,8 @@
     root.addEventListener('message', onMessage);
     root.addEventListener('keydown', onKey, true);
     document.addEventListener('selectionchange', onSelection);
+    document.addEventListener('pointerup', onRelease, true);
+    document.addEventListener('keyup', onRelease, true);
     urlTimer = setInterval(watchUrl, URL_MS);
   }
 
@@ -106,11 +194,18 @@
     root.removeEventListener('message', onMessage);
     root.removeEventListener('keydown', onKey, true);
     document.removeEventListener('selectionchange', onSelection);
+    document.removeEventListener('pointerup', onRelease, true);
+    document.removeEventListener('keyup', onRelease, true);
     clearTimeout(selTimer);
+    clearTimeout(autoTimer);
     clearInterval(urlTimer);
     host.remove();
     host = null;
     frame = null;
+    lastAuto = null;
+    // Text mode's small bar says words are added; with the panel gone they
+    // are not, so it goes too. Picture mode carries on.
+    if (root.__heddyBoxMode && root.__heddyBoxMode.panelClosed) root.__heddyBoxMode.panelClosed();
   }
 
   /** Resolves after the browser has painted a frame without the panel, so a
@@ -150,5 +245,5 @@
     if (host) host.style.setProperty('opacity', on ? '0' : '1', 'important');
   }
 
-  root.__heddyPanel = { open: open, close: close, away: away, host: function () { return host; }, isOpen: function () { return !!host; } };
+  root.__heddyPanel = { open: open, close: close, away: away, modeChanged: modeChanged, host: function () { return host; }, isOpen: function () { return !!host; } };
 })(globalThis);

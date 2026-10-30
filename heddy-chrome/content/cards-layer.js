@@ -1,12 +1,13 @@
 // content/cards-layer.js — the panel's card numbers, drawn on the page
-// (PRD-v0.96.0 D55; artifact R4 · B, R5b).
+// (PRD-v0.96.0 D55, D62, D65; artifact R4 · B, R5b).
 //
 // Injected on a gesture with the page tray or box mode, never declared. It
 // keeps each text card's Range and draws it highlighted, with the card's
 // number in a navy disc before it; each picture card is a green outline with
 // its number on a tab above (R4 · B). In box mode the tab reads "3 · kept",
 // as R5b draws it. The list itself lives in the background (lib/cards.js),
-// which sends the numbers here after every change.
+// which sends the numbers here after every change, in the child's order
+// (D62): a card moved in the panel moves its number here too.
 //
 // The highlight is the CSS Custom Highlight API: nothing in the page's own
 // DOM changes but one <style> for ::highlight. The numbers and outlines sit
@@ -158,8 +159,11 @@
 
   /** The words selected now, as a text card for `id`: {quote, before,
    *  after, pos, url, title}, or null. The Range is kept, unconfirmed,
-   *  until the background's next sync says whether the card was added. */
-  function take(id) {
+   *  until the background's next sync says whether the card was added.
+   *  + Text clears the selection so the highlight shows; an auto-add
+   *  (`keepSelection`, D65) leaves it, so the child can still stretch it,
+   *  shrink it or copy it. */
+  function take(id, keepSelection) {
     var sel = root.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
     var page = root.__heddyPage && root.__heddyPage.selection();
@@ -170,7 +174,7 @@
     var pos = POS.textPos(document.body || document.documentElement, range.startContainer, range.startOffset, lead);
     pending[id] = range;
     // The words are now a card: the highlight shows instead of the selection.
-    sel.removeAllRanges();
+    if (!keepSelection) sel.removeAllRanges();
     return { quote: page.quote, before: page.before, after: page.after, pos: pos, url: location.href, title: page.title };
   }
 
@@ -211,5 +215,18 @@
     if (typeof fn === 'function' && listeners.indexOf(fn) < 0) listeners.push(fn);
   }
 
-  root.__heddyCards = { take: take, sync: sync, away: away, boxMode: boxMode, clear: clear, onSync: onSync, count: function () { return list.length; } };
+  /** Does `range` share words with card `id`'s highlight? (D65's stretch
+   *  or shrink of the card just added.) */
+  function overlaps(id, range) {
+    var r = ranges[id];
+    var A = root.HeddyAutoAdd;
+    if (!r || !range || !A) return false;
+    try {
+      return A.overlap(range.compareBoundaryPoints(Range.START_TO_END, r), range.compareBoundaryPoints(Range.END_TO_START, r));
+    } catch (e) {
+      return false; // the card's words left the page
+    }
+  }
+
+  root.__heddyCards = { take: take, sync: sync, overlaps: overlaps, away: away, boxMode: boxMode, clear: clear, onSync: onSync, count: function () { return list.length; } };
 })(globalThis);

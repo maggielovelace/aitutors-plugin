@@ -192,6 +192,7 @@ test('Ctrl Shift K: once → box mode after 0.4 s; twice within 0.4 s → the wh
   s.clock.run(1);
   await new Promise((r) => setImmediate(r));
   assert.deepEqual(s.calls.injected[0].files, S.BOX_FILES);
+  assert.deepEqual(s.calls.shown, [7], 'picture mode opens the panel too (D64)');
 
   const t = setup();
   t.snap.command(S.COMMAND, t.tab);

@@ -58,7 +58,7 @@ test('a click on the icon injects the panel into the active tab and toggles it',
   const panel = createPanel({ chrome: f.chrome });
   assert.deepEqual(await panel.clicked(ARTICLE), { ok: true, where: 'page', open: true });
   assert.deepEqual(f.calls.injected[0], { target: { tabId: 9 }, files: PANEL_FILES });
-  assert.deepEqual(PANEL_FILES, ['content/panel.js']);
+  assert.deepEqual(PANEL_FILES, ['lib/auto-add.js', 'content/panel.js']);
   assert.deepEqual(f.calls.sent[0], { tabId: 9, m: { type: 'heddy-panel:toggle', tabId: 9 } });
   assert.deepEqual(await panel.clicked(ARTICLE), { ok: true, where: 'page', open: false }, 'the second click closes it');
   assert.equal(f.calls.windows.length, 0, 'no window on a page Heddy may draw on');
@@ -329,9 +329,9 @@ test('the popup acts on the tab it is given (?tab=), not on its own window’s a
   assert.match(popup, /HOST !== 'panel' \|\| e\.source !== window\.parent/, 'hints only from the page that holds it');
 });
 
-test('a new selection changes nothing until + Text; the background’s "changed" redraws the cards, never during an action', () => {
+test('the frame does not act on a selection itself (the page adds it, D65); the background’s "changed" redraws the cards, never during an action', () => {
   assert.doesNotMatch(popup, /heddyPanel === 'selection'/);
-  assert.match(popup, /if \(m && m\.type === 'heddy-cards:changed' && view && m\.tabId === view\.tab\.id\) refreshCards\(\);/);
+  assert.match(popup, /if \(m && m\.type === 'heddy-cards:changed' && view && m\.tabId === view\.tab\.id\) refreshCards\(m\.note\);/);
   assert.match(popup, /if \(!view \|\| busyNow\(\)\) return;/);
 });
 
