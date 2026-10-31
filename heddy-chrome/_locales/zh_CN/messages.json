@@ -520,5 +520,10 @@
   "openInMyClips": { "message": "在「我的短片」里打开 ↗" },
   "addedHint": { "message": "Heddy 没有打开任何页面，继续看吧。" },
   "toastClipUndone": { "message": "已从「我的短片」拿掉" },
-  "toastClipUndoFailed": { "message": "没能从「我的短片」拿掉。" }
+  "toastClipUndoFailed": { "message": "没能从「我的短片」拿掉。" },
+
+  "deskJotWaiting": {
+    "message": "正在读这个视频的文字稿：你在 $TIME$ 按的这一下，读到就记下来。",
+    "placeholders": { "time": { "content": "$1", "example": "0:31" } }
+  }
 }

@@ -101,6 +101,8 @@
         query: '',
         noteT: null,
         nowIdx: -1,
+        pressed: [], // H presses waiting for the transcript: the player's seconds
+        retried: false,
       };
     }
 
@@ -562,6 +564,33 @@
       return c;
     }
 
+    /** The line being spoken at `at` into the Jot tab (D74). `late`: from a
+     *  press that waited for the transcript, so never joined to the last. */
+    function jotAt(at, late) {
+      var t = st.transcript;
+      var r = D.press({ jots: st.jots, last: late ? null : st.last }, { now: Date.now(), t: at, lines: t.lines, id: newId() });
+      if (r.result === 'noLine') return say(tr('deskNoLine'), true);
+      if (r.result === 'full') return say(tr('deskJotsFull'), true);
+      st.jots = r.jots;
+      st.last = r.last;
+      st.say = null;
+      saveJots();
+      label();
+      if (st.tab === 'jot') drawPanel();
+    }
+
+    /** No transcript to jot from (no captions, signed out, refused): the note
+     *  box takes the press's time, the cursor goes there, and the line says
+     *  so until a jot is made. */
+    function noteFallback(at) {
+      if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
+      st.noteT = at;
+      say(tr('deskNoTranscriptNote', P.clockOf(at)), true);
+      if (ui.field) ui.field.placeholder = tr('deskJotPlaceholder', P.clockOf(at));
+      // After the key's own event: focused now, the H itself would be typed.
+      setTimeout(function () { if (ui && ui.field && ui.field.isConnected) ui.field.focus(); }, 0);
+    }
+
     /** A line under the Jot card. `stay`: it stays until the next jot, or
      *  the child closes the desk (the owner saw a 3.5 s line go unread). */
     function say(text, stay) {
@@ -827,9 +856,17 @@
         else if (r && r.error === 'unauthenticated') { st.video.status = 'signedOut'; st.transcript = { status: 'error', lines: [] }; }
         else st.transcript = { status: 'error', lines: [] };
         if (st.transcript.status === 'ok' && r.zh) addStretch(r.zh);
+        // H pressed while the transcript was on its way: each press is jotted
+        // now, at the second it was pressed; without a transcript, the note box.
+        var waiting = st.pressed;
+        st.pressed = [];
         label();
         drawPanel();
         wantZh();
+        if (waiting.length) {
+          if (st.transcript.status === 'ok') waiting.forEach(function (at) { jotAt(at, true); });
+          else noteFallback(waiting[waiting.length - 1]);
+        }
       });
     }
 
@@ -1021,6 +1058,12 @@
           }
           label();
           drawPanel();
+          // Presses made before the site answered, with no transcript coming.
+          if (st.video.status !== 'ok' && st.video.status !== 'error' && st.pressed.length) {
+            var last = st.pressed[st.pressed.length - 1];
+            st.pressed = [];
+            noteFallback(last);
+          }
         });
       },
 
@@ -1051,33 +1094,24 @@
         place();
       },
 
-      /** H (D74): the line being spoken into the Jot tab. */
+      /** H (D74): the line being spoken into the Jot tab. Whatever the
+       *  transcript's state, a press always leaves something on the desk
+       *  (the owner's 0.5.0 test: nothing visible happened). */
       pressJot: function () {
         if (!st) return;
         var t = st.transcript;
-        if (t.status !== 'ok' || !t.lines.length) {
-          if (t.status === 'loading') return say(tr('digestReading', profName()));
-          // No transcript (no captions, signed out, refused): H still does
-          // something visible. The note box takes the player's time now, the
-          // cursor goes there, and the line says so until a jot is made.
-          var at = now();
-          if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
-          st.noteT = at;
-          say(tr('deskNoTranscriptNote', P.clockOf(at)), true);
-          if (ui.field) ui.field.placeholder = tr('deskJotPlaceholder', P.clockOf(at));
-          // After the key's own event: focused now, the H itself would be typed.
-          setTimeout(function () { if (ui && ui.field && ui.field.isConnected) ui.field.focus(); }, 0);
+        var at = now();
+        if (t.status === 'ok' && t.lines.length) return jotAt(at, false);
+        if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
+        var canRead = st.video.status !== 'signedOut' && st.video.status !== 'forbidden';
+        // On its way (or failed once: read it again): the press waits for it.
+        if (canRead && (t.status === 'loading' || t.status === 'idle' || (t.status === 'error' && !st.retried))) {
+          st.pressed.push(at);
+          say(tr('deskJotWaiting', P.clockOf(at)), true);
+          if (t.status === 'error') { st.retried = true; loadTranscript(); }
           return;
         }
-        var r = D.press({ jots: st.jots, last: st.last }, { now: Date.now(), t: now(), lines: t.lines, id: newId() });
-        if (r.result === 'noLine') return say(tr('deskNoLine'));
-        if (r.result === 'full') return say(tr('deskJotsFull'));
-        st.jots = r.jots;
-        st.last = r.last;
-        st.say = null;
-        saveJots();
-        label();
-        if (st.tab === 'jot') drawPanel();
+        noteFallback(at);
       },
 
       /** Is the child typing in the desk (H is then a letter, not a jot)? */

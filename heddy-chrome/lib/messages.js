@@ -1377,6 +1377,15 @@
       },
       "toastClipUndoFailed": {
         "message": "Couldn't take that out of My Clips."
+      },
+      "deskJotWaiting": {
+        "message": "Reading this video's transcript: your press at $TIME$ is jotted as soon as it's here.",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "0:31"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -2755,6 +2764,15 @@
       },
       "toastClipUndoFailed": {
         "message": "没能从「我的短片」拿掉。"
+      },
+      "deskJotWaiting": {
+        "message": "正在读这个视频的文字稿：你在 $TIME$ 按的这一下，读到就记下来。",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "0:31"
+          }
+        }
       }
     }
   };

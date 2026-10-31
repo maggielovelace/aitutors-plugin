@@ -37,7 +37,7 @@
   var MAX_STREAM = 1024 * 1024;
   var MAX_DELTA = 8000;
   var MAX_ANSWER = 20000;
-  var MAX_FRONT = 500;
+  var MAX_FRONT = 2000;
   var MAX_BACK = 2000;
   var MAX_NAME = 40;
   var MAX_MESSAGE = 600;

@@ -26,7 +26,7 @@
   var PORT = 'heddy-ask';
   var PENDING_MS = 60000;
   var MAX_TITLE = 300;
-  var MAX_FRONT = 500;
+  var MAX_FRONT = 2000;
   var MAX_BACK = 2000;
   var MAX_JOT = 20000;
   var TOKEN = /^[A-Za-z0-9._~+/=:-]{1,2000}$/;

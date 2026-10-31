@@ -520,5 +520,10 @@
   "openInMyClips": { "message": "Open in My Clips ↗" },
   "addedHint": { "message": "Heddy didn't open anything. Keep watching." },
   "toastClipUndone": { "message": "Taken out of My Clips" },
-  "toastClipUndoFailed": { "message": "Couldn't take that out of My Clips." }
+  "toastClipUndoFailed": { "message": "Couldn't take that out of My Clips." },
+
+  "deskJotWaiting": {
+    "message": "Reading this video's transcript: your press at $TIME$ is jotted as soon as it's here.",
+    "placeholders": { "time": { "content": "$1", "example": "0:31" } }
+  }
 }
