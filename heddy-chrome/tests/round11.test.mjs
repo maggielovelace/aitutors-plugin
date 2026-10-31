@@ -256,13 +256,15 @@ test('#4 a tab with nothing behind it is drawn disabled, says why, and never tak
   assert.match(desk, /if \(!tabLive\(k\)\) b\.title = tr\(k === 'quiz' \? 'deskQuizSoon' : 'deskInsightsSoon'\);/);
 });
 
-test('#5 the jot pop-up after every jot: “● Note saved · 0:31 — title”, the line, Undo · Open in Jotter, 5 s, 56 px under the desk’s top', () => {
+test('#5 the jot pop-up after every jot: “● Note saved · 0:31 — title”, the line, Undo · Save to My Jotters (then Open in Jotter ↗), 5 s, 56 px under the desk’s top', () => {
   assert.match(SH.CSS, /\.jt\{position:absolute;z-index:6;left:10px;right:10px;top:56px;/);
   assert.match(SH.CSS, /\.jt\[data-anim\]\{animation:hd-toast 5s ease both\}/);
   assert.match(desk, /var TOAST_MS = 5000;/);
   assert.match(desk, /hd\.appendChild\(el\('span', 'ok', tr\('deskNoteSaved'\)\)\);/);
   assert.match(desk, /P\.clockOf\(j\.t\) \+ ' — ' \+ \(deps\.title\(\) \|\| ''\)/);
-  assert.match(desk, /open\.addEventListener\('click', function \(\) \{ hideToast\(\); saveToJotters\(true\); \}\);/, 'Open in Jotter saves, then opens the Jotter');
+  assert.match(desk, /var save = el\('button', 'jl', tr\('deskSaveJotters'\)\);/, 'owner: Save to My Jotters first, no tab');
+  assert.match(desk, /saveToJotters\(\)\.then\(function \(r\) \{/);
+  assert.match(desk, /open\.addEventListener\('click', function \(\) \{ hideToast\(\); openSite\(r\.href\); \}\);\n              save\.replaceWith\(open\);/, 'then Open in Jotter ↗, which leaves');
   for (const call of ['jotted(r.last.id, key);', 'jotted(id, false);']) assert.ok(desk.includes(call), call);
   assert.equal(I.t('en', 'deskNoteSaved'), 'Note saved');
   assert.equal(I.t('zh_CN', 'deskOpenInJotter'), '在笔记本里打开');
@@ -399,4 +401,9 @@ test('D92 locked: Classroom’s line, See plans ↗ (aitutors.me in a tab, and i
 test('D94 the Jot tab is jots only: nothing from Ask lands on it', () => {
   const view = read('lib/ask-view.js');
   assert.doesNotMatch(view, /st\.jots|saveJots|deskJots:/);
+});
+
+test('#28 an empty Ask view says Classroom’s room line', () => {
+  assert.match(read('lib/ask-view.js'), /if \(!state\.items\.length && !state\.error && opts\.emptyText\) talk\.appendChild/);
+  assert.equal(I.t('en', 'askEmpty', 'Newton'), "I'm watching along. Ask me anything about this bit, or pick a line in the Digest and press Ask Newton.");
 });
