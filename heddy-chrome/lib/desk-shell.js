@@ -163,7 +163,9 @@
     // A narrow column (YouTube at ~1100–1300 px windows gives 330–400 px):
     // the five tabs and the header still fit, the subtitle goes first.
     '@container (max-width:400px){.tabs{padding:0 8px;gap:0}.tab{padding:0 5px;gap:4px;font-size:13px}.tab small{padding:1px 5px}.hd{gap:7px;padding:0 10px}.x{margin-left:6px;gap:9px}.vr{padding:10px}.full{padding:0 9px}}',
-    '@container (max-width:350px){.tab .vi{display:none}.tab{padding:0 6px}.hd small{display:none}.full .vi{display:none}}',
+    // Narrower still: the tabs keep Classroom's icons (the owner's 0.6.0
+    // test: a desk with no tab icons is not Classroom's), drawn smaller.
+    '@container (max-width:350px){.tabs{padding:0 6px}.tab{padding:0 4px;gap:3px;font-size:12.5px}.tab .vi{width:14px;height:14px}.tab small{padding:1px 4px}.hd small{display:none}.full .vi{display:none}}',
     '[hidden]{display:none !important}',
   ].join('\n');
 

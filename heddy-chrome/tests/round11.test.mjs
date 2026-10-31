@@ -191,3 +191,23 @@ test('the failure line says “a few minutes”, not “tomorrow”', () => {
   assert.equal(I.t('en', 'digestZhFailed'), 'The Chinese lines did not come through — try again in a few minutes.');
   assert.equal(I.t('zh_CN', 'digestZhFailed'), '中文这次没出来——过几分钟再试。');
 });
+
+// ─── the tab row: Classroom's icons, and ←/→ (WAI-ARIA tabs) ──────────────
+
+test('every tab carries Classroom’s icon at every column width (none is hidden in a narrow column)', () => {
+  const desk = read('content/desk.js');
+  assert.match(desk, /\[\['quiz', 'quiz'\], \['jot', 'jot'\], \['digest', 'digest'\], \['insights', 'insights'\]\]\.forEach\(function \(t\) \{\n        var b = btn\('tab', ic\(t\[1\]\)\);/);
+  const SH = load('./lib/desk-shell.js');
+  assert.doesNotMatch(SH.CSS, /\.tab \.vi\{display:none\}/);
+  for (const k of ['quiz', 'jot', 'digest', 'insights']) assert.ok(SH.IC[k], k);
+});
+
+test('←/→ on a desk tab move to the next or previous shown tab, wrapping, and are claimed; elsewhere YouTube keeps them', () => {
+  const desk = read('content/desk.js');
+  assert.match(desk, /\(e\.key === 'ArrowRight' \|\| e\.key === 'ArrowLeft'\) && t && t\.getAttribute && t\.getAttribute\('role'\) === 'tab'\)/, 'only when a desk tab is the target');
+  assert.match(desk, /if \(type === 'keydown'\) \{ e\.preventDefault\(\); stepTab\(e\.key === 'ArrowRight' \? 1 : -1\); \}\n            e\.stopPropagation\(\);/);
+  assert.match(desk, /var next = shown\[\(\(i < 0 \? 0 : i\) \+ dir \+ shown\.length\) % shown\.length\];/, 'wraps');
+  assert.match(desk, /return \['quiz', 'jot', 'digest', 'insights'\]\.filter\(tabLive\)\.concat\(\['ask'\]\);/, 'the crest is the Ask tab, last');
+  assert.match(desk, /ui\.tabs\[k\]\.tabIndex = st\.tab === k \? 0 : -1;/, 'roving tabindex');
+  assert.doesNotMatch(read('content/youtube.js'), /ArrowRight|ArrowLeft/, 'the page’s own listener never touches the arrows');
+});

@@ -387,6 +387,13 @@
           // A Digest line is a role=button span: Space opens its tray, never
           // YouTube's play/pause.
           var activating = t && (t.tagName === 'BUTTON' || (t.getAttribute && t.getAttribute('role') === 'button')) && (e.key === ' ' || e.key === 'Enter');
+          // ←/→ on a tab move along the tab row, as Classroom's tablist does;
+          // only from a desk tab, and claimed, so YouTube does not also seek.
+          if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && t && t.getAttribute && t.getAttribute('role') === 'tab') {
+            if (type === 'keydown') { e.preventDefault(); stepTab(e.key === 'ArrowRight' ? 1 : -1); }
+            e.stopPropagation();
+            return;
+          }
           // Esc closes Pi's tray and claims the key, as Classroom's does.
           var closing = e.key === 'Escape' && st && st.sel;
           if (closing && type === 'keydown') { e.preventDefault(); closeSel(); }
@@ -448,6 +455,9 @@
       ui.crest.title = tr('deskAsk', profName());
       ui.crest.setAttribute('aria-label', tr('deskAsk', profName()));
       ui.crest.setAttribute('aria-selected', String(st.tab === 'ask'));
+      // Roving tabindex (WAI-ARIA tabs): only the selected tab is in the Tab order.
+      Object.keys(ui.tabs).forEach(function (k) { ui.tabs[k].tabIndex = st.tab === k ? 0 : -1; });
+      ui.crest.tabIndex = st.tab === 'ask' ? 0 : -1;
       ui.fname.textContent = isMentor() ? tr('deskFootMentor') : tr('deskFoot', profName());
       ui.gr.setAttribute('aria-pressed', String(prefs.tall));
       ui.gr.title = prefs.tall ? tr('deskShorter') : tr('deskTaller');
@@ -473,6 +483,29 @@
       label();
       drawPanel();
       if (k === 'digest') wantZh();
+    }
+
+    /** The tabs the arrows walk, in the row's order: the ones that open, then
+     *  the crest (the Ask tab, D80). */
+    function shownTabs() {
+      return ['quiz', 'jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
+    }
+
+    /** ←/→ (Classroom's onKey): the next or previous shown tab, wrapping,
+     *  selected and focused. */
+    function stepTab(dir) {
+      if (!st) return;
+      var shown = shownTabs();
+      var i = shown.indexOf(st.tab);
+      var next = shown[((i < 0 ? 0 : i) + dir + shown.length) % shown.length];
+      if (next === 'ask') {
+        if (askView.isOpen()) { st.tab = 'ask'; st.sel = null; label(); drawPanel(); }
+        else ask();
+      } else {
+        pickTab(next);
+      }
+      var b = next === 'ask' ? ui.crest : ui.tabs[next];
+      if (b) b.focus();
     }
 
     function signedOut() {
