@@ -51,7 +51,7 @@ test('the join window is Classroom’s 2.5 s (the desk’s press joins inside it
 test('the content script listens for H only while the desk is open, guarded, and stops no key (D74)', () => {
   const src = read('content/youtube.js');
   assert.match(src, /addEventListener\('keydown', onKeyDown, true\)/);
-  assert.match(src, /function onKeyDown\(e\) \{\n    if \(!desk\.isOpen\(\)\) return;\n    if \(!currentId\(\) \|\| isLive\(\) \|\| !K\.isJotKey\(e, document\.activeElement\) \|\| desk\.isTyping\(\)\) return;\n    desk\.pressJot\(\);/);
+  assert.match(src, /function onKeyDown\(e\) \{\n    if \(!desk\.isOpen\(\)\) return;\n    if \(!currentId\(\) \|\| isLive\(\) \|\| !K\.isJotKey\(e, document\.activeElement\) \|\| desk\.isTyping\(\)\) return;\n    desk\.pressJot\(true\);/);
   assert.doesNotMatch(src, /stopImmediatePropagation|stopPropagation|preventDefault/, 'YouTube’s own keys are left alone');
   assert.doesNotMatch(src, /heddy-ui:moment|createJHold/, 'no H window any more');
 });

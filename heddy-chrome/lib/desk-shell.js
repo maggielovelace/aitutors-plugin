@@ -128,7 +128,7 @@
     '.srch2::placeholder{color:var(--muted);opacity:1}',
     '.dlb{margin:0;font:600 10.5px/1.3 ' + MONO + ';letter-spacing:.12em;text-transform:uppercase;color:var(--muted);flex:none}',
     '.lns{display:grid;gap:2px}',
-    '.ln{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;padding:7px 9px;border-radius:10px;font:500 14px/1.45 ' + SANS + ';color:var(--ink-soft);text-align:left;cursor:pointer}',
+    '.ln{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;padding:7px 9px;border-radius:10px;font:500 14px/1.45 ' + SANS + ';color:var(--ink-soft);text-align:left}',
     '.ln .ts{font:600 11.5px/1.3 ' + MONO + ';color:var(--muted);padding-top:2px}',
     '.ln.now{background:var(--sc-soft);color:var(--ink-deep)}.ln.now .ts{color:var(--sc)}',
     '.ln .zh{display:block;font:500 13px/1.5 "PingFang SC","Noto Sans SC",' + SANS + ';color:var(--muted)}',

@@ -9,7 +9,9 @@ Heddy puts one button on every YouTube video page, straight after Share:
 suggestions column (under the player in theatre mode or a narrow window):
 Classroom's desk, with **Jot** (press **H** for the line being spoken, twice
 quickly for the line before, or type a note), the **Digest** (the transcript
-in English, Bilingual or Chinese, following the player; tap a line to jump),
+in English, Bilingual or Chinese, following the player; tap a time to jump,
+and select words or click a line for Classroom's tray: Jot it · Explain ·
+Make a card · Ask the professor · › Play from here · Copy),
 Insights where aitutors.me has them, and the crest to ask the professor.
 **Save to My Jotters** saves the jots to the video's Jotter; **Full desk**
 keeps the video in *My Clips* and opens it in Classroom with them. The desk
@@ -44,7 +46,9 @@ And on any page:
 
 - **H on a YouTube video**, while the desk is open, jots the line being
   spoken into the desk's Jot tab. Press H twice quickly to take the line
-  before as well. With the desk closed H does nothing, and YouTube's own keys,
+  before as well. It works on any of the desk's tabs, while the video plays
+  and in fullscreen (a small "Jotted" note shows on the video), never while
+  you type. With the desk closed H does nothing, and YouTube's own keys,
   J included, always keep doing what they did.
 - **Collect, then Save to Jotters.** Click Heddy's icon and its panel stays
   on the page while you read. While it is open, **select words and each

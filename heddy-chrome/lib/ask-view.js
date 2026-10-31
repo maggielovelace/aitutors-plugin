@@ -441,9 +441,11 @@
         if (prof) state.professor = prof;
       },
       /** After draw(): a 'card' or 'explain' intent starts that turn; 'ask'
-       *  puts the cursor in the box. */
-      start: function (intent) {
+       *  with `text` sends it as the child's first message (the Digest's
+       *  Ask {Professor}); 'ask' alone puts the cursor in the box. */
+      start: function (intent, text) {
         if (intent === 'card' || intent === 'explain') chip(intent);
+        else if (intent === 'ask' && typeof text === 'string' && text.trim()) send('ask', text);
         else if (ui) ui.field.focus();
       },
       draw: draw,

@@ -308,10 +308,12 @@
    *  (content/desk.js on YouTube, popup/web-desk.js on any other page): it
    *  selects the crest and opens its Ask view on this context. `intent`
    *  'card' or 'explain' starts that turn at once; 'ask' (or none) puts the
-   *  cursor in the box. */
-  function openAsk(ctx, desk, intent) {
+   *  cursor in the box, or with `text` (Round 11: Ask {Professor} on the
+   *  Digest's tray) sends it as the child's first message. */
+  function openAsk(ctx, desk, intent, text) {
     if (!desk || typeof desk.openAsk !== 'function') return false;
-    desk.openAsk(ctx || {}, INTENTS.indexOf(intent) >= 0 ? intent : 'ask');
+    var said = typeof text === 'string' ? str(text, MAX_TYPED).trim() : '';
+    desk.openAsk(ctx || {}, INTENTS.indexOf(intent) >= 0 ? intent : 'ask', said || undefined);
     return true;
   }
 

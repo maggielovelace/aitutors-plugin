@@ -10,7 +10,8 @@
 // the desk, lib/ask-view.js, never a window), the Jot tab (the "Jot the line being
 // spoken" card, the label line with Save to My Jotters, the notebook list,
 // the composer), the Digest (English · Bilingual · Chinese, the line being
-// spoken tinted, a tap on a line seeks) and the 32px foot with the chevron.
+// spoken tinted, a tap on a time seeks; Round 11: selecting words or clicking
+// a line opens Pi's tray, lib/desk-tray.js) and the 32px foot with the chevron.
 // The CSS values are the artifact's, which are Classroom's clip-desk.css,
 // clip-jot.css and clip-digest.css.
 //
@@ -30,6 +31,7 @@
   var FS = root.HeddyFilmStrip;
   var C = root.HeddyConfig;
   var AV = root.HeddyAskView;
+  var TR = root.HeddyDeskTray;
 
   var TICK_MS = 250;
   var SAY_MS = 3500;
@@ -80,6 +82,8 @@
     var sayTimer = null;
     var hidden = null; // YouTube's suggestions element, while hidden: { el, display }
     var lastScroll = 0;
+    var outside = null; // the page's press / Esc that closes Pi's tray
+    var askAt = null; // the line's start an Ask from the tray is about
 
     var st = null; // the open desk's state, per video
     var prefs = { tall: false, pin: false, view: null };
@@ -90,7 +94,9 @@
         tab: 'jot',
         video: { status: 'loading', professor: null, jotterHref: null },
         transcript: { status: 'idle', lines: [] },
-        zh: { stretches: [], asked: {}, tries: {}, state: 'idle', failed: false, locked: false },
+        // failedAt: when each stretch failed; the site retries one after
+        // ZH_FAIL_RETRY_MS (Round 11), so the desk asks again after that.
+        zh: { stretches: [], asked: {}, tries: {}, failedAt: {}, state: 'idle', failed: false, locked: false },
         insights: { status: 'unknown', parts: [], tries: 0 },
         jots: [],
         last: null,
@@ -102,7 +108,9 @@
         noteT: null,
         nowIdx: -1,
         pressed: [], // H presses waiting for the transcript: the player's seconds
+        pressedByKey: false, // one of them was H (not the Jot card)
         retried: false,
+        sel: null, // Pi's tray on the Digest: { i, to, parts, words, side }
       };
     }
 
@@ -261,7 +269,7 @@
     function build() {
       host = doc.createElement('heddy-desk');
       shadow = host.attachShadow({ mode: 'closed' });
-      shadow.innerHTML = '<style>' + CSS + '\n' + AV.CSS + '</style>';
+      shadow.innerHTML = '<style>' + CSS + '\n' + AV.CSS + '\n' + TR.CSS + '</style>';
       var cd = el('section', 'cd');
       cd.setAttribute('aria-label', 'Heddy');
 
@@ -376,10 +384,39 @@
           var t = e.target;
           var typing = t && t.tagName === 'INPUT';
           // (The Ask bar's box is an INPUT too: Enter there sends, not YouTube.)
-          var activating = t && t.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter');
-          if (typing || activating) e.stopPropagation();
+          // A Digest line is a role=button span: Space opens its tray, never
+          // YouTube's play/pause.
+          var activating = t && (t.tagName === 'BUTTON' || (t.getAttribute && t.getAttribute('role') === 'button')) && (e.key === ' ' || e.key === 'Enter');
+          // Esc closes Pi's tray and claims the key, as Classroom's does.
+          var closing = e.key === 'Escape' && st && st.sel;
+          if (closing && type === 'keydown') { e.preventDefault(); closeSel(); }
+          if (typing || activating || closing) e.stopPropagation();
         });
       });
+      // A press anywhere but the chosen rows closes the tray (Classroom's
+      // onDown): inside the desk here, on YouTube's page below.
+      shadow.addEventListener('pointerdown', function (e) {
+        if (!st || !st.sel) return;
+        var path = e.composedPath ? e.composedPath() : [];
+        for (var k = 0; k < path.length; k++) {
+          var n = path[k];
+          // A press on another line's words moves the tray there on release
+          // (closing first would reflow the list under the pointer).
+          if (n && n.classList && n.classList.contains('tx')) return;
+          if (n && n.classList && n.classList.contains('ln')) {
+            var i = Number(n.getAttribute('data-i'));
+            if (i >= st.sel.i && i <= st.sel.to) return;
+          }
+        }
+        closeSel();
+      });
+      outside = function (e) {
+        if (!st || !st.sel || e.target === host) return;
+        if (e.type === 'keydown' && e.key !== 'Escape') return;
+        closeSel();
+      };
+      doc.addEventListener('pointerdown', outside, true);
+      doc.addEventListener('keydown', outside, true);
 
       ui = { cd: cd, sub: sub, en: en, zh: zh, pin: pin, close: close, img: img, vt: vt, vtime: vtime, full: full, tabs: tabEls, crest: crest, pn: pn, fname: fname, gr: gr, more: more };
     }
@@ -432,6 +469,7 @@
     function pickTab(k) {
       if (!st) return;
       st.tab = k;
+      st.sel = null;
       label();
       drawPanel();
       if (k === 'digest') wantZh();
@@ -479,7 +517,7 @@
       words.appendChild(el('small', null, tr('deskJkSub')));
       jk.appendChild(words);
       jk.appendChild(el('span', 'kbd', 'H'));
-      jk.addEventListener('click', function () { api.pressJot(); });
+      jk.addEventListener('click', function () { api.pressJot(false); });
       sc.appendChild(jk);
       var say = el('p', 'say');
       say.setAttribute('aria-live', 'polite');
@@ -585,27 +623,39 @@
 
     /** The line being spoken at `at` into the Jot tab (D74). `late`: from a
      *  press that waited for the transcript, so never joined to the last. */
-    function jotAt(at, late) {
+    function jotAt(at, late, key) {
       var t = st.transcript;
       var r = D.press({ jots: st.jots, last: late ? null : st.last }, { now: Date.now(), t: at, lines: t.lines, id: newId() });
-      if (r.result === 'noLine') return say(tr('deskNoLine'), true);
-      if (r.result === 'full') return say(tr('deskJotsFull'), true);
+      if (r.result === 'noLine') return tell(tr('deskNoLine'), key);
+      if (r.result === 'full') return tell(tr('deskJotsFull'), key);
       st.jots = r.jots;
       st.last = r.last;
       st.say = null;
       saveJots();
       label();
       if (st.tab === 'jot') drawPanel();
+      // H on another tab, or in fullscreen: "Jotted · 2:48" and the words.
+      var jot = st.jots.filter(function (j) { return j.id === r.last.id; })[0];
+      if (key && jot && !jotsInSight()) notify({ kind: 'desk_jot', t: jot.t, quote: jot.text });
+    }
+
+    /** say(), and for a press of H the child cannot see it from (fullscreen),
+     *  the same words on the page. */
+    function tell(text, key) {
+      say(text, true);
+      if (key && !jotsInSight()) notify({ kind: 'desk_say', text: text });
     }
 
     /** No transcript to jot from (no captions, signed out, refused): the note
      *  box takes the press's time, the cursor goes there, and the line says
      *  so until a jot is made. */
-    function noteFallback(at) {
+    function noteFallback(at, key) {
       if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
       st.noteT = at;
-      say(tr('deskNoTranscriptNote', P.clockOf(at)), true);
+      tell(tr('deskNoTranscriptNote', P.clockOf(at)), key);
       if (ui.field) ui.field.placeholder = tr('deskJotPlaceholder', P.clockOf(at));
+      // Never in fullscreen: a box the child cannot see would take YouTube's keys.
+      if (doc.fullscreenElement) return;
       // After the key's own event: focused now, the H itself would be typed.
       setTimeout(function () { if (ui && ui.field && ui.field.isConnected) ui.field.focus(); }, 0);
     }
@@ -727,6 +777,20 @@
       root.HeddyDeskAsk.openAsk({ about: 'video' }, api, 'ask');
     }
 
+    /** A small confirmation on the page (youtube.js's toaster: inside the
+     *  fullscreen player while YouTube is fullscreen). */
+    function notify(msg) {
+      if (deps.notify) deps.notify(msg);
+    }
+
+    /** Can the child see the Jot tab's list right now? Not in fullscreen, not
+     *  on another tab, not with the desk scrolled out of the window. */
+    function jotsInSight() {
+      if (doc.fullscreenElement || !st || st.tab !== 'jot' || !host || !host.isConnected) return false;
+      var r = host.getBoundingClientRect();
+      return r.bottom > 0 && r.top < root.innerHeight && r.height > 0;
+    }
+
     // The Ask view (lib/ask-view.js). The background reads the video's
     // address from this tab and adds the player's second (`t`).
     var askView = AV.create({
@@ -734,7 +798,8 @@
       tr: function () { return tr; },
       lang: function () { return lang; },
       connect: function () { return chrome.runtime.connect({ name: 'heddy-ask' }); },
-      extra: function () { return { t: now() }; },
+      // From the tray, the chosen line's start; from the crest, the player's second.
+      extra: function () { return { t: askAt !== null ? askAt : now() }; },
       site: function () { return 'youtube.com'; },
       fallbackName: profName,
       extensionId: function () { return chrome.runtime.id; },
@@ -808,6 +873,7 @@
         b.addEventListener('click', function () {
           prefs.view = v[0];
           setLocal(PREF.view, v[0]);
+          retryZh();
           drawPanel();
           wantZh();
         });
@@ -834,6 +900,15 @@
       sc.addEventListener('scroll', function () { lastScroll = Date.now(); }, { passive: true });
       sc.addEventListener('wheel', function () { lastScroll = Date.now(); }, { passive: true });
       var lns = el('div', 'lns');
+      // A drag that ends off a line's words (a stamp, a gap) still opens the
+      // tray on what it selected.
+      lns.addEventListener('pointerup', function (e) {
+        if (e.button !== 0) return;
+        var t = e.target;
+        if (t && t.closest && t.closest('.tx, .pop')) return;
+        var pk = pickIn();
+        if (pk) openSel(pk);
+      });
       sc.appendChild(lns);
       pn.appendChild(sc);
       ui.lines = { sc: sc, box: lns, rows: [] };
@@ -844,7 +919,6 @@
     function drawLines() {
       if (!ui.lines) return;
       var lines = st.transcript.lines;
-      var view = viewNow();
       var box = ui.lines.box;
       box.textContent = '';
       ui.lines.rows = [];
@@ -854,31 +928,291 @@
         return;
       }
       (only || lines.map(function (_, i) { return i; })).forEach(function (i) {
-        var l = lines[i];
-        var row = btn('ln');
-        row.title = tr('digestSeek', P.clockOf(l.t));
-        row.appendChild(el('span', 'ts', P.clockOf(l.t)));
-        var body = el('span');
-        var z = view === 'en' ? null : zhOf(l);
-        if (view === 'zh' && z) {
-          var only2 = el('span', 'zh only', z);
-          only2.setAttribute('lang', 'zh-Hans');
-          body.appendChild(only2);
-        } else {
-          body.appendChild(doc.createTextNode(l.text));
-          if (view === 'bi' && z) {
-            var zz = el('span', 'zh', z);
-            zz.setAttribute('lang', 'zh-Hans');
-            body.appendChild(zz);
-          }
-        }
-        row.appendChild(body);
-        row.addEventListener('click', function () { seek(l.t); });
+        var row = makeRow(i);
         box.appendChild(row);
         ui.lines.rows[i] = row;
       });
       st.nowIdx = -2;
       tick();
+      placeTray();
+    }
+
+    /** `text` into `into`, the chosen words in a <mark> when they are in it.
+     *  Returns whether it marked them. */
+    function marked(into, text, picked) {
+      var parts = picked ? TR.splitMark(text, picked) : null;
+      if (!parts) {
+        into.appendChild(doc.createTextNode(text));
+        return false;
+      }
+      into.appendChild(doc.createTextNode(parts[0]));
+      into.appendChild(el('mark', null, parts[1]));
+      into.appendChild(doc.createTextNode(parts[2]));
+      return true;
+    }
+
+    /** One Digest row (Classroom's .cp-dg__ln): its stamp (a tap plays from
+     *  there), its line(s) (a click or a selection opens Pi's tray), and the
+     *  tray above it while it is chosen. A line with no Chinese shows its
+     *  English in every view. */
+    function makeRow(i) {
+      var l = st.transcript.lines[i];
+      var view = viewNow();
+      var sel = st.sel;
+      var open = !!sel && sel.i === i;
+      var picked = sel && i >= sel.i && i <= sel.to ? sel.parts[i - sel.i] || null : null;
+      var row = el('div', 'ln');
+      row.setAttribute('data-i', String(i));
+      if (sel && i >= sel.i && i <= sel.to) row.setAttribute('data-sel', '');
+      if (open) row.setAttribute('data-pop', sel.side);
+      if (i === st.nowIdx) { row.classList.add('now'); row.setAttribute('aria-current', 'true'); }
+      var ts = el('button', 'ts', P.clockOf(l.t));
+      ts.type = 'button';
+      ts.title = tr('digestSeek', P.clockOf(l.t));
+      ts.setAttribute('aria-label', ts.title);
+      ts.addEventListener('click', function () { seek(l.t); });
+      row.appendChild(ts);
+      var tx = el('span', 'tx');
+      tx.setAttribute('role', 'button');
+      tx.tabIndex = 0;
+      tx.setAttribute('aria-expanded', String(open));
+      if (open) tx.setAttribute('aria-controls', 'hd-pop-' + i);
+      var z = view === 'en' ? null : zhOf(l);
+      if (view === 'zh' && z) {
+        var only2 = el('span', 'zh only');
+        only2.setAttribute('lang', 'zh-Hans');
+        marked(only2, z, picked);
+        tx.appendChild(only2);
+      } else {
+        var done = marked(tx, l.text, picked);
+        if (view === 'bi' && z) {
+          var zz = el('span', 'zh');
+          zz.setAttribute('lang', 'zh-Hans');
+          marked(zz, z, done ? null : picked);
+          tx.appendChild(zz);
+        }
+      }
+      tx.addEventListener('pointerup', function (e) { if (e.button === 0) lineUp(i); });
+      tx.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        if (st.sel && st.sel.i === i) closeSel();
+        else openSel(wholeLine(i));
+      });
+      row.appendChild(tx);
+      if (open) row.appendChild(trayFor(i).el);
+      return row;
+    }
+
+    // ─── Pi's tray (Round 11; Classroom's DigestTray, lib/desk-tray.js) ─────
+
+    /** The selection inside the desk's closed shadow root, as a Range, or null. */
+    function liveRange() {
+      try {
+        var got = shadow.getSelection ? shadow.getSelection() : null;
+        var r = null;
+        if (got && !got.isCollapsed && got.rangeCount) {
+          r = got.getRangeAt(0);
+          return { range: r, anchor: got.anchorNode };
+        }
+        // Chrome without ShadowRoot.getSelection: the composed ranges.
+        var g = doc.getSelection();
+        if (!g || g.isCollapsed || !g.getComposedRanges) return null;
+        var s = g.getComposedRanges({ shadowRoots: [shadow] })[0];
+        if (!s || s.collapsed) return null;
+        r = doc.createRange();
+        r.setStart(s.startContainer, s.startOffset);
+        r.setEnd(s.endContainer, s.endOffset);
+        return { range: r, anchor: s.startContainer };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearSelection() {
+      try {
+        var got = shadow.getSelection ? shadow.getSelection() : doc.getSelection();
+        if (got) got.removeAllRanges();
+      } catch (e) { /* nothing selected */ }
+    }
+
+    /** The text two ranges share (Classroom's intersectText). */
+    function intersectText(a, b) {
+      var r = a.cloneRange();
+      if (r.compareBoundaryPoints(0, b) < 0) r.setStart(b.startContainer, b.startOffset); // START_TO_START
+      if (r.compareBoundaryPoints(2, b) > 0) r.setEnd(b.endContainer, b.endOffset); // END_TO_END
+      return r.collapsed ? '' : r.toString();
+    }
+
+    /** What the child selected in the list (Classroom's pickIn): the rows it
+     *  runs through, each row's part, the words joined; one language only, the
+     *  one the drag STARTED in. Null when nothing is selected in the list. */
+    function pickIn() {
+      var live = liveRange();
+      if (!live || !ui.lines) return null;
+      var range = live.range;
+      var list = ui.lines.box;
+      var lines = st.transcript.lines;
+      function elOf(n) { return n && n.nodeType === 3 ? n.parentElement : n; }
+      function rowOf(n) { var e = elOf(n); return e && e.closest ? e.closest('.ln[data-i]') : null; }
+      var startRow = rowOf(range.startContainer);
+      var endRow = rowOf(range.endContainer);
+      if (!startRow || !endRow || !list.contains(startRow) || !list.contains(endRow)) return null;
+      var from = Number(startRow.getAttribute('data-i'));
+      var to = Number(endRow.getAttribute('data-i'));
+      if (!(to >= from) || !lines[from] || !lines[to]) return null;
+      var anchorEl = elOf(live.anchor);
+      var anchorRow = rowOf(anchorEl);
+      var anchorTx = anchorRow ? anchorRow.querySelector('.tx') : null;
+      var anchorZh = anchorTx ? anchorTx.querySelector('[lang="zh-Hans"]') : null;
+      var anchor = !anchorEl || !anchorTx || !anchorTx.contains(anchorEl) ? null : anchorZh && anchorZh.contains(anchorEl) ? 'zh' : 'en';
+      function partOf(row) {
+        var tx = row.querySelector('.tx');
+        if (!tx) return { en: '', zh: '' };
+        var zhEl = tx.querySelector('[lang="zh-Hans"]');
+        var enRange = doc.createRange();
+        enRange.selectNodeContents(tx);
+        if (zhEl) enRange.setEndBefore(zhEl);
+        var zh = '';
+        if (zhEl) {
+          var zhRange = doc.createRange();
+          zhRange.selectNodeContents(zhEl);
+          zh = intersectText(range, zhRange);
+        }
+        return { en: intersectText(range, enRange), zh: zh };
+      }
+      if (from === to) {
+        var p = partOf(startRow);
+        var w = TR.selectionForLine({ anchor: anchor, en: p.en, zh: p.zh, line: lines[from].text });
+        return { from: from, to: to, parts: [w], words: w };
+      }
+      var parts = [];
+      for (var r = from; r <= to; r++) {
+        var row = r === from ? startRow : r === to ? endRow : list.querySelector('.ln[data-i="' + r + '"]');
+        var part = row ? partOf(row) : { en: '', zh: '' };
+        parts.push(TR.cleanSelection(anchor === 'zh' ? part.zh : part.en));
+      }
+      var words = TR.pickWords(parts);
+      return words ? { from: from, to: to, parts: parts, words: words } : null;
+    }
+
+    function wholeLine(i) {
+      var l = st.transcript.lines[i];
+      return l ? { from: i, to: i, parts: [l.text], words: l.text } : null;
+    }
+
+    /** A press let go on a line (Classroom's up, for a mouse): the words
+     *  selected, else the whole line; a click on the open line closes it. */
+    function lineUp(i) {
+      var pk = pickIn();
+      if (!pk && st.sel && st.sel.i === i) return closeSel();
+      openSel(pk || wholeLine(i));
+    }
+
+    function openSel(pick) {
+      if (!pick || !ui.lines) return;
+      var old = st.sel;
+      var side = 'above';
+      var row = ui.lines.rows[pick.from];
+      if (row) side = TR.popSide(row.getBoundingClientRect().top - ui.lines.sc.getBoundingClientRect().top);
+      st.sel = { i: pick.from, to: pick.to, parts: pick.parts, words: pick.words, side: side };
+      // The chosen words are drawn as a <mark> in the row, as Classroom does
+      // once the bar is open; the browser's own highlight goes.
+      clearSelection();
+      if (old) repaint(old.i, old.to);
+      repaint(st.sel.i, st.sel.to);
+      placeTray();
+    }
+
+    function closeSel() {
+      if (!st || !st.sel) return;
+      var old = st.sel;
+      st.sel = null;
+      repaint(old.i, old.to);
+    }
+
+    function repaint(from, to) {
+      if (!ui || !ui.lines) return;
+      for (var i = from; i <= to; i++) {
+        var was = ui.lines.rows[i];
+        if (!was || !was.parentNode) continue;
+        var row = makeRow(i);
+        was.parentNode.replaceChild(row, was);
+        ui.lines.rows[i] = row;
+      }
+    }
+
+    /** The caret on the centre of the chosen words: the <mark>'s first box,
+     *  else the line's text (Classroom's layout effect + trayPlacement). */
+    function placeTray() {
+      if (!st || !st.sel || !ui.lines) return;
+      var row = ui.lines.rows[st.sel.i];
+      var tray = row && row.querySelector('.pop');
+      var tx = row && row.querySelector('.tx');
+      if (!tray || !tx) return;
+      var rr = row.getBoundingClientRect();
+      var mark = tx.querySelector('mark');
+      var mr = mark ? mark.getClientRects()[0] : null;
+      var sx = mr ? mr.left - rr.left : tx.offsetLeft;
+      var sw = mr ? mr.width : tx.offsetWidth;
+      var p = TR.trayPlacement({ sx: sx, sw: sw, bw: tray.offsetWidth, rw: row.offsetWidth });
+      tray.style.setProperty('--bx', p.bx + 'px');
+      tray.style.setProperty('--cx', p.cx + 'px');
+    }
+
+    /** The tray for the open line, every tool wired to the desk. */
+    function trayFor(i) {
+      var sel = st.sel;
+      var lines = st.transcript.lines;
+      var l = lines[i];
+      var words = sel.words;
+      return TR.build({
+        doc: doc,
+        id: 'hd-pop-' + i,
+        below: sel.side === 'below',
+        eyes: EYES,
+        d: {
+          actionsLabel: tr('digestActionsLabel'),
+          jot: tr('digestActJot'),
+          explain: tr('digestActExplain'),
+          card: tr('digestActCard'),
+          ask: tr('deskAsk', profName()),
+          more: { open: tr('digestMoreOpen'), label: tr('digestMoreLabel'), play: tr('digestMorePlay'), copy: tr('digestMoreCopy'), copied: tr('digestMoreCopied'), copyFailed: tr('digestMoreCopyFailed') },
+        },
+        playAt: P.clockOf(l.t),
+        copyText: words,
+        onJot: function () { jotWords(l.t, words); },
+        onExplain: function () { askAbout(sel, 'explain'); },
+        onCard: function () { askAbout(sel, 'card'); },
+        onAsk: function () { askAbout(sel, 'ask'); },
+        onPlay: function () { closeSel(); seek(l.t); },
+        copy: function (text) { return root.navigator.clipboard.writeText(text); },
+      });
+    }
+
+    /** Jot it: a jot at the line's start with the chosen words (as H's). */
+    function jotWords(t, words) {
+      closeSel();
+      var next = D.lineJot(st.jots, { id: newId(), t: t, text: words });
+      if (!next) return notify({ kind: 'desk_say', text: tr('deskJotsFull') });
+      st.jots = next;
+      st.last = null;
+      saveJots();
+      label();
+    }
+
+    /** Explain, Make a card, Ask {Professor}: the desk's Ask view (Round 10
+     *  D88: no window, no tab) about the chosen words, at the line's start.
+     *  Ask sends the words as the child's first message, as Classroom's room
+     *  does; Explain and Make a card run their chip. */
+    function askAbout(sel, intent) {
+      var lines = st.transcript.lines;
+      var at = lines[sel.i] ? lines[sel.i].t : now();
+      var attach = { kind: 'text', quote: sel.words };
+      if (lines[sel.i - 1]) attach.before = lines[sel.i - 1].text;
+      if (lines[sel.to + 1]) attach.after = lines[sel.to + 1].text;
+      closeSel();
+      root.HeddyDeskAsk.openAsk({ about: 'words', attach: attach, at: at }, api, intent, intent === 'ask' ? sel.words : undefined);
     }
 
     function noteBox(title, body) {
@@ -902,19 +1236,36 @@
         // H pressed while the transcript was on its way: each press is jotted
         // now, at the second it was pressed; without a transcript, the note box.
         var waiting = st.pressed;
+        var key = st.pressedByKey;
         st.pressed = [];
+        st.pressedByKey = false;
         label();
         drawPanel();
         wantZh();
         if (waiting.length) {
-          if (st.transcript.status === 'ok') waiting.forEach(function (at) { jotAt(at, true); });
-          else noteFallback(waiting[waiting.length - 1]);
+          if (st.transcript.status === 'ok') waiting.forEach(function (at) { jotAt(at, true, key); });
+          else noteFallback(waiting[waiting.length - 1], key);
         }
       });
     }
 
     function addStretch(z) {
       st.zh.stretches = st.zh.stretches.filter(function (s) { return s.from !== z.from; }).concat([z]);
+    }
+
+    /** Round 11: a stretch that failed is asked for again once the site's
+     *  window has passed, when the child switches view again. */
+    function retryZh() {
+      if (!st) return;
+      var due = D.zhRetryDue(st.zh.failedAt, Date.now());
+      if (!due.length) return;
+      due.forEach(function (from) {
+        delete st.zh.failedAt[from];
+        delete st.zh.asked[from];
+        st.zh.tries[from] = 0;
+      });
+      st.zh.failed = Object.keys(st.zh.failedAt).length > 0;
+      if (!st.zh.failed && st.zh.state === 'failed') st.zh.state = 'idle';
     }
 
     /** D72: ask for the stretch the player is in, and the next one past 80%. */
@@ -943,6 +1294,7 @@
           st.zh.locked = true;
         } else if (state !== 'ready') {
           st.zh.failed = true;
+          st.zh.failedAt[from] = Date.now();
           state = 'failed';
         }
         var before = st.zh.state;
@@ -1009,7 +1361,8 @@
           if (row) {
             row.classList.add('now');
             row.setAttribute('aria-current', 'true');
-            if (Date.now() - lastScroll > FOLLOW_PAUSE_MS && !st.query) {
+            // The list holds still while Pi's tray is open on a line.
+            if (Date.now() - lastScroll > FOLLOW_PAUSE_MS && !st.query && !st.sel) {
               var box = ui.lines.sc;
               var top = row.offsetTop - box.offsetTop;
               if (top < box.scrollTop || top + row.offsetHeight > box.scrollTop + box.clientHeight) {
@@ -1040,13 +1393,15 @@
       isOpen: function () { return !!host && !!st; },
 
       /** lib/desk-ask.js openAsk: the crest selected, the Ask view drawn. */
-      openAsk: function (ctx, intent) {
+      openAsk: function (ctx, intent, text) {
         if (!st) return;
+        askAt = ctx && typeof ctx.at === 'number' && isFinite(ctx.at) ? ctx.at : null;
         askView.open(ctx);
         st.tab = 'ask';
+        st.sel = null;
         label();
         drawPanel();
-        askView.start(intent);
+        askView.start(intent, text);
       },
       pinned: function () { return prefs.pin; },
 
@@ -1104,8 +1459,10 @@
           // Presses made before the site answered, with no transcript coming.
           if (st.video.status !== 'ok' && st.video.status !== 'error' && st.pressed.length) {
             var last = st.pressed[st.pressed.length - 1];
+            var byKey = st.pressedByKey;
             st.pressed = [];
-            noteFallback(last);
+            st.pressedByKey = false;
+            noteFallback(last, byKey);
           }
         });
       },
@@ -1140,27 +1497,31 @@
       /** H (D74): the line being spoken into the Jot tab. Whatever the
        *  transcript's state, a press always leaves something on the desk
        *  (the owner's 0.5.0 test: nothing visible happened). */
-      pressJot: function () {
+      /** `key`: pressed with H (Round 11: on any tab, playing, fullscreen),
+       *  not the Jot card's button; the child then sees a confirmation even
+       *  where the desk is out of sight. */
+      pressJot: function (key) {
         if (!st) return;
         var t = st.transcript;
         var at = now();
-        if (t.status === 'ok' && t.lines.length) return jotAt(at, false);
+        if (t.status === 'ok' && t.lines.length) return jotAt(at, false, key);
         if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
         var canRead = st.video.status !== 'signedOut' && st.video.status !== 'forbidden';
         // On its way (or failed once: read it again): the press waits for it.
         if (canRead && (t.status === 'loading' || t.status === 'idle' || (t.status === 'error' && !st.retried))) {
           st.pressed.push(at);
-          say(tr('deskJotWaiting', P.clockOf(at)), true);
+          if (key) st.pressedByKey = true;
+          tell(tr('deskJotWaiting', P.clockOf(at)), key);
           if (t.status === 'error') { st.retried = true; loadTranscript(); }
           return;
         }
-        noteFallback(at);
+        noteFallback(at, key);
       },
 
       /** Is the child typing in the desk (H is then a letter, not a jot)? */
       isTyping: function () {
         var a = shadow && shadow.activeElement;
-        return !!a && a.tagName === 'INPUT';
+        return !!a && root.HeddyJotKey.isTypingTarget(a);
       },
 
       /** Jots changed in storage (the courier dropped the ones Full desk carried). */
@@ -1184,6 +1545,7 @@
         // D73: the language sets the Digest's starting view.
         prefs.view = D.defaultView(lang);
         setLocal(PREF.view, prefs.view);
+        retryZh();
         label();
         drawPanel();
         wantZh();
@@ -1194,6 +1556,11 @@
       /** D76: Heddy was reloaded under the page. */
       destroy: function () {
         api.close(true);
+        if (outside) {
+          doc.removeEventListener('pointerdown', outside, true);
+          doc.removeEventListener('keydown', outside, true);
+          outside = null;
+        }
         host = null;
         ui = null;
       },

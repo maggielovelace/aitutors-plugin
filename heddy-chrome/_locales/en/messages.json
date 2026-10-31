@@ -252,7 +252,7 @@
     "message": "$NAME$ is writing the Chinese lines…",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
   },
-  "digestZhFailed": { "message": "The Chinese lines did not come through — try again tomorrow." },
+  "digestZhFailed": { "message": "The Chinese lines did not come through — try again in a few minutes." },
   "digestFailed": {
     "message": "$NAME$ could not read the transcript just now.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
@@ -272,6 +272,16 @@
     "message": "Play from $T$",
     "placeholders": { "t": { "content": "$1", "example": "0:31" } }
   },
+  "digestActionsLabel": { "message": "What to do with this line" },
+  "digestActJot": { "message": "Jot it" },
+  "digestActExplain": { "message": "Explain" },
+  "digestActCard": { "message": "Make a card" },
+  "digestMoreOpen": { "message": "More" },
+  "digestMoreLabel": { "message": "More for these words" },
+  "digestMorePlay": { "message": "Play from here" },
+  "digestMoreCopy": { "message": "Copy" },
+  "digestMoreCopied": { "message": "Copied" },
+  "digestMoreCopyFailed": { "message": "Couldn't copy" },
   "insightsHead": {
     "message": "$NAME$'s insights",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
@@ -525,6 +535,10 @@
   "deskJotWaiting": {
     "message": "Reading this video's transcript: your press at $TIME$ is jotted as soon as it's here.",
     "placeholders": { "time": { "content": "$1", "example": "0:31" } }
+  },
+  "deskJotToast": {
+    "message": "Jotted · $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" } }
   },
 
   "deskWhyLoading": { "message": "Reading this video's transcript. A long video takes a little while; H waits for it." },

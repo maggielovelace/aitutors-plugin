@@ -31,6 +31,9 @@
   // again after 4 s, at most 5 times.
   var ZH_RETRY_MS = 4000;
   var ZH_TRIES = 5;
+  // Round 11 (site PR #1192): a stretch that failed is not tried again by the
+  // site for 10 minutes; after that the desk may ask for it again.
+  var ZH_FAIL_RETRY_MS = 10 * 60 * 1000;
   // The last line of a video stays "being spoken" for this long.
   var LINE_HOLD = 10;
   // D69: at rest the desk is never shorter than this (the Jot card, two jots
@@ -135,6 +138,22 @@
     if (jots.length >= MAX_JOTS) return { jots: jots, last: null, result: 'full' };
     var jot = { id: input.id, t: round1(lines[i].t), kind: 'line', text: clean(lines[i].text) };
     return { jots: sorted(jots.concat([jot])), last: { id: jot.id, at: input.now, from: i, to: i }, result: 'new' };
+  }
+
+  /** Jot it on a Digest line (Round 11, Classroom's onJot): the chosen words
+   *  as a line jot at the line's start. Returns the jots, or null (nothing
+   *  to add, or no room). */
+  function lineJot(jots, input) {
+    var text = clean(input.text);
+    if (!text || !num(input.t) || input.t < 0 || jots.length >= MAX_JOTS) return null;
+    return sorted(jots.concat([{ id: input.id, t: round1(input.t), kind: 'line', text: text }]));
+  }
+
+  /** The stretches whose failure is ZH_FAIL_RETRY_MS old at `nowMs`. */
+  function zhRetryDue(failedAt, nowMs) {
+    return Object.keys(failedAt || {}).map(Number).filter(function (from) {
+      return num(failedAt[from]) && nowMs - failedAt[from] >= ZH_FAIL_RETRY_MS;
+    });
   }
 
   /** A typed note at `t` (the composer). Returns the jots, or null when there
@@ -258,6 +277,9 @@
     NEXT_AT: NEXT_AT,
     ZH_RETRY_MS: ZH_RETRY_MS,
     ZH_TRIES: ZH_TRIES,
+    ZH_FAIL_RETRY_MS: ZH_FAIL_RETRY_MS,
+    lineJot: lineJot,
+    zhRetryDue: zhRetryDue,
     MIN_H: MIN_H,
     BELOW_H: BELOW_H,
     VIEWS: VIEWS,

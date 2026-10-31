@@ -675,7 +675,7 @@
         }
       },
       "digestZhFailed": {
-        "message": "The Chinese lines did not come through — try again tomorrow."
+        "message": "The Chinese lines did not come through — try again in a few minutes."
       },
       "digestFailed": {
         "message": "$NAME$ could not read the transcript just now.",
@@ -721,6 +721,36 @@
             "example": "0:31"
           }
         }
+      },
+      "digestActionsLabel": {
+        "message": "What to do with this line"
+      },
+      "digestActJot": {
+        "message": "Jot it"
+      },
+      "digestActExplain": {
+        "message": "Explain"
+      },
+      "digestActCard": {
+        "message": "Make a card"
+      },
+      "digestMoreOpen": {
+        "message": "More"
+      },
+      "digestMoreLabel": {
+        "message": "More for these words"
+      },
+      "digestMorePlay": {
+        "message": "Play from here"
+      },
+      "digestMoreCopy": {
+        "message": "Copy"
+      },
+      "digestMoreCopied": {
+        "message": "Copied"
+      },
+      "digestMoreCopyFailed": {
+        "message": "Couldn't copy"
       },
       "insightsHead": {
         "message": "$NAME$'s insights",
@@ -1384,6 +1414,15 @@
           "time": {
             "content": "$1",
             "example": "0:31"
+          }
+        }
+      },
+      "deskJotToast": {
+        "message": "Jotted · $TIME$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
           }
         }
       },
@@ -2083,7 +2122,7 @@
         }
       },
       "digestZhFailed": {
-        "message": "中文没有传过来——明天再试吧。"
+        "message": "中文这次没出来——过几分钟再试。"
       },
       "digestFailed": {
         "message": "$NAME$现在读不到文字稿。",
@@ -2129,6 +2168,36 @@
             "example": "0:31"
           }
         }
+      },
+      "digestActionsLabel": {
+        "message": "用这句话做什么"
+      },
+      "digestActJot": {
+        "message": "记一笔"
+      },
+      "digestActExplain": {
+        "message": "讲一讲"
+      },
+      "digestActCard": {
+        "message": "做成闪卡"
+      },
+      "digestMoreOpen": {
+        "message": "更多"
+      },
+      "digestMoreLabel": {
+        "message": "更多操作"
+      },
+      "digestMorePlay": {
+        "message": "从这里播放"
+      },
+      "digestMoreCopy": {
+        "message": "复制"
+      },
+      "digestMoreCopied": {
+        "message": "已复制"
+      },
+      "digestMoreCopyFailed": {
+        "message": "没能复制"
       },
       "insightsHead": {
         "message": "$NAME$ 的见解",
@@ -2792,6 +2861,15 @@
           "time": {
             "content": "$1",
             "example": "0:31"
+          }
+        }
+      },
+      "deskJotToast": {
+        "message": "已记下 · $TIME$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
           }
         }
       },

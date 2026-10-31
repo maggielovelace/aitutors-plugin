@@ -252,7 +252,7 @@
     "message": "$NAME$ 正在写中文……",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
   },
-  "digestZhFailed": { "message": "中文没有传过来——明天再试吧。" },
+  "digestZhFailed": { "message": "中文这次没出来——过几分钟再试。" },
   "digestFailed": {
     "message": "$NAME$现在读不到文字稿。",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
@@ -272,6 +272,16 @@
     "message": "从 $T$ 开始播放",
     "placeholders": { "t": { "content": "$1", "example": "0:31" } }
   },
+  "digestActionsLabel": { "message": "用这句话做什么" },
+  "digestActJot": { "message": "记一笔" },
+  "digestActExplain": { "message": "讲一讲" },
+  "digestActCard": { "message": "做成闪卡" },
+  "digestMoreOpen": { "message": "更多" },
+  "digestMoreLabel": { "message": "更多操作" },
+  "digestMorePlay": { "message": "从这里播放" },
+  "digestMoreCopy": { "message": "复制" },
+  "digestMoreCopied": { "message": "已复制" },
+  "digestMoreCopyFailed": { "message": "没能复制" },
   "insightsHead": {
     "message": "$NAME$ 的见解",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
@@ -525,6 +535,10 @@
   "deskJotWaiting": {
     "message": "正在读这个视频的文字稿：你在 $TIME$ 按的这一下，读到就记下来。",
     "placeholders": { "time": { "content": "$1", "example": "0:31" } }
+  },
+  "deskJotToast": {
+    "message": "已记下 · $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" } }
   },
 
   "deskWhyLoading": { "message": "正在读这个视频的文字稿。视频长，要等一会儿；按 H 会等它读完。" },

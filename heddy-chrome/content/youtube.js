@@ -10,10 +10,12 @@
 //
 // H jots the line being spoken into the desk's Jot tab, and only while the
 // desk is open (D74): with the desk closed H does nothing, and YouTube's own
-// keys are always left alone (Heddy only listens). It also shows Heddy's
-// toasts (lib/toast.js) and pauses the video when Full desk hands it to
-// Classroom. It reads the video id from the address, the player's time and
-// length, and the video's title and channel. Selectors:
+// keys are always left alone (Heddy only listens). Round 11: on any desk tab,
+// while the video plays and in YouTube's fullscreen, with a small
+// confirmation drawn inside the fullscreen player (where the desk is not).
+// It also shows Heddy's toasts (lib/toast.js) and pauses the video when Full
+// desk hands it to Classroom. It reads the video id from the address, the
+// player's time and length, and the video's title and channel. Selectors:
 // content/youtube-selectors.js, nowhere else.
 //
 // D76: a copy of this script left in the tab when Heddy is reloaded finds
@@ -83,6 +85,8 @@
     channel: channelName,
     isDark: isDark,
     onOpenChange: function () { labelBar(); },
+    // The desk's confirmations for H (Round 11): Heddy's toast.
+    notify: function (msg) { onToast(msg); },
   });
 
   // ─── the button ────────────────────────────────────────────────────────────
@@ -136,6 +140,9 @@
   var toaster = T.createToaster({
     document: document,
     marks: M,
+    // In YouTube's fullscreen only the fullscreen element is drawn: the toast
+    // goes inside it, or the child would never see it.
+    mount: function () { return document.fullscreenElement || document.documentElement; },
     onOpen: function (href) { send({ type: 'heddy-ui:open', href: href }); },
     onUndo: function (jotId, jotterId) { send({ type: 'heddy-ui:undo', jotId: jotId, jotterId: jotterId }); },
     onUndoCards: function (cardIds) { send({ type: 'heddy-ui:undo-card', cardIds: cardIds }); },
@@ -151,10 +158,18 @@
   // the child types (lib/jot-key.js, and the desk's own fields). Closed, H
   // does nothing. The 2.5 s join is the desk's (lib/desk-model.js press).
 
+  // A capture listener on the window: it runs before YouTube's player can
+  // swallow the key, and it never stops or prevents the event, so YouTube's
+  // own shortcuts keep working (H is none of them).
   function onKeyDown(e) {
     if (!desk.isOpen()) return;
     if (!currentId() || isLive() || !K.isJotKey(e, document.activeElement) || desk.isTyping()) return;
-    desk.pressJot();
+    desk.pressJot(true);
+  }
+
+  /** In or out of fullscreen: a toast drawn in the other place goes. */
+  function onFullscreen() {
+    if (life.check()) toaster.hide();
   }
 
   // ─── wiring ────────────────────────────────────────────────────────────────
@@ -209,6 +224,7 @@
   function teardown() {
     window.removeEventListener('keydown', onKeyDown, true);
     window.removeEventListener('resize', onResize);
+    document.removeEventListener('fullscreenchange', onFullscreen);
     document.removeEventListener('yt-navigate-finish', refresh);
     document.removeEventListener('yt-page-data-updated', refresh);
     try { chrome.runtime.onMessage.removeListener(onMessage); } catch (e) { /* gone with Heddy */ }
@@ -236,6 +252,7 @@
   // its bar, and keeps the desk in its column.
   window.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('resize', onResize);
+  document.addEventListener('fullscreenchange', onFullscreen);
   document.addEventListener('yt-navigate-finish', refresh);
   document.addEventListener('yt-page-data-updated', refresh);
   life.start();
