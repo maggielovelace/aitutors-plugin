@@ -27,7 +27,11 @@
   // What the background injects into a tab that reached a watch page by
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
-  var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'content/youtube-selectors.js', 'content/youtube.js'];
+  var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'lib/desk-model.js', 'lib/film-strip.js', 'content/youtube-selectors.js', 'content/desk.js', 'content/youtube.js'];
+  // The desk's jots carried by Full desk (D71): at most this many ids, which
+  // leave the desk's store once the site has kept the clip.
+  var MAX_JOT_IDS = 200;
+  var DESK_PREFIX = 'deskJots:';
   // What a gesture injects into any page for Jot it and Save page to Jotters
   // (Phase 2), and for the panel's cards: lib/pos.js places a snippet on its
   // page, content/cards-layer.js draws the cards' numbers (Round 5).
@@ -144,16 +148,43 @@
         });
     }
 
-    /** Add to My Clips / Watch with Heddy: in a new tab beside the video. */
+    /** Add to My Clips (the popup) and Full desk (the desk): in a new tab
+     *  beside the video. Add to My Clips may carry the part's end (D75);
+     *  Full desk carries the desk's jots, then 'classroom' (D71). */
     function capture(input) {
+      var meta = { tabId: input.tabId, then: input.then, youtubeId: input.youtubeId, startSec: input.startSec == null ? null : Math.floor(input.startSec) };
+      if (input.jotIds && input.jotIds.length) meta.jotIds = input.jotIds;
       return openCapture({
         page: 'clip',
         kind: 'clip',
         windowId: input.windowId,
         asTab: input.tabId == null ? null : input.tabId,
-        build: function (cid) { return P.buildAdd({ cid: cid, youtubeId: input.youtubeId, startSec: input.startSec, then: input.then }); },
-        meta: { tabId: input.tabId, then: input.then, youtubeId: input.youtubeId, startSec: input.startSec == null ? null : Math.floor(input.startSec) },
+        build: function (cid) {
+          return P.buildAdd({ cid: cid, youtubeId: input.youtubeId, startSec: input.startSec, endSec: input.endSec, jots: input.jots, then: input.then });
+        },
+        meta: meta,
       });
+    }
+
+    /** Full desk's jots are on aitutors.me now (the result's jotsSaved): they leave the desk's store
+     *  (the desk redraws from chrome.storage.onChanged). Jots made since stay. */
+    function dropCarriedJots(meta) {
+      if (!meta.jotIds || !meta.jotIds.length || !P.isYoutubeId(meta.youtubeId)) return Promise.resolve();
+      var key = DESK_PREFIX + meta.youtubeId;
+      var gone = {};
+      meta.jotIds.forEach(function (id) { gone[id] = true; });
+      return Promise.resolve()
+        .then(function () { return chrome.storage.local.get(key); })
+        .then(function (got) {
+          var list = got && Array.isArray(got[key]) ? got[key] : [];
+          var keep = list.filter(function (j) { return !(j && gone[j.id]); });
+          if (keep.length === list.length) return null;
+          if (!keep.length) return chrome.storage.local.remove(key);
+          var o = {};
+          o[key] = keep;
+          return chrome.storage.local.set(o);
+        })
+        .catch(function () {});
     }
 
     /** heddy:result: the tick on the toolbar, the toast, and the pause. Each
@@ -188,19 +219,6 @@
       }
       setIcon(meta.tabId, 'saved');
       later(function () { restIcon(meta.tabId); }, SAVED_MS);
-      if (kind === 'moment') {
-        return tellTab(meta.tabId, {
-          type: 'heddy-ui:toast',
-          kind: 'note',
-          t: result.t != null ? result.t : meta.startSec,
-          quote: result.quote,
-          jotId: result.jotId,
-          topic: result.topic,
-          topicLang: result.lang,
-          title: meta.title,
-          href: C.jotterUrl(origin, meta.youtubeId),
-        });
-      }
       // (Round 5: Heddy no longer opens a Jot it or picture-jot window, so no
       // 'jot' or 'box' result comes back; the site still answers older installs.)
       // Tool windows (lib/tools.js; owner, 2026-10-29). Make a card closes
@@ -238,6 +256,9 @@
           .then(function () { return tellTab(meta.tabId, saved); });
       }
       if (kind !== 'clip') return Promise.resolve();
+      // The window says it saved Full desk's jots (contract Changes, site 4):
+      // only then do they leave the desk.
+      if (result.jotsSaved != null) dropCarriedJots(meta);
       // "from m:ss" is where the site says the kept clip starts (its `t`):
       // the child may choose another start there, or Part of it. Heddy's own
       // start stands in when the site sends none.
@@ -289,18 +310,6 @@
     function tabRemoved(tabId) {
       return ready.then(function () {
         if (store.dropTab(tabId)) return persist();
-      });
-    }
-
-    /** J: one heddy:moment, in a window that does not take focus. */
-    function moment(input) {
-      return openCapture({
-        page: 'jot',
-        kind: 'moment',
-        windowId: input.windowId,
-        focused: false,
-        build: function (cid) { return P.buildMoment({ cid: cid, youtubeId: input.youtubeId, t: input.t, tEnd: input.tEnd }); },
-        meta: { tabId: input.tabId, youtubeId: input.youtubeId, startSec: Math.floor(input.t), title: input.title },
       });
     }
 
@@ -431,25 +440,20 @@
           if (!P.isYoutubeId(message.youtubeId) || (message.then !== 'keep' && message.then !== 'classroom')) return Promise.resolve({ ok: false });
           // From the YouTube page itself, the video must be the one it shows.
           if (tab && P.youtubeIdFromUrl(sender.url || tab.url) !== message.youtubeId) return Promise.resolve({ ok: false });
+          // Full desk's jots come only from the desk, on its own page (D71).
+          var jots = tab && message.then === 'classroom' && Array.isArray(message.jots) ? message.jots : null;
+          var jotIds = jots && Array.isArray(message.jotIds) && message.jotIds.length <= MAX_JOT_IDS
+            ? message.jotIds.filter(function (id) { return typeof id === 'string' && id.length <= 64; })
+            : null;
           return capture({
             youtubeId: message.youtubeId,
             startSec: message.startSec == null ? null : message.startSec,
+            endSec: message.endSec == null ? null : message.endSec,
+            jots: jots,
+            jotIds: jotIds,
             then: message.then,
             tabId: tab ? tab.id : message.tabId,
             windowId: tab ? tab.windowId : message.windowId,
-          });
-        }
-        case 'heddy-ui:moment': {
-          // J, from a watch page: the video must be the one that page shows.
-          if (!tab || !P.isYoutubeId(message.youtubeId) || P.youtubeIdFromUrl(sender.url || tab.url) !== message.youtubeId) return Promise.resolve({ ok: false });
-          if (typeof message.t !== 'number' || !isFinite(message.t) || message.t < 0) return Promise.resolve({ ok: false });
-          return moment({
-            youtubeId: message.youtubeId,
-            t: message.t,
-            tEnd: typeof message.tEnd === 'number' ? message.tEnd : null,
-            title: typeof message.title === 'string' ? message.title.slice(0, 200) : null,
-            tabId: tab.id,
-            windowId: tab.windowId,
           });
         }
         case 'heddy-ui:undo':
@@ -469,7 +473,9 @@
             var href = typeof message.href === 'string' ? message.href : '';
             var u;
             try { u = new URL(href); } catch (e) { return { ok: false }; }
-            if (C.allowedOrigins(dev).indexOf(u.origin) < 0 || !/^\/study\/(clips|jotters)(\/|$)/.test(u.pathname)) return { ok: false };
+            // My Clips, Jotters, and the kid sign-in door (the desk signed out).
+            var to = /^\/study\/(clips|jotters)(\/|$)/.test(u.pathname) || (u.pathname === '/auth/login' && u.search === '?door=kid');
+            if (C.allowedOrigins(dev).indexOf(u.origin) < 0 || !to) return { ok: false };
             return chrome.tabs.create({ url: u.href, openerTabId: tab ? tab.id : undefined }).then(
               function () { return { ok: true }; },
               function () { return { ok: false }; }
@@ -494,7 +500,7 @@
     return { ready: ready, openCapture: openCapture, capture: capture, external: external, internal: internal, tabUpdated: tabUpdated, tabRemoved: tabRemoved, menuClicked: menuClicked, command: command, installMenus: installMenus, installed: installed };
   }
 
-  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, NO_CAPTIONS: NO_CAPTIONS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, contentTab: contentTab, createCourier: createCourier };
+  var api = { SESSION_KEY: SESSION_KEY, SAVED_MS: SAVED_MS, TAB_CLOSE_MS: TAB_CLOSE_MS, CANCELLED: CANCELLED, NO_CAPTIONS: NO_CAPTIONS, ICONS: ICONS, CONTENT_FILES: CONTENT_FILES, PAGE_FILES: PAGE_FILES, MENU_ID: MENU_ID, COMMAND: COMMAND, MAX_JOT_IDS: MAX_JOT_IDS, DESK_PREFIX: DESK_PREFIX, contentTab: contentTab, createCourier: createCourier };
   root.HeddyCourier = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

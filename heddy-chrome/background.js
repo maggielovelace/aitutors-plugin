@@ -1,6 +1,6 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js');
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js', 'lib/desk-api.js');
 
 var cards = null;
 var courier = HeddyCourier.createCourier({
@@ -73,9 +73,14 @@ chrome.runtime.onInstalled.addListener(function (details) {
   courier.installed(details);
 });
 
+// The desk on a YouTube watch page (Round 8, D69–D72): its four requests to
+// aitutors.me go from here, with the browser's own aitutors.me cookie, as
+// lib/who.js's /me does (lib/desk-api.js).
+var desk = HeddyDeskApi.createDeskApi({ chrome: chrome, fetchImpl: fetch.bind(self) });
+
 // Heddy's own popup, the YouTube content script and the page tray.
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  var mine = snap.internal(message, sender) || cards.internal(message, sender);
+  var mine = desk.internal(message, sender) || snap.internal(message, sender) || cards.internal(message, sender);
   if (mine) {
     mine.then(function (reply) { sendResponse(reply); }, function () { sendResponse(null); });
     return true;

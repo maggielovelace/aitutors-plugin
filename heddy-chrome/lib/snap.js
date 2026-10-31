@@ -128,12 +128,21 @@
       return withPanel(tab, { whole: true, keep: true });
     }
 
-    /** heddy-ui:tool from the words tray (lib/tools.js sendTool). The address
-     *  and title come from the tab, not the page. */
+    /** A watch page's address at the player's second (the desk's crest, Ask
+     *  {professor}: the contract's § 6), as youtube.com/watch?v={id}&t={s}.
+     *  Any other page, or no time, keeps its address. */
+    function atMoment(url, t) {
+      var id = P.youtubeIdFromUrl(url);
+      if (!id || typeof t !== 'number' || !isFinite(t) || t < 0) return url;
+      return 'https://www.youtube.com/watch?v=' + id + '&t=' + Math.floor(t);
+    }
+
+    /** heddy-ui:tool from the words tray (lib/tools.js sendTool), or the
+     *  desk's crest. The address and title come from the tab, not the page. */
     function wordsTool(tab, m) {
       if (T.TOOLS.indexOf(m.tool) < 0) return Promise.resolve({ ok: false });
       return deps.sender.tool(
-        { tool: m.tool, url: tab.url, title: tab.title, quote: m.quote, context: m.context },
+        { tool: m.tool, url: atMoment(tab.url, m.t), title: tab.title, quote: m.quote, context: m.context },
         { tabId: tab.id, windowId: tab.windowId }
       );
     }

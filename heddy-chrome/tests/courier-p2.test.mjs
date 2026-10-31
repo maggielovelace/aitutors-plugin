@@ -62,54 +62,11 @@ async function claim(s) {
   return s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
 }
 
-test('H opens /capture/jot in a window that does not take focus, with heddy:moment — still a window, never a tab (owner, 2026-10-30)', async () => {
+test('H no longer opens a window (Round 8, D74): heddy-ui:moment is not a message the courier answers', async () => {
   const s = setup();
-  const r = await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
-  assert.deepEqual(r, { ok: true, cid: CID });
-  assert.equal(s.calls.windows[0].url, `${PROD}/capture/jot?cid=${CID}`);
-  assert.equal(s.calls.windows[0].type, 'popup');
-  assert.equal(s.calls.windows[0].focused, false);
-  assert.equal(s.calls.tabsCreated.length, 0, 'a tab would flash on every press');
-  assert.deepEqual(await claim(s), { type: 'heddy:moment', v: 1, cid: CID, youtubeId: VIDEO, t: 168, tEnd: 171 });
-});
-
-test('J’s saved result: the tick, then "Note saved" with the quote, Undo’s jot id and Open in Jotter', async () => {
-  const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 170, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
-  await claim(s);
-  const reply = await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, t: 168, jotId: JOT, quote: 'On a 1:50 000 map, 2 cm represents 1 km on the ground.' }, page());
-  assert.deepEqual(reply, { ok: true });
-  assert.equal(s.calls.icons.at(-1).path[16], 'icons/toolbar-saved-16.png');
-  assert.deepEqual(s.calls.tabMessages, [{
-    tabId: 7,
-    m: {
-      type: 'heddy-ui:toast', kind: 'note', t: 168, quote: 'On a 1:50 000 map, 2 cm represents 1 km on the ground.', jotId: JOT,
-      topic: null, topicLang: null, title: 'GCSE Maths - Using Scales on Maps', href: `${PROD}/study/jotters/v/${VIDEO}`,
-    },
-  }]);
-});
-
-test('J’s refusals stay in the window: no toast for Keep and jot, cant_keep or an unknown video', async () => {
-  for (const error of ['unknown_video', 'cant_keep', 'cannot_keep', null]) {
-    const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, fromYouTube);
-    await claim(s);
-    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error }, page());
-    assert.equal(s.calls.tabMessages.length, 0, String(error));
-    assert.equal(s.calls.icons.length, 0);
-  }
-});
-
-test('J only for the video the page shows, and never from Shorts, an embed or a page that is not Heddy', async () => {
-  const s = setup();
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: 'abcdefghijk', t: 3 }, fromYouTube), { ok: false });
-  const shorts = { id: 'heddy', url: `https://www.youtube.com/shorts/${VIDEO}`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/shorts/${VIDEO}` } };
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, shorts), { ok: false });
-  const embed = { id: 'heddy', url: `https://www.youtube.com/embed/${VIDEO}`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/embed/${VIDEO}` } };
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, embed), { ok: false });
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: -1 }, fromYouTube), { ok: false });
-  assert.equal(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, { ...fromYouTube, id: 'other' }), null);
+  assert.equal(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'x' }, fromYouTube), null);
   assert.equal(s.calls.windows.length, 0);
+  assert.equal(s.calls.tabsCreated.length, 0);
 });
 
 test('Undo: heddy:undo in a window without focus; then "Jot deleted." or "Couldn’t undo that note."', async () => {
