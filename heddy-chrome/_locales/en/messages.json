@@ -15,18 +15,13 @@
   "firstTimeYouTube": { "message": "Add a YouTube video, or watch it with Heddy" },
   "openSite": { "message": "Open aitutors.me" },
   "sitePageLine": { "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages." },
-  "captureFailed": { "message": "Heddy couldn't open aitutors.me. Try again." },
 
   "commandJot": { "message": "Show Heddy's buttons for the words you selected" },
   "trayLabel": { "message": "Heddy: what to do with these words" },
-  "trayMore": { "message": "More" },
-  "menuCopy": { "message": "Copy" },
   "menuParagraph": { "message": "Select the whole paragraph" },
-  "menuClipPage": { "message": "Save page to Jotters" },
   "imageLabel": { "message": "Image" },
 
 
-  "clipThisPage": { "message": "Save page to Jotters" },
   "firstTimePage": { "message": "Save words, pictures or a whole page to Jotters" },
   "pageEmpty": { "message": "This page has no text to save." },
 
@@ -92,9 +87,6 @@
   },
   "boxDropped": { "message": "The page changed, so the cards you collected were cleared." },
   "boxFailed": { "message": "Heddy couldn't take that picture. Try again." },
-  "trayExplain": { "message": "Explain" },
-  "trayCard": { "message": "Make a card" },
-  "trayAsk": { "message": "Ask Heddy" },
   "menuCopyPicture": { "message": "Copy picture" },
   "menuCopied": { "message": "Copied" },
   "copyFailed": { "message": "Couldn't copy the picture." },
@@ -103,13 +95,6 @@
   "toastCardUndoFailed": { "message": "Couldn't undo that card." },
 
   "saveToJotters": { "message": "Save to Jotters" },
-  "saveAndJot": { "message": "Save and jot now" },
-  "saveGoesTo": {
-    "message": "Goes to the left page of your \"$TITLE$\" Jotter. You can jot it there.",
-    "placeholders": { "title": { "content": "$1", "example": "Sparx Science – Home" } }
-  },
-  "saveGoesToNoTitle": { "message": "Goes to the left page of this page's Jotter. You can jot it there." },
-  "savePageToo": { "message": "Save the whole page too" },
   "cardsHeading": { "message": "In this save" },
   "cardsSnippet": { "message": "1 snippet" },
   "cardsSnippets": {
@@ -121,16 +106,12 @@
     "message": "$N$ pictures",
     "placeholders": { "n": { "content": "$1", "example": "2" } }
   },
-  "addText": { "message": "+ Text" },
   "addPicture": { "message": "+ Picture" },
   "modeSwitchLabel": { "message": "Add words or pictures" },
-  "modeText": { "message": "Text" },
-  "modePicture": { "message": "Picture" },
   "textModeLine": { "message": "Select words: each one is added" },
   "cardMoveUp": { "message": "Move up" },
   "cardMoveDown": { "message": "Move down" },
   "cardDrag": { "message": "Drag to change the order" },
-  "cardsEmptyHint": { "message": "Select words on the page: each one is added here." },
   "cardPictureLabel": { "message": "Picture" },
   "cardRemove": {
     "message": "Remove card $N$",
@@ -143,10 +124,6 @@
   },
   "cardsFullText": { "message": "Heddy keeps up to 10 snippets from one page." },
   "cardsFullPictures": { "message": "Heddy keeps up to 4 pictures from one page." },
-  "toolsOnCard1": { "message": "On card 1" },
-  "barHeddy": { "message": "Heddy ▾" },
-  "menuExplainPicture": { "message": "Explain this picture" },
-  "menuAskAbout": { "message": "Ask Heddy about it" },
   "menuWholePage": { "message": "Whole visible page" },
   "boxEscDone": { "message": "· Esc to stop" },
   "toastNoCaptions": { "message": "Heddy needs captions to help with this video, and this one has none." },
@@ -204,7 +181,6 @@
   "aboutCopied": { "message": "Copied" },
   "aboutPrivacy": { "message": "Privacy" },
   "aboutPrivacyLink": { "message": "What Heddy reads, and when" },
-  "trayAddCard": { "message": "+ Add" },
   "menuAddPicture": { "message": "Add picture to Heddy" },
 
   "deskSub": { "message": "aitutors for KS3 & GCSE" },
@@ -329,8 +305,190 @@
     "message": "Add $SPAN$ to My Clips",
     "placeholders": { "span": { "content": "$1", "example": "52 s" } }
   },
-  "opensInMyClips": { "message": "Opens it in My Clips." },
   "filmLabel": { "message": "The part to add: drag either end" },
   "filmStart": { "message": "Start of the part" },
-  "filmEnd": { "message": "End of the part" }
+  "filmEnd": { "message": "End of the part" },
+
+  "webTabSources": { "message": "Sources" },
+  "webDeskClose": { "message": "Close the desk" },
+  "deskFootMentor": { "message": "Mentor's desk" },
+  "webCardsLabel": { "message": "Your sources, in your order" },
+  "cardsNothingYet": { "message": "nothing picked yet" },
+  "webEmptyTitle": { "message": "Pick words or pictures on the page" },
+  "webEmptyBody": { "message": "Select words and they're added. For a picture, use + Picture and draw a box." },
+  "webPageCardHead": { "message": "Or keep the page" },
+  "webPageCardLine": { "message": "Save keeps its article text: headings and paragraphs, without menus or ads." },
+  "webAddText": { "message": "Text" },
+  "webAddPicture": { "message": "Picture" },
+  "webAddFailed": { "message": "Heddy couldn't add those words. Try again." },
+  "saveArticle": { "message": "Also keep the article's text" },
+  "saveArticleWhy": { "message": "The page's main text, without menus or ads. It goes on the Jotter's left page." },
+  "saveOne": { "message": "Save 1 to my Jotters" },
+  "saveN": {
+    "message": "Save $N$ to my Jotters",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "savePage": { "message": "Save this page to my Jotters" },
+  "savingN": {
+    "message": "Saving $N$ to your Jotter…",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "savingPage": { "message": "Saving this page to your Jotter…" },
+  "stepRead": { "message": "Read it" },
+  "stepJot": { "message": "Jot it" },
+  "stepGet": { "message": "Get it" },
+  "saveSignedOut": { "message": "Sign in to aitutors.me to save to your Jotters." },
+  "saveTooBig": { "message": "That's too much for one save. Take out a picture and try again." },
+  "saveFailedOne": { "message": "Couldn't save. Your source is still here: try again." },
+  "saveFailedN": {
+    "message": "Couldn't save. Your $N$ sources are still here: try again.",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "saveFailedPage": { "message": "Couldn't save this page. Try again." },
+  "savedTo": {
+    "message": "Saved to your $NAME$ Jotter",
+    "placeholders": { "name": { "content": "$1", "example": "DeepLearning.AI" } }
+  },
+  "savedToJotter": { "message": "Saved to your Jotter" },
+  "savedArticle": { "message": "the article's text" },
+  "savedSomething": { "message": "Your save" },
+  "savedComma": { "message": ", " },
+  "savedAnd": { "message": " and " },
+  "savedIs": {
+    "message": "$WHAT$ is on its left page, in your order.",
+    "placeholders": { "what": { "content": "$1", "example": "1 snippet" } }
+  },
+  "savedAre": {
+    "message": "$WHAT$ are on its left page, in your order.",
+    "placeholders": { "what": { "content": "$1", "example": "1 snippet and 2 pictures" } }
+  },
+  "savedNext": { "message": "Read it, jot it and get it on aitutors.me whenever you like." },
+  "savedOpen": { "message": "Open my Jotter ↗" },
+  "savedUndo": { "message": "Undo" },
+  "savedFine": { "message": "Open is the only thing that leaves this page." },
+  "savedUndoFailed": { "message": "Couldn't undo that save. Try again." },
+  "deskSavedTitle": { "message": "Saved to your Jotter" },
+  "deskSavedOne": { "message": "1 jot is in this video's Jotter, by its time." },
+  "deskSavedMany": {
+    "message": "$N$ jots are in this video's Jotter, by their times.",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "deskSavedDone": { "message": "Done" },
+  "askAboutPictureN": {
+    "message": "Ask $NAME$ · about picture $N$",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" }, "n": { "content": "$2", "example": "2" } }
+  },
+  "askAboutPicture": {
+    "message": "Ask $NAME$ · about this picture",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askAboutWords": {
+    "message": "Ask $NAME$ · about these words",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askAboutVideo": {
+    "message": "Ask $NAME$ · about this video",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askAboutPage": {
+    "message": "Ask $NAME$ · about this page",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhPictureN": {
+    "message": "Ask $NAME$ about picture $N$…",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" }, "n": { "content": "$2", "example": "2" } }
+  },
+  "askPhPicture": {
+    "message": "Ask $NAME$ about this picture…",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhWords": {
+    "message": "Ask $NAME$ about these words…",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhVideo": {
+    "message": "Ask $NAME$ about this video…",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhPage": {
+    "message": "Ask $NAME$ about this page…",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askExplain": { "message": "Explain" },
+  "askMakeCard": { "message": "Make a card" },
+  "askSend": { "message": "Ask" },
+  "askExplainPicture": { "message": "Explain this picture" },
+  "askExplainVideo": { "message": "Explain this video" },
+  "askExplainThis": { "message": "Explain this" },
+  "askCardDraft": { "message": "Card draft" },
+  "askKeepCard": { "message": "Keep card" },
+  "askChangeIt": { "message": "Change it" },
+  "askChangePrefix": { "message": "Change the card: " },
+  "askKept": { "message": "Kept in your deck" },
+  "askKeepJot": { "message": "Keep as a jot" },
+  "askKeptJot": { "message": "Kept as a jot" },
+  "askOpen": { "message": "Open ↗" },
+  "askUndo": { "message": "Undo" },
+  "askSignIn": { "message": "Sign in" },
+  "askErrSignedOut": {
+    "message": "Sign in to aitutors.me to ask $NAME$.",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askErrNoSeat": {
+    "message": "Asking $NAME$ needs this subject on your plan.",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askErrCap": { "message": "That's all your turns for today. More tomorrow." },
+  "askErrFailed": {
+    "message": "$NAME$ couldn't answer just now. Try again.",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askKeepFailed": { "message": "Couldn't keep that. Try again." },
+  "askTurnsLeft": {
+    "message": "$N$ turns left today",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "askPicSmall": {
+    "message": "Picture $N$ · $SITE$",
+    "placeholders": { "n": { "content": "$1", "example": "2" }, "site": { "content": "$2", "example": "deeplearning.ai" } }
+  },
+  "askPicSmallNoN": {
+    "message": "This picture · $SITE$",
+    "placeholders": { "site": { "content": "$1", "example": "deeplearning.ai" } }
+  },
+  "modeTextView": { "message": "Text view" },
+  "modePictureView": { "message": "Picture view" },
+  "barHeddyMenu": { "message": "Heddy ▾" },
+  "menuAskAboutIt": {
+    "message": "Ask $NAME$ about it",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "menuAskAboutThis": {
+    "message": "Ask $NAME$ about this",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "menuMakeCard": { "message": "Make a card" },
+  "menuInDesk": { "message": "in Heddy's desk" },
+  "menuCopyWords": { "message": "Copy words" },
+  "menuAddToSources": { "message": "Add to Sources" },
+  "clipFailed": { "message": "Heddy couldn't add it to My Clips. Try again." },
+  "clipSignedOut": { "message": "Sign in to aitutors.me to add clips." },
+  "addsToMyClips": { "message": "Heddy says when it's in My Clips." },
+  "toastAddedToClips": { "message": "Added to My Clips" },
+  "toastAlreadyInClips": { "message": "Already in My Clips" },
+  "toastSignInClips": { "message": "Sign in to aitutors.me to add clips." },
+  "toastSignIn": { "message": "Sign in" },
+
+  "askPickSubject": { "message": "Which subject is it? Heddy will ask that professor." },
+  "subjMATH": { "message": "Maths" },
+  "subjENLA": { "message": "English" },
+  "subjBIOL": { "message": "Biology" },
+  "subjCHEM": { "message": "Chemistry" },
+  "subjPHYS": { "message": "Physics" },
+  "subjHIST": { "message": "History" },
+  "subjGEOG": { "message": "Geography" },
+  "savedNoArticle": { "message": "The article's text wasn't kept this time; your snippets and pictures were." },
+  "clipLimit": { "message": "That's today's limit for adding videos. Try again tomorrow." },
+  "toastNoticeNewChannel": { "message": "A grown-up will be told about this channel" },
+  "toastNoticeOffMap": { "message": "Off your map: in Mentor's Classroom" }
 }

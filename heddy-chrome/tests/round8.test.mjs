@@ -23,8 +23,8 @@ const PROD = 'https://aitutors.me';
 const WATCH = `https://www.youtube.com/watch?v=${VIDEO}`;
 const fromYouTube = { id: 'heddy', url: WATCH, tab: { id: 7, index: 3, windowId: 1, url: WATCH } };
 
-test('the version is 0.5.0', () => {
-  assert.equal(manifest().version, '0.5.0');
+test('the version moved on from 0.5.0 (Round 9 is 0.6.0: tests/round9.test.mjs)', () => {
+  assert.notEqual(manifest().version, '0.5.0');
 });
 
 // ─── heddy:add: endSec and jots (contract § 5) ─────────────────────────────
@@ -136,7 +136,7 @@ test('§ 3: Insights is live only when the site serves it; a 404 draws the tab d
   assert.equal(A.parseInsights({ status: 'ok', parts: [] }).ok, false, 'without ok: true it is not the wrapped route');
 });
 
-test('§ 4: Save to My Jotters posts the jots, then opens the Jotter beside the video; 401 is signed out', async () => {
+test('§ 4: Save to My Jotters posts the jots and opens nothing (Round 9, D86: the desk shows the Saved card); 401 is signed out', async () => {
   const s = deskSetup({ answers: { '/api/learn/heddy/desk/jots': { status: 200, body: { ok: true, saved: 2, href: `/study/jotters/v/${VIDEO}` } } } });
   const jots = [{ t: 14.24, kind: 'line', text: 'Predict first' }, { t: 52, kind: 'note', text: 'They land together' }];
   const r = await s.api.internal({ type: 'heddy-desk:save-jots', youtubeId: VIDEO, title: 'Meet Professor Newton', channel: 'Heddy', durationSec: 174.4, jots }, fromYouTube);
@@ -147,7 +147,7 @@ test('§ 4: Save to My Jotters posts the jots, then opens the Jotter beside the 
   assert.equal(f.init.credentials, 'include');
   assert.equal(f.init.headers['Content-Type'], 'application/json');
   assert.deepEqual(JSON.parse(f.init.body), { youtubeId: VIDEO, title: 'Meet Professor Newton', channel: 'Heddy', durationSec: 174, jots: [{ t: 14.2, kind: 'line', text: 'Predict first' }, { t: 52, kind: 'note', text: 'They land together' }] });
-  assert.deepEqual(s.calls.tabsCreated, [{ url: `${PROD}/study/jotters/v/${VIDEO}`, openerTabId: 7, index: 4, windowId: 1, active: true }]);
+  assert.deepEqual(s.calls.tabsCreated, [], 'no tab until Open my Jotter ↗ is tapped');
 
   const out = deskSetup({ answers: { '/api/learn/heddy/desk/jots': { status: 401, body: { error: 'unauthenticated' } } } });
   assert.deepEqual(await out.api.internal({ type: 'heddy-desk:save-jots', youtubeId: VIDEO, jots }, fromYouTube), { ok: false, error: 'unauthenticated' });
@@ -201,12 +201,9 @@ function courierSetup(stored = {}) {
 
 const capturePage = { origin: PROD, url: `${PROD}/capture/clip?cid=${CID}`, tab: { id: 900, windowId: 1 } };
 
-test('Add to My Clips from the popup carries the part’s end (D75)', async () => {
-  const s = courierSetup();
-  const r = await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 21, endSec: 73, then: 'keep', tabId: 7, windowId: 1 }, { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html?host=panel', tab: { id: 7 } });
-  assert.equal(r.ok, true);
-  const payload = await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, capturePage);
-  assert.deepEqual(payload, { type: 'heddy:add', v: 1, cid: CID, youtubeId: VIDEO, startSec: 21, then: 'keep', endSec: 73 });
+test('Add to My Clips from the popup carries the part’s end (D75), now as the clip request’s body (Round 9 § 3)', () => {
+  const H = load('./lib/heddy-api.js');
+  assert.deepEqual(H.clipBody({ youtubeId: VIDEO, title: 'Meet Newton', startSec: 21.7, endSec: 72.2 }), { youtubeId: VIDEO, title: 'Meet Newton', startSec: 21, endSec: 73 });
 });
 
 test('Full desk carries the desk’s jots to Classroom; once the clip is kept, those jots leave the desk and newer ones stay (D71)', async () => {
@@ -239,11 +236,10 @@ test('jotsSaved on a result is an integer 0–200, else dropped', () => {
   for (const bad of [201, -1, 1.5, '2', null, undefined]) assert.equal(r(bad), null, String(bad));
 });
 
-test('jots ride only on Full desk from the video’s own page, never with keep or from the popup', async () => {
+test('jots ride only on Full desk from the video’s own page, never from the popup; keep is not the courier’s at all', async () => {
   const jots = [{ t: 1, kind: 'note', text: 'x' }];
   const keep = courierSetup();
-  await keep.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, then: 'keep', jots, jotIds: ['a'] }, fromYouTube);
-  assert.equal('jots' in (await keep.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, capturePage)), false);
+  assert.deepEqual(await keep.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, then: 'keep', jots, jotIds: ['a'] }, fromYouTube), { ok: false });
   const popup = courierSetup();
   await popup.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, then: 'classroom', jots, tabId: 7 }, { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html', tab: { id: 7 } });
   assert.equal('jots' in (await popup.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, capturePage)), false);
@@ -267,41 +263,6 @@ test('Open from the desk: My Clips, Jotters and the kid sign-in door; nothing el
 });
 
 // ─── the crest: Ask {professor} with the video at its second (contract § 6) ─
-
-test('the crest’s Ask carries the video at this second as its address, through the existing room message', async () => {
-  globalThis.HeddyTools = load('./lib/tools.js');
-  globalThis.HeddyCrop = load('./lib/crop.js');
-  const { createSnap } = load('./lib/snap.js');
-  const sent = [];
-  const snap = createSnap({
-    chrome: { runtime: { id: 'heddy' } },
-    crop: globalThis.HeddyCrop,
-    tools: globalThis.HeddyTools,
-    makers: {},
-    sender: { tool: async (input, where) => { sent.push({ input, where }); return { ok: true }; } },
-  });
-  await snap.internal({ type: 'heddy-ui:tool', tool: 'ask', quote: 'Which one do you think hits the ground first?', context: '', t: 31.8 }, { id: 'heddy', url: WATCH, tab: { id: 7, windowId: 1, url: `${WATCH}&list=PL1`, title: 'Meet Professor Newton - YouTube' } });
-  assert.equal(sent[0].input.url, `https://www.youtube.com/watch?v=${VIDEO}&t=31`);
-  assert.equal(sent[0].input.quote, 'Which one do you think hits the ground first?');
-  assert.equal(sent[0].input.tool, 'ask');
-  await snap.internal({ type: 'heddy-ui:tool', tool: 'ask', quote: 'x', context: '', t: 31 }, { id: 'heddy', url: 'https://example.com/a', tab: { id: 8, windowId: 1, url: 'https://example.com/a', title: 'A' } });
-  assert.equal(sent[1].input.url, 'https://example.com/a', 'any other page keeps its address');
-});
-
-test('Ask goes through ONE function, lib/desk-ask.js openAsk, so the in-desk room can replace it', async () => {
-  const K = load('./lib/desk-ask.js');
-  const sent = [];
-  const send = async (m) => { sent.push(m); return { ok: true }; };
-  await K.openAsk({ line: 'Which one hits the ground first?', title: 'Meet Newton', youtubeId: VIDEO, t: 31.8 }, send);
-  await K.openAsk({ line: null, title: 'Meet Newton', youtubeId: VIDEO, t: 3 }, send);
-  assert.deepEqual(sent, [
-    { type: 'heddy-ui:tool', tool: 'ask', quote: 'Which one hits the ground first?', context: '', t: 31.8 },
-    { type: 'heddy-ui:tool', tool: 'ask', quote: 'Meet Newton', context: '', t: 3 },
-  ]);
-  const desk = read('content/desk.js');
-  assert.match(desk, /root\.HeddyDeskAsk\.openAsk\(/);
-  assert.doesNotMatch(desk, /heddy-ui:tool/, 'the desk itself never names the room window');
-});
 
 // ─── source pins (the page surfaces need a browser; looked at headless) ────
 

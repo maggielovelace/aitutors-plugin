@@ -44,32 +44,17 @@
       "sitePageLine": {
         "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages."
       },
-      "captureFailed": {
-        "message": "Heddy couldn't open aitutors.me. Try again."
-      },
       "commandJot": {
         "message": "Show Heddy's buttons for the words you selected"
       },
       "trayLabel": {
         "message": "Heddy: what to do with these words"
       },
-      "trayMore": {
-        "message": "More"
-      },
-      "menuCopy": {
-        "message": "Copy"
-      },
       "menuParagraph": {
         "message": "Select the whole paragraph"
       },
-      "menuClipPage": {
-        "message": "Save page to Jotters"
-      },
       "imageLabel": {
         "message": "Image"
-      },
-      "clipThisPage": {
-        "message": "Save page to Jotters"
       },
       "firstTimePage": {
         "message": "Save words, pictures or a whole page to Jotters"
@@ -234,15 +219,6 @@
       "boxFailed": {
         "message": "Heddy couldn't take that picture. Try again."
       },
-      "trayExplain": {
-        "message": "Explain"
-      },
-      "trayCard": {
-        "message": "Make a card"
-      },
-      "trayAsk": {
-        "message": "Ask Heddy"
-      },
       "menuCopyPicture": {
         "message": "Copy picture"
       },
@@ -263,24 +239,6 @@
       },
       "saveToJotters": {
         "message": "Save to Jotters"
-      },
-      "saveAndJot": {
-        "message": "Save and jot now"
-      },
-      "saveGoesTo": {
-        "message": "Goes to the left page of your \"$TITLE$\" Jotter. You can jot it there.",
-        "placeholders": {
-          "title": {
-            "content": "$1",
-            "example": "Sparx Science – Home"
-          }
-        }
-      },
-      "saveGoesToNoTitle": {
-        "message": "Goes to the left page of this page's Jotter. You can jot it there."
-      },
-      "savePageToo": {
-        "message": "Save the whole page too"
       },
       "cardsHeading": {
         "message": "In this save"
@@ -309,20 +267,11 @@
           }
         }
       },
-      "addText": {
-        "message": "+ Text"
-      },
       "addPicture": {
         "message": "+ Picture"
       },
       "modeSwitchLabel": {
         "message": "Add words or pictures"
-      },
-      "modeText": {
-        "message": "Text"
-      },
-      "modePicture": {
-        "message": "Picture"
       },
       "textModeLine": {
         "message": "Select words: each one is added"
@@ -335,9 +284,6 @@
       },
       "cardDrag": {
         "message": "Drag to change the order"
-      },
-      "cardsEmptyHint": {
-        "message": "Select words on the page: each one is added here."
       },
       "cardPictureLabel": {
         "message": "Picture"
@@ -368,18 +314,6 @@
       },
       "cardsFullPictures": {
         "message": "Heddy keeps up to 4 pictures from one page."
-      },
-      "toolsOnCard1": {
-        "message": "On card 1"
-      },
-      "barHeddy": {
-        "message": "Heddy ▾"
-      },
-      "menuExplainPicture": {
-        "message": "Explain this picture"
-      },
-      "menuAskAbout": {
-        "message": "Ask Heddy about it"
       },
       "menuWholePage": {
         "message": "Whole visible page"
@@ -545,9 +479,6 @@
       },
       "aboutPrivacyLink": {
         "message": "What Heddy reads, and when"
-      },
-      "trayAddCard": {
-        "message": "+ Add"
       },
       "menuAddPicture": {
         "message": "Add picture to Heddy"
@@ -881,9 +812,6 @@
           }
         }
       },
-      "opensInMyClips": {
-        "message": "Opens it in My Clips."
-      },
       "filmLabel": {
         "message": "The part to add: drag either end"
       },
@@ -892,6 +820,486 @@
       },
       "filmEnd": {
         "message": "End of the part"
+      },
+      "webTabSources": {
+        "message": "Sources"
+      },
+      "webDeskClose": {
+        "message": "Close the desk"
+      },
+      "deskFootMentor": {
+        "message": "Mentor's desk"
+      },
+      "webCardsLabel": {
+        "message": "Your sources, in your order"
+      },
+      "cardsNothingYet": {
+        "message": "nothing picked yet"
+      },
+      "webEmptyTitle": {
+        "message": "Pick words or pictures on the page"
+      },
+      "webEmptyBody": {
+        "message": "Select words and they're added. For a picture, use + Picture and draw a box."
+      },
+      "webPageCardHead": {
+        "message": "Or keep the page"
+      },
+      "webPageCardLine": {
+        "message": "Save keeps its article text: headings and paragraphs, without menus or ads."
+      },
+      "webAddText": {
+        "message": "Text"
+      },
+      "webAddPicture": {
+        "message": "Picture"
+      },
+      "webAddFailed": {
+        "message": "Heddy couldn't add those words. Try again."
+      },
+      "saveArticle": {
+        "message": "Also keep the article's text"
+      },
+      "saveArticleWhy": {
+        "message": "The page's main text, without menus or ads. It goes on the Jotter's left page."
+      },
+      "saveOne": {
+        "message": "Save 1 to my Jotters"
+      },
+      "saveN": {
+        "message": "Save $N$ to my Jotters",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "savePage": {
+        "message": "Save this page to my Jotters"
+      },
+      "savingN": {
+        "message": "Saving $N$ to your Jotter…",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "savingPage": {
+        "message": "Saving this page to your Jotter…"
+      },
+      "stepRead": {
+        "message": "Read it"
+      },
+      "stepJot": {
+        "message": "Jot it"
+      },
+      "stepGet": {
+        "message": "Get it"
+      },
+      "saveSignedOut": {
+        "message": "Sign in to aitutors.me to save to your Jotters."
+      },
+      "saveTooBig": {
+        "message": "That's too much for one save. Take out a picture and try again."
+      },
+      "saveFailedOne": {
+        "message": "Couldn't save. Your source is still here: try again."
+      },
+      "saveFailedN": {
+        "message": "Couldn't save. Your $N$ sources are still here: try again.",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "saveFailedPage": {
+        "message": "Couldn't save this page. Try again."
+      },
+      "savedTo": {
+        "message": "Saved to your $NAME$ Jotter",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "DeepLearning.AI"
+          }
+        }
+      },
+      "savedToJotter": {
+        "message": "Saved to your Jotter"
+      },
+      "savedArticle": {
+        "message": "the article's text"
+      },
+      "savedSomething": {
+        "message": "Your save"
+      },
+      "savedComma": {
+        "message": ", "
+      },
+      "savedAnd": {
+        "message": " and "
+      },
+      "savedIs": {
+        "message": "$WHAT$ is on its left page, in your order.",
+        "placeholders": {
+          "what": {
+            "content": "$1",
+            "example": "1 snippet"
+          }
+        }
+      },
+      "savedAre": {
+        "message": "$WHAT$ are on its left page, in your order.",
+        "placeholders": {
+          "what": {
+            "content": "$1",
+            "example": "1 snippet and 2 pictures"
+          }
+        }
+      },
+      "savedNext": {
+        "message": "Read it, jot it and get it on aitutors.me whenever you like."
+      },
+      "savedOpen": {
+        "message": "Open my Jotter ↗"
+      },
+      "savedUndo": {
+        "message": "Undo"
+      },
+      "savedFine": {
+        "message": "Open is the only thing that leaves this page."
+      },
+      "savedUndoFailed": {
+        "message": "Couldn't undo that save. Try again."
+      },
+      "deskSavedTitle": {
+        "message": "Saved to your Jotter"
+      },
+      "deskSavedOne": {
+        "message": "1 jot is in this video's Jotter, by its time."
+      },
+      "deskSavedMany": {
+        "message": "$N$ jots are in this video's Jotter, by their times.",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "deskSavedDone": {
+        "message": "Done"
+      },
+      "askAboutPictureN": {
+        "message": "Ask $NAME$ · about picture $N$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          },
+          "n": {
+            "content": "$2",
+            "example": "2"
+          }
+        }
+      },
+      "askAboutPicture": {
+        "message": "Ask $NAME$ · about this picture",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askAboutWords": {
+        "message": "Ask $NAME$ · about these words",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askAboutVideo": {
+        "message": "Ask $NAME$ · about this video",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askAboutPage": {
+        "message": "Ask $NAME$ · about this page",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhPictureN": {
+        "message": "Ask $NAME$ about picture $N$…",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          },
+          "n": {
+            "content": "$2",
+            "example": "2"
+          }
+        }
+      },
+      "askPhPicture": {
+        "message": "Ask $NAME$ about this picture…",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhWords": {
+        "message": "Ask $NAME$ about these words…",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhVideo": {
+        "message": "Ask $NAME$ about this video…",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhPage": {
+        "message": "Ask $NAME$ about this page…",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askExplain": {
+        "message": "Explain"
+      },
+      "askMakeCard": {
+        "message": "Make a card"
+      },
+      "askSend": {
+        "message": "Ask"
+      },
+      "askExplainPicture": {
+        "message": "Explain this picture"
+      },
+      "askExplainVideo": {
+        "message": "Explain this video"
+      },
+      "askExplainThis": {
+        "message": "Explain this"
+      },
+      "askCardDraft": {
+        "message": "Card draft"
+      },
+      "askKeepCard": {
+        "message": "Keep card"
+      },
+      "askChangeIt": {
+        "message": "Change it"
+      },
+      "askChangePrefix": {
+        "message": "Change the card: "
+      },
+      "askKept": {
+        "message": "Kept in your deck"
+      },
+      "askKeepJot": {
+        "message": "Keep as a jot"
+      },
+      "askKeptJot": {
+        "message": "Kept as a jot"
+      },
+      "askOpen": {
+        "message": "Open ↗"
+      },
+      "askUndo": {
+        "message": "Undo"
+      },
+      "askSignIn": {
+        "message": "Sign in"
+      },
+      "askErrSignedOut": {
+        "message": "Sign in to aitutors.me to ask $NAME$.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askErrNoSeat": {
+        "message": "Asking $NAME$ needs this subject on your plan.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askErrCap": {
+        "message": "That's all your turns for today. More tomorrow."
+      },
+      "askErrFailed": {
+        "message": "$NAME$ couldn't answer just now. Try again.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askKeepFailed": {
+        "message": "Couldn't keep that. Try again."
+      },
+      "askTurnsLeft": {
+        "message": "$N$ turns left today",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "askPicSmall": {
+        "message": "Picture $N$ · $SITE$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          },
+          "site": {
+            "content": "$2",
+            "example": "deeplearning.ai"
+          }
+        }
+      },
+      "askPicSmallNoN": {
+        "message": "This picture · $SITE$",
+        "placeholders": {
+          "site": {
+            "content": "$1",
+            "example": "deeplearning.ai"
+          }
+        }
+      },
+      "modeTextView": {
+        "message": "Text view"
+      },
+      "modePictureView": {
+        "message": "Picture view"
+      },
+      "barHeddyMenu": {
+        "message": "Heddy ▾"
+      },
+      "menuAskAboutIt": {
+        "message": "Ask $NAME$ about it",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "menuAskAboutThis": {
+        "message": "Ask $NAME$ about this",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "menuMakeCard": {
+        "message": "Make a card"
+      },
+      "menuInDesk": {
+        "message": "in Heddy's desk"
+      },
+      "menuCopyWords": {
+        "message": "Copy words"
+      },
+      "menuAddToSources": {
+        "message": "Add to Sources"
+      },
+      "clipFailed": {
+        "message": "Heddy couldn't add it to My Clips. Try again."
+      },
+      "clipSignedOut": {
+        "message": "Sign in to aitutors.me to add clips."
+      },
+      "addsToMyClips": {
+        "message": "Heddy says when it's in My Clips."
+      },
+      "toastAddedToClips": {
+        "message": "Added to My Clips"
+      },
+      "toastAlreadyInClips": {
+        "message": "Already in My Clips"
+      },
+      "toastSignInClips": {
+        "message": "Sign in to aitutors.me to add clips."
+      },
+      "toastSignIn": {
+        "message": "Sign in"
+      },
+      "askPickSubject": {
+        "message": "Which subject is it? Heddy will ask that professor."
+      },
+      "subjMATH": {
+        "message": "Maths"
+      },
+      "subjENLA": {
+        "message": "English"
+      },
+      "subjBIOL": {
+        "message": "Biology"
+      },
+      "subjCHEM": {
+        "message": "Chemistry"
+      },
+      "subjPHYS": {
+        "message": "Physics"
+      },
+      "subjHIST": {
+        "message": "History"
+      },
+      "subjGEOG": {
+        "message": "Geography"
+      },
+      "savedNoArticle": {
+        "message": "The article's text wasn't kept this time; your snippets and pictures were."
+      },
+      "clipLimit": {
+        "message": "That's today's limit for adding videos. Try again tomorrow."
+      },
+      "toastNoticeNewChannel": {
+        "message": "A grown-up will be told about this channel"
+      },
+      "toastNoticeOffMap": {
+        "message": "Off your map: in Mentor's Classroom"
       }
     },
     "zh_CN": {
@@ -937,32 +1345,17 @@
       "sitePageLine": {
         "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。"
       },
-      "captureFailed": {
-        "message": "Heddy 没能打开 aitutors.me，再试一次。"
-      },
       "commandJot": {
         "message": "为选中的文字显示 Heddy 的按钮"
       },
       "trayLabel": {
         "message": "Heddy：怎么处理这段文字"
       },
-      "trayMore": {
-        "message": "更多"
-      },
-      "menuCopy": {
-        "message": "复制"
-      },
       "menuParagraph": {
         "message": "选中整段"
       },
-      "menuClipPage": {
-        "message": "存到 Jotters"
-      },
       "imageLabel": {
         "message": "图片"
-      },
-      "clipThisPage": {
-        "message": "存到 Jotters"
       },
       "firstTimePage": {
         "message": "把文字、图片或整页存到 Jotters"
@@ -1127,15 +1520,6 @@
       "boxFailed": {
         "message": "Heddy 没能截下这张图，再试一次。"
       },
-      "trayExplain": {
-        "message": "讲解"
-      },
-      "trayCard": {
-        "message": "做成卡片"
-      },
-      "trayAsk": {
-        "message": "问 Heddy"
-      },
       "menuCopyPicture": {
         "message": "复制图片"
       },
@@ -1156,24 +1540,6 @@
       },
       "saveToJotters": {
         "message": "存到 Jotters"
-      },
-      "saveAndJot": {
-        "message": "存下，马上写批注"
-      },
-      "saveGoesTo": {
-        "message": "会放进「$TITLE$」这本 Jotter 的左页，你可以在那里写批注。",
-        "placeholders": {
-          "title": {
-            "content": "$1",
-            "example": "Sparx Science – Home"
-          }
-        }
-      },
-      "saveGoesToNoTitle": {
-        "message": "会放进这一页的 Jotter 的左页，你可以在那里写批注。"
-      },
-      "savePageToo": {
-        "message": "连整页一起存"
       },
       "cardsHeading": {
         "message": "这次保存"
@@ -1202,20 +1568,11 @@
           }
         }
       },
-      "addText": {
-        "message": "+ 文字"
-      },
       "addPicture": {
         "message": "+ 图片"
       },
       "modeSwitchLabel": {
         "message": "加文字还是图片"
-      },
-      "modeText": {
-        "message": "文字"
-      },
-      "modePicture": {
-        "message": "图片"
       },
       "textModeLine": {
         "message": "选中文字：每段都会加进来"
@@ -1228,9 +1585,6 @@
       },
       "cardDrag": {
         "message": "拖动来调整顺序"
-      },
-      "cardsEmptyHint": {
-        "message": "在页面上选中文字，每段都会加到这里。"
       },
       "cardPictureLabel": {
         "message": "图片"
@@ -1261,18 +1615,6 @@
       },
       "cardsFullPictures": {
         "message": "同一页最多收 4 张图片。"
-      },
-      "toolsOnCard1": {
-        "message": "用第 1 张"
-      },
-      "barHeddy": {
-        "message": "Heddy ▾"
-      },
-      "menuExplainPicture": {
-        "message": "讲解这张图"
-      },
-      "menuAskAbout": {
-        "message": "问 Heddy 这张图"
       },
       "menuWholePage": {
         "message": "整个可见页面"
@@ -1438,9 +1780,6 @@
       },
       "aboutPrivacyLink": {
         "message": "Heddy 读什么、什么时候读"
-      },
-      "trayAddCard": {
-        "message": "+ 加入"
       },
       "menuAddPicture": {
         "message": "把图片加到 Heddy"
@@ -1774,9 +2113,6 @@
           }
         }
       },
-      "opensInMyClips": {
-        "message": "会在「我的短片」里打开。"
-      },
       "filmLabel": {
         "message": "要放进去的部分：拖动两头"
       },
@@ -1785,6 +2121,486 @@
       },
       "filmEnd": {
         "message": "结束"
+      },
+      "webTabSources": {
+        "message": "来源"
+      },
+      "webDeskClose": {
+        "message": "关上书桌"
+      },
+      "deskFootMentor": {
+        "message": "Mentor 的书桌"
+      },
+      "webCardsLabel": {
+        "message": "你的来源，按你排的顺序"
+      },
+      "cardsNothingYet": {
+        "message": "还没选"
+      },
+      "webEmptyTitle": {
+        "message": "在页面上选文字或图片"
+      },
+      "webEmptyBody": {
+        "message": "选中文字就会加进来。要加图片，点「+ 图片」再框出来。"
+      },
+      "webPageCardHead": {
+        "message": "或者保存这一页"
+      },
+      "webPageCardLine": {
+        "message": "保存会留下它的正文：标题和段落，不含菜单和广告。"
+      },
+      "webAddText": {
+        "message": "文字"
+      },
+      "webAddPicture": {
+        "message": "图片"
+      },
+      "webAddFailed": {
+        "message": "Heddy 没能加上这段文字，再试一次。"
+      },
+      "saveArticle": {
+        "message": "同时保留文章正文"
+      },
+      "saveArticleWhy": {
+        "message": "页面的正文，不含菜单和广告。会放在 Jotter 的左页。"
+      },
+      "saveOne": {
+        "message": "存 1 条到我的 Jotters"
+      },
+      "saveN": {
+        "message": "存 $N$ 条到我的 Jotters",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "savePage": {
+        "message": "把这一页存到我的 Jotters"
+      },
+      "savingN": {
+        "message": "正在把 $N$ 条存到你的 Jotter……",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "savingPage": {
+        "message": "正在把这一页存到你的 Jotter……"
+      },
+      "stepRead": {
+        "message": "读"
+      },
+      "stepJot": {
+        "message": "记"
+      },
+      "stepGet": {
+        "message": "懂"
+      },
+      "saveSignedOut": {
+        "message": "登录 aitutors.me 才能存到你的 Jotters。"
+      },
+      "saveTooBig": {
+        "message": "一次存不下这么多。拿掉一张图片再试。"
+      },
+      "saveFailedOne": {
+        "message": "没存上。你的来源还在，再试一次。"
+      },
+      "saveFailedN": {
+        "message": "没存上。你的 $N$ 条来源还在，再试一次。",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "saveFailedPage": {
+        "message": "这一页没存上，再试一次。"
+      },
+      "savedTo": {
+        "message": "已存到你的「$NAME$」Jotter",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "DeepLearning.AI"
+          }
+        }
+      },
+      "savedToJotter": {
+        "message": "已存到你的 Jotter"
+      },
+      "savedArticle": {
+        "message": "文章正文"
+      },
+      "savedSomething": {
+        "message": "这次保存的内容"
+      },
+      "savedComma": {
+        "message": "、"
+      },
+      "savedAnd": {
+        "message": "和"
+      },
+      "savedIs": {
+        "message": "$WHAT$已放在它的左页，按你排的顺序。",
+        "placeholders": {
+          "what": {
+            "content": "$1",
+            "example": "1 snippet"
+          }
+        }
+      },
+      "savedAre": {
+        "message": "$WHAT$已放在它的左页，按你排的顺序。",
+        "placeholders": {
+          "what": {
+            "content": "$1",
+            "example": "1 snippet and 2 pictures"
+          }
+        }
+      },
+      "savedNext": {
+        "message": "随时到 aitutors.me 上读、记、弄懂它。"
+      },
+      "savedOpen": {
+        "message": "打开我的 Jotter ↗"
+      },
+      "savedUndo": {
+        "message": "撤销"
+      },
+      "savedFine": {
+        "message": "只有「打开」会离开这一页。"
+      },
+      "savedUndoFailed": {
+        "message": "没能撤销这次保存，再试一次。"
+      },
+      "deskSavedTitle": {
+        "message": "已存到你的 Jotter"
+      },
+      "deskSavedOne": {
+        "message": "1 条随记已放进这个视频的 Jotter，按时间排。"
+      },
+      "deskSavedMany": {
+        "message": "$N$ 条随记已放进这个视频的 Jotter，按时间排。",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "deskSavedDone": {
+        "message": "好的"
+      },
+      "askAboutPictureN": {
+        "message": "问 $NAME$ · 关于图 $N$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          },
+          "n": {
+            "content": "$2",
+            "example": "2"
+          }
+        }
+      },
+      "askAboutPicture": {
+        "message": "问 $NAME$ · 关于这张图",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askAboutWords": {
+        "message": "问 $NAME$ · 关于这段文字",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askAboutVideo": {
+        "message": "问 $NAME$ · 关于这个视频",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askAboutPage": {
+        "message": "问 $NAME$ · 关于这一页",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhPictureN": {
+        "message": "问 $NAME$ 关于图 $N$ 的问题……",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          },
+          "n": {
+            "content": "$2",
+            "example": "2"
+          }
+        }
+      },
+      "askPhPicture": {
+        "message": "问 $NAME$ 关于这张图的问题……",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhWords": {
+        "message": "问 $NAME$ 关于这段文字的问题……",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhVideo": {
+        "message": "问 $NAME$ 关于这个视频的问题……",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askPhPage": {
+        "message": "问 $NAME$ 关于这一页的问题……",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askExplain": {
+        "message": "讲讲"
+      },
+      "askMakeCard": {
+        "message": "做张卡片"
+      },
+      "askSend": {
+        "message": "问"
+      },
+      "askExplainPicture": {
+        "message": "讲讲这张图"
+      },
+      "askExplainVideo": {
+        "message": "讲讲这个视频"
+      },
+      "askExplainThis": {
+        "message": "讲讲这个"
+      },
+      "askCardDraft": {
+        "message": "卡片草稿"
+      },
+      "askKeepCard": {
+        "message": "留下卡片"
+      },
+      "askChangeIt": {
+        "message": "改一改"
+      },
+      "askChangePrefix": {
+        "message": "把卡片改成："
+      },
+      "askKept": {
+        "message": "已放进你的卡组"
+      },
+      "askKeepJot": {
+        "message": "留作随记"
+      },
+      "askKeptJot": {
+        "message": "已留作随记"
+      },
+      "askOpen": {
+        "message": "打开 ↗"
+      },
+      "askUndo": {
+        "message": "撤销"
+      },
+      "askSignIn": {
+        "message": "登录"
+      },
+      "askErrSignedOut": {
+        "message": "登录 aitutors.me 才能问 $NAME$。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askErrNoSeat": {
+        "message": "要问 $NAME$，你的方案里得有这门课。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askErrCap": {
+        "message": "今天的次数用完了，明天再来。"
+      },
+      "askErrFailed": {
+        "message": "$NAME$ 刚才没能回答，再试一次。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "askKeepFailed": {
+        "message": "没能留下，再试一次。"
+      },
+      "askTurnsLeft": {
+        "message": "今天还剩 $N$ 次",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "askPicSmall": {
+        "message": "图 $N$ · $SITE$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "2"
+          },
+          "site": {
+            "content": "$2",
+            "example": "deeplearning.ai"
+          }
+        }
+      },
+      "askPicSmallNoN": {
+        "message": "这张图 · $SITE$",
+        "placeholders": {
+          "site": {
+            "content": "$1",
+            "example": "deeplearning.ai"
+          }
+        }
+      },
+      "modeTextView": {
+        "message": "文字视图"
+      },
+      "modePictureView": {
+        "message": "图片视图"
+      },
+      "barHeddyMenu": {
+        "message": "Heddy ▾"
+      },
+      "menuAskAboutIt": {
+        "message": "问 $NAME$ 这张图",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "menuAskAboutThis": {
+        "message": "问 $NAME$ 这段话",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "menuMakeCard": {
+        "message": "做张卡片"
+      },
+      "menuInDesk": {
+        "message": "在 Heddy 书桌里"
+      },
+      "menuCopyWords": {
+        "message": "复制文字"
+      },
+      "menuAddToSources": {
+        "message": "加到来源"
+      },
+      "clipFailed": {
+        "message": "Heddy 没能把它加进「我的短片」，再试一次。"
+      },
+      "clipSignedOut": {
+        "message": "登录 aitutors.me 才能加短片。"
+      },
+      "addsToMyClips": {
+        "message": "放进「我的短片」后，Heddy 会告诉你。"
+      },
+      "toastAddedToClips": {
+        "message": "已加进「我的短片」"
+      },
+      "toastAlreadyInClips": {
+        "message": "已经在「我的短片」里了"
+      },
+      "toastSignInClips": {
+        "message": "登录 aitutors.me 才能加短片。"
+      },
+      "toastSignIn": {
+        "message": "登录"
+      },
+      "askPickSubject": {
+        "message": "这是哪一门课？Heddy 去问那位老师。"
+      },
+      "subjMATH": {
+        "message": "数学"
+      },
+      "subjENLA": {
+        "message": "英语"
+      },
+      "subjBIOL": {
+        "message": "生物"
+      },
+      "subjCHEM": {
+        "message": "化学"
+      },
+      "subjPHYS": {
+        "message": "物理"
+      },
+      "subjHIST": {
+        "message": "历史"
+      },
+      "subjGEOG": {
+        "message": "地理"
+      },
+      "savedNoArticle": {
+        "message": "这次没留下文章正文；你的文字和图片都存好了。"
+      },
+      "clipLimit": {
+        "message": "今天加视频的次数到上限了，明天再试。"
+      },
+      "toastNoticeNewChannel": {
+        "message": "会告诉家长这个频道"
+      },
+      "toastNoticeOffMap": {
+        "message": "不在你的学习地图上：放在 Mentor 的教室"
       }
     }
   };

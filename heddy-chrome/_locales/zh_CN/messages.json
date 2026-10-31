@@ -15,18 +15,13 @@
   "firstTimeYouTube": { "message": "放进一个 YouTube 视频，或和 Heddy 一起看" },
   "openSite": { "message": "打开 aitutors.me" },
   "sitePageLine": { "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。" },
-  "captureFailed": { "message": "Heddy 没能打开 aitutors.me，再试一次。" },
 
   "commandJot": { "message": "为选中的文字显示 Heddy 的按钮" },
   "trayLabel": { "message": "Heddy：怎么处理这段文字" },
-  "trayMore": { "message": "更多" },
-  "menuCopy": { "message": "复制" },
   "menuParagraph": { "message": "选中整段" },
-  "menuClipPage": { "message": "存到 Jotters" },
   "imageLabel": { "message": "图片" },
 
 
-  "clipThisPage": { "message": "存到 Jotters" },
   "firstTimePage": { "message": "把文字、图片或整页存到 Jotters" },
   "pageEmpty": { "message": "这一页没有可以保存的文字。" },
 
@@ -92,9 +87,6 @@
   },
   "boxDropped": { "message": "页面变了，收集的卡片已清空。" },
   "boxFailed": { "message": "Heddy 没能截下这张图，再试一次。" },
-  "trayExplain": { "message": "讲解" },
-  "trayCard": { "message": "做成卡片" },
-  "trayAsk": { "message": "问 Heddy" },
   "menuCopyPicture": { "message": "复制图片" },
   "menuCopied": { "message": "已复制" },
   "copyFailed": { "message": "没能复制这张图片。" },
@@ -103,13 +95,6 @@
   "toastCardUndoFailed": { "message": "没能撤销这张卡片。" },
 
   "saveToJotters": { "message": "存到 Jotters" },
-  "saveAndJot": { "message": "存下，马上写批注" },
-  "saveGoesTo": {
-    "message": "会放进「$TITLE$」这本 Jotter 的左页，你可以在那里写批注。",
-    "placeholders": { "title": { "content": "$1", "example": "Sparx Science – Home" } }
-  },
-  "saveGoesToNoTitle": { "message": "会放进这一页的 Jotter 的左页，你可以在那里写批注。" },
-  "savePageToo": { "message": "连整页一起存" },
   "cardsHeading": { "message": "这次保存" },
   "cardsSnippet": { "message": "1 段文字" },
   "cardsSnippets": {
@@ -121,16 +106,12 @@
     "message": "$N$ 张图片",
     "placeholders": { "n": { "content": "$1", "example": "2" } }
   },
-  "addText": { "message": "+ 文字" },
   "addPicture": { "message": "+ 图片" },
   "modeSwitchLabel": { "message": "加文字还是图片" },
-  "modeText": { "message": "文字" },
-  "modePicture": { "message": "图片" },
   "textModeLine": { "message": "选中文字：每段都会加进来" },
   "cardMoveUp": { "message": "上移" },
   "cardMoveDown": { "message": "下移" },
   "cardDrag": { "message": "拖动来调整顺序" },
-  "cardsEmptyHint": { "message": "在页面上选中文字，每段都会加到这里。" },
   "cardPictureLabel": { "message": "图片" },
   "cardRemove": {
     "message": "移除第 $N$ 张",
@@ -143,10 +124,6 @@
   },
   "cardsFullText": { "message": "同一页最多收 10 段文字。" },
   "cardsFullPictures": { "message": "同一页最多收 4 张图片。" },
-  "toolsOnCard1": { "message": "用第 1 张" },
-  "barHeddy": { "message": "Heddy ▾" },
-  "menuExplainPicture": { "message": "讲解这张图" },
-  "menuAskAbout": { "message": "问 Heddy 这张图" },
   "menuWholePage": { "message": "整个可见页面" },
   "boxEscDone": { "message": "· 按 Esc 退出" },
   "toastNoCaptions": { "message": "Heddy 需要字幕才能帮你看这个视频，可这个视频没有字幕。" },
@@ -204,7 +181,6 @@
   "aboutCopied": { "message": "已复制" },
   "aboutPrivacy": { "message": "隐私" },
   "aboutPrivacyLink": { "message": "Heddy 读什么、什么时候读" },
-  "trayAddCard": { "message": "+ 加入" },
   "menuAddPicture": { "message": "把图片加到 Heddy" },
 
   "deskSub": { "message": "aitutors · KS3 与 GCSE" },
@@ -329,8 +305,190 @@
     "message": "把这 $SPAN$ 放进「我的短片」",
     "placeholders": { "span": { "content": "$1", "example": "52 s" } }
   },
-  "opensInMyClips": { "message": "会在「我的短片」里打开。" },
   "filmLabel": { "message": "要放进去的部分：拖动两头" },
   "filmStart": { "message": "开始" },
-  "filmEnd": { "message": "结束" }
+  "filmEnd": { "message": "结束" },
+
+  "webTabSources": { "message": "来源" },
+  "webDeskClose": { "message": "关上书桌" },
+  "deskFootMentor": { "message": "Mentor 的书桌" },
+  "webCardsLabel": { "message": "你的来源，按你排的顺序" },
+  "cardsNothingYet": { "message": "还没选" },
+  "webEmptyTitle": { "message": "在页面上选文字或图片" },
+  "webEmptyBody": { "message": "选中文字就会加进来。要加图片，点「+ 图片」再框出来。" },
+  "webPageCardHead": { "message": "或者保存这一页" },
+  "webPageCardLine": { "message": "保存会留下它的正文：标题和段落，不含菜单和广告。" },
+  "webAddText": { "message": "文字" },
+  "webAddPicture": { "message": "图片" },
+  "webAddFailed": { "message": "Heddy 没能加上这段文字，再试一次。" },
+  "saveArticle": { "message": "同时保留文章正文" },
+  "saveArticleWhy": { "message": "页面的正文，不含菜单和广告。会放在 Jotter 的左页。" },
+  "saveOne": { "message": "存 1 条到我的 Jotters" },
+  "saveN": {
+    "message": "存 $N$ 条到我的 Jotters",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "savePage": { "message": "把这一页存到我的 Jotters" },
+  "savingN": {
+    "message": "正在把 $N$ 条存到你的 Jotter……",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "savingPage": { "message": "正在把这一页存到你的 Jotter……" },
+  "stepRead": { "message": "读" },
+  "stepJot": { "message": "记" },
+  "stepGet": { "message": "懂" },
+  "saveSignedOut": { "message": "登录 aitutors.me 才能存到你的 Jotters。" },
+  "saveTooBig": { "message": "一次存不下这么多。拿掉一张图片再试。" },
+  "saveFailedOne": { "message": "没存上。你的来源还在，再试一次。" },
+  "saveFailedN": {
+    "message": "没存上。你的 $N$ 条来源还在，再试一次。",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "saveFailedPage": { "message": "这一页没存上，再试一次。" },
+  "savedTo": {
+    "message": "已存到你的「$NAME$」Jotter",
+    "placeholders": { "name": { "content": "$1", "example": "DeepLearning.AI" } }
+  },
+  "savedToJotter": { "message": "已存到你的 Jotter" },
+  "savedArticle": { "message": "文章正文" },
+  "savedSomething": { "message": "这次保存的内容" },
+  "savedComma": { "message": "、" },
+  "savedAnd": { "message": "和" },
+  "savedIs": {
+    "message": "$WHAT$已放在它的左页，按你排的顺序。",
+    "placeholders": { "what": { "content": "$1", "example": "1 snippet" } }
+  },
+  "savedAre": {
+    "message": "$WHAT$已放在它的左页，按你排的顺序。",
+    "placeholders": { "what": { "content": "$1", "example": "1 snippet and 2 pictures" } }
+  },
+  "savedNext": { "message": "随时到 aitutors.me 上读、记、弄懂它。" },
+  "savedOpen": { "message": "打开我的 Jotter ↗" },
+  "savedUndo": { "message": "撤销" },
+  "savedFine": { "message": "只有「打开」会离开这一页。" },
+  "savedUndoFailed": { "message": "没能撤销这次保存，再试一次。" },
+  "deskSavedTitle": { "message": "已存到你的 Jotter" },
+  "deskSavedOne": { "message": "1 条随记已放进这个视频的 Jotter，按时间排。" },
+  "deskSavedMany": {
+    "message": "$N$ 条随记已放进这个视频的 Jotter，按时间排。",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "deskSavedDone": { "message": "好的" },
+  "askAboutPictureN": {
+    "message": "问 $NAME$ · 关于图 $N$",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" }, "n": { "content": "$2", "example": "2" } }
+  },
+  "askAboutPicture": {
+    "message": "问 $NAME$ · 关于这张图",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askAboutWords": {
+    "message": "问 $NAME$ · 关于这段文字",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askAboutVideo": {
+    "message": "问 $NAME$ · 关于这个视频",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askAboutPage": {
+    "message": "问 $NAME$ · 关于这一页",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhPictureN": {
+    "message": "问 $NAME$ 关于图 $N$ 的问题……",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" }, "n": { "content": "$2", "example": "2" } }
+  },
+  "askPhPicture": {
+    "message": "问 $NAME$ 关于这张图的问题……",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhWords": {
+    "message": "问 $NAME$ 关于这段文字的问题……",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhVideo": {
+    "message": "问 $NAME$ 关于这个视频的问题……",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askPhPage": {
+    "message": "问 $NAME$ 关于这一页的问题……",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askExplain": { "message": "讲讲" },
+  "askMakeCard": { "message": "做张卡片" },
+  "askSend": { "message": "问" },
+  "askExplainPicture": { "message": "讲讲这张图" },
+  "askExplainVideo": { "message": "讲讲这个视频" },
+  "askExplainThis": { "message": "讲讲这个" },
+  "askCardDraft": { "message": "卡片草稿" },
+  "askKeepCard": { "message": "留下卡片" },
+  "askChangeIt": { "message": "改一改" },
+  "askChangePrefix": { "message": "把卡片改成：" },
+  "askKept": { "message": "已放进你的卡组" },
+  "askKeepJot": { "message": "留作随记" },
+  "askKeptJot": { "message": "已留作随记" },
+  "askOpen": { "message": "打开 ↗" },
+  "askUndo": { "message": "撤销" },
+  "askSignIn": { "message": "登录" },
+  "askErrSignedOut": {
+    "message": "登录 aitutors.me 才能问 $NAME$。",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askErrNoSeat": {
+    "message": "要问 $NAME$，你的方案里得有这门课。",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askErrCap": { "message": "今天的次数用完了，明天再来。" },
+  "askErrFailed": {
+    "message": "$NAME$ 刚才没能回答，再试一次。",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "askKeepFailed": { "message": "没能留下，再试一次。" },
+  "askTurnsLeft": {
+    "message": "今天还剩 $N$ 次",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "askPicSmall": {
+    "message": "图 $N$ · $SITE$",
+    "placeholders": { "n": { "content": "$1", "example": "2" }, "site": { "content": "$2", "example": "deeplearning.ai" } }
+  },
+  "askPicSmallNoN": {
+    "message": "这张图 · $SITE$",
+    "placeholders": { "site": { "content": "$1", "example": "deeplearning.ai" } }
+  },
+  "modeTextView": { "message": "文字视图" },
+  "modePictureView": { "message": "图片视图" },
+  "barHeddyMenu": { "message": "Heddy ▾" },
+  "menuAskAboutIt": {
+    "message": "问 $NAME$ 这张图",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "menuAskAboutThis": {
+    "message": "问 $NAME$ 这段话",
+    "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
+  },
+  "menuMakeCard": { "message": "做张卡片" },
+  "menuInDesk": { "message": "在 Heddy 书桌里" },
+  "menuCopyWords": { "message": "复制文字" },
+  "menuAddToSources": { "message": "加到来源" },
+  "clipFailed": { "message": "Heddy 没能把它加进「我的短片」，再试一次。" },
+  "clipSignedOut": { "message": "登录 aitutors.me 才能加短片。" },
+  "addsToMyClips": { "message": "放进「我的短片」后，Heddy 会告诉你。" },
+  "toastAddedToClips": { "message": "已加进「我的短片」" },
+  "toastAlreadyInClips": { "message": "已经在「我的短片」里了" },
+  "toastSignInClips": { "message": "登录 aitutors.me 才能加短片。" },
+  "toastSignIn": { "message": "登录" },
+
+  "askPickSubject": { "message": "这是哪一门课？Heddy 去问那位老师。" },
+  "subjMATH": { "message": "数学" },
+  "subjENLA": { "message": "英语" },
+  "subjBIOL": { "message": "生物" },
+  "subjCHEM": { "message": "化学" },
+  "subjPHYS": { "message": "物理" },
+  "subjHIST": { "message": "历史" },
+  "subjGEOG": { "message": "地理" },
+  "savedNoArticle": { "message": "这次没留下文章正文；你的文字和图片都存好了。" },
+  "clipLimit": { "message": "今天加视频的次数到上限了，明天再试。" },
+  "toastNoticeNewChannel": { "message": "会告诉家长这个频道" },
+  "toastNoticeOffMap": { "message": "不在你的学习地图上：放在 Mentor 的教室" }
 }

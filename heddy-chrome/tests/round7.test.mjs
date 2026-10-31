@@ -68,7 +68,7 @@ function fakeSession(data = {}) {
 }
 
 function setup({ selection = null } = {}) {
-  const calls = { synced: [], told: [], opened: [], tools: [], takes: [] };
+  const calls = { synced: [], told: [], saves: [], asks: [], takes: [] };
   const tab = { id: 7, windowId: 3, url: PAGE + '#top', title: 'Sparx Science – Home' };
   let n = 0;
   const page = { selection };
@@ -90,8 +90,8 @@ function setup({ selection = null } = {}) {
     randomUUID: () => `c0ffee00-0000-4000-8000-${String(++n).padStart(12, '0')}`,
     pageFiles: ['lib/pos.js', 'content/cards-layer.js'],
     capture: async (t, rect, vw, vh) => ({ png: PNG, box: K.webBox(rect, vw, vh) }),
-    openCapture: async (spec) => { calls.opened.push({ spec, payload: spec.build('0f8fad5b-d9cb-469f-a165-70867728950e') }); return { ok: true }; },
-    sender: { tool: async (input) => { calls.tools.push(input); return { ok: true }; } },
+    api: { save: async (body) => { calls.saves.push(body); return { ok: true, jotterId: 'j1', href: '/study/jotters/j1', saveId: 's1', counts: {} }; }, undo: async () => ({ ok: true }) },
+    ask: async (t, ctx, intent) => { calls.asks.push({ ctx, intent }); return { ok: true }; },
   });
   const panel = { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html?tab=7&host=panel', tab, frameId: 4 };
   const top = { id: 'heddy', url: tab.url, tab, frameId: 0 };
@@ -122,15 +122,12 @@ test('heddy-cards:move from the panel: the list reorders, the page is told the n
   assert.deepEqual(again.cards.map((c) => c.quote), ['three', 'one', 'two']);
 });
 
-test('the order is what is saved, and what Explain acts on as card 1', async () => {
+test('the order is what is saved (Round 9: the background’s save, in the child’s order)', async () => {
   const s = setup();
   await three(s);
   await s.ask({ type: 'heddy-cards:move', id: UID(2), to: 0 });
-  await s.ask({ type: 'heddy-cards:save', then: 'save' });
-  assert.deepEqual(s.calls.opened[0].payload.items.map((i) => i.quote), ['two', 'one', 'three'], 'heddy:save in the child’s order');
-  assert.deepEqual(s.calls.opened[0].spec.meta.cards, [UID(2), UID(1), UID(3)]);
-  await s.ask({ type: 'heddy-cards:tool', tool: 'explain' });
-  assert.equal(s.calls.tools[0].quote, 'two');
+  await s.cards.saveWeb({ id: 7, windowId: 3, url: PAGE + '#top', title: 'Sparx Science – Home' }, false);
+  assert.deepEqual(s.calls.saves[0].items.map((i) => i.quote), ['two', 'one', 'three']);
 });
 
 test('heddy-cards:move is the panel’s alone; a nonsense move changes nothing and tells no one', async () => {
@@ -403,37 +400,36 @@ test('PANEL_FILES load the rules before the watcher', () => {
   assert.deepEqual(load('./lib/panel.js').PANEL_FILES, ['lib/auto-add.js', 'content/panel.js']);
 });
 
-// ─── the panel (popup/popup.js): source pins ────────────────────────────────
+// ─── the desk's Sources (popup/web-desk.js since Round 9): source pins ───────
 
-const src = read('popup/popup.js');
-const css = read('popup/popup.css');
+const src = read('popup/web-desk.js');
 
 test('each card has ⠿, ↑ and ↓ (named "Move up" and "Move down"), and Alt+↑ / Alt+↓ on a focused card', () => {
-  assert.match(src, /var dh = el\('span', 'dh', '⠿'\);/);
-  assert.match(src, /dh\.addEventListener\('pointerdown', function \(e\) \{ dragFrom\(e, row, card, row\.parentNode\); \}\);/);
-  assert.match(src, /\[\['up', -1, 'cardMoveUp'\], \['down', 1, 'cardMoveDown'\]\]/);
+  assert.match(src, /var gp = el\('span', 'gp', '⠿'\);/);
+  assert.match(src, /gp\.addEventListener\('pointerdown', function \(e\) \{ dragFrom\(e, li, card\); \}\);/);
+  assert.match(src, /\[\['up', -1, 'cardMoveUp', '⌃'\], \['down', 1, 'cardMoveDown', '⌄'\]\]/);
   assert.match(src, /b\.setAttribute\('aria-label', tr\(m\[2\]\)\);/);
-  assert.match(src, /if \(!e\.altKey \|\| \(e\.key !== 'ArrowUp' && e\.key !== 'ArrowDown'\) \|\| busyNow\(\)\) return;/);
-  assert.match(src, /cardsCall\(\{ type: 'heddy-cards:move', id: card\.id, to: to \}, view\.tab\)/);
-  assert.match(src, /var at = HeddyCards\.dropIndex\(mids, ev\.clientY\);/, 'the drag lands by the shared rule');
-  assert.match(css, /\.dh \{[^}]*touch-action: none;/, 'a pointer drag, not the page’s scroll');
+  assert.match(src, /if \(!e\.altKey \|\| \(e\.key !== 'ArrowUp' && e\.key !== 'ArrowDown'\) \|\| busy\(\)\) return;/);
+  assert.match(src, /call\(\{ type: 'heddy-cards:move', id: card\.id, to: to \}\)/);
+  assert.match(src, /CARDS\.dropIndex\(mids, ev\.clientY\)/, 'the drag lands by the shared rule');
+  assert.match(src, /\.cd \.cl \.gp\{[^}]*touch-action:none/, 'a pointer drag, not the page’s scroll');
   assert.deepEqual([en.cardMoveUp.message, en.cardMoveDown.message], ['Move up', 'Move down']);
   assert.deepEqual([zh.cardMoveUp.message, zh.cardMoveDown.message], ['上移', '下移']);
 });
 
-test('the panel’s + Text / + Picture is the switch: the mode that is on is pressed, and it follows the page', () => {
-  assert.match(src, /addText\.setAttribute\('aria-pressed', String\(!picture\)\);/);
-  assert.match(src, /addPic\.setAttribute\('aria-pressed', String\(picture\)\);/);
-  assert.match(src, /if \(view\.mode === 'picture'\) return toTextMode\(tab\);/, '+ Text in Picture mode switches back');
+test('the desk’s + Text / + Picture is the switch: the mode that is on is pressed, and it follows the page', () => {
+  assert.match(src, /t\.setAttribute\('aria-pressed', String\(st\.mode === 'text'\)\);/);
+  assert.match(src, /p\.setAttribute\('aria-pressed', String\(st\.mode === 'picture'\)\);/);
+  assert.match(src, /if \(st\.mode === 'picture'\) return toText\(\);/, '+ Text in Picture mode switches back');
   assert.match(src, /if \(b && b\.stop\) b\.stop\(\);/);
-  assert.match(src, /if \(e\.data\.heddyPanel === 'mode'\) setMode\(/);
-  assert.match(css, /\.adds button\[aria-pressed="true"\]/);
+  assert.match(read('popup/popup.js'), /if \(e\.data\.heddyPanel === 'mode' && desk\) desk\.setMode\(/);
+  assert.match(src, /\.cd \.pr2 button\[aria-pressed="true"\]/);
 });
 
-test('the empty list says selecting words adds them; a full list is said once, from the background’s note', () => {
-  assert.match(src, /if \(!cards\.length && !picture\) body\.appendChild\(el\('p', 'fine hint', tr\('cardsEmptyHint'\)\)\);/);
-  assert.match(src, /if \(note === 'full_text' && view\.err\) fail\(view\.err, 'cardsFullText'\);/);
-  assert.equal(en.cardsEmptyHint.message, 'Select words on the page: each one is added here.');
+test('the empty list says how to pick (D82); a full list is said once, from the background’s note', () => {
+  assert.match(src, /empty\.appendChild\(el\('b', null, tr\('webEmptyTitle'\)\)\);/);
+  assert.match(src, /if \(note === 'full_text'\) fail\('cardsFullText'\);/);
+  assert.equal(en.webEmptyBody.message, "Select words and they're added. For a picture, use + Picture and draw a box.");
   assert.doesNotMatch(en.cardsSelectFirst.message, /then tap/, 'no longer "then tap + Text"');
 });
 
@@ -444,7 +440,7 @@ test('the old D55 "no reordering" is gone from the cards’ notes', () => {
 // ─── strings and version ────────────────────────────────────────────────────
 
 test('every Round 7 string exists in both languages, the English free of Chinese', () => {
-  const keys = ['modeSwitchLabel', 'modeText', 'modePicture', 'textModeLine', 'cardMoveUp', 'cardMoveDown', 'cardDrag', 'cardsEmptyHint'];
+  const keys = ['modeSwitchLabel', 'modeTextView', 'modePictureView', 'textModeLine', 'cardMoveUp', 'cardMoveDown', 'cardDrag', 'webEmptyBody'];
   for (const k of keys) {
     assert.ok(en[k] && en[k].message, `en ${k}`);
     assert.ok(zh[k] && zh[k].message, `zh_CN ${k}`);
