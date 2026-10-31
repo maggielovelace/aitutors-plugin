@@ -74,10 +74,13 @@ async function closeTab(s) {
 const page = (origin = PROD, windowId = 1, tabId = 900) => ({ origin, url: `${origin}/capture/clip?cid=${CID}`, tab: { id: tabId, windowId } });
 const fromYouTube = { id: 'heddy', url: `https://www.youtube.com/watch?v=${VIDEO}`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/watch?v=${VIDEO}` } };
 
-test('Add to My Clips and Watch with Heddy open /capture/clip?cid=… in a NEW TAB next to the video, not a window (owner, 2026-10-30)', async () => {
-  for (const then of ['keep', 'classroom']) {
+test('Full desk ↗ opens /capture/clip?cid=… in a NEW TAB next to the video, never a window (D71, D78)', async () => {
+  for (const then of ['classroom']) {
     const s = setup();
     const r = await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 112, then }, fromYouTube);
+    // Add to My Clips ('keep') is a background request since Round 9 (D86):
+    // the courier refuses it, lib/web-routes.js answers it.
+    assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 112, then: 'keep' }, fromYouTube), { ok: false });
     assert.deepEqual(r, { ok: true, cid: CID });
     assert.equal(s.calls.windows.length, 0, 'no window');
     assert.equal(s.calls.tabsCreated.length, 1);
@@ -91,14 +94,14 @@ test('Add to My Clips and Watch with Heddy open /capture/clip?cid=… in a NEW T
 
 test('the popup’s capture opens its tab beside the tab the popup names', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep', tabId: 7, windowId: 1 }, { id: 'heddy' });
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom', tabId: 7, windowId: 1 }, { id: 'heddy' });
   assert.equal(s.calls.tabsCreated[0].openerTabId, 7);
   assert.equal(s.calls.tabsCreated[0].index, 4);
 });
 
 test('only the capture tab Heddy opened may claim the payload', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   const ready = { type: 'heddy:ready', v: 1, cid: CID };
   assert.equal(await s.courier.external(ready, page(PROD, 1, 555)), null, 'another aitutors.me tab in the same window');
   assert.equal((await s.courier.external(ready, page())).youtubeId, VIDEO);
@@ -106,7 +109,7 @@ test('only the capture tab Heddy opened may claim the payload', async () => {
 
 test('an ok result: Heddy closes the capture tab ~1 s later, brings the video back, then the toast shows there', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page());
   assert.equal(s.calls.removed.length, 0, 'not at once');
@@ -139,7 +142,7 @@ test('Keep and watch: the capture tab closes, but the Classroom tab the site ope
 test('an error result leaves the capture tab open', async () => {
   for (const error of ['cant_keep', 'unknown_video']) {
     const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
     await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
     await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error }, page());
     for (const t of s.timers) await t.fn();
@@ -150,14 +153,14 @@ test('an error result leaves the capture tab open', async () => {
 
 test('a capture tab the child closes takes its cid with it, quietly', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   await s.courier.tabRemoved(900);
   assert.equal(s.session.heddyCids.held[CID], undefined, 'held payload dropped');
   assert.equal(await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page()), null);
   assert.equal(s.calls.tabMessages.length, 0, 'no toast');
 
   const t = setup();
-  await t.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await t.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   await t.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
   await t.courier.tabRemoved(900);
   assert.equal(await t.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'claimed one dropped too');
@@ -166,7 +169,7 @@ test('a capture tab the child closes takes its cid with it, quietly', async () =
 
 test('the signed-out child signs in in the same capture tab and it carries on with the same cid', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   // The kid door, then back to /capture/clip?cid=… — same tab id throughout.
   const back = { origin: PROD, url: `${PROD}/capture/clip?cid=${CID}`, tab: { id: 900, windowId: 1 } };
   assert.equal((await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, back)).cid, CID);
@@ -187,7 +190,7 @@ test('the window gets heddy:add once; a second ask, another origin or another wi
 
 test('with the developer switch on, captures go to localhost:3000 and it may answer', async () => {
   const s = setup({ dev: true });
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   assert.equal(s.calls.tabsCreated[0].url, `${DEV}/capture/clip?cid=${CID}`);
   assert.equal(await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page(PROD)), null, 'held for the dev origin');
   assert.equal((await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page(DEV))).youtubeId, VIDEO);
@@ -195,7 +198,7 @@ test('with the developer switch on, captures go to localhost:3000 and it may ans
 
 test('turning the developer switch off shuts localhost out, even for a payload held for it', async () => {
   const s = setup({ dev: true });
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   s.local.devOrigin = false;
   assert.equal(await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page(DEV)), null);
 });
@@ -221,14 +224,14 @@ test('heddy:result ok: tick for 2 s, the toast with Open, and a pause for Watch 
   assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'one result per cid');
 });
 
-test('Add to My Clips does not pause; without a topic, Open goes to My Clips', async () => {
+test('Full desk pauses the video after the toast; without a topic, Open goes to My Clips', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page());
   await closeTab(s);
   const msgs = s.calls.tabMessages.map((x) => x.m);
-  assert.equal(msgs.length, 1);
+  assert.deepEqual(msgs.map((m) => m.type), ['heddy-ui:toast', 'heddy-ui:pause']);
   assert.equal(msgs[0].href, `${PROD}/study/clips`);
 });
 
@@ -236,7 +239,7 @@ test('Open goes to the topic’s clip page first, then an off-map clip in Mentor
   const MOMENT = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
   async function hrefFor(extra) {
     const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
     await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
     await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, ...extra }, page());
     await closeTab(s);
@@ -265,7 +268,7 @@ test('cant_keep becomes the family-settings toast; other refusals stay in the wi
   assert.equal(s.calls.icons.length, 0, 'no tick');
 
   const t = setup();
-  await t.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await t.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   await t.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
   await t.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'unknown_video' }, page());
   assert.equal(t.calls.tabMessages.length, 0);
@@ -273,7 +276,7 @@ test('cant_keep becomes the family-settings toast; other refusals stay in the wi
 
 test('a result for a cid nobody claimed does nothing', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null);
   assert.equal(s.calls.tabMessages.length, 0);
 });
@@ -288,7 +291,7 @@ test('a content script can only capture the video its own page shows, and only f
 
 test('the popup’s capture targets the tab it names', async () => {
   const s = setup();
-  const r = await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep', tabId: 5, windowId: 1 }, { id: 'heddy' });
+  const r = await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom', tabId: 5, windowId: 1 }, { id: 'heddy' });
   assert.equal(r.ok, true);
   assert.equal(s.calls.tabsCreated.length, 1);
   assert.equal(s.calls.tabsCreated[0].openerTabId, 5);
@@ -314,7 +317,7 @@ test('reaching a watch page by YouTube’s own navigation injects the content sc
 
 test('the clip toast’s "from m:ss" is the start the site kept (Part of it, or another start chosen there)', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 112, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 112, then: 'classroom' }, fromYouTube);
   await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, t: 140 }, page());
   await closeTab(s);
@@ -325,7 +328,7 @@ test('Cancel or Close in the capture tab (heddy:result cancelled): Heddy closes 
   assert.equal(CANCELLED, 'cancelled');
   for (const front of [true, false]) {
     const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+    await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
     await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
     s.tabs[900].active = front;
     assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
@@ -341,7 +344,7 @@ test('Cancel or Close in the capture tab (heddy:result cancelled): Heddy closes 
 
 test('Cancel or Close AFTER an earlier result (the duplicate screen’s ok) still closes the tab, once, from that tab only', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep' }, fromYouTube);
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, fromYouTube);
   await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, momentId: '6ba7b810-9dad-41d1-80b4-00c04fd430c8' }, page());
   const cancel = { type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' };

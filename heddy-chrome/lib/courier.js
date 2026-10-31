@@ -1,9 +1,13 @@
 // lib/courier.js — what the background service worker does, with Chrome passed
 // in so the tests can drive it with a fake (background.js only wires it up).
 //
-// Heddy is a courier (PRD-v0.96.0 Appendix A.5): it carries a payload to a
-// window on aitutors.me and the child's own session there does the saving.
-// It holds no credential and makes no request of its own.
+// Heddy was a courier (PRD-v0.96.0 Appendix A.5): it carried a payload to a
+// window on aitutors.me and the child's own session there did the saving.
+// Round 9 (D78) moved every save to Heddy's background (lib/heddy-api.js,
+// lib/web-routes.js), so what is left here is the one deliberate trip that
+// still opens a tab, Full desk ↗ (D71), with its heddy:ready / heddy:result
+// handshake, plus the toolbar icon, the menus, the welcome page on first
+// install and the links the child taps to go to aitutors.me.
 (function (root) {
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
   var C = root.HeddyConfig || (typeof require === 'function' && require('./config.js'));
@@ -27,7 +31,7 @@
   // What the background injects into a tab that reached a watch page by
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
-  var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'lib/desk-model.js', 'lib/film-strip.js', 'lib/desk-ask.js', 'content/youtube-selectors.js', 'content/desk.js', 'content/youtube.js'];
+  var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'lib/desk-model.js', 'lib/film-strip.js', 'lib/desk-ask.js', 'lib/ask-view.js', 'lib/desk-shell.js', 'content/youtube-selectors.js', 'content/desk.js', 'content/youtube.js'];
   // The desk's jots carried by Full desk (D71): at most this many ids, which
   // leave the desk's store once the site has kept the clip.
   var MAX_JOT_IDS = 200;
@@ -105,11 +109,10 @@
         );
     }
 
-    /** Hold a payload for a /capture window and open it. `spec`:
-     *  { page: 'clip'|'jot'|'page', kind, build(cid) → payload, meta, windowId, focused, asTab }.
-     *  A J's window and an Undo's do not take focus (D18): the child keeps
-     *  watching while the site saves. `asTab` (the YouTube tab's id) opens
-     *  the page in a new tab beside it instead of a window. */
+    /** Hold a payload for a /capture page and open it in a tab beside the
+     *  tab it came from. `spec`: { page, kind, build(cid) → payload, meta,
+     *  asTab }. Only Full desk ↗ comes here now (D71, D78): a tab the child
+     *  asked for, never a window. */
     function openCapture(spec) {
       var payload;
       var cid = String(randomUUID()).toLowerCase();
@@ -120,24 +123,10 @@
           var origin = C.captureOrigin(dev);
           store.put(cid, Object.assign({ payload: payload, origin: origin, kind: spec.kind }, spec.meta));
           var url = C.captureUrl(origin, spec.page, cid);
-          if (spec.asTab !== undefined) {
-            return persist()
-              .then(function () { return openTab(url, spec.asTab); })
-              .then(function (created) {
-                if (created && created.id != null) store.setTab(cid, created.id, created.windowId);
-                return persist().then(function () { return { ok: true, cid: cid }; });
-              });
-          }
           return persist()
-            .then(function () {
-              return (spec.windowId != null ? chrome.windows.get(spec.windowId) : chrome.windows.getLastFocused()).catch(function () { return null; });
-            })
-            .then(function (win) {
-              var created = Object.assign({ url: url, type: 'popup', focused: spec.focused !== false }, C.windowBounds(win));
-              return chrome.windows.create(created);
-            })
+            .then(function () { return openTab(url, spec.asTab); })
             .then(function (created) {
-              if (created && created.id != null) store.setWindow(cid, created.id);
+              if (created && created.id != null) store.setTab(cid, created.id, created.windowId);
               return persist().then(function () { return { ok: true, cid: cid }; });
             });
         })
@@ -148,9 +137,9 @@
         });
     }
 
-    /** Add to My Clips (the popup) and Full desk (the desk): in a new tab
-     *  beside the video. Add to My Clips may carry the part's end (D75);
-     *  Full desk carries the desk's jots, then 'classroom' (D71). */
+    /** Full desk ↗ (the desk, D71): the video to My Clips and Classroom, in
+     *  a new tab beside the video, carrying the desk's jots. (Add to My Clips
+     *  from the popup is a background request since Round 9, D86.) */
     function capture(input) {
       var meta = { tabId: input.tabId, then: input.then, youtubeId: input.youtubeId, startSec: input.startSec == null ? null : Math.floor(input.startSec) };
       if (input.jotIds && input.jotIds.length) meta.jotIds = input.jotIds;
@@ -196,12 +185,6 @@
       // cannot always close itself (a tab after the sign-in redirect), so
       // Heddy closes what it opened, at once, and shows nothing.
       if (!result.ok && result.error === CANCELLED) return closeCapture(meta);
-      if (kind === 'card_undo') {
-        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'card_undone' : 'card_undo_failed' });
-      }
-      if (kind === 'undo') {
-        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: result.ok ? 'undone' : 'undo_failed' });
-      }
       // A video with no captions is not kept (D59): the page says so, then
       // Heddy closes its tab and says the same on the video.
       if (!result.ok && result.error === NO_CAPTIONS && kind === 'clip') {
@@ -219,42 +202,9 @@
       }
       setIcon(meta.tabId, 'saved');
       later(function () { restIcon(meta.tabId); }, SAVED_MS);
-      // (Round 5: Heddy no longer opens a Jot it or picture-jot window, so no
-      // 'jot' or 'box' result comes back; the site still answers older installs.)
-      // Tool windows (lib/tools.js; owner, 2026-10-29). Make a card closes
-      // after Keep card: "Card made", Undo (its cards), Open in Jotter. The
-      // room (Explain, Ask Heddy) stays open and says nothing on the page,
-      // unless "Jot it with this" saved a jot: then the Jotted toast.
-      if (kind === 'card' || kind === 'room') {
-        var toast = null;
-        if (kind === 'card' && result.cardIds) {
-          toast = { type: 'heddy-ui:toast', kind: 'card', cardIds: result.cardIds, href: C.jotterById(origin, result.jotterId) };
-        } else if (kind === 'room' && result.jotId) {
-          toast = { type: 'heddy-ui:toast', kind: 'jotted', quote: result.quote, jotId: result.jotId, jotterId: result.jotterId, href: C.jotterById(origin, result.jotterId) };
-        }
-        if (!toast) return Promise.resolve();
-        return Promise.resolve()
-          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
-          .catch(function () {})
-          .then(function () { return tellTab(meta.tabId, toast); });
-      }
-      if (kind === 'page') {
-        return tellTab(meta.tabId, { type: 'heddy-ui:toast', kind: 'clipped', title: meta.title, cut: meta.cut === true, href: C.jotterById(origin, result.jotterId) });
-      }
-      // Save to Jotters (Round 5, D54): the cards it carried leave the panel,
-      // and the page says "Saved to Jotters · {title}". The site closes its
-      // window; with Save and jot now its tab has become the notebook and
-      // stays, so there is no Open in Jotter. The heddy:save result names
-      // saves, not a jot, so there is no Undo to offer.
-      if (kind === 'save') {
-        var done = deps.saved ? Promise.resolve().then(function () { return deps.saved(meta, result); }).catch(function () {}) : Promise.resolve();
-        var saved = { type: 'heddy-ui:toast', kind: 'saved', title: result.title || meta.title };
-        if (meta.then !== 'jot') saved.href = C.jotterById(origin, result.jotterId);
-        return done
-          .then(function () { return chrome.scripting.executeScript({ target: { tabId: meta.tabId }, files: PAGE_FILES }); })
-          .catch(function () {})
-          .then(function () { return tellTab(meta.tabId, saved); });
-      }
+      // (Round 9, D78: Heddy opens no save, page, card, room or Undo window,
+      // so only Full desk's 'clip' result comes back; the site still answers
+      // older installs' windows itself.)
       if (kind !== 'clip') return Promise.resolve();
       // The window says it saved Full desk's jots (contract Changes, site 4):
       // only then do they leave the desk.
@@ -310,36 +260,6 @@
     function tabRemoved(tabId) {
       return ready.then(function () {
         if (store.dropTab(tabId)) return persist();
-      });
-    }
-
-    /** Undo on the toast: heddy:undo, in a window that does not take focus. */
-    function undo(input) {
-      return openCapture({
-        page: 'jot',
-        kind: 'undo',
-        windowId: input.windowId,
-        focused: false,
-        build: function (cid) { return P.buildUndo({ cid: cid, jotId: input.jotId, jotterId: input.jotterId }); },
-        meta: { tabId: input.tabId },
-      });
-    }
-
-    /** Save page to Jotters: heddy:page. Past 200 KB of UTF-8 it keeps the first
-     *  part (`cut: true`), and the toast after the save says so. */
-    function page(input) {
-      var meta = { tabId: input.tabId, title: null, cut: false };
-      return openCapture({
-        page: 'page',
-        kind: 'page',
-        windowId: input.windowId,
-        build: function (cid) {
-          var p = P.buildPage({ cid: cid, url: input.url, title: input.title, markdown: input.markdown });
-          meta.title = p.title || null;
-          meta.cut = p.cut === true;
-          return p;
-        },
-        meta: meta,
       });
     }
 
@@ -437,7 +357,8 @@
       var tab = contentTab(sender);
       switch (message.type) {
         case 'heddy-ui:capture': {
-          if (!P.isYoutubeId(message.youtubeId) || (message.then !== 'keep' && message.then !== 'classroom')) return Promise.resolve({ ok: false });
+          // Full desk only: Add to My Clips ('keep') is lib/web-routes.js's.
+          if (!P.isYoutubeId(message.youtubeId) || message.then !== 'classroom') return Promise.resolve({ ok: false });
           // From the YouTube page itself, the video must be the one it shows.
           if (tab && P.youtubeIdFromUrl(sender.url || tab.url) !== message.youtubeId) return Promise.resolve({ ok: false });
           // Full desk's jots come only from the desk, on its own page (D71).
@@ -456,16 +377,6 @@
             windowId: tab ? tab.windowId : message.windowId,
           });
         }
-        case 'heddy-ui:undo':
-          // buildUndo refuses anything but a jot id, so a bad one opens nothing.
-          return undo({ jotId: message.jotId, jotterId: message.jotterId == null ? null : message.jotterId, tabId: tab ? tab.id : null, windowId: tab ? tab.windowId : message.windowId });
-        case 'heddy-ui:page': {
-          // The page tray's Save page to Jotters. From a page, only that
-          // page's own address; the popup names its tab. (heddy-ui:jot is
-          // gone: since Round 5 nothing in Heddy writes a jot from a page.)
-          if (tab && P.pageUrl(message.url) !== P.pageUrl(sender.url || tab.url)) return Promise.resolve({ ok: false });
-          return page(Object.assign({}, message, { tabId: tab ? tab.id : message.tabId, windowId: tab ? tab.windowId : message.windowId }));
-        }
         case 'heddy-ui:watch-page':
           return setIcon(tab && tab.id, message.on ? 'ready' : 'idle').then(function () { return { ok: true }; });
         case 'heddy-ui:open':
@@ -473,8 +384,9 @@
             var href = typeof message.href === 'string' ? message.href : '';
             var u;
             try { u = new URL(href); } catch (e) { return { ok: false }; }
-            // My Clips, Jotters, and the kid sign-in door (the desk signed out).
-            var to = /^\/study\/(clips|jotters)(\/|$)/.test(u.pathname) || (u.pathname === '/auth/login' && u.search === '?door=kid');
+            // My Clips, Jotters, a card's deck, and the kid sign-in door (the
+            // desk signed out): each a link the child taps (D78).
+            var to = /^\/study\/(clips|jotters|cards)(\/|$)/.test(u.pathname) || (u.pathname === '/auth/login' && u.search === '?door=kid');
             if (C.allowedOrigins(dev).indexOf(u.origin) < 0 || !to) return { ok: false };
             return chrome.tabs.create({ url: u.href, openerTabId: tab ? tab.id : undefined }).then(
               function () { return { ok: true }; },

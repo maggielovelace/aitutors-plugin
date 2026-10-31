@@ -1,7 +1,7 @@
-// What happens after /capture/save and /capture/clip answer (Round 5: D54,
-// D59). A save's ok result clears the cards it carried and the page says
-// "Saved to Jotters · {title}"; Save and jot now's tab is the notebook by
-// then and stays. A clip refused for no captions says so on the video.
+// What happens after /capture/clip answers (D59), and the save toasts' words.
+// Round 9 (D78, D83): the save is a background request and the desk shows its
+// Saved card (tests/round9.test.mjs), so no /capture/save window answers here.
+// A clip refused for no captions says so on the video.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './helpers.mjs';
@@ -13,7 +13,7 @@ globalThis.HeddyConfig = load('./lib/config.js');
 const P = globalThis.HeddyProtocol;
 const I = globalThis.HeddyI18n;
 const T = load('./lib/toast.js');
-const { createCourier, PAGE_FILES, TAB_CLOSE_MS } = load('./lib/courier.js');
+const { createCourier, TAB_CLOSE_MS } = load('./lib/courier.js');
 const { createCidStore } = load('./lib/cid-store.js');
 
 const CID = '0f8fad5b-d9cb-469f-a165-70867728950e';
@@ -43,59 +43,9 @@ function setup() {
     store: createCidStore(),
     randomUUID: () => CID,
     setTimeout: (fn, ms) => { calls.timers.push({ fn, ms }); },
-    saved: (meta) => { calls.saved.push(meta); },
   });
   return { courier, calls };
 }
-
-const site = (tabId, windowId = 42) => ({ origin: PROD, url: `${PROD}/capture/save?cid=${CID}`, tab: { id: tabId, windowId } });
-const SAVE_MSG = { v: 1, cid: CID, type: 'heddy:save', url: 'https://www.sparxscience.com/', title: 'Sparx Science – Home', then: 'save', items: [{ kind: 'text', quote: 'q', before: '', after: '', pos: { block: 0, offset: 0 } }] };
-
-async function saveVia(s, then) {
-  const spec = { page: 'save', kind: 'save', windowId: 1, build: () => ({ ...SAVE_MSG, then }), meta: { tabId: 9, title: 'Sparx Science – Home', then, cards: ['card-0001', 'card-0002'] } };
-  if (then === 'jot') spec.asTab = 9;
-  assert.equal((await s.courier.openCapture(spec)).ok, true);
-  const who = then === 'jot' ? site(900, 1) : site(77);
-  return who;
-}
-
-test('the save window claims heddy:save once, as it was built', async () => {
-  const s = setup();
-  const who = await saveVia(s, 'save');
-  assert.deepEqual(await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, who), { ...SAVE_MSG, then: 'save' });
-  assert.equal(await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, who), null);
-});
-
-test('saved: the cards it carried are cleared, and the page says "Saved to Jotters · title" with Open in Jotter, no Undo', async () => {
-  const s = setup();
-  const who = await saveVia(s, 'save');
-  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, who);
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: JOTTER, saveIds: [SAVE], title: 'Sparx Science – Home', lang: 'en-GB' }, who);
-  assert.deepEqual(s.calls.saved.map((m) => m.cards), [['card-0001', 'card-0002']]);
-  assert.deepEqual(s.calls.injected.at(-1), { target: { tabId: 9 }, files: PAGE_FILES }, 'the toaster is put in the page first');
-  assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'saved', title: 'Sparx Science – Home', href: `${PROD}/study/jotters/${JOTTER}` } }]);
-});
-
-test('Save and jot now: a tab beside the page; the result leaves it open (it is the notebook), and the toast has no Open', async () => {
-  const s = setup();
-  const who = await saveVia(s, 'jot');
-  assert.equal(s.calls.created[0].url, `${PROD}/capture/save?cid=${CID}`);
-  assert.equal(s.calls.created[0].openerTabId, 9);
-  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, who);
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: JOTTER, saveIds: [SAVE] }, who);
-  s.calls.timers.forEach((t) => t.fn());
-  assert.deepEqual(s.calls.removed, [], 'the capture tab stays');
-  assert.deepEqual(s.calls.tabMessages[0].m, { type: 'heddy-ui:toast', kind: 'saved', title: 'Sparx Science – Home' });
-});
-
-test('a refused save stays in its window: no toast, and the cards stay', async () => {
-  const s = setup();
-  const who = await saveVia(s, 'save');
-  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, who);
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'failed' }, who);
-  assert.deepEqual(s.calls.saved, []);
-  assert.deepEqual(s.calls.tabMessages, []);
-});
 
 test('the result’s saveIds and title: UUIDs lowercased, a title as one line; anything else is none', () => {
   const r = P.parseExternal({ type: 'heddy:result', v: 1, cid: CID, ok: true, saveIds: [SAVE.toUpperCase()], title: ' Sparx\n Science ' });
@@ -118,7 +68,8 @@ test('the cid store carries a save’s card ids from the payload to its result',
 
 test('a clip refused with no_captions: Heddy closes its tab and says so on the video', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep', tabId: 7, windowId: 1 }, { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html' });
+  // Full desk's tab (Add to My Clips is a background request since Round 9).
+  await s.courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom' }, { id: 'heddy', url: `https://www.youtube.com/watch?v=${VIDEO}`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/watch?v=${VIDEO}` } });
   const who = { origin: PROD, url: `${PROD}/capture/clip?cid=${CID}`, tab: { id: 900, windowId: 1 } };
   await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, who);
   await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'no_captions' }, who);

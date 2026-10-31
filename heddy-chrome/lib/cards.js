@@ -17,20 +17,22 @@
 // the card it may replace (lib/auto-add.js decides that in the page). The
 // same words as a card are ignored without a word; a full list says so once.
 //
-// Saving (D54): Save to Jotters sends every card, and optionally the whole
-// page, in one heddy:save to /capture/save, where the child's own session
-// saves them to the left page of that page's Jotter:
+// Saving (D54, Round 9 D82/D83): Save n to my Jotters sends every card, in
+// the child's order, and with "Also keep the article's text" (or with
+// nothing picked) the page's main article, from the background to
+// POST /api/learn/heddy/save (lib/heddy-api.js) on the child's own
+// aitutors.me sign-in. No window opens (D78). The body is the Round 9
+// contract's § 1:
 //
-//   Heddy → page  {v:1, cid, type:'heddy:save', url, title, then:'save'|'jot', items}
+//   { url, title, items, article? }
 //     items: {kind:'text', quote, before, after, pos}       quote ≤ 4000, before/after ≤ 300
-//            {kind:'image', png, box, before, after, pos}   png and WebBox as heddy:box's
-//            {kind:'page', markdown, cut?: true}            as heddy:page's
-//     at most 10 text, 4 image and 1 page item; pos as lib/pos.js defines it.
+//            {kind:'image', png, box, before, after, pos}   png raw base64, box a WebBox
+//     article: {markdown, cut?: true}                       content/extract.js, ≤ 200 KB
+//     at most 10 text and 4 image items; items may be empty only with article.
 //
-// then:'jot' (Save and jot now) opens /capture/save in a tab, which the site
-// turns into the notebook at the new save; then:'save' opens the usual
-// window, which the site closes. Every card's text is page text, untrusted:
-// it is cut and stripped here, and the site checks it again.
+// The saved cards leave the list and wait, with the save's id, for Undo,
+// which deletes the save and puts them back. Every card's text is page text,
+// untrusted: it is cut and stripped here, and the site checks it again.
 //
 // The list lives in the background, in chrome.storage.session under
 // heddyCards:<tabId>, so it outlives the panel, box mode, and a restart of
@@ -45,7 +47,6 @@
   var MAX_QUOTE = 4000;
   var SIDE = 300;
   var MAX_TITLE = 300;
-  var THEN = ['save', 'jot'];
   var KEY_PREFIX = 'heddyCards:';
   var CARD_ID = /^[a-z0-9-]{8,64}$/;
 
@@ -223,18 +224,24 @@
     throw new Error('bad kind');
   }
 
-  /** heddy:save, or throws on anything the site's parser would refuse. */
-  function buildSave(input) {
-    if (!P.isCaptureId(input.cid)) throw new Error('bad cid');
+  /** The save's body (contract § 1), or throws on anything the site's
+   *  parser would refuse. */
+  function buildWebSave(input) {
     var url = T.cleanUrl(input.url);
     if (!url) throw new Error('bad url');
-    if (THEN.indexOf(input.then) < 0) throw new Error('bad then');
-    if (!Array.isArray(input.items) || !input.items.length) throw new Error('empty');
-    var items = input.items.map(cleanItem);
+    var items = (Array.isArray(input.items) ? input.items : []).map(cleanItem);
     var n = { text: 0, image: 0, page: 0 };
     items.forEach(function (it) { n[it.kind] += 1; });
-    if (n.text > MAX_TEXT || n.image > MAX_IMAGES || n.page > 1) throw new Error('too many');
-    return { v: P.PROTOCOL_VERSION, cid: input.cid, type: 'heddy:save', url: url, title: T.cleanText(input.title, MAX_TITLE), then: input.then, items: items };
+    if (n.page) throw new Error('bad kind');
+    if (n.text > MAX_TEXT || n.image > MAX_IMAGES) throw new Error('too many');
+    var out = { url: url, title: T.cleanText(input.title, MAX_TITLE), items: items };
+    if (input.article) {
+      var a = cleanItem({ kind: 'page', markdown: input.article.markdown, cut: input.article.cut });
+      out.article = { markdown: a.markdown };
+      if (a.cut) out.article.cut = true;
+    }
+    if (!items.length && !out.article) throw new Error('empty');
+    return out;
   }
 
   // ─── the background's side ─────────────────────────────────────────────────
@@ -259,8 +266,8 @@
   }
 
   /**
-   * deps: { chrome, crop (HeddyCrop), openCapture (the courier's), sender
-   * (lib/tools.js createSender), randomUUID, pageFiles (what the page needs
+   * deps: { chrome, crop (HeddyCrop), api (lib/heddy-api.js's save and undo),
+   * ask(tab, ctx, intent) (lib/web-routes.js: the desk's Ask view), randomUUID, pageFiles (what the page needs
    * for taking words and drawing numbers), capture(tab, rect, vw, vh) →
    * Promise<{png, box}> (lib/snap.js's crop), droppedText() → Promise<string>,
    * showLine(tabId, text), showPanel(tab) → opens the panel if it is closed }
@@ -455,70 +462,87 @@
       });
     }
 
-    /** Save to Jotters (then 'save') or Save and jot now (then 'jot'): every
-     *  card, and with `withPage` the whole page too. With no card, the page
-     *  alone (Save page to Jotters). */
-    function save(tab, then, withPage) {
-      if (THEN.indexOf(then) < 0) return Promise.resolve({ ok: false });
+    /** Save n to my Jotters (D82): every card, and with `withArticle` (or
+     *  with no card: "Save this page to my Jotters") the page's article.
+     *  Resolves to the contract's answer, the href still relative. */
+    function saveWeb(tab, withArticle) {
       return current(tab).then(function (s) {
-        var items = s.cards.map(itemOf);
-        var page = withPage
+        var sent = s.cards.slice();
+        var items = sent.map(itemOf);
+        var want = withArticle || !items.length;
+        var article = want
           ? Promise.resolve()
             .then(function () { return inject(tab.id); })
             .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extractInPage }); })
             .then(function (res) {
               var p = res && res[0] && res[0].result;
-              if (!p || typeof p.markdown !== 'string' || !p.markdown.trim()) throw new Error('empty');
-              return p.markdown;
-            })
+              return p && typeof p.markdown === 'string' && p.markdown.trim() ? { markdown: p.markdown, cut: p.cut === true } : null;
+            }, function () { return null; })
           : Promise.resolve(null);
-        return page.then(function (markdown) {
-          if (markdown) items.push({ kind: 'page', markdown: markdown });
-          if (!items.length) return { ok: false, error: 'empty' };
-          var title = T.cleanText(tab.title, MAX_TITLE) || s.title;
-          var spec = {
-            page: 'save',
-            kind: 'save',
-            windowId: tab.windowId,
-            build: function (cid) { return buildSave({ cid: cid, url: s.url || tab.url, title: title, then: then, items: items }); },
-            meta: { tabId: tab.id, title: title || null, then: then, cards: s.cards.map(function (c) { return c.id; }) },
-          };
-          // Save and jot now: a tab beside the page, which becomes the notebook.
-          if (then === 'jot') spec.asTab = tab.id;
-          return deps.openCapture(spec);
-        }, function (e) { return { ok: false, error: e && e.message === 'empty' ? 'empty' : 'page' }; });
+        return article.then(function (a) {
+          var body;
+          try {
+            body = buildWebSave({ url: s.url || tab.url, title: T.cleanText(tab.title, MAX_TITLE) || s.title, items: items, article: a });
+          } catch (e) {
+            return { ok: false, error: e && e.message === 'empty' ? 'empty' : 'invalid' };
+          }
+          return deps.api.save(body).then(function (r) {
+            if (!r.ok) return { ok: false, error: r.error };
+            return load(tab.id).then(function (now) {
+              var ids = sent.map(function (c) { return c.id; });
+              now.cards = now.cards.filter(function (c) { return ids.indexOf(c.id) < 0; });
+              // Undo puts these back (the save's id names them).
+              now.lastSave = { saveId: r.saveId, cards: sent };
+              roomAgain(now);
+              return store(tab.id, now).then(function () { return changed(tab.id, now); });
+            }).then(function () {
+              return { ok: true, jotterTitle: r.jotterTitle, href: r.href, saveId: r.saveId, counts: r.counts, dropped: r.dropped || null };
+            });
+          });
+        });
       });
     }
 
-    /** The site saved: those cards leave the list (any added since stay). */
-    function saved(meta) {
-      if (!meta || meta.tabId == null || !Array.isArray(meta.cards)) return Promise.resolve();
-      return load(meta.tabId).then(function (s) {
-        var before = s.cards.length;
-        s.cards = s.cards.filter(function (c) { return meta.cards.indexOf(c.id) < 0; });
-        if (s.cards.length === before) return null;
-        roomAgain(s);
-        return store(meta.tabId, s).then(function () { return changed(meta.tabId, s); });
+    /** Undo on the Saved card (D83): the save is deleted and its cards come
+     *  back, first, in their order, as far as there is room. */
+    function undoSave(tab, saveId) {
+      return deps.api.undo({ kind: 'save', saveId: saveId }).then(function (r) {
+        if (!r.ok) return { ok: false, error: r.error };
+        return current(tab).then(function (s) {
+          var back = s.lastSave && s.lastSave.saveId === saveId ? s.lastSave.cards : [];
+          delete s.lastSave;
+          var have = {};
+          s.cards.forEach(function (c) { have[c.id] = true; });
+          var next = [];
+          back.concat(s.cards).forEach(function (c) {
+            if (have[c.id] && back.indexOf(c) >= 0) return;
+            if (room(next, c.kind)) next.push(c);
+          });
+          s.cards = next;
+          return store(tab.id, s).then(function () { return changed(tab.id, s); }).then(function () { return reply(s); });
+        });
       });
     }
 
-    /** Explain, Make a card or Ask Heddy on one card (card 1 in the panel),
-     *  or on a picture box mode just cut. */
-    function toolOn(tab, tool, card) {
-      var where = { tabId: tab.id, windowId: tab.windowId };
+    /** Heddy ▾'s Ask about it and Make a card (D84, D85): the desk opens
+     *  its Ask view on this card or on a picture box mode just cut. */
+    function intentOf(tool) {
+      return tool === 'card' ? 'card' : tool === 'explain' ? 'explain' : 'ask';
+    }
+
+    function toolOn(tab, tool, card, n) {
       if (!card) return Promise.resolve({ ok: false });
       if (card.kind === 'text') {
-        var c = P.contextOf(card.before, card.after);
-        return deps.sender.tool({ tool: tool, url: tab.url, title: tab.title, quote: card.quote, context: c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after }, where);
+        return deps.ask(tab, { about: 'words', attach: { kind: 'text', quote: card.quote, before: card.before, after: card.after } }, intentOf(tool));
       }
-      return deps.sender.tool({ tool: tool, url: tab.url, title: tab.title, quote: '', images: [{ png: card.png, box: card.box }], context: card.before }, where);
+      return deps.ask(tab, { about: 'picture', n: n || null, attach: { kind: 'image', png: card.png } }, intentOf(tool));
     }
 
     function tool(tab, m) {
       if (T.TOOLS.indexOf(m.tool) < 0) return Promise.resolve({ ok: false });
       return current(tab).then(function (s) {
-        if (m.cardId) return toolOn(tab, m.tool, s.cards.filter(function (c) { return c.id === m.cardId; })[0]);
-        return toolOn(tab, m.tool, s.cards[0]);
+        var at = m.cardId ? numberOf(s.cards, m.cardId) : 1;
+        return toolOn(tab, m.tool, s.cards[at - 1], at);
       });
     }
 
@@ -526,7 +550,7 @@
     function toolOnBox(tab, m) {
       if (T.TOOLS.indexOf(m.tool) < 0) return Promise.resolve({ ok: false });
       return deps.capture(tab, m.rect, m.vw, m.vh).then(
-        function (img) { return toolOn(tab, m.tool, { kind: 'image', png: img.png, box: img.box, before: side(m.context) }); },
+        function (img) { return toolOn(tab, m.tool, { kind: 'image', png: img.png, box: img.box, before: side(m.context) }, null); },
         function () { return { ok: false }; }
       );
     }
@@ -551,7 +575,7 @@
         .catch(function () { return null; });
     }
 
-    var FROM_PANEL = { 'heddy-cards:get': 1, 'heddy-cards:add-text': 1, 'heddy-cards:remove': 1, 'heddy-cards:move': 1, 'heddy-cards:save': 1, 'heddy-cards:tool': 1 };
+    var FROM_PANEL = { 'heddy-cards:get': 1, 'heddy-cards:add-text': 1, 'heddy-cards:remove': 1, 'heddy-cards:move': 1 };
     // From the page itself (box mode, the page tray, the panel's selection
     // watcher in content/panel.js): its own top frame only.
     var FROM_BOX = { 'heddy-box:state': 1, 'heddy-box:keep': 1, 'heddy-box:tool': 1, 'heddy-cards:collect': 1, 'heddy-cards:auto': 1 };
@@ -572,8 +596,6 @@
           case 'heddy-cards:add-text': return addText(tab);
           case 'heddy-cards:remove': return remove(tab, String(message.id || ''));
           case 'heddy-cards:move': return move(tab, String(message.id || ''), message.to);
-          case 'heddy-cards:save': return save(tab, message.then, message.page === true);
-          case 'heddy-cards:tool': return tool(tab, message);
           case 'heddy-cards:collect': return collect(tab);
           case 'heddy-cards:auto': return auto(tab, typeof message.replace === 'string' ? message.replace : null);
           case 'heddy-box:state': return state(tab);
@@ -612,7 +634,7 @@
       return forget(tabId);
     }
 
-    return { internal: internal, collect: collect, saved: saved, tabUpdated: tabUpdated, tabGone: tabGone, load: load };
+    return { internal: internal, collect: collect, saveWeb: saveWeb, undoSave: undoSave, tabUpdated: tabUpdated, tabGone: tabGone, load: load };
   }
 
   var api = {
@@ -633,7 +655,7 @@
     marks: marks,
     forPanel: forPanel,
     itemOf: itemOf,
-    buildSave: buildSave,
+    buildWebSave: buildWebSave,
     createCards: createCards,
   };
   root.HeddyCards = api;

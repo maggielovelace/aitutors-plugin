@@ -36,6 +36,23 @@
           ms: CLIP_MS,
         };
       }
+      case 'clip_added':
+        // Add to My Clips from the popup (Round 9, D86): a request, no tab,
+        // and this toast on the video; Open is the one tap that leaves.
+        return {
+          title: msg.duplicate === true ? tr('toastAlreadyInClips') : tr('toastAddedToClips'),
+          line: [typeof msg.startSec === 'number' && msg.startSec > 0 ? tr('toastFrom', P.clockOf(msg.startSec)) : null]
+            .concat((Array.isArray(msg.notices) ? msg.notices : []).map(function (n) { return n === 'new_channel' ? tr('toastNoticeNewChannel') : n === 'off_map' ? tr('toastNoticeOffMap') : null; }))
+            .filter(Boolean).join(' · ') || null,
+          open: typeof msg.href === 'string' ? { label: tr('toastOpen'), href: msg.href } : null,
+          ms: CLIP_MS,
+        };
+      case 'signed_out':
+        return {
+          title: tr('toastSignInClips'),
+          open: typeof msg.href === 'string' ? { label: tr('toastSignIn'), href: msg.href } : null,
+          ms: NOTE_MS,
+        };
       case 'note': {
         // The topic when the site sent one in Heddy's language, else the
         // video's own title (a toast never mixes two languages).

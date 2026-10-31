@@ -23,7 +23,7 @@
   var FONT_FILES = ['lib/font-data.js', 'lib/fonts.js'];
   // What box mode needs in the page, injected on the gesture (activeTab):
   // its own script, and the layer that numbers the cards on the page.
-  var BOX_FILES = FONT_FILES.concat(['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'lib/pos.js', 'content/cards-layer.js', 'content/box-mode.js']);
+  var BOX_FILES = FONT_FILES.concat(['lib/messages.js', 'lib/i18n.js', 'lib/marks.js', 'lib/tray-tools.js', 'lib/pos.js', 'content/cards-layer.js', 'content/box-mode.js']);
   // captureVisibleTab allows two calls a second; one retry after this.
   var CAPTURE_RETRY_MS = 600;
   // The crop-corners glyph (Jotters' Select area; the owner's ruling 29 Oct).
@@ -73,7 +73,7 @@
     setTimeout(function () { host.remove(); }, 4000);
   }
 
-  /** deps: {chrome, sender (lib/tools.js createSender), crop (HeddyCrop),
+  /** deps: {chrome, crop (HeddyCrop),
    *  makers: {createImageBitmap, OffscreenCanvas, Blob}, later,
    *  showPanel(tab) → Promise: opens Heddy's panel on that page if closed} */
   function createSnap(deps) {
@@ -128,25 +128,6 @@
       return withPanel(tab, { whole: true, keep: true });
     }
 
-    /** A watch page's address at the player's second (the desk's crest, Ask
-     *  {professor}: the contract's § 6), as youtube.com/watch?v={id}&t={s}.
-     *  Any other page, or no time, keeps its address. */
-    function atMoment(url, t) {
-      var id = P.youtubeIdFromUrl(url);
-      if (!id || typeof t !== 'number' || !isFinite(t) || t < 0) return url;
-      return 'https://www.youtube.com/watch?v=' + id + '&t=' + Math.floor(t);
-    }
-
-    /** heddy-ui:tool from the words tray (lib/tools.js sendTool), or the
-     *  desk's crest. The address and title come from the tab, not the page. */
-    function wordsTool(tab, m) {
-      if (T.TOOLS.indexOf(m.tool) < 0) return Promise.resolve({ ok: false });
-      return deps.sender.tool(
-        { tool: m.tool, url: atMoment(tab.url, m.t), title: tab.title, quote: m.quote, context: m.context },
-        { tabId: tab.id, windowId: tab.windowId }
-      );
-    }
-
     /** chrome.runtime.onMessage: the popup's icon and box mode in a page.
      *  Resolves to the reply, or undefined for a message that is not ours. */
     function internal(message, sender) {
@@ -173,14 +154,11 @@
             function (img) { return { ok: true, png: img.png }; },
             function () { return { ok: false }; }
           );
-        case 'heddy-ui:undo-card':
-          // The "Card made" toast's Undo, from the page it showed on.
-          if (!tab || !P.cardIdsOf(message.cardIds)) return Promise.resolve({ ok: false });
-          return deps.sender.undoCards(message.cardIds, { tabId: tab.id, windowId: tab.windowId });
-        case 'heddy-ui:tool':
-          // From the page tray (its tab), or the popup (which names the tab).
-          if (tab) return wordsTool(tab, message);
-          return chrome.tabs.get(message.tabId).then(function (t) { return wordsTool(t, message); }, function () { return { ok: false }; });
+        case 'heddy-page:picture':
+          // Picture view on the words bar (D85): box mode on that page, the
+          // desk beside it, as the panel's + Picture does.
+          if (!tab || sender.frameId) return Promise.resolve({ ok: false });
+          return withPanel(tab);
         default:
           return undefined;
       }

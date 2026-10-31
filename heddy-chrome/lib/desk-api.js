@@ -12,7 +12,8 @@
 //   GET  /api/learn/heddy/desk/video?v=&title=          the professor, the Jotter
 //   GET  /api/learn/heddy/desk/transcript?v=&title=[&zh=1&from=] the Digest, zh stretches
 //   GET  /api/learn/heddy/desk/insights?v=&lang=         Insights, or 404 (drawn disabled)
-//   POST /api/learn/heddy/desk/jots                     Save to My Jotters
+//   POST /api/learn/heddy/desk/jots                     Save to My Jotters (the
+//                                                       desk then shows the Saved card, D86)
 //
 // Every answer is untrusted: each parser keeps only the fields the desk draws,
 // cut to size, and anything else reads as an error. The desk sets every
@@ -176,19 +177,12 @@
       return function (r) { return r.status >= 200 && r.status < 300 ? parse(r.data) : errorFor(r.status); };
     }
 
-    function openTab(href, tab) {
-      return origin().then(function (o) {
-        return chrome.tabs.create({ url: o + href, openerTabId: tab.id, index: tab.index + 1, windowId: tab.windowId, active: true });
-      }).catch(function () {});
-    }
-
     /** The desk's message, from the watch page of the video it names. */
     function internal(message, sender) {
       if (!message || typeof message !== 'object' || typeof message.type !== 'string' || message.type.indexOf('heddy-desk:') !== 0) return undefined;
       if (!sender || sender.id !== chrome.runtime.id || !sender.tab || /^chrome-extension:/.test(String(sender.url || ''))) return Promise.resolve({ ok: false });
-      var tab = sender.tab;
       var id = message.youtubeId;
-      if (!P.isYoutubeId(id) || P.youtubeIdFromUrl(sender.url || tab.url) !== id) return Promise.resolve({ ok: false });
+      if (!P.isYoutubeId(id) || P.youtubeIdFromUrl(sender.url || sender.tab.url) !== id) return Promise.resolve({ ok: false });
       switch (message.type) {
         case 'heddy-desk:video':
           return call('GET', PATHS.video, { v: id, title: text(message.title, 300) }).then(answer(parseVideo));
@@ -212,17 +206,16 @@
             durationSec: num(message.durationSec) && message.durationSec > 0 ? Math.round(message.durationSec) : null,
             jots: jots,
           };
-          return call('POST', PATHS.jots, null, body).then(answer(parseSaved)).then(function (r) {
-            if (!r.ok) return r;
-            return openTab(r.href, tab).then(function () { return r; });
-          });
+          // Round 9 (D86): no tab opens by itself. The desk shows the Saved
+          // card, and its Open my Jotter ↗ is the one tap that leaves.
+          return call('POST', PATHS.jots, null, body).then(answer(parseSaved));
         }
         default:
           return Promise.resolve({ ok: false });
       }
     }
 
-    return { internal: internal, call: call };
+    return { internal: internal, call: call, origin: origin };
   }
 
   var api = {
