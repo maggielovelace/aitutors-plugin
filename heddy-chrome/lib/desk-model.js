@@ -78,9 +78,12 @@
     var reserve = num(o.reserve) ? o.reserve : 0;
     var room = Math.max(MIN_H, Math.floor(vh - top - reserve - GAP));
     if (o.tall) return room;
-    if (o.layout === 'below') return Math.min(BELOW_H, room);
-    var player = num(o.playerH) && o.playerH > 0 ? Math.round(o.playerH) : MIN_H;
-    return Math.min(Math.max(MIN_H, player), room);
+    var base = o.layout === 'below' ? BELOW_H : Math.max(MIN_H, num(o.playerH) && o.playerH > 0 ? Math.round(o.playerH) : MIN_H);
+    // Round 11 (Classroom's deskStep): grown to what the open tab needs,
+    // capped at the window, and never shrinking on its own (`keep`, the most
+    // the content has wanted this visit).
+    var want = Math.max(base, num(o.keep) ? o.keep : 0, num(o.content) ? Math.ceil(o.content) : 0);
+    return Math.min(want, room);
   }
 
   /** The index of the line being spoken at `t`, or -1. `lines` are sorted by t. */
@@ -175,7 +178,12 @@
     if (!Array.isArray(x)) return [];
     return sorted(x.filter(function (j) {
       return j && typeof j.id === 'string' && j.id.length <= 64 && num(j.t) && j.t >= 0 && (j.kind === 'line' || j.kind === 'note') && typeof j.text === 'string' && j.text.trim();
-    }).slice(0, MAX_JOTS).map(function (j) { return { id: j.id, t: j.t, kind: j.kind, text: clean(j.text) }; }));
+    }).slice(0, MAX_JOTS).map(function (j) {
+      var o = { id: j.id, t: j.t, kind: j.kind, text: clean(j.text) };
+      // Who made it (Round 11): H ('key', the small H mark) or the professor's insights.
+      if (j.by === 'key' || j.by === 'professor') o.by = j.by;
+      return o;
+    }));
   }
 
   /** What leaves the device: {t, kind, text}, no ids. */
@@ -240,6 +248,53 @@
     return out;
   }
 
+  /** Classroom's search (digest-helpers foldText / matchLines): the lines
+   *  whose English or Chinese holds the query, accents and case folded. */
+  function foldText(s) {
+    return String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  function matchLines(lines, q, zhOf) {
+    var needle = foldText(String(q || '').trim());
+    if (!needle) return [];
+    var out = [];
+    (lines || []).forEach(function (l, i) {
+      var z = zhOf ? zhOf(l) : null;
+      if (foldText(l.text).indexOf(needle) >= 0 || (z && foldText(z).indexOf(needle) >= 0)) out.push(i);
+    });
+    return out;
+  }
+
+  // The Digest's brief of the professor's insights (digest-helpers briefOf):
+  // about two lines, at most 40 words (80 characters of Chinese).
+  var BRIEF_MAX_WORDS = 40;
+  var BRIEF_MAX_CJK = 80;
+
+  function briefOf(text) {
+    var t = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!t) return '';
+    var cjk = /[\u3400-\u9fff]/.test(t);
+    var max = cjk ? BRIEF_MAX_CJK : BRIEF_MAX_WORDS;
+    function size(x) { return cjk ? x.replace(/\s/g, '').length : x.split(' ').filter(Boolean).length; }
+    if (size(t) <= max) return t;
+    var sentences = t.match(/[^.!?…。！？]+[.!?…。！？]+["”’)]*\s*|[^.!?…。！？]+$/g) || [t];
+    var out = '';
+    for (var i = 0; i < sentences.length; i++) {
+      if (size(out + sentences[i]) > max) break;
+      out += sentences[i];
+    }
+    out = out.trim();
+    if (!out) out = cjk ? Array.from(t.replace(/\s/g, '')).slice(0, max).join('') : t.split(' ').slice(0, max).join(' ');
+    return out.replace(/[\s.,;:!?…。，；：！？]+$/, '') + '…';
+  }
+
+  /** The first sentence, beside the folded card's title (teaserOf). */
+  function teaserOf(text) {
+    var t = String(text || '').trim();
+    var m = /^[\s\S]*?(?:[。！？]|[.!?…](?=\s|$))/.exec(t);
+    return (m ? m[0] : t).trim();
+  }
+
   /** Is Heddy still installed under this script? chrome.runtime.id goes when
    *  Heddy is reloaded or removed; touching it may then throw. */
   function alive(chromeApi) {
@@ -299,6 +354,10 @@
     defaultView: defaultView,
     viewFor: viewFor,
     matches: matches,
+    foldText: foldText,
+    matchLines: matchLines,
+    briefOf: briefOf,
+    teaserOf: teaserOf,
     alive: alive,
     createLifeline: createLifeline,
   };

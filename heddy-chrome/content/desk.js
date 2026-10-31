@@ -36,7 +36,7 @@
   var TICK_MS = 250;
   var SAY_MS = 3500;
   var FOLLOW_PAUSE_MS = 4000;
-  var PREF = { tall: 'deskTall', pin: 'deskPin', view: 'digestView' };
+  var PREF = { tall: 'deskTall', pin: 'deskPin', view: 'digestView', note: 'digestNoteOpen', fine: 'digestFineHidden' };
   // The desk's look (lib/desk-shell.js): the colours, Classroom's icons, the CSS.
   var SH = root.HeddyDeskShell;
   var SC = SH.SC;
@@ -86,7 +86,7 @@
     var askAt = null; // the line's start an Ask from the tray is about
 
     var st = null; // the open desk's state, per video
-    var prefs = { tall: false, pin: false, view: null };
+    var prefs = { tall: false, pin: false, view: null, noteOpen: false, fineHidden: false };
 
     function fresh(id) {
       return {
@@ -111,6 +111,11 @@
         pressedByKey: false, // one of them was H (not the Jot card)
         retried: false,
         sel: null, // Pi's tray on the Digest: { i, to, parts, words, side }
+        keep: 0, // the tallest the open tabs have wanted this visit (the desk never shrinks on its own)
+        gone: {}, // jot ids just deleted: "Jot deleted." stands in their row
+        noteOpen: null, // the Digest's insights card unfolded (per device: prefs.noteOpen)
+        hit: -1, // the search match stepped to with Enter
+        insightsAdded: false, // Add to my Jots was tapped
       };
     }
 
@@ -260,8 +265,26 @@
         top: top || mastheadH() + 12,
         tall: prefs.tall,
         reserve: ui.more.getBoundingClientRect().height + 8,
+        content: contentHeight(),
+        keep: st ? st.keep : 0,
       });
+      if (st && !prefs.tall) st.keep = Math.max(st.keep || 0, h);
       ui.cd.style.height = h + 'px';
+    }
+
+    /** What the open tab would take with nothing scrolling inside it: the
+     *  desk's own rows, plus each part of the panel at its full height. */
+    function contentHeight() {
+      if (!ui || !ui.pn.isConnected) return 0;
+      var pn = ui.pn;
+      var kids = Array.prototype.slice.call(pn.children);
+      var inner = 16;
+      kids.forEach(function (k, n) {
+        var scroller = k.classList.contains('lnwrap') ? k.firstChild : k;
+        var scrolls = scroller && (scroller.classList.contains('sc') || scroller.classList.contains('talk'));
+        inner += (scrolls ? scroller.scrollHeight : k.offsetHeight) + (n ? 14 : 0);
+      });
+      return ui.cd.offsetHeight - pn.clientHeight + inner;
     }
 
     // ─── drawing ─────────────────────────────────────────────────────────────
@@ -334,10 +357,14 @@
         b.setAttribute('role', 'tab');
         b.appendChild(el('span'));
         if (t[0] === 'jot') b.appendChild(el('small'));
-        b.addEventListener('click', function () { pickTab(t[0]); });
+        b.addEventListener('click', function () { if (tabLive(t[0])) pickTab(t[0]); });
         tabEls[t[0]] = b;
         tabs.appendChild(b);
       });
+      // ONE pill under the selected tab, slid from tab to tab (clip-desk.css .cp-desk__ind).
+      var ind = el('span', 'ind');
+      ind.setAttribute('aria-hidden', 'true');
+      tabs.insertBefore(ind, tabs.firstChild);
       // The crest is the Ask tab (D80): selected while the Ask view shows.
       var crest = btn('tab crest', null);
       crest.setAttribute('role', 'tab');
@@ -382,7 +409,7 @@
       ['keydown', 'keypress', 'keyup'].forEach(function (type) {
         shadow.addEventListener(type, function (e) {
           var t = e.target;
-          var typing = t && t.tagName === 'INPUT';
+          var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
           // (The Ask bar's box is an INPUT too: Enter there sends, not YouTube.)
           // A Digest line is a role=button span: Space opens its tray, never
           // YouTube's play/pause.
@@ -425,7 +452,57 @@
       doc.addEventListener('pointerdown', outside, true);
       doc.addEventListener('keydown', outside, true);
 
-      ui = { cd: cd, sub: sub, en: en, zh: zh, pin: pin, close: close, img: img, vt: vt, vtime: vtime, full: full, tabs: tabEls, crest: crest, pn: pn, fname: fname, gr: gr, more: more };
+      ui = { cd: cd, sub: sub, en: en, zh: zh, pin: pin, close: close, img: img, vt: vt, vtime: vtime, full: full, tabs: tabEls, crest: crest, pn: pn, fname: fname, gr: gr, more: more, row: tabs, ind: ind, shown: null, geo: null };
+      // The row's boxes change without a tab change (a font arrives, the
+      // column narrows): the pill is placed again, never animated.
+      if (root.ResizeObserver) {
+        var ro = new root.ResizeObserver(function () { if (ui) ui.geo = placeInd(); });
+        ro.observe(tabs);
+      }
+    }
+
+    // ─── the tab row's motion (ClipDesk.tsx: the pill slides 200 ms, the panel
+    // slides 10 px in from the side of travel and fades, the icon tilts) ──────
+
+    var EASE = 'cubic-bezier(.2,.7,.2,1)';
+    var TAB_ORDER = ['quiz', 'jot', 'digest', 'insights', 'ask'];
+    var ICON_TILT = [{ transform: 'rotate(-14deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(0)' }];
+
+    function reducedMotion() {
+      try { return root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+    }
+
+    function selectedTab() {
+      return st && (st.tab === 'ask' ? ui.crest : ui.tabs[st.tab]);
+    }
+
+    /** The pill under the selected tab; returns its geometry. */
+    function placeInd() {
+      var b = selectedTab();
+      if (!b || !b.offsetWidth) return null;
+      var g = { l: b.offsetLeft, w: b.offsetWidth };
+      ui.ind.style.left = g.l + 'px';
+      ui.ind.style.width = g.w + 'px';
+      ui.row.setAttribute('data-ind', '');
+      return g;
+    }
+
+    function play(node, frames, ms) {
+      if (node && node.animate) node.animate(frames, { duration: ms, easing: EASE });
+    }
+
+    /** After a tab change: the pill slides from where it was, the panel comes
+     *  in from the side of travel, the selected icon tilts. */
+    function moved(from) {
+      var before = ui.geo;
+      var g = placeInd();
+      ui.geo = g;
+      if (!g || !before || !from || from === st.tab || reducedMotion()) return;
+      play(ui.ind, [{ left: before.l + 'px', width: before.w + 'px' }, { left: g.l + 'px', width: g.w + 'px' }], 200);
+      var dx = TAB_ORDER.indexOf(st.tab) > TAB_ORDER.indexOf(from) ? 10 : -10;
+      play(ui.pn, [{ opacity: 0, transform: 'translateX(' + dx + 'px)' }, { opacity: 1, transform: 'none' }], 200);
+      var icon = selectedTab().querySelector('.vi, .eyes');
+      play(icon, ICON_TILT, 220);
     }
 
     /** Every word on the desk in Heddy's language (D73: relabels live). */
@@ -449,6 +526,9 @@
         b.querySelector('span').textContent = tr(names[k]);
         b.setAttribute('aria-selected', String(st.tab === k));
         b.setAttribute('aria-disabled', String(!tabLive(k)));
+        // A tab with nothing behind it says why, and is never selected (D77).
+        if (!tabLive(k)) b.title = tr(k === 'quiz' ? 'deskQuizSoon' : 'deskInsightsSoon');
+        else b.removeAttribute('title');
       });
       ui.tabs.jot.querySelector('small').textContent = String(st.jots.length);
       ui.tabs.jot.querySelector('small').hidden = !st.jots.length;
@@ -458,6 +538,10 @@
       // Roving tabindex (WAI-ARIA tabs): only the selected tab is in the Tab order.
       Object.keys(ui.tabs).forEach(function (k) { ui.tabs[k].tabIndex = st.tab === k ? 0 : -1; });
       ui.crest.tabIndex = st.tab === 'ask' ? 0 : -1;
+      var from = ui.shown;
+      ui.shown = st.tab;
+      if (from !== st.tab) moved(from);
+      else if (!ui.geo) ui.geo = placeInd();
       ui.fname.textContent = isMentor() ? tr('deskFootMentor') : tr('deskFoot', profName());
       ui.gr.setAttribute('aria-pressed', String(prefs.tall));
       ui.gr.title = prefs.tall ? tr('deskShorter') : tr('deskTaller');
@@ -522,11 +606,18 @@
     }
 
     function drawPanel() {
+      drawPanelBody();
+      // The desk grows to what the tab now holds (never shrinking on its own).
+      if (host && host.isConnected) size();
+    }
+
+    function drawPanelBody() {
       if (!ui || !st) return;
       var pn = ui.pn;
       pn.textContent = '';
       ui.lines = null;
       ui.field = null;
+      ui.chip = null;
       ui.say = null;
       askView.detach();
       if (st.tab === 'ask') return askView.draw(pn);
@@ -570,27 +661,34 @@
       lb.appendChild(save);
       sc.appendChild(lb);
 
-      if (!st.jots.length) {
+      var gone = Object.keys(st.gone).map(function (k) { return st.gone[k]; });
+      var rows = st.jots.concat(gone).sort(function (a, b) { return a.t - b.t; });
+      if (!rows.length) {
         sc.appendChild(el('p', 'empty', tr('deskJotsEmpty')));
       } else {
         var ls = el('ul', 'ls');
-        st.jots.forEach(function (j) {
-          var li = el('li');
-          var stamp = btn('st', null, P.clockOf(j.t));
-          stamp.title = tr('deskJotReplay', P.clockOf(j.t));
-          stamp.addEventListener('click', function () { seek(j.t); });
-          li.appendChild(stamp);
-          li.appendChild(j.kind === 'line' ? el('q', null, j.text) : el('span', 'tx', j.text));
-          var del = btn('del', null, '✕');
-          del.setAttribute('aria-label', tr('deskJotDelete'));
-          del.title = tr('deskJotDelete');
-          del.addEventListener('click', function () {
-            st.jots = D.removeIds(st.jots, [j.id]);
-            if (st.last && st.last.id === j.id) st.last = null;
-            saveJots();
-            label();
-            drawPanel();
-          });
+        rows.forEach(function (j) {
+          var li = el('li', j.by === 'professor' ? 'ins2' : null);
+          if (st.gone[j.id]) {
+            // "Jot deleted." stands in the row for a moment (clip-jot.css .cp-jot__gone).
+            li.appendChild(el('span', 'gone', tr('deskJotDeleted')));
+            ls.appendChild(li);
+            return;
+          }
+          // The whole jot is a button that plays from its time (ClipJot's item).
+          var it = el('button', 'it');
+          it.type = 'button';
+          it.title = tr('deskJotReplay', P.clockOf(j.t));
+          it.appendChild(el('span', 'st', P.clockOf(j.t)));
+          it.appendChild(j.kind === 'line' ? el('q', null, j.text) : el('span', 'tx', j.text));
+          if (j.by === 'key') it.appendChild(el('span', 'byj', 'H'));
+          else if (j.by === 'professor') it.appendChild(el('span', 'byj', tr('insightsFrom')));
+          it.insertAdjacentHTML('beforeend', ic('play'));
+          it.addEventListener('click', function () { seek(j.t); });
+          li.appendChild(it);
+          var del = el('button', 'del', tr('deskJotDelete'));
+          del.type = 'button';
+          del.addEventListener('click', function () { deleteJot(j.id); });
           li.appendChild(del);
           ls.appendChild(li);
         });
@@ -598,21 +696,59 @@
       }
       pn.appendChild(sc);
 
-      // The composer: "Jot at m:ss…" and the round Jot button.
+      // The composer (ClipJot's): the time chip (a tap plays from there), a
+      // field that grows to about five lines, the round Jot button. Enter
+      // jots, Shift+Enter starts a new line; Jot with nothing typed jots the
+      // line being spoken, as H does.
       var cp = el('div', 'cp');
-      var field = el('input', 'fld');
-      field.type = 'text';
+      var box = el('div', 'fld');
+      var chip = el('button', 'st');
+      chip.type = 'button';
+      chip.addEventListener('click', function () { seek(st.noteT === null ? now() : st.noteT); });
+      var field = el('textarea');
+      field.rows = 1;
       field.maxLength = 2000;
       field.setAttribute('aria-label', tr('deskJotPlaceholder', P.clockOf(now())));
-      field.addEventListener('input', function () { if (st.noteT === null && field.value) st.noteT = now(); });
-      field.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addNote(); } });
+      field.addEventListener('input', function () {
+        if (st.noteT === null && field.value) st.noteT = now();
+        grow(field);
+      });
+      field.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); addNote(); } });
+      box.appendChild(chip);
+      box.appendChild(field);
       var go = btn('go', ic('jot'), tr('deskJotButton'));
       go.addEventListener('click', addNote);
-      cp.appendChild(field);
+      cp.appendChild(box);
       cp.appendChild(go);
       pn.appendChild(cp);
       ui.field = field;
+      ui.chip = chip;
       tick();
+    }
+
+    /** The composer grows with the note: one 20 px line, up to 120 px. */
+    function grow(field) {
+      field.style.height = '20px';
+      field.style.height = Math.min(field.scrollHeight, 120) + 'px';
+    }
+
+    /** Delete (ClipJot's): "Jot deleted." for a moment, then the row goes. */
+    function deleteJot(id) {
+      if (!st) return;
+      var j = st.jots.filter(function (x) { return x.id === id; })[0];
+      st.jots = D.removeIds(st.jots, [id]);
+      if (st.last && st.last.id === id) st.last = null;
+      saveJots();
+      // Drawn in its place, as "Jot deleted.", until UNDONE_MS has passed.
+      if (j) st.gone[id] = j;
+      label();
+      if (st.tab === 'jot') drawPanel();
+      var forId = st.id;
+      setTimeout(function () {
+        if (!st || st.id !== forId) return;
+        delete st.gone[id];
+        if (st.tab === 'jot') drawPanel();
+      }, UNDONE_MS);
     }
 
     /** Why H cannot jot a spoken line on this video, said on the Jot tab for
@@ -661,22 +797,22 @@
       var r = D.press({ jots: st.jots, last: late ? null : st.last }, { now: Date.now(), t: at, lines: t.lines, id: newId() });
       if (r.result === 'noLine') return tell(tr('deskNoLine'), key);
       if (r.result === 'full') return tell(tr('deskJotsFull'), key);
+      if (key && r.result === 'new') r.jots = r.jots.map(function (j) { return j.id === r.last.id ? Object.assign({}, j, { by: 'key' }) : j; });
       st.jots = r.jots;
       st.last = r.last;
       st.say = null;
       saveJots();
       label();
       if (st.tab === 'jot') drawPanel();
-      // H on another tab, or in fullscreen: "Jotted · 2:48" and the words.
-      var jot = st.jots.filter(function (j) { return j.id === r.last.id; })[0];
-      if (key && jot && !jotsInSight()) notify({ kind: 'desk_jot', t: jot.t, quote: jot.text });
+      // The pop-up after every jot (in fullscreen, Heddy's toast on the video).
+      jotted(r.last.id, key);
     }
 
     /** say(), and for a press of H the child cannot see it from (fullscreen),
      *  the same words on the page. */
     function tell(text, key) {
       say(text, true);
-      if (key && !jotsInSight()) notify({ kind: 'desk_say', text: text });
+      toastSay(text, key);
     }
 
     /** No transcript to jot from (no captions, signed out, refused): the note
@@ -708,8 +844,12 @@
 
     function addNote() {
       if (!st || !ui.field) return;
+      // Nothing typed: Jot jots the line being spoken (twice joins the line before).
+      if (!ui.field.value.trim()) return api.pressJot(false);
       var t = st.noteT === null ? now() : st.noteT;
-      var next = D.note(st.jots, { id: newId(), t: t, text: ui.field.value });
+      var id = newId();
+      var text = ui.field.value;
+      var next = D.note(st.jots, { id: id, t: t, text: text });
       if (!next) {
         if (st.jots.length >= D.MAX_JOTS) say(tr('deskJotsFull'));
         return;
@@ -722,9 +862,93 @@
       label();
       drawPanel();
       if (ui.field) ui.field.focus();
+      jotted(id, false);
     }
 
-    function saveToJotters() {
+    // ─── the jot pop-up (ClipDesk's JotToast; clip-jot.css .cp-toast) ───────
+    // After every jot, on any tab: "● Note saved · 0:31 — {title}", the line
+    // or the note, then Undo · Open in Jotter, for TOAST_MS. Where the desk
+    // cannot be seen (YouTube fullscreen, the desk scrolled away) the same
+    // jot shows Heddy's toast on the video instead (lib/toast.js desk_jot).
+
+    var TOAST_MS = 5000;
+    var UNDONE_MS = 1800;
+    var toastTimer = null;
+
+    function deskInSight() {
+      if (doc.fullscreenElement || !host || !host.isConnected) return false;
+      var r = host.getBoundingClientRect();
+      return r.bottom > 56 && r.top < root.innerHeight - 56 && r.height > 0;
+    }
+
+    function hideToast() {
+      clearTimeout(toastTimer);
+      if (ui && ui.toast) ui.toast.remove();
+      if (ui) ui.toast = null;
+    }
+
+    /** The pop-up's body, replacing any before it. */
+    function showToast(fill, ms, anim) {
+      hideToast();
+      if (!ui) return;
+      var t = el('div', 'jt');
+      t.setAttribute('role', 'status');
+      t.setAttribute('aria-live', 'polite');
+      if (anim !== false) t.setAttribute('data-anim', '');
+      fill(t);
+      ui.cd.appendChild(t);
+      ui.toast = t;
+      toastTimer = setTimeout(hideToast, ms || TOAST_MS);
+    }
+
+    /** A jot was made (`id`). `key`: with H. */
+    function jotted(id, key) {
+      var j = st && st.jots.filter(function (x) { return x.id === id; })[0];
+      if (!j) return;
+      if (!deskInSight()) {
+        if (key) notify({ kind: 'desk_jot', t: j.t, quote: j.text });
+        return;
+      }
+      showToast(function (box) {
+        var hd = el('span', 'hd2');
+        hd.appendChild(el('span', 'ok', tr('deskNoteSaved')));
+        hd.appendChild(el('span', 'tt', P.clockOf(j.t) + ' — ' + (deps.title() || '')));
+        box.appendChild(hd);
+        box.appendChild(j.kind === 'line' ? el('q', null, j.text) : el('span', 'text', j.text));
+        var acts = el('span', 'acts');
+        var undo = el('button', 'lk', tr('deskJotUndo'));
+        undo.type = 'button';
+        undo.addEventListener('click', function () {
+          st.jots = D.removeIds(st.jots, [id]);
+          if (st.last && st.last.id === id) st.last = null;
+          saveJots();
+          label();
+          if (st.tab === 'jot') drawPanel();
+          showToast(function (b) { b.appendChild(el('span', 'msg', tr('deskJotDeleted'))); }, UNDONE_MS, false);
+        });
+        var open = el('button', 'jl', tr('deskOpenInJotter'));
+        open.type = 'button';
+        // Open in Jotter: Save to My Jotters, then the Jotter (a link that says it leaves).
+        open.addEventListener('click', function () { hideToast(); saveToJotters(true); });
+        acts.appendChild(undo);
+        acts.appendChild(open);
+        box.appendChild(acts);
+      });
+    }
+
+    /** A press that jotted nothing, said in the pop-up (Classroom's noLine). */
+    function toastSay(text, key) {
+      if (!deskInSight()) {
+        if (key) notify({ kind: 'desk_say', text: text });
+        return;
+      }
+      showToast(function (b) { b.appendChild(el('span', 'msg', text)); });
+    }
+
+    /** Save to My Jotters. `thenOpen` (the pop-up's Open in Jotter): once
+     *  saved, the Jotter opens too; the Saved card's Open is otherwise the
+     *  only tab (D86). */
+    function saveToJotters(thenOpen) {
       if (!st || st.busy.save) return;
       if (signedOut()) return openSite('/auth/login?door=kid');
       var href = st.video.jotterHref || '/study/jotters/v/' + st.id;
@@ -749,6 +973,7 @@
           st.last = null;
           st.saved = { href: r.href, n: sent.length };
           saveJots();
+          if (thenOpen === true) openSite(r.href);
         } else if (r && r.error === 'unauthenticated') {
           st.video.status = 'signedOut';
         }
@@ -807,7 +1032,14 @@
      *  video at this second. lib/desk-ask.js openAsk is the one way in. */
     function ask() {
       if (!st) return;
-      root.HeddyDeskAsk.openAsk({ about: 'video' }, api, 'ask');
+      // "Ask Newton · about 1:09" (the artifact's #ytask), with the line being
+      // spoken then, when there is one.
+      var t = now();
+      var lines = st.transcript.lines;
+      var i = st.transcript.status === 'ok' ? D.lineAt(lines, t) : -1;
+      var ctx = { about: 'video', atLabel: P.clockOf(t) };
+      if (i >= 0) ctx.attach = { kind: 'text', quote: lines[i].text };
+      root.HeddyDeskAsk.openAsk(ctx, api, 'ask');
     }
 
     /** A small confirmation on the page (youtube.js's toaster: inside the
@@ -816,13 +1048,6 @@
       if (deps.notify) deps.notify(msg);
     }
 
-    /** Can the child see the Jot tab's list right now? Not in fullscreen, not
-     *  on another tab, not with the desk scrolled out of the window. */
-    function jotsInSight() {
-      if (doc.fullscreenElement || !st || st.tab !== 'jot' || !host || !host.isConnected) return false;
-      var r = host.getBoundingClientRect();
-      return r.bottom > 0 && r.top < root.innerHeight && r.height > 0;
-    }
 
     // The Ask view (lib/ask-view.js). The background reads the video's
     // address from this tab and adds the player's second (`t`).
@@ -874,19 +1099,17 @@
         signInLine(pn);
         return;
       }
-      if (t.status === 'idle' || t.status === 'loading') {
-        pn.appendChild(noteBox(null, tr('digestReading', profName())));
-        return;
-      }
+      var reading = t.status === 'idle' || t.status === 'loading';
       if (t.status === 'none') {
         pn.appendChild(noteBox(tr('digestNoCaptionsTitle'), tr('digestNoCaptionsBody')));
+        onlyChannel(pn);
         return;
       }
       if (t.status === 'locked') {
         pn.appendChild(noteBox(tr('digestLockedTitle', profName()), tr('digestLockedBody', profName())));
         return;
       }
-      if (t.status !== 'ok') {
+      if (!reading && t.status !== 'ok') {
         var box = noteBox(null, tr('digestFailed', profName()));
         var again = btn('', null, tr('digestTryAgain'));
         again.addEventListener('click', function () { loadTranscript(); });
@@ -895,6 +1118,7 @@
         return;
       }
 
+      // The top row stays while the transcript is read (ClipDigest W9).
       var view = viewNow();
       var dgt = el('div', 'dgt');
       var seg = el('span', 'seg3');
@@ -913,22 +1137,80 @@
         seg.appendChild(b);
       });
       dgt.appendChild(seg);
-      var q = el('input', 'srch2');
+      // Search (ClipDigest): the magnifier, the matching lines, Enter steps
+      // through them (Shift+Enter back), Esc clears.
+      var lab = el('label', 'srch');
+      var ics = el('i', 'ics');
+      ics.setAttribute('aria-hidden', 'true');
+      lab.appendChild(ics);
+      var q = el('input');
       q.type = 'search';
       q.placeholder = tr('digestSearch');
       q.setAttribute('aria-label', tr('digestSearchLabel'));
       q.value = st.query;
-      q.addEventListener('input', function () { st.query = q.value; drawLines(); });
-      dgt.appendChild(q);
+      q.disabled = reading;
+      q.addEventListener('input', function () { st.query = q.value; st.hit = -1; drawLines(); });
+      q.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && st.query) {
+          e.preventDefault();
+          e.stopPropagation();
+          st.query = '';
+          st.hit = -1;
+          q.value = '';
+          drawLines();
+          return;
+        }
+        if (e.key !== 'Enter' || !ui.lines || !ui.lines.matches.length) return;
+        e.preventDefault();
+        var m = ui.lines.matches;
+        st.hit = (st.hit + (e.shiftKey ? m.length - 1 : 1)) % m.length;
+        drawLines();
+        var row = ui.lines.rows[m[st.hit]];
+        if (row) {
+          var sc0 = ui.lines.sc;
+          var top = row.offsetTop - sc0.offsetTop;
+          if (top < sc0.scrollTop || top + row.offsetHeight > sc0.scrollTop + sc0.clientHeight) sc0.scrollTop = Math.max(0, top - sc0.clientHeight / 3);
+        }
+      });
+      lab.appendChild(q);
+      dgt.appendChild(lab);
       pn.appendChild(dgt);
 
+      // {name}'s insights, folded to one row; a door to the Insights tab.
+      pn.appendChild(insightsNote(view));
+
       var d = duration();
-      pn.appendChild(el('p', 'dlb', tr('digestTranscript', '0:00', P.clockOf(d || (t.lines.length ? t.lines[t.lines.length - 1].t : 0)))));
+      var end = P.clockOf(d || (t.lines.length ? t.lines[t.lines.length - 1].t : 0));
+      if (reading) {
+        // ClipDigest W9: the clock, the skeletons, the fine line.
+        var rd = el('p', 'reading');
+        rd.appendChild(el('span', 'clock'));
+        rd.appendChild(doc.createTextNode(tr('digestReading', profName())));
+        pn.appendChild(rd);
+        pn.appendChild(el('p', 'dlb', tr('digestTranscript', '0:00', d ? end : '–:––')));
+        var sks = el('div', 'sks');
+        ['92%', '84%', '60%', '88%', '70%'].forEach(function (w) { var k = el('span', 'sk'); k.style.width = w; sks.appendChild(k); });
+        pn.appendChild(sks);
+        pn.appendChild(el('p', 'fine', tr('deskReadingFine')));
+        return;
+      }
+      pn.appendChild(el('p', 'dlb', tr('digestTranscript', '0:00', end)));
+      var count = el('p', 'fine');
+      count.setAttribute('role', 'status');
+      count.setAttribute('aria-live', 'polite');
+      count.hidden = true;
+      pn.appendChild(count);
       if (view !== 'en') {
         if (st.zh.locked) pn.appendChild(el('p', 'empty', tr('digestLockedBody', profName())));
         else if (st.zh.failed) pn.appendChild(el('p', 'empty', tr('digestZhFailed')));
-        else if (st.zh.state === 'writing') pn.appendChild(el('p', 'empty', tr('digestReadingZh', profName())));
+        else if (st.zh.state === 'writing') {
+          var zw = el('p', 'reading');
+          zw.appendChild(el('span', 'clock'));
+          zw.appendChild(doc.createTextNode(tr('digestReadingZh', profName())));
+          pn.appendChild(zw);
+        }
       }
+      var wrap = el('div', 'lnwrap');
       var sc = el('div', 'sc');
       sc.addEventListener('scroll', function () { lastScroll = Date.now(); }, { passive: true });
       sc.addEventListener('wheel', function () { lastScroll = Date.now(); }, { passive: true });
@@ -937,16 +1219,115 @@
       // tray on what it selected.
       lns.addEventListener('pointerup', function (e) {
         if (e.button !== 0) return;
-        var t = e.target;
-        if (t && t.closest && t.closest('.tx, .pop')) return;
+        var tg = e.target;
+        if (tg && tg.closest && tg.closest('.tx, .pop')) return;
         var pk = pickIn();
         if (pk) openSel(pk);
       });
       sc.appendChild(lns);
-      pn.appendChild(sc);
-      ui.lines = { sc: sc, box: lns, rows: [] };
+      wrap.appendChild(sc);
+      // Jump to now (ClipDigest): while the line being spoken is out of view.
+      var jump = el('button', 'jump', tr('digestJumpNow'));
+      jump.type = 'button';
+      jump.hidden = true;
+      jump.addEventListener('click', function () {
+        var row = ui.lines && ui.lines.rows[st.nowIdx];
+        if (!row) return;
+        lastScroll = 0;
+        sc.scrollTop = Math.max(0, row.offsetTop - sc.offsetTop - sc.clientHeight / 2 + row.offsetHeight / 2);
+        jump.hidden = true;
+      });
+      wrap.appendChild(jump);
+      pn.appendChild(wrap);
+      onlyChannel(pn);
+      ui.lines = { sc: sc, box: lns, rows: [], count: count, jump: jump, matches: [] };
       ui.lines.sc.dataset.view = view;
       drawLines();
+    }
+
+    /** "We only use a channel's own captions…", until the child hides it
+     *  (ClipDigest's fine line; kept per device). */
+    function onlyChannel(pn) {
+      if (prefs.fineHidden) return;
+      var p = el('p', 'fine close');
+      p.appendChild(el('span', null, tr('digestOnlyChannel')));
+      var x = btn('finex', ic('close'));
+      x.setAttribute('aria-label', tr('digestOnlyChannelHide'));
+      x.title = tr('digestOnlyChannelHide');
+      x.addEventListener('click', function () {
+        prefs.fineHidden = true;
+        setLocal(PREF.fine, true);
+        p.remove();
+      });
+      p.appendChild(x);
+      pn.appendChild(p);
+    }
+
+    /** {name}'s insights on the Digest (ClipDigest's DigestNoteCard): one
+     *  44 px row at rest, the whole row the toggle; unfolded, a brief and the
+     *  door to the Insights tab. While the site serves no insights (8a), the
+     *  card says so and the door is drawn disabled. */
+    function insightsNote(view) {
+      var s = st.insights;
+      var live = tabLive('insights');
+      var first = (s.parts || []).filter(function (p) { return p.text; })[0];
+      var zhText = first && view !== 'en' ? first.zh || null : null;
+      var text = first ? (view === 'zh' && zhText ? zhText : first.en || first.text) : '';
+      var waiting = live && s.status === 'writing' && !text;
+      var teaser = !live ? tr('deskInsightsSoon') : waiting ? tr('insightsWriting', profName()) : D.teaserOf(text);
+      var open = prefs.noteOpen === true;
+      var card = el('div', open ? 'dnote' : 'dnote closed');
+      if (open) card.setAttribute('data-open', '');
+      var p = st.video.professor;
+      if (p && p.code) card.setAttribute('data-subj', p.code);
+      var hd = el('button', 'notehd');
+      hd.type = 'button';
+      hd.setAttribute('aria-expanded', String(open));
+      hd.setAttribute('aria-label', tr(open ? 'overviewFold' : 'overviewUnfold', profName()));
+      var crest = el('span', 'eyes');
+      crest.innerHTML = EYES;
+      hd.appendChild(crest);
+      var nt = el('span', 'nt');
+      nt.appendChild(el('b', null, tr('insightsHead', profName())));
+      if (!open) nt.appendChild(el('span', 'teaser', teaser));
+      hd.appendChild(nt);
+      hd.insertAdjacentHTML('beforeend', ic('down'));
+      hd.addEventListener('click', function () {
+        prefs.noteOpen = !open;
+        setLocal(PREF.note, prefs.noteOpen);
+        var next = insightsNote(viewNow());
+        if (!open) {
+          var b = next.querySelector('.notebody');
+          if (b) b.setAttribute('data-anim', '');
+        }
+        card.replaceWith(next);
+      });
+      card.appendChild(hd);
+      if (open) {
+        var body = el('div', 'notebody');
+        var brief = el('p', live && !waiting ? 'brief' : 'brief soon', !live ? tr('deskInsightsSoon') : waiting ? tr('insightsWriting', profName()) : D.briefOf(text));
+        if (view === 'zh' && zhText) brief.setAttribute('lang', 'zh-Hans');
+        body.appendChild(brief);
+        if (view === 'bi' && zhText && live) {
+          var bz = el('p', 'brief', D.briefOf(zhText));
+          bz.setAttribute('lang', 'zh-Hans');
+          body.appendChild(bz);
+        }
+        var door = el('button', 'ovlink');
+        door.type = 'button';
+        door.insertAdjacentHTML('beforeend', ic('insights'));
+        door.appendChild(doc.createTextNode(tr('overviewOpenLink', profName())));
+        door.insertAdjacentHTML('beforeend', ic('arrow'));
+        if (!live) {
+          door.setAttribute('aria-disabled', 'true');
+          door.title = tr('deskInsightsSoon');
+        } else {
+          door.addEventListener('click', function () { pickTab('insights'); });
+        }
+        body.appendChild(door);
+        card.appendChild(body);
+      }
+      return card;
     }
 
     function drawLines() {
@@ -955,13 +1336,19 @@
       var box = ui.lines.box;
       box.textContent = '';
       ui.lines.rows = [];
-      var only = D.matches(lines, st.query, zhOf);
-      if (only && !only.length) {
-        box.appendChild(el('p', 'empty', tr('digestNoMatches')));
-        return;
+      var filtering = !!String(st.query || '').trim();
+      var only = filtering ? D.matchLines(lines, st.query, zhOf) : null;
+      ui.lines.matches = only || [];
+      var count = ui.lines.count;
+      if (count) {
+        count.hidden = !filtering;
+        count.textContent = !filtering ? '' : only.length === 1 ? tr('digestMatchesOne', '1') : only.length ? tr('digestMatchesMany', String(only.length)) : tr('digestNoMatches');
       }
+      if (only && !only.length) return;
+      var hitAt = filtering && st.hit >= 0 ? only[st.hit] : -1;
       (only || lines.map(function (_, i) { return i; })).forEach(function (i) {
         var row = makeRow(i);
+        if (i === hitAt) row.setAttribute('data-hit', '');
         box.appendChild(row);
         ui.lines.rows[i] = row;
       });
@@ -1226,12 +1613,14 @@
     /** Jot it: a jot at the line's start with the chosen words (as H's). */
     function jotWords(t, words) {
       closeSel();
-      var next = D.lineJot(st.jots, { id: newId(), t: t, text: words });
-      if (!next) return notify({ kind: 'desk_say', text: tr('deskJotsFull') });
+      var id = newId();
+      var next = D.lineJot(st.jots, { id: id, t: t, text: words });
+      if (!next) return toastSay(tr('deskJotsFull'), false);
       st.jots = next;
       st.last = null;
       saveJots();
       label();
+      jotted(id, false);
     }
 
     /** Explain, Make a card, Ask {Professor}: the desk's Ask view (Round 10
@@ -1350,28 +1739,81 @@
         }
         label();
         if (st.tab === 'insights') drawPanel();
+        else if (st.tab === 'digest' && ui) {
+          // The Digest's insights card follows, without redrawing the list.
+          var card = ui.pn.querySelector('.dnote');
+          if (card) card.replaceWith(insightsNote(viewNow()));
+        }
       });
     }
 
+    /** Insights (clip-digest.css .cp-dg__parts): each part's time and
+     *  serif title in the subject ink, the paragraph justified, the part the
+     *  player is in marked; Add to my Jots puts the parts on the Jot tab as
+     *  the professor's jots (tinted), kept on this device until Save. */
     function drawInsights(pn) {
       var s = st.insights;
-      if (s.status === 'writing' && !s.parts.some(function (p) { return p.text; })) return pn.appendChild(noteBox(null, tr('insightsWriting', profName())));
+      if (s.status === 'writing' && !s.parts.some(function (p) { return p.text; })) {
+        var w = el('p', 'reading');
+        w.appendChild(el('span', 'clock'));
+        w.appendChild(doc.createTextNode(tr('insightsWriting', profName())));
+        return pn.appendChild(w);
+      }
       if (s.status === 'none') return pn.appendChild(noteBox(tr('digestNoCaptionsTitle'), tr('digestNoCaptionsBody')));
       if (s.status === 'locked') return pn.appendChild(noteBox(tr('digestLockedTitle', profName()), tr('digestLockedBody', profName())));
       var sc = el('div', 'sc');
+      var p0 = st.video.professor;
+      if (p0 && p0.code) sc.setAttribute('data-subj', p0.code);
       sc.appendChild(el('p', 'dlb', tr('insightsHead', profName())));
-      var list = el('div', 'ins');
-      s.parts.forEach(function (p) {
-        var row = el('div');
-        var stamp = btn('st', null, P.clockOf(p.startSec));
+      var add = el('div', 'insadd');
+      var written = s.parts.filter(function (p) { return p.text; });
+      var pill = el('button', 'addj');
+      pill.type = 'button';
+      pill.insertAdjacentHTML('beforeend', ic(st.insightsAdded ? 'tick' : 'jot'));
+      pill.appendChild(doc.createTextNode(tr(st.insightsAdded ? 'insightsAdded' : 'insightsAdd')));
+      if (st.insightsAdded) { pill.setAttribute('data-added', ''); pill.setAttribute('aria-disabled', 'true'); }
+      else if (!written.length) pill.setAttribute('aria-disabled', 'true');
+      else pill.addEventListener('click', function () { addInsights(written); });
+      add.appendChild(pill);
+      sc.appendChild(add);
+      var list = el('ul', 'ins');
+      var t = now();
+      ui.insRows = [];
+      s.parts.forEach(function (p, k) {
+        var row = el('li');
+        var next = s.parts[k + 1];
+        if (t >= p.startSec && (!next || t < next.startSec)) row.setAttribute('aria-current', 'true');
+        var hd = el('div', 'parthd');
+        var stamp = el('button', 'ts2', P.clockOf(p.startSec));
+        stamp.type = 'button';
+        stamp.title = tr('digestSeek', P.clockOf(p.startSec));
         stamp.addEventListener('click', function () { seek(p.startSec); });
-        row.appendChild(stamp);
-        row.appendChild(el('b', null, p.title || (p.minutes ? tr('insightsBand', String(p.minutes.from), String(p.minutes.to)) : '')));
-        row.appendChild(el('p', null, p.text || tr('insightsFailed', profName())));
+        hd.appendChild(stamp);
+        hd.appendChild(el('span', 'pttl', p.title || (p.minutes ? tr('insightsBand', String(p.minutes.from), String(p.minutes.to)) : '')));
+        row.appendChild(hd);
+        row.appendChild(p.text ? el('p', null, p.text) : el('p', 'pnote', tr('insightsFailed', profName())));
         list.appendChild(row);
+        ui.insRows.push({ el: row, from: p.startSec });
       });
       sc.appendChild(list);
       pn.appendChild(sc);
+    }
+
+    /** Add to my Jots (DigestInsights): each written part as the professor's
+     *  jot at its time. */
+    function addInsights(parts) {
+      var jots = st.jots;
+      parts.forEach(function (p) {
+        var text = (p.title ? p.title + ' — ' : '') + p.text;
+        var id = newId();
+        var next = D.note(jots, { id: id, t: p.startSec, text: text });
+        if (next) jots = next.map(function (j) { return j.id === id ? Object.assign({}, j, { by: 'professor' }) : j; });
+      });
+      st.jots = jots;
+      st.insightsAdded = true;
+      saveJots();
+      label();
+      drawPanel();
     }
 
     // ─── the clock: the time, the line being spoken, the next stretch ───────
@@ -1379,11 +1821,27 @@
     function tick() {
       if (!ui || !st) return;
       var t = now();
+      // Insights: the part the player is in wears its edge.
+      if (ui.insRows && ui.insRows.length && ui.insRows[0].el.isConnected) {
+        ui.insRows.forEach(function (r, k) {
+          var next = ui.insRows[k + 1];
+          var on = t >= r.from && (!next || t < next.from);
+          if ((r.el.getAttribute('aria-current') === 'true') !== on) {
+            if (on) r.el.setAttribute('aria-current', 'true');
+            else r.el.removeAttribute('aria-current');
+          }
+        });
+      }
       var d = duration();
       ui.vtime.textContent = tr('deskTimeOnTab', P.clockOf(t), d ? P.clockOf(d) : '–:––');
       if (ui.field && ui.field.isConnected) {
-        var ph = tr('deskJotPlaceholder', P.clockOf(st.noteT === null ? t : st.noteT));
+        var at = P.clockOf(st.noteT === null ? t : st.noteT);
+        var ph = tr('deskJotPlaceholder', at);
         if (ui.field.placeholder !== ph) ui.field.placeholder = ph;
+        if (ui.chip && ui.chip.textContent !== at) {
+          ui.chip.textContent = at;
+          ui.chip.title = tr('deskJotReplay', at);
+        }
       }
       if (ui.lines && ui.lines.box.isConnected) {
         var i = D.lineAt(st.transcript.lines, t);
@@ -1404,6 +1862,13 @@
             }
           }
           st.nowIdx = i;
+        }
+        // Jump to now while the line being spoken is out of the list's view.
+        if (ui.lines.jump) {
+          var nr = ui.lines.rows[st.nowIdx];
+          var lb = ui.lines.sc;
+          var off = !!nr && !st.query && (nr.offsetTop - lb.offsetTop + nr.offsetHeight < lb.scrollTop || nr.offsetTop - lb.offsetTop > lb.scrollTop + lb.clientHeight);
+          if (ui.lines.jump.hidden === off) ui.lines.jump.hidden = !off;
         }
         wantZh();
       }
@@ -1440,7 +1905,9 @@
 
       /** Load the device's choices: 📌, the chevron, the Digest's view. */
       loadPrefs: function () {
-        return local([PREF.tall, PREF.pin, PREF.view]).then(function (got) {
+        return local([PREF.tall, PREF.pin, PREF.view, PREF.note, PREF.fine]).then(function (got) {
+          prefs.noteOpen = got[PREF.note] === true;
+          prefs.fineHidden = got[PREF.fine] === true;
           prefs.tall = got[PREF.tall] === true;
           prefs.pin = got[PREF.pin] === true;
           prefs.view = D.VIEWS.indexOf(got[PREF.view]) >= 0 ? got[PREF.view] : null;
@@ -1455,6 +1922,8 @@
         if (st) api.close(true);
         st = fresh(id);
         if (!host) build();
+        ui.shown = null; // a new video: the pill is placed, not slid
+        ui.geo = null;
         ui.img.hidden = false;
         ui.img.src = FS.thumbUrl(id) || '';
         label();
@@ -1502,6 +1971,7 @@
 
       /** ✕, the button again, another video: the suggestions come back. */
       close: function (quiet) {
+        hideToast();
         askView.close();
         clearInterval(timer);
         timer = null;

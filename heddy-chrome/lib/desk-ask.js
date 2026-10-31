@@ -140,6 +140,9 @@
     return {
       about: ['picture', 'words', 'video', 'page'].indexOf(c.about) >= 0 ? c.about : 'page',
       n: typeof c.n === 'number' && c.n > 0 ? Math.floor(c.n) : null,
+      // The crest on a video (Round 11, the artifact's #ytask): "about 1:09",
+      // and the line being spoken then, carried on the child's first bubble.
+      atLabel: typeof c.atLabel === 'string' && /^\d{1,2}(:\d{2}){1,2}$/.test(c.atLabel) ? c.atLabel : null,
       attach: attachOf(c.attach),
       professor: null,
       items: [], // {who:'me', text, pic?} | {who:'tu', text, token?, kept?} | {who:'card', front, back, token, kept?}
@@ -175,7 +178,7 @@
     var who = name || 'Mentor';
     if (state.about === 'picture') return state.n ? { key: 'askAboutPictureN', args: [who, String(state.n)] } : { key: 'askAboutPicture', args: [who] };
     if (state.about === 'words') return { key: 'askAboutWords', args: [who] };
-    if (state.about === 'video') return { key: 'askAboutVideo', args: [who] };
+    if (state.about === 'video') return state.atLabel ? { key: 'askAboutAt', args: [who, state.atLabel] } : { key: 'askAboutVideo', args: [who] };
     return { key: 'askAboutPage', args: [who] };
   }
 
@@ -198,6 +201,8 @@
     var me = { who: 'me', text: said };
     // The picture rides on the child's first bubble, as the artifact draws it.
     if (first && state.attach && state.attach.kind === 'image') me.pic = state.attach.png;
+    // The video's moment rides on it too: '1:09 · "They land at the same time."'.
+    if (first && state.about === 'video' && state.atLabel) me.at = state.atLabel + (state.attach && state.attach.kind === 'text' ? ' · “' + state.attach.quote + '”' : '');
     var items = state.items.concat([me, { who: 'tu', text: '' }]);
     return Object.assign({}, state, { items: items, busy: true, error: null, message: '', lastIntent: intent });
   }

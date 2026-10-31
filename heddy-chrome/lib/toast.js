@@ -160,7 +160,7 @@
     '.t b{font:700 14px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif}' +
     '.t span{font:500 12px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#5d6878}' +
     '.t q{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;quotes:none;margin-top:4px;' +
-    'font:500 13px/1.45 "Source Serif 4",Georgia,serif;color:#14253f;overflow-wrap:anywhere}' +
+    'font:500 13px/1.45 "Heddy Serif","Source Serif 4",Georgia,serif;color:#14253f;overflow-wrap:anywhere}' +
     '.o{display:flex;flex-direction:column;align-items:flex-end;gap:8px;align-self:center}' +
     '.toast.wide .o{align-self:flex-start}' +
     '.o button{all:unset;cursor:pointer;font:700 13px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#1f6a40;white-space:nowrap}' +

@@ -548,5 +548,45 @@
     "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
   },
   "deskWhyError": { "message": "Heddy couldn't read this video's transcript. Write notes below, or try again." },
-  "deskFullFailed": { "message": "Full desk didn't open. Try again." }
+  "deskFullFailed": { "message": "Full desk didn't open. Try again." },
+
+  "deskNoteSaved": { "message": "Note saved" },
+  "deskJotUndo": { "message": "Undo" },
+  "deskJotDeleted": { "message": "Jot deleted." },
+  "deskOpenInJotter": { "message": "Open in Jotter" },
+  "digestMatchesOne": {
+    "message": "1 match",
+    "placeholders": { "n": { "content": "$1", "example": "1" } }
+  },
+  "digestMatchesMany": {
+    "message": "$N$ matches",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "digestOnlyChannel": { "message": "We only use a channel's own captions. We never make a copy of the video to write our own." },
+  "digestOnlyChannelHide": { "message": "Hide this note" },
+  "digestJumpNow": { "message": "Jump to now" },
+  "deskReadingFine": { "message": "Usually under ten seconds." },
+  "overviewOpenLink": {
+    "message": "Open $NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "overviewUnfold": {
+    "message": "Show $NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "overviewFold": {
+    "message": "Hide $NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "insightsAdd": { "message": "Add to my Jots" },
+  "insightsAdded": { "message": "Added" },
+  "insightsFrom": { "message": "From insights" },
+  "askAboutAt": {
+    "message": "Ask $NAME$ · about $T$",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" }, "t": { "content": "$2", "example": "1:09" } }
+  },
+  "askPhShort": {
+    "message": "Ask $NAME$…",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  }
 }

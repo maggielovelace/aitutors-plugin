@@ -122,4 +122,4 @@ npm test
 
 `fonts/` 里的 Manrope 字体（以及 `lib/font-data.js` 里的同一份字体数据）
 版权归 The Manrope Project Authors，采用 SIL Open Font License 1.1 许可，
-见 [fonts/OFL.txt](fonts/OFL.txt)。字体随扩展程序打包，不从网上下载。
+见 [fonts/OFL.txt](fonts/OFL.txt)。字体随扩展程序打包，不从网上下载。书桌用的 JetBrains Mono（[fonts/OFL-JetBrainsMono.txt](fonts/OFL-JetBrainsMono.txt)）和 Source Serif 4（[fonts/OFL-SourceSerif4.txt](fonts/OFL-SourceSerif4.txt)）同样采用 SIL Open Font License 1.1，同样随扩展打包（`lib/font-desk-data.js`）。

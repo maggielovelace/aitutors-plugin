@@ -35,6 +35,7 @@
       "js": [
         "lib/font-data.js",
         "lib/fonts.js",
+        "lib/font-desk-data.js",
         "lib/messages.js",
         "lib/i18n.js",
         "lib/protocol.js",

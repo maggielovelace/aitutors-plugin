@@ -25,8 +25,8 @@
   var A = root.HeddyDeskAsk;
 
   var SANS = (root.HeddyFonts && root.HeddyFonts.SANS) || 'Manrope,Roboto,Arial,sans-serif';
-  var SERIF = '"Source Serif 4",Georgia,"Times New Roman",serif';
-  var MONO = '"JetBrains Mono",ui-monospace,Menlo,monospace';
+  var SERIF = (root.HeddyFonts && root.HeddyFonts.SERIF) || '"Source Serif 4",Georgia,"Times New Roman",serif';
+  var MONO = (root.HeddyFonts && root.HeddyFonts.MONO) || '"JetBrains Mono",ui-monospace,Menlo,monospace';
 
   // The artifact's .askhd, .talk/.room bubbles, .kc and .askb, in the desk's .cd.
   var CSS = [
@@ -121,6 +121,7 @@
 
     function placeholder() {
       if (state.about === 'picture' && state.n) return tr('askPhPictureN', name(), String(state.n));
+      if (state.about === 'video' && state.atLabel) return tr('askPhShort', name());
       return tr(PLACE[state.about] || 'askPhPage', name());
     }
 
@@ -195,6 +196,7 @@
             me.appendChild(img);
           }
           me.appendChild(el(doc, 'span', null, it.text));
+          if (it.at) me.appendChild(el(doc, 'small', null, it.at));
           if (it.pic) me.appendChild(el(doc, 'small', null, state.n ? tr('askPicSmall', String(state.n), site) : tr('askPicSmallNoN', site)));
           talk.appendChild(me);
         } else if (it.who === 'tu') {
