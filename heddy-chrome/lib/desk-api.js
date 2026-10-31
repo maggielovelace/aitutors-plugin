@@ -25,6 +25,10 @@
   var BASE = '/api/learn/heddy/desk/';
   var PATHS = { video: BASE + 'video', transcript: BASE + 'transcript', insights: BASE + 'insights', jots: BASE + 'jots' };
   var TIMEOUT_MS = 15000;
+  // The transcript's first read of a long video goes through the site's
+  // captions vendor (an hour-long video took the owner's desk past 15 s, and
+  // the desk then said there was no transcript): it gets longer.
+  var TRANSCRIPT_TIMEOUT_MS = 60000;
   var MAX_LINES = 8000;
   var MAX_LINE = 2000;
   var MAX_NAME = 40;
@@ -149,13 +153,19 @@
     }
 
     /** The one place a desk request is made. Resolves to {status, data}, never rejects. */
-    function call(method, path, params, body) {
+    function call(method, path, params, body, waitMs) {
       var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
-      var timer = ctrl ? later(function () { ctrl.abort(); }, TIMEOUT_MS) : null;
+      var timer = ctrl ? later(function () { ctrl.abort(); }, waitMs || TIMEOUT_MS) : null;
       return origin()
         .then(function (o) {
           var qs = query(params || {});
-          var init = { method: method, credentials: 'include', cache: 'no-store', redirect: 'error', headers: { Accept: 'application/json' }, signal: ctrl ? ctrl.signal : undefined };
+          // X-Heddy-Id: Chrome sends NO Origin on a GET from the service
+          // worker to a host Heddy has permission for (proven in real Chrome,
+          // 2026-10-31: every desk GET was 403 'forbidden', so the desk never
+          // loaded and H found no transcript). The header names Heddy's id;
+          // a web page cannot send it cross-site without a preflight the site
+          // refuses (contract Changes, r9-ext 8).
+          var init = { method: method, credentials: 'include', cache: 'no-store', redirect: 'error', headers: { Accept: 'application/json', 'X-Heddy-Id': chrome.runtime.id }, signal: ctrl ? ctrl.signal : undefined };
           if (body !== undefined) {
             init.headers['Content-Type'] = 'application/json';
             init.body = JSON.stringify(body);
@@ -191,7 +201,7 @@
           // &title= helps the site pick the subject for the Chinese (contract Changes, site 7).
           var q = { v: id, title: text(message.title, 300) };
           if (from !== null) { q.zh = 1; q.from = from; }
-          return call('GET', PATHS.transcript, q).then(answer(parseTranscript));
+          return call('GET', PATHS.transcript, q, undefined, TRANSCRIPT_TIMEOUT_MS).then(answer(parseTranscript));
         }
         case 'heddy-desk:insights':
           return call('GET', PATHS.insights, { v: id, lang: message.lang === 'zh' ? 'zh' : 'en' }).then(answer(parseInsights));
@@ -220,6 +230,8 @@
 
   var api = {
     PATHS: PATHS,
+    TIMEOUT_MS: TIMEOUT_MS,
+    TRANSCRIPT_TIMEOUT_MS: TRANSCRIPT_TIMEOUT_MS,
     parseVideo: parseVideo,
     parseTranscript: parseTranscript,
     parseInsights: parseInsights,

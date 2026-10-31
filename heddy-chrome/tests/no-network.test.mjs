@@ -28,7 +28,7 @@ const ALLOWED_FETCH = {
   'options/options.js': [/W\.loadMe\(window\.fetch\.bind\(window\), origin\)/],
   'background.js': [
     /HeddyDeskApi\.createDeskApi\(\{ chrome: chrome, fetchImpl: fetch\.bind\(self\) \}\)/,
-    /HeddyApi\.createHeddyApi\(\{ call: desk\.call, origin: desk\.origin, fetchImpl: fetch\.bind\(self\) \}\)/,
+    /HeddyApi\.createHeddyApi\(\{ call: desk\.call, origin: desk\.origin, fetchImpl: fetch\.bind\(self\), extensionId: chrome\.runtime\.id \}\)/,
   ],
 };
 

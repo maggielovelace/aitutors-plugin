@@ -199,7 +199,7 @@
             credentials: 'include',
             cache: 'no-store',
             redirect: 'error',
-            headers: { Accept: 'application/x-ndjson', 'Content-Type': 'application/json' },
+            headers: { Accept: 'application/x-ndjson', 'Content-Type': 'application/json', 'X-Heddy-Id': deps.extensionId || '' },
             body: JSON.stringify(body),
             signal: ctrl ? ctrl.signal : undefined,
           });

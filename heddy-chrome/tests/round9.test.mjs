@@ -548,3 +548,16 @@ test('a copy of Heddy aitutors.me does not know (403 forbidden) is said plainly,
   assert.match(I.t('en', 'deskForbidden', 'abc'), /^aitutors\.me doesn't know this copy of Heddy \(id abc\)/);
   assert.ok(A.ERRORS.includes('forbidden'));
 });
+
+test('every desk and Round 9 request names Heddy’s id in X-Heddy-Id: Chrome sends no Origin on a GET from the worker to a permitted host', async () => {
+  const DA = load('./lib/desk-api.js');
+  const seen = [];
+  const api = DA.createDeskApi({ chrome: { runtime: { id: 'dfodgnhipffpkldflfjcelbafjogjheo' }, storage: { local: { get: async () => ({}) } } }, fetchImpl: async (u, init) => { seen.push(init.headers); return { status: 200, json: async () => ({ signedIn: false }) }; }, setTimeout: () => 1, clearTimeout: () => {} });
+  await api.internal({ type: 'heddy-desk:video', youtubeId: VIDEO }, { id: 'dfodgnhipffpkldflfjcelbafjogjheo', url: WATCH, tab: { id: 7, url: WATCH } });
+  assert.equal(seen[0]['X-Heddy-Id'], 'dfodgnhipffpkldflfjcelbafjogjheo');
+  const f = streamFetch(['{"type":"done","turnsLeft":null}\n']);
+  const ask = H.createHeddyApi({ call: async () => ({}), origin: async () => PROD, fetchImpl: f.fetchImpl, extensionId: 'dfodgnhipffpkldflfjcelbafjogjheo', setTimeout: () => 1, clearTimeout: () => {} });
+  await ask.ask({}, () => {}).done;
+  assert.equal(f.seen[0].init.headers['X-Heddy-Id'], 'dfodgnhipffpkldflfjcelbafjogjheo');
+  assert.equal(DA.TRANSCRIPT_TIMEOUT_MS, 60000, 'a long video’s first transcript gets a minute');
+});

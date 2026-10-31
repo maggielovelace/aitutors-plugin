@@ -39,7 +39,7 @@ var desk = HeddyDeskApi.createDeskApi({ chrome: chrome, fetchImpl: fetch.bind(se
 // Round 9 (D78–D86): every save, Undo, card, jot, clip and the Ask view's
 // conversation, as requests from here on the same cookie (lib/heddy-api.js,
 // lib/web-routes.js). Nothing opens a window.
-var heddyApi = HeddyApi.createHeddyApi({ call: desk.call, origin: desk.origin, fetchImpl: fetch.bind(self) });
+var heddyApi = HeddyApi.createHeddyApi({ call: desk.call, origin: desk.origin, fetchImpl: fetch.bind(self), extensionId: chrome.runtime.id });
 var routes = HeddyWebRoutes.createWebRoutes({
   chrome: chrome,
   api: heddyApi,
