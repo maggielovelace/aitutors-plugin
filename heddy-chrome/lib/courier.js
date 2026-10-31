@@ -384,9 +384,10 @@
             var href = typeof message.href === 'string' ? message.href : '';
             var u;
             try { u = new URL(href); } catch (e) { return { ok: false }; }
-            // My Clips, Jotters, a card's deck, and the kid sign-in door (the
-            // desk signed out): each a link the child taps (D78).
-            var to = /^\/study\/(clips|jotters|cards)(\/|$)/.test(u.pathname) || (u.pathname === '/auth/login' && u.search === '?door=kid');
+            // My Clips, Jotters, a card's deck, the kid sign-in door (the
+            // desk signed out), and the plans page (the locked block's See
+            // plans ↗, D92; exactly /pricing): each a link the child taps (D78).
+            var to = /^\/study\/(clips|jotters|cards)(\/|$)/.test(u.pathname) || (u.pathname === '/auth/login' && u.search === '?door=kid') || (u.pathname === '/pricing' && !u.search && !u.hash);
             if (C.allowedOrigins(dev).indexOf(u.origin) < 0 || !to) return { ok: false };
             return chrome.tabs.create({ url: u.href, openerTabId: tab ? tab.id : undefined }).then(
               function () { return { ok: true }; },
