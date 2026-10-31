@@ -1589,6 +1589,18 @@
             "example": "Physics"
           }
         }
+      },
+      "askEmpty": {
+        "message": "I'm watching along. Ask me anything about this bit, or pick a line in the Digest and press Ask $NAME$.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "deskOpenInJotterTitle": {
+        "message": "Opens your Jotter on aitutors.me in a new tab"
       }
     },
     "zh_CN": {
@@ -3179,6 +3191,18 @@
             "example": "Physics"
           }
         }
+      },
+      "askEmpty": {
+        "message": "我陪你一起看。这一段有什么想问的都可以，或者在精读里选一句，按「问 $NAME$」。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "deskOpenInJotterTitle": {
+        "message": "在新标签页打开 aitutors.me 上的笔记本"
       }
     }
   };

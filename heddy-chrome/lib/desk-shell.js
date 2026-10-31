@@ -294,6 +294,9 @@
     '.jt .lk[aria-busy="true"]{opacity:.55;cursor:progress}',
     '.jt .jl{font:600 12px ' + SANS + ';color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}',
     '.jt .jl:hover{color:var(--ink-deep)}',
+    '.jt .jl{display:inline-flex;align-items:center;gap:4px}',
+    '.jt .jl .vi{width:14px;height:14px}',
+    '.jt .jl[aria-busy="true"]{opacity:.55;cursor:progress}',
     // under the desk, in YouTube's own type
     '.more{display:inline-block;margin-top:8px;font:600 12.5px Roboto,Arial,sans-serif;color:#3ea6ff;padding:2px}',
     ':host(.light) .more{color:#065fd4}',

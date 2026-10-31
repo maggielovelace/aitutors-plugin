@@ -92,6 +92,8 @@ const PINS = [
   ['insightsNoTranscript', 'insights.noTranscript'],
   ['overviewWriteNotes', 'overview.writeNotes'],
   ['insightsLocked', 'insights.locked'],
+  ['askEmpty', 'room.empty'],
+  ['askPhShort', 'room.placeholder'],
   ['insightsHead', 'digest.overview'],
   ['insightsBand', 'insights.band'],
   ['insightsWriting', 'insights.writing'],

@@ -931,12 +931,34 @@
           if (st.tab === 'jot') drawPanel();
           showToast(function (b) { b.appendChild(el('span', 'msg', tr('deskJotDeleted'))); }, UNDONE_MS, false);
         });
-        var open = el('button', 'jl', tr('deskOpenInJotter'));
-        open.type = 'button';
-        // Open in Jotter: Save to My Jotters, then the Jotter (a link that says it leaves).
-        open.addEventListener('click', function () { hideToast(); saveToJotters(true); });
+        // Owner's pick (Round 11b): Save to My Jotters saves the desk's jots
+        // here, opening nothing; once saved the link becomes Open in Jotter ↗,
+        // which opens the Jotter in a tab and says so.
+        var save = el('button', 'jl', tr('deskSaveJotters'));
+        save.type = 'button';
+        save.addEventListener('click', function () {
+          if (save.getAttribute('aria-busy') === 'true') return;
+          save.setAttribute('aria-busy', 'true');
+          clearTimeout(toastTimer);
+          saveToJotters().then(function (r) {
+            if (!ui || !ui.toast || !ui.toast.contains(save)) return;
+            save.removeAttribute('aria-busy');
+            if (r && r.ok) {
+              var open = el('button', 'jl', tr('deskOpenInJotter'));
+              open.type = 'button';
+              open.title = tr('deskOpenInJotterTitle');
+              open.insertAdjacentHTML('beforeend', ' ' + ic('out'));
+              open.addEventListener('click', function () { hideToast(); openSite(r.href); });
+              save.replaceWith(open);
+              undo.remove();
+            } else {
+              save.textContent = tr('deskSaveFailed');
+            }
+            toastTimer = setTimeout(hideToast, TOAST_MS);
+          });
+        });
         acts.appendChild(undo);
-        acts.appendChild(open);
+        acts.appendChild(save);
         box.appendChild(acts);
       });
     }
@@ -950,18 +972,18 @@
       showToast(function (b) { b.appendChild(el('span', 'msg', text)); });
     }
 
-    /** Save to My Jotters. `thenOpen` (the pop-up's Open in Jotter): once
-     *  saved, the Jotter opens too; the Saved card's Open is otherwise the
-     *  only tab (D86). */
-    function saveToJotters(thenOpen) {
-      if (!st || st.busy.save) return;
-      if (signedOut()) return openSite('/auth/login?door=kid');
+    /** Save to My Jotters (D86: no tab; the Saved card's Open, or the
+     *  pop-up's Open in Jotter, is the one tap that leaves). Resolves to the
+     *  site's answer, or null when nothing was sent. */
+    function saveToJotters() {
+      if (!st || st.busy.save) return Promise.resolve(null);
+      if (signedOut()) { openSite('/auth/login?door=kid'); return Promise.resolve(null); }
       var href = st.video.jotterHref || '/study/jotters/v/' + st.id;
-      if (!st.jots.length) return openSite(href);
+      if (!st.jots.length) { openSite(href); return Promise.resolve(null); }
       var sent = st.jots.slice();
       st.busy.save = true;
       drawPanel();
-      deps.send({
+      return deps.send({
         type: 'heddy-desk:save-jots',
         youtubeId: st.id,
         title: deps.title(),
@@ -978,13 +1000,13 @@
           st.last = null;
           st.saved = { href: r.href, n: sent.length };
           saveJots();
-          if (thenOpen === true) openSite(r.href);
         } else if (r && r.error === 'unauthenticated') {
           st.video.status = 'signedOut';
         }
         label();
         drawPanel();
         if (!(r && r.ok)) say(tr('deskSaveFailed'));
+        return r || null;
       });
     }
 
@@ -1071,6 +1093,8 @@
       undo: function (m) { return deps.send(Object.assign({ type: 'heddy-web:undo' }, m)).then(function (r) { return r || { ok: false }; }); },
       open: function (href) { deps.send({ type: 'heddy-ui:open', href: href }); },
       signIn: function () { openSite('/auth/login?door=kid'); },
+      // An empty Ask view says what Classroom's room says (classroom.room.empty).
+      emptyText: function () { return tr('askEmpty', profName()); },
       onProfessor: function (p) {
         // The video's professor stands; the stream names one only when the
         // desk had none (signed out at first, or the site did not answer).

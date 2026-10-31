@@ -265,6 +265,15 @@ test('Open from the desk: My Clips, Jotters and the kid sign-in door; nothing el
   assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: `${PROD}/admin` }, fromYouTube), { ok: false });
 });
 
+test('D92: See plans opens exactly aitutors.me/pricing, nothing under it, nothing with a query', async () => {
+  const s = courierSetup();
+  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: `${PROD}/pricing` }, fromYouTube), { ok: true });
+  assert.equal(s.calls.tabsCreated.at(-1).url, `${PROD}/pricing`);
+  for (const bad of [`${PROD}/pricing/x`, `${PROD}/pricing?next=/admin`, `${PROD}/pricing#x`, `${PROD}/pricingx`, `${PROD}/admin`, 'https://evil.example/pricing']) {
+    assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:open', href: bad }, fromYouTube), { ok: false }, bad);
+  }
+});
+
 // ─── the crest: Ask {professor} with the video at its second (contract § 6) ─
 
 // ─── source pins (the page surfaces need a browser; looked at headless) ────
