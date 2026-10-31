@@ -1546,6 +1546,49 @@
             "example": "Newton"
           }
         }
+      },
+      "digestMoreChapter": {
+        "message": "Select the whole chapter"
+      },
+      "digestSelectChapter": {
+        "message": "Select the chapter “$TITLE$”",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Intro"
+          }
+        }
+      },
+      "digestLockedCta": {
+        "message": "See plans"
+      },
+      "digestLockedCtaTitle": {
+        "message": "Opens aitutors.me in a new tab"
+      },
+      "digestKeepWatching": {
+        "message": "Keep watching"
+      },
+      "insightsWritingFine": {
+        "message": "Once per video. Usually under ten seconds."
+      },
+      "insightsNoTranscript": {
+        "message": "No transcript for this part."
+      },
+      "overviewWriteNotes": {
+        "message": "Write notes"
+      },
+      "insightsLocked": {
+        "message": "$NAME$ writes a note on each part for children who have $SUBJECT$ on their plan.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          },
+          "subject": {
+            "content": "$2",
+            "example": "Physics"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -3091,6 +3134,49 @@
           "name": {
             "content": "$1",
             "example": "Newton"
+          }
+        }
+      },
+      "digestMoreChapter": {
+        "message": "选中整章"
+      },
+      "digestSelectChapter": {
+        "message": "选中这一章「$TITLE$」",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Intro"
+          }
+        }
+      },
+      "digestLockedCta": {
+        "message": "看看计划"
+      },
+      "digestLockedCtaTitle": {
+        "message": "在新标签页打开 aitutors.me"
+      },
+      "digestKeepWatching": {
+        "message": "继续看视频"
+      },
+      "insightsWritingFine": {
+        "message": "每个视频只写一次，通常不到十秒。"
+      },
+      "insightsNoTranscript": {
+        "message": "这一段没有文字稿。"
+      },
+      "overviewWriteNotes": {
+        "message": "写笔记"
+      },
+      "insightsLocked": {
+        "message": "计划里有$SUBJECT$的孩子，$NAME$ 会为每一段写一条笔记。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          },
+          "subject": {
+            "content": "$2",
+            "example": "Physics"
           }
         }
       }

@@ -588,5 +588,20 @@
   "askPhShort": {
     "message": "Ask $NAME$…",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestMoreChapter": { "message": "Select the whole chapter" },
+  "digestSelectChapter": {
+    "message": "Select the chapter “$TITLE$”",
+    "placeholders": { "title": { "content": "$1", "example": "Intro" } }
+  },
+  "digestLockedCta": { "message": "See plans" },
+  "digestLockedCtaTitle": { "message": "Opens aitutors.me in a new tab" },
+  "digestKeepWatching": { "message": "Keep watching" },
+  "insightsWritingFine": { "message": "Once per video. Usually under ten seconds." },
+  "insightsNoTranscript": { "message": "No transcript for this part." },
+  "overviewWriteNotes": { "message": "Write notes" },
+  "insightsLocked": {
+    "message": "$NAME$ writes a note on each part for children who have $SUBJECT$ on their plan.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" }, "subject": { "content": "$2", "example": "Physics" } }
   }
 }

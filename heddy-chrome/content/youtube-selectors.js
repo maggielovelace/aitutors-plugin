@@ -30,6 +30,13 @@
     watchFlexy: 'ytd-watch-flexy',
     suggestions: 'ytd-watch-flexy #related',
     masthead: '#masthead-container',
+    // The video's own chapters (Round 11b, D93): the chapters panel's items
+    // (each a time and a title), else the description, whose "0:00 Intro"
+    // lines are where YouTube's chapters come from. Read as text only.
+    chapterItem: 'ytd-macro-markers-list-item-renderer',
+    chapterTime: '#time',
+    chapterTitle: 'h4',
+    description: 'ytd-watch-metadata #description-inline-expander, ytd-watch-metadata #description',
   });
 
   var api = { SELECTORS: SELECTORS };

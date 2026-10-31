@@ -97,7 +97,12 @@
         // failedAt: when each stretch failed; the site retries one after
         // ZH_FAIL_RETRY_MS (Round 11), so the desk asks again after that.
         zh: { stretches: [], asked: {}, tries: {}, failedAt: {}, state: 'idle', failed: false, locked: false },
-        insights: { status: 'unknown', parts: [], tries: 0 },
+        // Insights (Round 11b, D93): the professor's paragraph per chapter,
+        // from POST …/desk/keypoints. `parts` are the chapters with their text;
+        // `zh` the Chinese by chapter start; asked/tries/failedAt per request.
+        insights: { status: 'unknown', parts: [], zh: {}, asked: {}, tries: {}, failedAt: {}, done: {} },
+        chapters: null, // [{startSec, endSec, title}], the video's own or ten-minute stretches
+        chaptersKind: null, // 'yt' | 'stretch'
         jots: [],
         last: null,
         say: null,
@@ -1106,7 +1111,7 @@
         return;
       }
       if (t.status === 'locked') {
-        pn.appendChild(noteBox(tr('digestLockedTitle', profName()), tr('digestLockedBody', profName())));
+        pn.appendChild(lockedBlock(tr('digestLockedTitle', profName()), tr('digestLockedBody', profName())));
         return;
       }
       if (!reading && t.status !== 'ok') {
@@ -1346,7 +1351,11 @@
       }
       if (only && !only.length) return;
       var hitAt = filtering && st.hit >= 0 ? only[st.hit] : -1;
+      // The chapters as bookmarks in the list (r11b D93): a divider before each
+      // chapter's first line, its title selecting the chapter's lines.
+      var marks = filtering ? {} : chapterMarks();
       (only || lines.map(function (_, i) { return i; })).forEach(function (i) {
+        if (marks[i] !== undefined) box.appendChild(chapterDivider(marks[i]));
         var row = makeRow(i);
         if (i === hitAt) row.setAttribute('data-hit', '');
         box.appendChild(row);
@@ -1355,6 +1364,50 @@
       st.nowIdx = -2;
       tick();
       placeTray();
+    }
+
+    /** line index → chapter index, for each chapter's first line. */
+    function chapterMarks() {
+      var out = {};
+      var chapters = chaptersNow();
+      if (!chapters) return out;
+      var lines = st.transcript.lines;
+      chapters.forEach(function (c, k) {
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].t >= c.startSec && lines[i].t < c.endSec) { out[i] = k; return; }
+          if (lines[i].t >= c.endSec) return;
+        }
+      });
+      return out;
+    }
+
+    function chapterDivider(k) {
+      var c = st.chapters[k];
+      var d = el('button', 'div', P.clockOf(c.startSec) + ' · ' + c.title);
+      d.type = 'button';
+      d.setAttribute('role', 'separator');
+      d.title = tr('digestSelectChapter', c.title);
+      d.setAttribute('aria-label', d.title);
+      d.addEventListener('click', function () { selectChapter(k, true); });
+      return d;
+    }
+
+    /** A chapter's lines as one pick (Classroom's selectChapter): from its
+     *  divider quietly, from the tray's › drawn. */
+    function selectChapter(k, quiet) {
+      var c = st.chapters && st.chapters[k];
+      if (!c || !ui.lines) return;
+      var lines = st.transcript.lines;
+      var from = -1;
+      var to = -1;
+      lines.forEach(function (l, i) { if (l.t >= c.startSec && l.t < c.endSec) { if (from < 0) from = i; to = i; } });
+      if (from < 0) return;
+      var parts = lines.slice(from, to + 1).map(function (l) { return l.text; });
+      var words = TR.pickWords(parts);
+      if (!words) return;
+      openSel({ from: from, to: to, parts: parts, words: words }, quiet);
+      var row = ui.lines.rows[from];
+      if (row) ui.lines.sc.scrollTop = Math.max(0, row.offsetTop - ui.lines.sc.offsetTop - TR.POP_ROOM_PX - 40);
     }
 
     /** `text` into `into`, the chosen words in a <mark> when they are in it.
@@ -1380,10 +1433,10 @@
       var view = viewNow();
       var sel = st.sel;
       var open = !!sel && sel.i === i;
-      var picked = sel && i >= sel.i && i <= sel.to ? sel.parts[i - sel.i] || null : null;
+      var picked = sel && !sel.quiet && i >= sel.i && i <= sel.to ? sel.parts[i - sel.i] || null : null;
       var row = el('div', 'ln');
       row.setAttribute('data-i', String(i));
-      if (sel && i >= sel.i && i <= sel.to) row.setAttribute('data-sel', '');
+      if (sel && !sel.quiet && i >= sel.i && i <= sel.to) row.setAttribute('data-sel', '');
       if (open) row.setAttribute('data-pop', sel.side);
       if (i === st.nowIdx) { row.classList.add('now'); row.setAttribute('aria-current', 'true'); }
       var ts = el('button', 'ts', P.clockOf(l.t));
@@ -1529,13 +1582,13 @@
       openSel(pk || wholeLine(i));
     }
 
-    function openSel(pick) {
+    function openSel(pick, quiet) {
       if (!pick || !ui.lines) return;
       var old = st.sel;
       var side = 'above';
       var row = ui.lines.rows[pick.from];
       if (row) side = TR.popSide(row.getBoundingClientRect().top - ui.lines.sc.getBoundingClientRect().top);
-      st.sel = { i: pick.from, to: pick.to, parts: pick.parts, words: pick.words, side: side };
+      st.sel = { i: pick.from, to: pick.to, parts: pick.parts, words: pick.words, side: side, quiet: quiet === true };
       // The chosen words are drawn as a <mark> in the row, as Classroom does
       // once the bar is open; the browser's own highlight goes.
       clearSelection();
@@ -1597,7 +1650,7 @@
           explain: tr('digestActExplain'),
           card: tr('digestActCard'),
           ask: tr('deskAsk', profName()),
-          more: { open: tr('digestMoreOpen'), label: tr('digestMoreLabel'), play: tr('digestMorePlay'), copy: tr('digestMoreCopy'), copied: tr('digestMoreCopied'), copyFailed: tr('digestMoreCopyFailed') },
+          more: { open: tr('digestMoreOpen'), label: tr('digestMoreLabel'), play: tr('digestMorePlay'), copy: tr('digestMoreCopy'), copied: tr('digestMoreCopied'), copyFailed: tr('digestMoreCopyFailed'), chapter: tr('digestMoreChapter') },
         },
         playAt: P.clockOf(l.t),
         copyText: words,
@@ -1606,8 +1659,24 @@
         onCard: function () { askAbout(sel, 'card'); },
         onAsk: function () { askAbout(sel, 'ask'); },
         onPlay: function () { closeSel(); seek(l.t); },
+        // Select the whole chapter (r11b: chapters for every video), unless the pick already is it.
+        onChapter: chapterOfPick(sel) >= 0 ? function () { selectChapter(chapterOfPick(sel), false); } : null,
         copy: function (text) { return root.navigator.clipboard.writeText(text); },
       });
+    }
+
+    /** The chapter holding the pick's first line, unless the pick is that
+     *  whole chapter already; -1 otherwise. */
+    function chapterOfPick(sel) {
+      var chapters = chaptersNow();
+      var l = st.transcript.lines[sel.i];
+      if (!chapters || !l) return -1;
+      var k = D.chapterAt(chapters, l.t);
+      if (k < 0) return -1;
+      var c = chapters[k];
+      var lines = st.transcript.lines;
+      var whole = (sel.i === 0 || lines[sel.i - 1].t < c.startSec) && (!lines[sel.to + 1] || lines[sel.to + 1].t >= c.endSec) && sel.parts.every(function (p, n) { return p === lines[sel.i + n].text; });
+      return whole ? -1 : k;
     }
 
     /** Jot it: a jot at the line's start with the chosen words (as H's). */
@@ -1727,15 +1796,58 @@
 
     // ─── Insights (contract § 3: live only when the site serves it) ─────────
 
-    function loadInsights() {
+    /** The video's chapters (r11b "Chapters (plugin)"): YouTube's own, read
+     *  from the page as text and checked, else ten-minute stretches. Needs the
+     *  video's length. */
+    function chaptersNow() {
+      if (!st) return null;
+      if (st.chapters && (st.chaptersKind === 'yt' || st.insights.parts.length)) return st.chapters;
+      var d = duration();
+      if (!d) return null;
+      var src = deps.chapters ? deps.chapters() : null;
+      var items = src && Array.isArray(src.items) ? src.items.map(function (x) { return { t: D.secondsOf(x.time), title: x.title }; }) : [];
+      var yt = D.chaptersOf(items, d) || D.chaptersFromText(src && src.text, d);
+      st.chapters = yt || D.stretchChapters(d, P.clockOf);
+      st.chaptersKind = yt ? 'yt' : 'stretch';
+      return st.chapters;
+    }
+
+    /** Ask for the chapter at `from` (and the next one) in `lng`; the reply
+     *  carries every chapter already written. */
+    function loadKeypoints(from, lng) {
+      var chapters = chaptersNow();
+      if (!st || !chapters || st.video.status !== 'ok') return;
       var id = st.id;
-      deps.send({ type: 'heddy-desk:insights', youtubeId: id, lang: lang === 'zh_CN' ? 'zh' : 'en' }).then(function (r) {
+      var key = lng + ':' + from;
+      var k = st.insights;
+      if (k.asked[key] === 'busy') return;
+      k.asked[key] = 'busy';
+      k.tries[key] = (k.tries[key] || 0) + 1;
+      if (k.status === 'unknown') { k.status = 'writing'; label(); }
+      deps.send({ type: 'heddy-desk:keypoints', youtubeId: id, title: deps.title(), lang: lng, chapters: chapters, from: from }).then(function (r) {
         if (!st || st.id !== id) return;
+        var k2 = st.insights;
+        k2.asked[key] = true;
         if (!r || !r.ok) {
-          st.insights = { status: 'unavailable', parts: [], tries: st.insights.tries };
+          // Nothing from the site yet (signed out, refused, offline): the tab stays as it was before.
+          if (!k2.parts.length) k2.status = 'unavailable';
+          k2.failedAt[key] = Date.now();
         } else {
-          st.insights = { status: r.status, parts: r.parts || [], tries: st.insights.tries + 1 };
-          if (r.status === 'writing' && st.insights.tries < D.ZH_TRIES) setTimeout(function () { if (st && st.id === id) loadInsights(); }, D.ZH_RETRY_MS);
+          if (lng === 'en') {
+            k2.parts = r.chapters.map(function (c) { return { startSec: c.startSec, endSec: c.endSec, title: c.title, text: c.text, points: c.points, written: c.written }; });
+            k2.status = r.status === 'writing' || r.status === 'failed' ? (k2.parts.some(function (p) { return p.text; }) ? 'ok' : r.status) : r.status;
+          } else {
+            r.chapters.forEach(function (c) { k2.zh[c.startSec] = c.written ? c.text : null; });
+            if (r.status === 'locked' && k2.status !== 'locked') k2.zhLocked = true;
+          }
+          if (r.status === 'writing' && k2.tries[key] < D.ZH_TRIES) {
+            k2.asked[key] = 'busy';
+            setTimeout(function () { if (st && st.id === id) { st.insights.asked[key] = false; loadKeypoints(from, lng); } }, D.ZH_RETRY_MS);
+          } else if (r.status === 'failed') {
+            k2.failedAt[key] = Date.now();
+          } else {
+            k2.done[key] = true;
+          }
         }
         label();
         if (st.tab === 'insights') drawPanel();
@@ -1745,6 +1857,61 @@
           if (card) card.replaceWith(insightsNote(viewNow()));
         }
       });
+    }
+
+    /** The player's chapter, written in each language the view shows: ask
+     *  for it when it has not been asked for (or failed more than the site's
+     *  10-minute window ago). Called on the clock. */
+    function wantKeypoints() {
+      if (!st || st.video.status !== 'ok' || st.insights.status === 'locked' || st.insights.status === 'none' || st.insights.status === 'unavailable') return;
+      var chapters = chaptersNow();
+      if (!chapters) return;
+      var i = Math.max(0, D.chapterAt(chapters, now()));
+      var from = chapters[i].startSec;
+      var langs = ['en'];
+      if (viewNow() !== 'en' || lang === 'zh_CN') langs.push('zh');
+      langs.forEach(function (lng) {
+        var key = lng + ':' + from;
+        var k = st.insights;
+        var part = k.parts.filter(function (p) { return p.startSec === from; })[0];
+        var have = lng === 'en' ? part && (part.written || k.done[key]) : k.zh[from] || k.done[key];
+        if (have || k.asked[key] === 'busy') return;
+        if (k.failedAt[key] && Date.now() - k.failedAt[key] < D.ZH_FAIL_RETRY_MS) return;
+        if (k.asked[key] === true && !k.failedAt[key]) return;
+        delete k.failedAt[key];
+        loadKeypoints(from, lng);
+      });
+    }
+
+    /** Write notes on a chapter the player has not reached (Classroom's). */
+    function writeChapter(from) {
+      var k = st.insights;
+      ['en'].concat(viewNow() !== 'en' || lang === 'zh_CN' ? ['zh'] : []).forEach(function (lng) {
+        delete k.failedAt[lng + ':' + from];
+        k.asked[lng + ':' + from] = false;
+        loadKeypoints(from, lng);
+      });
+      if (st.tab === 'insights') drawPanel();
+    }
+
+    /** D92, Classroom's locked block: the line, See plans ↗ (a page on
+     *  aitutors.me, in a tab, and it says so), Keep watching. */
+    function lockedBlock(title, body) {
+      var box = noteBox(title, body);
+      var row = el('span', 'btnrow');
+      var plans = btn('btn', null, tr('digestLockedCta'));
+      plans.insertAdjacentHTML('beforeend', ic('out'));
+      plans.title = tr('digestLockedCtaTitle');
+      plans.addEventListener('click', function () { openSite('/pricing'); });
+      var keep = btn('lnk', null, tr('digestKeepWatching'));
+      keep.addEventListener('click', function () {
+        var p = doc.querySelector(SEL.player);
+        if (p && p.scrollIntoView) p.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+      row.appendChild(plans);
+      row.appendChild(keep);
+      box.appendChild(row);
+      return box;
     }
 
     /** Insights (clip-digest.css .cp-dg__parts): each part's time and
@@ -1757,10 +1924,17 @@
         var w = el('p', 'reading');
         w.appendChild(el('span', 'clock'));
         w.appendChild(doc.createTextNode(tr('insightsWriting', profName())));
-        return pn.appendChild(w);
+        pn.appendChild(w);
+        pn.appendChild(el('p', 'fine', tr('insightsWritingFine')));
+        return;
       }
       if (s.status === 'none') return pn.appendChild(noteBox(tr('digestNoCaptionsTitle'), tr('digestNoCaptionsBody')));
-      if (s.status === 'locked') return pn.appendChild(noteBox(tr('digestLockedTitle', profName()), tr('digestLockedBody', profName())));
+      if (s.status === 'locked') {
+        // Classroom's Insights line names the subject; Mentor's video has none.
+        var code = st.video.professor && st.video.professor.code;
+        return pn.appendChild(lockedBlock(null, code ? tr('insightsLocked', profName(), tr('subj' + code)) : tr('digestLockedBody', profName())));
+      }
+      var view = viewNow();
       var sc = el('div', 'sc');
       var p0 = st.video.professor;
       if (p0 && p0.code) sc.setAttribute('data-subj', p0.code);
@@ -1789,9 +1963,36 @@
         stamp.title = tr('digestSeek', P.clockOf(p.startSec));
         stamp.addEventListener('click', function () { seek(p.startSec); });
         hd.appendChild(stamp);
-        hd.appendChild(el('span', 'pttl', p.title || (p.minutes ? tr('insightsBand', String(p.minutes.from), String(p.minutes.to)) : '')));
+        hd.appendChild(el('span', 'pttl', p.title));
         row.appendChild(hd);
-        row.appendChild(p.text ? el('p', null, p.text) : el('p', 'pnote', tr('insightsFailed', profName())));
+        var zh = view !== 'en' ? s.zh[p.startSec] : null;
+        if (p.text) {
+          var para = el('p', null, view === 'zh' && zh ? zh : p.text);
+          if (view === 'zh' && zh) para.setAttribute('lang', 'zh-Hans');
+          row.appendChild(para);
+          if (view === 'bi' && zh) {
+            var pz = el('p', 'pzh', zh);
+            pz.setAttribute('lang', 'zh-Hans');
+            row.appendChild(pz);
+          }
+        } else {
+          var keyEn = 'en:' + p.startSec;
+          var note = el('p', 'pnote');
+          if (s.asked[keyEn] === 'busy') {
+            note.appendChild(el('span', 'clock'));
+            note.appendChild(doc.createTextNode(tr('insightsWriting', profName())));
+          } else if (s.failedAt[keyEn]) {
+            note.appendChild(doc.createTextNode(tr('insightsFailed', profName())));
+          } else if (s.done[keyEn]) {
+            note.appendChild(doc.createTextNode(tr('insightsNoTranscript')));
+          } else {
+            var wn = el('button', 'addj', tr('overviewWriteNotes'));
+            wn.type = 'button';
+            wn.addEventListener('click', function () { writeChapter(p.startSec); });
+            note.appendChild(wn);
+          }
+          row.appendChild(note);
+        }
         list.appendChild(row);
         ui.insRows.push({ el: row, from: p.startSec });
       });
@@ -1804,7 +2005,8 @@
     function addInsights(parts) {
       var jots = st.jots;
       parts.forEach(function (p) {
-        var text = (p.title ? p.title + ' — ' : '') + p.text;
+        // A jot at the chapter's start with the paragraph (r11b), "From insights".
+        var text = p.text;
         var id = newId();
         var next = D.note(jots, { id: id, t: p.startSec, text: text });
         if (next) jots = next.map(function (j) { return j.id === id ? Object.assign({}, j, { by: 'professor' }) : j; });
@@ -1821,6 +2023,7 @@
     function tick() {
       if (!ui || !st) return;
       var t = now();
+      wantKeypoints();
       // Insights: the part the player is in wears its edge.
       if (ui.insRows && ui.insRows.length && ui.insRows[0].el.isConnected) {
         ui.insRows.forEach(function (r, k) {
@@ -1946,7 +2149,6 @@
           } else if (r && r.ok) {
             st.video = { status: 'ok', professor: r.professor, jotterHref: r.jotterHref };
             loadTranscript();
-            loadInsights();
           } else {
             // 'forbidden': aitutors.me does not know this copy of Heddy (an
             // unpacked build whose id is not on the site's list). Said

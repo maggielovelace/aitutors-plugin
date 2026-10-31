@@ -61,12 +61,12 @@ test('the tray’s CSS is Classroom’s, in px: 50 px bar, 64 × 42 tools, 11 px
   }
 });
 
-test('the tray: Jot it · Explain · Make a card · hairline · Ask {name} · ›, whose menu is Play from here · Copy (no chapters on YouTube)', () => {
+test('the tray: Jot it · Explain · Make a card · hairline · Ask {name} · ›, whose menu is Play from here · Copy · Select the whole chapter', () => {
   const src = read('lib/desk-tray.js');
   const order = ["tool('t-jot'", "tool('t-explain'", "tool('t-card'", "sep.className = 'sep2'", "tool('t-ask'", "more.className = 'more2'"].map((s) => src.indexOf(s));
   assert.ok(order.every((n, i) => n > 0 && (i === 0 || n > order[i - 1])), 'in Classroom’s order');
   assert.match(src, /item\('mi-play'[\s\S]*item\('mi-copy'/);
-  assert.doesNotMatch(src, /mi-chapter|digestMoreChapter/, 'no Select the whole chapter on a YouTube video');
+  assert.match(src, /item\('mi-copy'[\s\S]*if \(chapter\) item\('mi-chapter'/, 'Select the whole chapter last (r11b: every video has chapters)');
   assert.match(src, /COPIED_MS = 1200/);
 });
 
@@ -350,4 +350,53 @@ test('#31 the desk grows to what the open tab needs, capped at the window, and n
   assert.equal(D2.deskHeight({ ...base, content: 700 }), 700);
   assert.equal(D2.deskHeight({ ...base, content: 300, keep: 700 }), 700, 'keeps');
   assert.equal(D2.deskHeight({ ...base, content: 5000 }), 900 - 68 - 32 - 12, 'capped');
+});
+
+// ─── Round 11b (D91–D96): chapters + key points, locked ─────────────────
+
+test('D93 chapters: YouTube’s own (first at 0:00, at least three, increasing), else ten-minute stretches; the last ends at the video’s end', () => {
+  const D2 = load('./lib/desk-model.js');
+  const P2 = load('./lib/protocol.js');
+  assert.deepEqual(D2.chaptersOf([{ t: 0, title: ' Intro ' }, { t: 90, title: 'Forces' }, { t: 725, title: 'Friction\u0007x' }], 900.4), [
+    { startSec: 0, endSec: 90, title: 'Intro' }, { startSec: 90, endSec: 725, title: 'Forces' }, { startSec: 725, endSec: 901, title: 'Friction x' }]);
+  assert.equal(D2.chaptersOf([{ t: 5, title: 'a' }, { t: 9, title: 'b' }, { t: 20, title: 'c' }], 100), null, 'must start at 0:00');
+  assert.equal(D2.chaptersOf([{ t: 0, title: 'a' }, { t: 50, title: 'b' }], 100), null, 'at least three');
+  assert.equal(D2.chaptersOf([{ t: 0, title: 'a' }, { t: 50, title: 'b' }, { t: 40, title: 'c' }], 100), null, 'increasing');
+  assert.equal(D2.chaptersOf([{ t: 0, title: 'a'.repeat(300) }, { t: 1, title: 'b' }, { t: 2, title: 'c' }], 10)[0].title.length, 120);
+  const many = Array.from({ length: 90 }, (_, i) => ({ t: i * 10, title: 'c' + i }));
+  assert.equal(D2.chaptersOf(many, 1000).length, D2.MAX_CHAPTERS);
+  assert.deepEqual(D2.chaptersFromText('Watch!\n0:00 Intro\n1:30 - Forces\n1:02:05 Friction\n', 4000).map((c) => c.startSec), [0, 90, 3725]);
+  assert.equal(D2.chaptersFromText('No stamps here', 100), null);
+  assert.deepEqual(D2.stretchChapters(1500, P2.clockOf).map((c) => [c.startSec, c.endSec, c.title]), [[0, 600, '0:00–10:00'], [600, 1200, '10:00–20:00'], [1200, 1500, '20:00–25:00']]);
+  assert.equal(D2.chapterAt([{ startSec: 0, endSec: 90 }, { startSec: 90, endSec: 200 }], 90), 1);
+  const yt = read('content/youtube.js');
+  assert.match(yt, /document\.querySelectorAll\(SEL\.chapterItem\)/, 'read from the page as text, selectors in content/youtube-selectors.js');
+});
+
+test('D93 the desk asks …/desk/keypoints for the player’s chapter (and in Chinese when the view shows it); writing again after 4 s, a failure after the 10-minute window', () => {
+  assert.match(desk, /deps\.send\(\{ type: 'heddy-desk:keypoints', youtubeId: id, title: deps\.title\(\), lang: lng, chapters: chapters, from: from \}\)/);
+  assert.match(desk, /if \(r\.status === 'writing' && k2\.tries\[key\] < D\.ZH_TRIES\)/);
+  assert.match(desk, /if \(k\.failedAt\[key\] && Date\.now\(\) - k\.failedAt\[key\] < D\.ZH_FAIL_RETRY_MS\) return;/);
+  assert.match(desk, /if \(viewNow\(\) !== 'en' \|\| lang === 'zh_CN'\) langs\.push\('zh'\);/);
+  assert.match(desk, /var wn = el\('button', 'addj', tr\('overviewWriteNotes'\)\);/, 'a chapter not yet written: Write notes');
+  assert.doesNotMatch(desk, /heddy-desk:insights/, 'the old insights route is gone');
+});
+
+test('D93 chapters are bookmarks in the Digest, and Add to my Jots is the paragraph at the chapter’s start, From insights', () => {
+  assert.match(desk, /if \(marks\[i\] !== undefined\) box\.appendChild\(chapterDivider\(marks\[i\]\)\);/);
+  assert.match(desk, /d\.addEventListener\('click', function \(\) \{ selectChapter\(k, true\); \}\);/);
+  assert.match(desk, /var text = p\.text;\n        var id = newId\(\);\n        var next = D\.note\(jots, \{ id: id, t: p\.startSec, text: text \}\);/);
+  assert.match(desk, /else if \(j\.by === 'professor'\) it\.appendChild\(el\('span', 'byj', tr\('insightsFrom'\)\)\);/);
+});
+
+test('D92 locked: Classroom’s line, See plans ↗ (aitutors.me in a tab, and it says so), Keep watching', () => {
+  assert.match(desk, /plans\.addEventListener\('click', function \(\) \{ openSite\('\/pricing'\); \}\);/);
+  assert.match(desk, /plans\.insertAdjacentHTML\('beforeend', ic\('out'\)\);/);
+  assert.equal(I.t('en', 'digestLockedCta'), 'See plans');
+  assert.match(desk, /pn\.appendChild\(lockedBlock\(tr\('digestLockedTitle', profName\(\)\), tr\('digestLockedBody', profName\(\)\)\)\);/);
+});
+
+test('D94 the Jot tab is jots only: nothing from Ask lands on it', () => {
+  const view = read('lib/ask-view.js');
+  assert.doesNotMatch(view, /st\.jots|saveJots|deskJots:/);
 });

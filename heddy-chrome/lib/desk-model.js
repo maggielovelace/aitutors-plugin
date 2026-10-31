@@ -295,6 +295,71 @@
     return (m ? m[0] : t).trim();
   }
 
+  // ─── chapters (Round 11b, D93; r11b-contract "Chapters (plugin)") ────────
+
+  var MAX_CHAPTERS = 60;
+  var MAX_CHAPTER_TITLE = 120;
+
+  /** "1:02:03" / "12:34" → seconds, or null. */
+  function secondsOf(stamp) {
+    var m = /^\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s*$/.exec(String(stamp || ''));
+    if (!m) return null;
+    return (m[1] ? Number(m[1]) * 3600 : 0) + Number(m[2]) * 60 + Number(m[3]);
+  }
+
+  function chapterTitle(x) {
+    return String(x == null ? '' : x).replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, MAX_CHAPTER_TITLE);
+  }
+
+  /** The page's chapters, checked: [{t, title}] (untrusted) → [{startSec,
+   *  endSec, title}], or null when they are not a video's chapters (YouTube's
+   *  own rule: the first at 0:00, at least three, each start later than the
+   *  last). Needs the video's length for the last chapter's end. */
+  function chaptersOf(items, duration) {
+    if (!Array.isArray(items) || !num(duration) || duration <= 0) return null;
+    var out = [];
+    for (var i = 0; i < items.length && out.length < MAX_CHAPTERS; i++) {
+      var it = items[i];
+      var t = it && num(it.t) ? Math.floor(it.t) : null;
+      var title = chapterTitle(it && it.title);
+      if (t === null || !title || t >= duration) continue;
+      if (out.length && t <= out[out.length - 1].startSec) return null;
+      out.push({ startSec: t, title: title });
+    }
+    if (out.length < 3 || out[0].startSec !== 0) return null;
+    return out.map(function (c, k) {
+      return { startSec: c.startSec, endSec: k + 1 < out.length ? out[k + 1].startSec : Math.ceil(duration), title: c.title };
+    });
+  }
+
+  /** Chapters from the description's own timestamps ("0:00 Intro" lines). */
+  function chaptersFromText(text, duration) {
+    var items = [];
+    String(text || '').split(/\n/).forEach(function (line) {
+      var m = /^\s*[-–•▶]?\s*((?:\d{1,2}:)?\d{1,2}:\d{2})\s*[-–:|]?\s*(.+)$/.exec(line);
+      if (m) items.push({ t: secondsOf(m[1]), title: m[2] });
+    });
+    return chaptersOf(items, duration);
+  }
+
+  /** No chapters: ten-minute stretches (the Chinese's, D72), titled by time. */
+  function stretchChapters(duration, clock) {
+    if (!num(duration) || duration <= 0) return null;
+    var out = [];
+    for (var s = 0; s < duration && out.length < MAX_CHAPTERS; s += STRETCH) {
+      var e = Math.min(Math.ceil(duration), s + STRETCH);
+      out.push({ startSec: s, endSec: e, title: clock(s) + '–' + clock(e) });
+    }
+    return out;
+  }
+
+  /** The chapter holding `t`, as its index, or -1. */
+  function chapterAt(chapters, t) {
+    if (!Array.isArray(chapters) || !num(t)) return -1;
+    for (var i = 0; i < chapters.length; i++) if (t >= chapters[i].startSec && t < chapters[i].endSec) return i;
+    return -1;
+  }
+
   /** Is Heddy still installed under this script? chrome.runtime.id goes when
    *  Heddy is reloaded or removed; touching it may then throw. */
   function alive(chromeApi) {
@@ -355,6 +420,12 @@
     viewFor: viewFor,
     matches: matches,
     foldText: foldText,
+    MAX_CHAPTERS: MAX_CHAPTERS,
+    secondsOf: secondsOf,
+    chaptersOf: chaptersOf,
+    chaptersFromText: chaptersFromText,
+    stretchChapters: stretchChapters,
+    chapterAt: chapterAt,
     matchLines: matchLines,
     briefOf: briefOf,
     teaserOf: teaserOf,

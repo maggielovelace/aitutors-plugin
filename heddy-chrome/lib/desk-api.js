@@ -11,7 +11,8 @@
 //
 //   GET  /api/learn/heddy/desk/video?v=&title=          the professor, the Jotter
 //   GET  /api/learn/heddy/desk/transcript?v=&title=[&zh=1&from=] the Digest, zh stretches
-//   GET  /api/learn/heddy/desk/insights?v=&lang=         Insights, or 404 (drawn disabled)
+//   POST /api/learn/heddy/desk/keypoints                Insights: the professor's paragraph per
+//                                                       chapter (Round 11b, D93; r11b-contract)
 //   POST /api/learn/heddy/desk/jots                     Save to My Jotters (the
 //                                                       desk then shows the Saved card, D86)
 //
@@ -23,7 +24,7 @@
   var C = root.HeddyConfig || (typeof require === 'function' && require('./config.js'));
 
   var BASE = '/api/learn/heddy/desk/';
-  var PATHS = { video: BASE + 'video', transcript: BASE + 'transcript', insights: BASE + 'insights', jots: BASE + 'jots' };
+  var PATHS = { video: BASE + 'video', transcript: BASE + 'transcript', keypoints: BASE + 'keypoints', jots: BASE + 'jots' };
   var TIMEOUT_MS = 15000;
   // The transcript's first read of a long video goes through the site's
   // captions vendor (an hour-long video took the owner's desk past 15 s, and
@@ -32,14 +33,17 @@
   var MAX_LINES = 8000;
   var MAX_LINE = 2000;
   var MAX_NAME = 40;
-  var MAX_PARTS = 40;
   var MAX_PART_TEXT = 4000;
+  var MAX_CHAPTERS = 60;
+  // A keypoints request waits as long as the transcript's (r11b: maxDuration
+  // fits two chapter writes; the extension waits 60 s).
+  var KEYPOINTS_TIMEOUT_MS = 60000;
   var HEX = /^#[0-9a-f]{6}$/i;
   var SUBJECT = /^[A-Z]{3,5}$/;
   var JOTTER_HREF = /^\/study\/jotters\/v\/[A-Za-z0-9_-]{11}$/;
   var STATUS = ['ok', 'none', 'locked', 'error'];
   var ZH_STATE = ['idle', 'ready', 'writing', 'failed', 'locked'];
-  var INSIGHT_STATUS = ['ok', 'writing', 'failed', 'locked', 'none'];
+  var KEYPOINT_STATUS = ['ok', 'writing', 'failed', 'locked', 'none'];
   var ERROR = { ok: false, error: 'network' };
 
   function num(x) {
@@ -101,18 +105,37 @@
     };
   }
 
-  /** § 3: /api/videos/insights' answer, kept to what the tab draws. */
-  function parseInsights(data) {
-    if (!data || typeof data !== 'object' || data.ok !== true || INSIGHT_STATUS.indexOf(data.status) < 0) return { ok: false, error: 'unavailable' };
-    var parts = Array.isArray(data.parts) ? data.parts.slice(0, MAX_PARTS) : [];
+  /** r11b: the keypoints reply, kept to what the Insights tab draws. */
+  function parseKeypoints(data) {
+    if (!data || typeof data !== 'object' || KEYPOINT_STATUS.indexOf(data.status) < 0) return ERROR;
+    var list = Array.isArray(data.chapters) ? data.chapters.slice(0, MAX_CHAPTERS) : [];
     return {
       ok: true,
       status: data.status,
-      parts: parts.filter(function (p) { return p && num(p.startSec) && p.startSec >= 0; }).map(function (p) {
-        var m = p.minutes && num(p.minutes.from) && num(p.minutes.to) ? { from: p.minutes.from, to: p.minutes.to } : null;
-        return { startSec: p.startSec, title: text(p.title, 200) || null, minutes: m, text: text(p.text, MAX_PART_TEXT) || null, en: text(p.en, MAX_PART_TEXT) || null, zh: text(p.zh, MAX_PART_TEXT) || null };
+      chapters: list.filter(function (c) { return c && num(c.startSec) && num(c.endSec) && c.startSec >= 0 && c.endSec > c.startSec; }).map(function (c) {
+        return {
+          startSec: c.startSec,
+          endSec: c.endSec,
+          title: text(c.title, 120),
+          text: text(c.text, MAX_PART_TEXT) || null,
+          points: Array.isArray(c.points) ? c.points.slice(0, 12).map(function (p) { return text(p, 400); }).filter(Boolean) : [],
+          written: c.written === true,
+        };
       }),
     };
+  }
+
+  /** The chapters the desk sends, checked again (r11b's rules). */
+  function chaptersBody(x) {
+    if (!Array.isArray(x) || !x.length || x.length > MAX_CHAPTERS) return null;
+    var out = [];
+    for (var i = 0; i < x.length; i++) {
+      var c = x[i];
+      if (!c || !num(c.startSec) || !num(c.endSec) || c.startSec < 0 || c.endSec <= c.startSec || c.endSec > 6 * 3600) return null;
+      if (out.length && c.startSec < out[out.length - 1].endSec) return null;
+      out.push({ startSec: Math.floor(c.startSec), endSec: Math.floor(c.endSec), title: text(c.title, 120) });
+    }
+    return out;
   }
 
   /** § 4: the save's answer. */
@@ -219,8 +242,12 @@
           if (from !== null) { q.zh = 1; q.from = from; }
           return call('GET', PATHS.transcript, q, undefined, TRANSCRIPT_TIMEOUT_MS).then(answer(parseTranscript));
         }
-        case 'heddy-desk:insights':
-          return call('GET', PATHS.insights, { v: id, lang: message.lang === 'zh' ? 'zh' : 'en' }).then(answer(parseInsights));
+        case 'heddy-desk:keypoints': {
+          var chapters = chaptersBody(message.chapters);
+          if (!chapters) return Promise.resolve({ ok: false, error: 'bad_request' });
+          var at = num(message.from) && message.from >= 0 ? Math.floor(message.from) : 0;
+          return call('POST', PATHS.keypoints, null, { youtubeId: id, title: text(message.title, 300), lang: message.lang === 'zh' ? 'zh' : 'en', chapters: chapters, from: at }, KEYPOINTS_TIMEOUT_MS).then(answer(parseKeypoints));
+        }
         case 'heddy-desk:save-jots':
           // Round 9 (D86): no tab opens by itself. The desk shows the Saved
           // card, and its Open my Jotter ↗ is the one tap that leaves.
@@ -239,7 +266,7 @@
     TRANSCRIPT_TIMEOUT_MS: TRANSCRIPT_TIMEOUT_MS,
     parseVideo: parseVideo,
     parseTranscript: parseTranscript,
-    parseInsights: parseInsights,
+    parseKeypoints: parseKeypoints,
     parseSaved: parseSaved,
     createDeskApi: createDeskApi,
   };

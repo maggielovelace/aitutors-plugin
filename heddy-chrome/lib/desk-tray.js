@@ -10,9 +10,9 @@
 // Each tool is an icon over its word (64 × 42 px, 18 px icon, 11 px / 700) in
 // a 50 px bar that floats 8 px off the line; the line reserves those 58 px on
 // the side the bar opens. The › opens a menu holding only what the bar does
-// not show: Play from here · Copy (Select the whole chapter is Classroom's
-// third item; a YouTube video on the desk has no chapters to select, so it is
-// never drawn). Ask's icon is the desk's crest (Heddy's eyes, the Ask tab's
+// not show: Play from here · Copy · Select the whole chapter (Round 11b: the
+// video's own chapters, else ten-minute stretches; drawn when the words are
+// not the whole chapter already). Ask's icon is the desk's crest (Heddy's eyes, the Ask tab's
 // own mark) where Classroom draws the professor's crest.
 //
 // The rules (where the bar sits, which words a selection gives, the mark) are
@@ -228,6 +228,7 @@
         more.setAttribute('aria-controls', menu.id);
       }
       if (o.onPlay) item('mi-play', glyph('play'), d.more.play, o.playAt || null, function () { close(); o.onPlay(); });
+      var chapter = o.onChapter;
       var cp = item('mi-copy', glyph('copy'), d.more.copy, null, function () {
         if (copied) return;
         // Inside the click, so the browser lets the page write the clipboard.
@@ -245,6 +246,7 @@
         cp.appendChild(s);
         later(function () { copied = null; close(); }, COPIED_MS);
       }
+      if (chapter) item('mi-chapter', glyph('digest'), d.more.chapter, null, function () { close(); chapter(); });
       pop.appendChild(menu);
       more.setAttribute('aria-expanded', 'true');
     }

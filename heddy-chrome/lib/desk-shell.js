@@ -214,6 +214,18 @@
     // Jump to now (.cp-dg__jump).
     '.jump{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:4;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;background:#002147;color:#fff;font:700 12.5px/1 ' + SANS + ';box-shadow:0 6px 18px rgb(0 0 0 / .22);cursor:pointer}',
     '.jump:focus-visible{outline:2px solid var(--sc);outline-offset:2px}',
+    // A chapter's bookmark in the list (clip-digest.css .cp-dg__div, the button face).
+    '.lns .div{display:flex;align-items:center;gap:8px;width:100%;padding:6px 9px 2px;border-radius:8px;font:600 10px/1.2 ' + MONO + ';letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;cursor:pointer}',
+    '.lns .div::before,.lns .div::after{content:"";flex:1;height:1px;background:var(--line)}',
+    '.lns .div::before{flex:0 0 12px}',
+    '.lns .div:hover{color:var(--sc);background:color-mix(in srgb,var(--sc) 8%,transparent)}',
+    '.lns .div:hover::before,.lns .div:hover::after{background:color-mix(in srgb,var(--sc) 45%,var(--line))}',
+    '.lns .div:focus-visible{outline:2px solid var(--sc);outline-offset:1px;color:var(--sc)}',
+    // The locked block's buttons (.cp-dg__btnrow, .cp-dg__btn), D92.
+    '.note .btnrow{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;margin-top:4px}',
+    '.note .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--sc);background:var(--sc);color:#fff;font:700 14px/1 ' + SANS + ';white-space:nowrap;text-decoration:none;cursor:pointer}',
+    '.note .btn .vi{width:14px;height:14px}',
+    '.ins p.pzh{margin-top:2px}',
     '.lnwrap{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}',
     '.ln[data-hit]{box-shadow:inset 0 0 0 1px var(--sc)}',
     '.dlb{margin:0;font:600 10.5px/1.3 ' + MONO + ';letter-spacing:.12em;text-transform:uppercase;color:var(--muted);flex:none}',

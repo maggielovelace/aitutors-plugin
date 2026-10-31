@@ -69,6 +69,23 @@
     return (text || document.title.replace(/\s*-\s*YouTube\s*$/, '')).slice(0, 200) || null;
   }
 
+  /** What the page says about the video's chapters (D93), as text: the
+   *  chapters panel's items, and the description. The desk checks it all. */
+  function chapterSource() {
+    var items = [];
+    var seen = {};
+    document.querySelectorAll(SEL.chapterItem).forEach(function (n) {
+      var time = n.querySelector(SEL.chapterTime);
+      var title = n.querySelector(SEL.chapterTitle);
+      var key = (time && time.textContent) + '|' + (title && title.textContent);
+      if (!time || !title || seen[key] || items.length >= 200) return;
+      seen[key] = true;
+      items.push({ time: time.textContent, title: title.textContent });
+    });
+    var d = document.querySelector(SEL.description);
+    return { items: items, text: d ? String(d.textContent || '').slice(0, 20000) : '' };
+  }
+
   function channelName() {
     var a = document.querySelector(SEL.channel);
     return a ? a.textContent.trim().slice(0, 100) : null;
@@ -87,6 +104,7 @@
     onOpenChange: function () { labelBar(); },
     // The desk's confirmations for H (Round 11): Heddy's toast.
     notify: function (msg) { onToast(msg); },
+    chapters: chapterSource,
   });
 
   // ─── the button ────────────────────────────────────────────────────────────

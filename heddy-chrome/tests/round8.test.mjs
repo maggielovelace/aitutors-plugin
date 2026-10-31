@@ -127,13 +127,16 @@ test('§ 2: the transcript and a Chinese stretch; zh=1&from= asks for the stretc
   assert.equal(A.parseTranscript({ status: 'weird' }).ok, false);
 });
 
-test('§ 3: Insights is live only when the site serves it; a 404 draws the tab disabled', async () => {
-  const s = deskSetup({ answers: { '/api/learn/heddy/desk/insights': { status: 404, body: { error: 'not-found' } } } });
-  assert.deepEqual(await s.api.internal({ type: 'heddy-desk:insights', youtubeId: VIDEO, lang: 'zh' }, fromYouTube), { ok: false, error: 'unavailable' });
-  assert.match(s.calls.fetches[0].url, /insights\?v=Xq3aPn3x_-A&lang=zh$/);
-  const ok = A.parseInsights({ ok: true, status: 'ok', parts: [{ startSec: 0, title: null, minutes: { from: 0, to: 2 }, text: 'They fall together.' }, { startSec: -3 }] });
-  assert.deepEqual(ok.parts, [{ startSec: 0, title: null, minutes: { from: 0, to: 2 }, text: 'They fall together.', en: null, zh: null }]);
-  assert.equal(A.parseInsights({ status: 'ok', parts: [] }).ok, false, 'without ok: true it is not the wrapped route');
+test('r11b: Insights is POST …/desk/keypoints with the video’s chapters; the reply is checked', async () => {
+  const body = { status: 'writing', chapters: [{ startSec: 0, endSec: 312, title: 'Intro', text: 'They fall together.', points: [], written: true }, { startSec: -3, endSec: 1 }] };
+  const s = deskSetup({ answers: { '/api/learn/heddy/desk/keypoints': { status: 200, body } } });
+  const r = await s.api.internal({ type: 'heddy-desk:keypoints', youtubeId: VIDEO, title: 'Meet Newton', lang: 'zh', from: 12.7, chapters: [{ startSec: 0, endSec: 312.4, title: 'Intro' }, { startSec: 312.4, endSec: 600, title: 'Drop' }] }, fromYouTube);
+  assert.equal(s.calls.fetches[0].url, `${PROD}/api/learn/heddy/desk/keypoints`);
+  assert.equal(s.calls.fetches[0].init.method, 'POST');
+  assert.deepEqual(JSON.parse(s.calls.fetches[0].init.body), { youtubeId: VIDEO, title: 'Meet Newton', lang: 'zh', chapters: [{ startSec: 0, endSec: 312, title: 'Intro' }, { startSec: 312, endSec: 600, title: 'Drop' }], from: 12 });
+  assert.deepEqual(r, { ok: true, status: 'writing', chapters: [{ startSec: 0, endSec: 312, title: 'Intro', text: 'They fall together.', points: [], written: true }] });
+  assert.deepEqual(await s.api.internal({ type: 'heddy-desk:keypoints', youtubeId: VIDEO, chapters: [{ startSec: 10, endSec: 5, title: 'x' }] }, fromYouTube), { ok: false, error: 'bad_request' }, 'never sends chapters the site would refuse');
+  assert.equal(A.parseKeypoints({ status: 'weird' }).ok, false);
 });
 
 test('§ 4: Save to My Jotters posts the jots and opens nothing (Round 9, D86: the desk shows the Saved card); 401 is signed out', async () => {
