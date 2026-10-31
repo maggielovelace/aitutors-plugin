@@ -1,6 +1,6 @@
 // The popup's rows. Round 5 (D55) replaced the page state's shortcut row
-// ("Select some words · for Jot it · [key]") with the numbered cards; the H
-// row is still the YouTube state's supplement. Source pins, as the popup
+// ("Select some words · for Jot it · [key]") with the numbered cards; Round 8
+// (D75) took the H row out of the YouTube state. Source pins, as the popup
 // needs a browser; the rendered states were looked at by hand, the cards state
 // in a headless Chrome against R5 · Chrome and R5b.
 import { test } from 'node:test';
@@ -15,8 +15,8 @@ test('the page state has no shortcut row any more: R5 · Chrome and R5b draw the
   assert.doesNotMatch(src, /Ctrl Shift J|⌘ Shift J/, 'no default key printed');
 });
 
-test('the YouTube state’s row is "Jot the line being spoken · H"', () => {
-  assert.match(src, /keyRow\('h-quill', tr\('jotLineSpoken'\), tr\('jotLineSpokenSub'\), 'H'\)/);
+test('the YouTube state has no H row any more (D75): H lives on the desk', () => {
+  assert.doesNotMatch(src, /keyRow|jotLineSpoken/);
 });
 
 test('Save page to Jotters is never refused for length in the popup (the courier cuts it)', () => {

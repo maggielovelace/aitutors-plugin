@@ -2,8 +2,10 @@
 //
 // The states, showing only what already works (D25, Direction A):
 //   first time      the one line, what Heddy does, Open aitutors.me (primary)
-//   YouTube watch   the video row, Whole video / From m:ss, Watch with Heddy
-//                   (primary), Add to My Clips (outlined), the H row
+//   YouTube watch   Add to My Clips (D75, artifact P2): the real thumbnail,
+//                   the exact link with Copy, the film strip with its gold
+//                   window, Whole · The last 30 s · From now, the range, the
+//                   button; a faint eyes icon in the header opens the desk
 //   aitutors.me     one line of help, no primary, no footer
 //   any other page  the numbered cards (Round 5, D54, D55): "In this save ·
 //                   2 snippets · 1 picture", the cards with ⠿, ↑ / ↓ and ✕
@@ -48,7 +50,8 @@
     var h = Math.ceil(document.getElementById('pop').getBoundingClientRect().height);
     if (!h) return;
     if (HOST === 'panel') {
-      window.parent.postMessage({ heddyPanel: 'size', h: h }, '*');
+      // The YouTube state is the artifact's 400 px popup (P2); the rest are 360.
+      window.parent.postMessage({ heddyPanel: 'size', h: h, w: document.body.classList.contains('yt') ? 400 : 360 }, '*');
     } else if (HOST === 'window' && chrome.windows && chrome.windows.getCurrent) {
       chrome.windows.getCurrent().then(function (w) {
         var chromeH = (w && typeof w.height === 'number') ? w.height - window.innerHeight : 0;
@@ -137,22 +140,6 @@
     open.addEventListener('click', function () { openSite(C.welcomeUrl(origin, lang)); });
     body.appendChild(open);
     $('foot').hidden = false;
-  }
-
-  /** A row: a label, a line under it, a key hint at the right (a supplement, D17). */
-  function keyRow(mark, title, line, keys) {
-    var row = el('div', 'row');
-    if (mark) {
-      var ic = el('span', 'ico');
-      ic.insertAdjacentHTML('beforeend', M.use(mark, 18));
-      row.appendChild(ic);
-    }
-    var t = el('span', 't');
-    t.appendChild(el('b', null, title));
-    if (line) t.appendChild(el('span', null, line));
-    row.appendChild(t);
-    row.appendChild(el('span', 'r kbd', keys));
-    return row;
   }
 
   /** The jot-selection shortcut the child set in Chrome, or null. There is no
@@ -641,6 +628,19 @@
     };
   }
 
+  /** Runs in the page's own world: YouTube's storyboard spec for the film
+   *  strip (D75), from the player. Text only; lib/film-strip.js checks it. */
+  function readStoryboard() {
+    try {
+      var p = document.getElementById('movie_player');
+      var r = p && typeof p.getPlayerResponse === 'function' ? p.getPlayerResponse() : null;
+      var s = r && r.storyboards && r.storyboards.playerStoryboardSpecRenderer;
+      return s && typeof s.spec === 'string' ? s.spec.slice(0, 4000) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function videoInfo(tab) {
     var fallback = { t: null, duration: null, title: (tab.title || '').replace(/\s*-\s*YouTube\s*$/, '').slice(0, 200) || null, channel: null };
     return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readVideo, args: [SEL] }).then(
@@ -653,74 +653,276 @@
     );
   }
 
-  function renderYouTube(body, tab, youtubeId, info, stored) {
-    $('ctx').textContent = 'youtube.com';
-    var canFrom = P.startSecFor('from', info.t) !== null;
-    var choice = stored === 'from' && canFrom ? 'from' : 'whole';
+  function storyboard(tab) {
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: readStoryboard }).then(
+      function (res) { return HeddyFilmStrip.parseStoryboard(res && res[0] && res[0].result); },
+      function () { return null; }
+    );
+  }
 
+  /** Dragging the strip moves the video to that frame (D75). */
+  function seekTab(tab, t) {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: function (sel, s) { var v = document.querySelector(sel); if (v && isFinite(s)) v.currentTime = s; return true; },
+      args: [SEL.video, t],
+    }).catch(function () {});
+  }
+
+  function copyText(text) {
+    var ok = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard'));
+    return ok.catch(function () {
+      var ta = el('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      var done = document.execCommand('copy');
+      ta.remove();
+      if (!done) throw new Error('copy');
+    });
+  }
+
+  // How many frames the strip shows (the artifact's 46 px rhythm on 372 px).
+  var FRAMES = 8;
+  var SEEK_MS = 120;
+
+  /** The film strip's frames, from YouTube's storyboard (else a plain bar). */
+  function drawFrames(film, level, duration) {
+    film.classList.toggle('plain', !level);
+    if (!level) return;
+    var reel = film.querySelector('.reel');
+    var w = film.clientWidth || 372;
+    var h = film.clientHeight || 46;
+    var cell = w / FRAMES;
+    var scale = h / level.h;
+    var tw = level.w * scale;
+    for (var i = 0; i < FRAMES; i++) {
+      var f = HeddyFilmStrip.frameAt(level, ((i + 0.5) / FRAMES) * duration, duration);
+      if (!f) continue;
+      var c = el('span', 'fr');
+      c.style.left = i * cell + 'px';
+      c.style.width = Math.ceil(cell) + 'px';
+      c.style.backgroundImage = 'url("' + f.url.replace(/["\\]/g, '') + '")';
+      c.style.backgroundSize = f.cols * tw + 'px ' + f.rows * h + 'px';
+      c.style.backgroundPosition = -(f.col * tw + (tw - cell) / 2) + 'px ' + -(f.row * h) + 'px';
+      reel.appendChild(c);
+    }
+  }
+
+  /** The popup on a YouTube video (D75, artifact #popup P2): Add to My Clips,
+   *  the real thumbnail, the exact link with Copy, the film strip with its
+   *  gold window, Whole · The last 30 s · From now, the range, and the button.
+   *  The faint eyes in the header opens the desk on the video. */
+  function renderYouTube(body, tab, youtubeId, info) {
+    var F = HeddyFilmStrip;
+    $('pop').classList.add('yt');
+    document.body.classList.add('yt');
+    $('ctx').hidden = true;
+    $('title').textContent = tr('addToMyClips');
+    $('mark').innerHTML = $('mark').innerHTML.replace(/width="22" height="22"/, 'width="28" height="28"');
+    var lite = el('button', 'watchlite');
+    lite.type = 'button';
+    lite.title = tr('watchWithHeddy');
+    lite.setAttribute('aria-label', tr('watchWithHeddy'));
+    lite.insertAdjacentHTML('beforeend', M.use('h-eyes', 22));
+    lite.addEventListener('click', function () {
+      chrome.tabs.sendMessage(tab.id, { type: 'heddy-ui:open-desk' }).catch(function () {}).then(closeUi);
+    });
+    $('close').parentNode.insertBefore(lite, $('close'));
+
+    var duration = info.duration && info.duration >= F.MIN_SPAN ? info.duration : null;
+    var nowT = info.t;
+    var range = duration ? F.chipRange('whole', nowT, duration) : null;
+
+    // The video: the thumbnail with its length, the title, the channel, the link.
     var vid = el('div', 'vid');
     var th = el('span', 'th');
-    th.insertAdjacentHTML('beforeend', M.use('h-film', 24));
+    var img = el('img');
+    img.alt = '';
+    img.addEventListener('error', function () { img.remove(); th.classList.add('none'); });
+    img.src = F.thumbUrl(youtubeId);
+    th.appendChild(img);
+    if (duration) th.appendChild(el('em', null, P.clockOf(duration)));
     vid.appendChild(th);
     var meta = el('div');
     meta.appendChild(el('b', null, info.title || tr('thisVideo')));
-    var sub = [info.channel, info.duration ? P.clockOf(info.duration) : null].filter(Boolean).join(' · ');
-    if (sub) meta.appendChild(el('span', 'sub', sub));
+    if (info.channel) meta.appendChild(el('small', null, info.channel));
+    var url = el('div', 'url');
+    var link = el('span');
+    url.appendChild(link);
+    var copy = el('button', 'cpy', tr('clipCopy'));
+    copy.type = 'button';
+    copy.addEventListener('click', function () {
+      copyText(F.linkFor(youtubeId, range ? range.start : 0).href).then(function () {
+        copy.textContent = tr('clipCopied');
+        setTimeout(function () { copy.textContent = tr('clipCopy'); }, 1500);
+      }, function () {});
+    });
+    url.appendChild(copy);
+    meta.appendChild(url);
     vid.appendChild(meta);
     body.appendChild(vid);
 
-    var seg = el('div', 'seg');
-    seg.setAttribute('role', 'group');
-    var whole = button('', null, 0, tr('wholeVideo'));
-    var from = button('', 'h-clock', 14, tr('fromTime', P.clockOf(canFrom ? info.t : 0)));
-    from.disabled = !canFrom;
-    function paint() {
-      whole.setAttribute('aria-pressed', String(choice === 'whole'));
-      from.setAttribute('aria-pressed', String(choice === 'from'));
-    }
-    function pick(c) {
-      choice = c;
-      paint();
-      var o = {};
-      o[C.START_KEY] = c;
-      chrome.storage.local.set(o).catch(function () {});
-    }
-    whole.addEventListener('click', function () { pick('whole'); });
-    from.addEventListener('click', function () { if (canFrom) pick('from'); });
-    seg.appendChild(whole);
-    seg.appendChild(from);
-    paint();
-    body.appendChild(seg);
+    // The chips.
+    var chips = el('div', 'chips');
+    var chipEls = {};
+    [['whole', 'chipWhole'], ['last30', 'chipLast30'], ['fromNow', 'chipFromNow']].forEach(function (c) {
+      var b = el('button', null, tr(c[1]));
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        var r = F.chipRange(c[0], nowT, duration);
+        if (!r) return;
+        range = r;
+        paint();
+        if (c[0] !== 'whole') seekTab(tab, r.start);
+      });
+      chipEls[c[0]] = b;
+      chips.appendChild(b);
+    });
+    body.appendChild(chips);
+
+    // The film strip: frames, the dimmed outside, the gold window with two
+    // handles (dragging seeks the video), the playhead.
+    var film = el('div', 'film plain');
+    film.setAttribute('role', 'group');
+    film.setAttribute('aria-label', tr('filmLabel'));
+    var reel = el('span', 'reel');
+    var dimL = el('span', 'dim l');
+    var dimR = el('span', 'dim r');
+    var win = el('span', 'win');
+    var hs = el('span', 'hdl s');
+    var he = el('span', 'hdl e');
+    var head = el('span', 'ph2');
+    [hs, he].forEach(function (h, k) {
+      h.tabIndex = 0;
+      h.setAttribute('role', 'slider');
+      h.setAttribute('aria-label', tr(k ? 'filmEnd' : 'filmStart'));
+      h.addEventListener('keydown', function (e) {
+        var step = e.shiftKey ? 10 : 1;
+        var d = e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -step : e.key === 'ArrowRight' || e.key === 'ArrowUp' ? step : 0;
+        if (!d || !range) return;
+        e.preventDefault();
+        var which = k ? 'end' : 'start';
+        range = F.dragTo(range, which, range[which] + d, duration);
+        paint();
+        seekTab(tab, range[which]);
+      });
+    });
+    win.appendChild(hs);
+    win.appendChild(he);
+    film.appendChild(reel);
+    film.appendChild(dimL);
+    film.appendChild(dimR);
+    film.appendChild(win);
+    film.appendChild(head);
+    body.appendChild(film);
+
+    var lens = el('div', 'lens');
+    var lensL = el('span');
+    var lensM = el('em');
+    var lensR = el('span');
+    lens.appendChild(lensL);
+    lens.appendChild(lensM);
+    lens.appendChild(lensR);
+    body.appendChild(lens);
 
     var err = el('p', 'err');
     err.hidden = true;
-    function go(then, btn) {
-      btn.setAttribute('aria-busy', 'true');
-      chrome.runtime.sendMessage({
-        type: 'heddy-ui:capture',
-        youtubeId: youtubeId,
-        startSec: choice === 'from' ? P.startSecFor('from', info.t) : null,
-        then: then,
-        tabId: tab.id,
-        windowId: tab.windowId,
-      }).then(function (reply) {
+    var go = el('button', 'go');
+    go.type = 'button';
+    go.addEventListener('click', function () {
+      go.setAttribute('aria-busy', 'true');
+      var m = { type: 'heddy-ui:capture', youtubeId: youtubeId, startSec: null, then: 'keep', tabId: tab.id, windowId: tab.windowId };
+      if (range && duration) Object.assign(m, F.captureFields(range, duration));
+      chrome.runtime.sendMessage(m).then(function (reply) {
         if (reply && reply.ok) return closeUi();
         throw new Error('no window');
       }).catch(function () {
-        btn.removeAttribute('aria-busy');
+        go.removeAttribute('aria-busy');
         err.textContent = tr('captureFailed');
         err.hidden = false;
       });
-    }
-    var watch = button('btn wide', 'h-eyes', 18, tr('watchWithHeddy'));
-    var add = button('btn ghost wide', 'h-film', 16, tr('addToMyClips'));
-    watch.addEventListener('click', function () { go('classroom', watch); });
-    add.addEventListener('click', function () { go('keep', add); });
-    body.appendChild(watch);
-    body.appendChild(add);
-    body.appendChild(keyRow('h-quill', tr('jotLineSpoken'), tr('jotLineSpokenSub'), 'H'));
+    });
+    body.appendChild(go);
+    body.appendChild(el('p', 'hint', tr('opensInMyClips')));
     body.appendChild(err);
+
+    function secWord(n) { return tr('spanSec', n); }
+
+    function paint() {
+      var isWhole = !range || !duration || (range.start === 0 && range.end >= Math.floor(duration));
+      var chip = range && duration ? F.chipOf(range, nowT, duration) : 'whole';
+      Object.keys(chipEls).forEach(function (k) {
+        chipEls[k].setAttribute('aria-pressed', String(chip === k));
+        chipEls[k].disabled = !F.chipRange(k, nowT, duration);
+      });
+      link.textContent = F.linkFor(youtubeId, range ? range.start : 0).shown;
+      link.title = link.textContent;
+      win.hidden = dimL.hidden = dimR.hidden = lens.hidden = !range;
+      if (range) {
+        var p = F.windowPct(range, duration);
+        win.style.left = p.left + '%';
+        win.style.width = p.width + '%';
+        dimL.style.width = p.left + '%';
+        dimR.style.left = p.left + p.width + '%';
+        hs.setAttribute('aria-valuenow', String(range.start));
+        hs.setAttribute('aria-valuetext', P.clockOf(range.start));
+        he.setAttribute('aria-valuenow', String(range.end));
+        he.setAttribute('aria-valuetext', P.clockOf(range.end));
+        lensL.textContent = P.clockOf(range.start);
+        lensR.textContent = P.clockOf(range.end);
+        lensM.textContent = tr('clipRange', P.clockOf(range.start), P.clockOf(range.end), F.spanText(range.end - range.start, secWord));
+      }
+      head.hidden = !(duration && typeof nowT === 'number' && isFinite(nowT));
+      if (!head.hidden) head.style.left = (Math.min(nowT, duration) / duration) * 100 + '%';
+      go.textContent = isWhole ? tr('addToMyClips') : tr('addPart', F.spanText(range.end - range.start, secWord));
+    }
+
+    // Drag either end of the window (the nearer one to the pointer).
+    var dragging = null;
+    var lastSeek = 0;
+    film.addEventListener('pointerdown', function (e) {
+      if (!range || !duration) return;
+      var box = film.getBoundingClientRect();
+      var sec = F.secAt(e.clientX - box.left, box.width, duration);
+      dragging = Math.abs(sec - range.start) <= Math.abs(sec - range.end) ? 'start' : 'end';
+      film.setPointerCapture(e.pointerId);
+      move(e);
+    });
+    film.addEventListener('pointermove', function (e) { if (dragging) move(e); });
+    function end() {
+      if (!dragging) return;
+      seekTab(tab, range[dragging]);
+      dragging = null;
+    }
+    film.addEventListener('pointerup', end);
+    film.addEventListener('pointercancel', end);
+    function move(e) {
+      var box = film.getBoundingClientRect();
+      range = F.dragTo(range, dragging, F.secAt(e.clientX - box.left, box.width, duration), duration);
+      paint();
+      if (Date.now() - lastSeek > SEEK_MS) {
+        lastSeek = Date.now();
+        seekTab(tab, range[dragging]);
+      }
+    }
+
+    // The playhead and the chips follow the player while the popup is open.
+    setInterval(function () {
+      chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function (sel) { var v = document.querySelector(sel); return v ? v.currentTime : null; }, args: [SEL.video] })
+        .then(function (res) {
+          var t = res && res[0] && res[0].result;
+          if (typeof t === 'number' && isFinite(t) && !dragging) { nowT = t; paint(); }
+        }, function () {});
+    }, 1000);
+
+    paint();
     $('foot').hidden = false;
+    if (duration) {
+      storyboard(tab).then(function (levels) {
+        drawFrames(film, HeddyFilmStrip.pickLevel(levels, 40), duration);
+      });
+    }
   }
 
   // ─── start ─────────────────────────────────────────────────────────────────
@@ -745,7 +947,7 @@
   Promise.all([
     I.currentLang(),
     theTab(),
-    chrome.storage.local.get([C.DEV_KEY, C.START_KEY, C.FIRST_RUN_KEY]).catch(function () { return {}; }),
+    chrome.storage.local.get([C.DEV_KEY, C.FIRST_RUN_KEY]).catch(function () { return {}; }),
   ]).then(function (got) {
     var lang = got[0], tab = got[1], local = got[2] || {};
     tr = I.translator(lang);
@@ -773,7 +975,7 @@
     if (url && !cant && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab, close: closeUi });
     var youtubeId = url ? P.youtubeIdFromUrl(url) : null;
     if (youtubeId) {
-      return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info, local[C.START_KEY]); });
+      return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info); });
     }
     if (cant) return renderCantSave(body, cant);
     if (url && isSite(url, dev)) return renderSite(body);

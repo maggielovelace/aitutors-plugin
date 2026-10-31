@@ -58,6 +58,10 @@
     var m = e.data;
     if (m.heddyPanel === 'size' && typeof m.h === 'number' && isFinite(m.h) && m.h > 0) {
       frame.style.height = Math.ceil(Math.min(m.h, 2000)) + 'px';
+      // 400 on a YouTube video (Add to My Clips, artifact P2), else 360.
+      var w = (m.w === 400 ? 400 : WIDTH) + 'px';
+      frame.style.width = w;
+      host.style.setProperty('width', w, 'important');
       frame.classList.add('on');
     } else if (m.heddyPanel === 'close') {
       close();
@@ -170,6 +174,8 @@
     frame = document.createElement('iframe');
     frame.className = 'f';
     frame.title = 'Heddy';
+    // Copy on the YouTube state copies the video's link (D76).
+    frame.allow = 'clipboard-write';
     frame.src = chrome.runtime.getURL('popup/popup.html') + '?tab=' + encodeURIComponent(String(tabId)) + '&host=panel';
     var o = /^[a-z-]+:\/\/[^/]+/.exec(frame.src);
     frameOrigin = o ? o[0] : '*';
