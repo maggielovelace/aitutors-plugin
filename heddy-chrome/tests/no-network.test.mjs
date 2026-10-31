@@ -1,9 +1,13 @@
 // "The extension makes no fetch, XMLHttpRequest or WebSocket call" (PRD Must 2,
-// D2, PRIVACY.md), with ONE exception, D60: GET /api/learn/heddy/me on
-// aitutors.me, for the study pass and the panel's account row (lib/who.js).
-// Scans every file a store build ships, comments removed: any mention of
-// fetch at all fails, except that one request and the two pages that hand
-// it their window's fetch.
+// D2, PRIVACY.md), with TWO exceptions, both to aitutors.me with the browser's
+// own aitutors.me cookie: D60, GET /api/learn/heddy/me, for the study pass and
+// the panel's account row (lib/who.js); and Round 8 (D69–D72, artifact #desk),
+// the desk's four requests under /api/learn/heddy/desk/ (lib/desk-api.js); and
+// Round 9 (D78–D86), the six under /api/learn/heddy/ (lib/heddy-api.js: save,
+// undo, clip, ask, card, jot), all made by the background, which hands them
+// the worker's fetch. Scans every file
+// a store build ships, comments removed: any mention of fetch at all fails,
+// except those two places and the pages that hand them a fetch.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { read, shippedFiles } from './helpers.mjs';
@@ -22,6 +26,10 @@ const ALLOWED_FETCH = {
   'lib/who.js': [/fetchImpl\(origin \+ PATH, \{ method: 'GET', credentials: 'include'/],
   'popup/popup.js': [/HeddyWho\.loadMe\(window\.fetch\.bind\(window\), ORIGIN\)/],
   'options/options.js': [/W\.loadMe\(window\.fetch\.bind\(window\), origin\)/],
+  'background.js': [
+    /HeddyDeskApi\.createDeskApi\(\{ chrome: chrome, fetchImpl: fetch\.bind\(self\) \}\)/,
+    /HeddyApi\.createHeddyApi\(\{ call: desk\.call, origin: desk\.origin, fetchImpl: fetch\.bind\(self\), extensionId: chrome\.runtime\.id \}\)/,
+  ],
 };
 
 /** Source with the allowed uses taken out, so nothing else may mention fetch. */

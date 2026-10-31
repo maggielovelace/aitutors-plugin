@@ -1,5 +1,8 @@
-// lib/jot-key.js — H on a YouTube watch page (PRD-v0.96.0 D18; artifact R2 · F3),
-// with the desk's rules (aitutors.me lib/videos/jots-client.ts, PRD-v0.97.0 D11).
+// lib/jot-key.js — H on a YouTube watch page (PRD-v0.96.0 D18, D74; artifact
+// R2 · F3), with the desk's rules (aitutors.me lib/videos/jots-client.ts,
+// PRD-v0.97.0 D11). Since Round 8, H jots into the desk on the page and only
+// while it is open (content/youtube.js); the 2.5 s join of the line before is
+// lib/desk-model.js press, which reads JOIN_MS from here.
 //
 // The key is H, "H for Heddy" (owner, 2026-10-29), not the desk's J: on
 // YouTube J is the player's own "back 10 seconds", and Heddy leaves it alone.
@@ -10,14 +13,9 @@
 //     held down, not during IME composition, and not while the child types in
 //     a field: an input, a textarea, a select, anything contenteditable or a
 //     textbox (YouTube's search box and comment box among them);
-//   - createJHold: an H is held for 2.5 s; another H inside that window joins
-//     the line before (the window restarts from the newest press), and when it
-//     closes Heddy sends ONE heddy:moment: `t` the FIRST press's player time,
-//     and `tEnd` the LAST press's (only when there was more than one press),
-//     so the site maps the time range to transcript lines. The desk holds its
-//     post the same way and posts once.
+//   - JOIN_MS: a second press within 2.5 s of the last joins the line before.
 //
-// Pure: the clock and the timers are injected, so the join is a unit test.
+// Pure.
 (function (root) {
   var JOIN_MS = 2500;
 
@@ -48,60 +46,7 @@
     return !isTypingTarget(e.target) && !isTypingTarget(active);
   }
 
-  /**
-   * deps: { now(), setTimer(fn, ms), clearTimer(h), send({ t, tEnd?, video }) }.
-   * press(t, video) takes the player's second at the key press. Returns the hold.
-   */
-  function createJHold(deps) {
-    var pending = null; // { t, tEnd, at, timer, video }
-
-    function sameVideo(a, b) {
-      return (a && a.youtubeId) === (b && b.youtubeId);
-    }
-
-    function fire() {
-      var p = pending;
-      if (!p) return;
-      pending = null;
-      var out = { t: p.t, video: p.video };
-      if (p.tEnd !== null) out.tEnd = p.tEnd;
-      deps.send(out);
-    }
-
-    /** `video` is what the J belongs to (the id and title read at the press),
-     *  so a J still waiting when the video changes goes under ITS video. A
-     *  press on another video never joins. */
-    function press(t, video) {
-      var at = deps.now();
-      if (pending && at - pending.at < JOIN_MS && sameVideo(pending.video, video)) {
-        // Never before the first press (the child may have scrubbed back).
-        pending.tEnd = Math.max(pending.t, t);
-        pending.at = at;
-        deps.clearTimer(pending.timer);
-        pending.timer = deps.setTimer(fire, JOIN_MS);
-        return 'joined';
-      }
-      // A press outside the window lets the waiting one go first: its own jot.
-      if (pending) {
-        deps.clearTimer(pending.timer);
-        fire();
-      }
-      pending = { t: t, tEnd: null, at: at, timer: null, video: video };
-      pending.timer = deps.setTimer(fire, JOIN_MS);
-      return 'held';
-    }
-
-    /** Send a waiting J now (the page is going away or the video changed). */
-    function flush() {
-      if (!pending) return;
-      deps.clearTimer(pending.timer);
-      fire();
-    }
-
-    return { press: press, flush: flush, waiting: function () { return !!pending; } };
-  }
-
-  var api = { JOIN_MS: JOIN_MS, TYPING_SELECTOR: TYPING_SELECTOR, isJotKey: isJotKey, createJHold: createJHold };
+  var api = { JOIN_MS: JOIN_MS, TYPING_SELECTOR: TYPING_SELECTOR, isJotKey: isJotKey };
   root.HeddyJotKey = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

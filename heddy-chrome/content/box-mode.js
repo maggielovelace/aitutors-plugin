@@ -36,6 +36,7 @@
 // words below) is read as text and only ever sent as a card's context; nothing
 // from the page is drawn here.
 (function (root) {
+  var TT = root.HeddyTrayTools || (typeof require === 'function' && require('../lib/tray-tools.js'));
   var MIN_BOX = 24;
   var MIN_PICTURE = 48;
   var MAX_PICTURES = 4;
@@ -71,12 +72,9 @@
     };
   }
 
-  /** The switch's two buttons, and which one is on. */
+  /** The switch's two buttons, and which one is on (lib/tray-tools.js). */
   function switchModel(mode) {
-    return [
-      { mode: 'text', label: 'modeText', pressed: mode === 'text' },
-      { mode: 'picture', label: 'modePicture', pressed: mode !== 'text' },
-    ];
+    return TT.switchRows(mode);
   }
 
   /** A rectangle from two corners, in either direction. */
@@ -138,19 +136,12 @@
     return i < 0 ? String(href || '') : String(href).slice(0, i);
   }
 
-  /** The Heddy ▾ menu (D58, R5b · C): the three ways to understand the
-   *  picture, a rule, then Copy picture and Whole visible page. Copy needs a
-   *  box; Whole visible page needs room for one more picture. */
+  /** The Heddy ▾ menu (D85): Ask {professor} about it · Make a card, a
+   *  rule, then Copy picture and Whole visible page (lib/tray-tools.js).
+   *  The tools and Copy need a box; Whole visible page needs room for one
+   *  more picture. */
   function menuRows(images, current) {
-    var any = !!current || images > 0;
-    return [
-      { act: 'explain', label: 'menuExplainPicture', icon: 'search', disabled: !any },
-      { act: 'card', label: 'trayCard', icon: 'star', disabled: !any },
-      { act: 'ask', label: 'menuAskAbout', icon: 'quill', disabled: !any },
-      { sep: true },
-      { act: 'copy', label: 'menuCopyPicture', icon: 'page', disabled: !any },
-      { act: 'whole', label: 'menuWholePage', icon: 'crop', disabled: images >= MAX_PICTURES },
-    ];
+    return TT.menuFor('picture', { any: !!current || images > 0, full: images >= MAX_PICTURES });
   }
 
   /** What Copy picture and the Heddy menu act on: the box being drawn, else
@@ -219,19 +210,6 @@
   var POS = root.HeddyPos;
   var tr = I.translator('en');
 
-  // The bar's line icons (the artifact's sprite: i-crop, i-search, i-star,
-  // i-quill, i-page), as constant SVG.
-  var ICONS = {
-    crop: '<path d="M7 2.5 V17 H21.5 M2.5 7 H17 V21.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
-    search: '<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15 L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
-    star: '<path d="M12 3.5 L14.6 9 L20.5 9.6 L16 13.6 L17.3 19.5 L12 16.5 L6.7 19.5 L8 13.6 L3.5 9.6 L9.4 9 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
-    quill: '<path d="M19.5 4.5c-6 .5-10.5 4-12.5 10l-1.5 5 5-1.5c6-2 9-7 9-13.5z" fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5.5 19.5 14 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="15.4" cy="9.2" r="1.1" fill="currentColor"/>',
-    page: '<path d="M6 3.5 H14 L18.5 8 V20.5 H6 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3.5 V8 H18.5 M9 12 H15.5 M9 15.5 H15.5" stroke="currentColor" stroke-width="1.6" fill="none"/>',
-  };
-  function icon(name) {
-    return '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONS[name] + '</svg>';
-  }
-
   var SANS = '"Heddy Manrope",Manrope,Roboto,Arial,sans-serif';
   var MONO = '"JetBrains Mono",ui-monospace,Menlo,monospace';
   var CSS =
@@ -250,29 +228,22 @@
     '.hint{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:#002147;color:#fff;border-radius:999px;padding:7px 14px;font:600 12.5px ' + SANS + ';white-space:nowrap;pointer-events:none}' +
     '.hint b{font:700 11px ' + MONO + ';background:rgba(255,255,255,.18);border-radius:5px;padding:1px 6px}' +
     '.hint.bottom{bottom:14px}.hint.top{top:12px}' +
-    '.tray{position:absolute;display:flex;align-items:stretch;gap:2px;padding:4px;border-radius:12px;background:#002147;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.22);white-space:nowrap;line-height:1}' +
-    '.tray>button{all:unset;box-sizing:border-box;display:grid;justify-items:center;align-content:center;gap:5px;min-width:76px;height:50px;padding:0 8px;border-radius:9px;font:700 11.5px ' + SANS + ';cursor:pointer}' +
-    '.tray>button:hover,.tray>button[aria-expanded="true"]{background:rgba(255,255,255,.16)}' +
-    '.tray>button.pri{background:#DC9400;color:#002147}.tray>button.pri:hover{filter:brightness(1.06)}' +
-    '.tray>button[aria-disabled="true"]{opacity:.45;cursor:default;background:transparent}' +
-    '.tray>button:focus-visible{outline:2px solid #DC9400;outline-offset:1px}' +
-    '.tray>i{width:1px;background:rgba(255,255,255,.3);margin:9px 2px}' +
-    '.hf{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center}' +
-    '.menu{position:absolute;display:grid;min-width:210px;padding:5px;background:#fff;border:1px solid #d6d9de;border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.2)}' +
-    '.menu button{all:unset;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:6px;font:500 13px ' + SANS + ';color:#202124;cursor:pointer}' +
-    '.menu button svg{color:#5d6878}' +
-    '.menu button:hover,.menu button:focus-visible{background:#eef0fb}' +
-    '.menu button[aria-disabled="true"]{color:#9aa0a6;cursor:default;background:transparent}' +
-    '.menu hr{all:unset;display:block;height:1px;background:#e3e5e8;margin:3px 4px}' +
-    // The Text | Picture switch (D64), on the bar and on the small bar. Not
-    // .sw: that is the box's south-west handle.
-    '.msw{display:flex;align-items:center;gap:2px;padding:3px;margin:6px 4px;border-radius:9px;background:rgba(255,255,255,.14)}' +
-    '.msw button{all:unset;box-sizing:border-box;height:32px;padding:0 11px;border-radius:7px;display:grid;place-items:center;font:700 12px ' + SANS + ';color:#d5ddea;cursor:pointer}' +
+    // The bar and Heddy ▾ (lib/tray-tools.js: the artifact's .hbar / .hmenu).
+    TT.CSS +
+    '.tray{position:absolute}' +
+    '.tray>.pri{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;background:#DC9400;color:#002147;font:700 13px ' + SANS + ';cursor:pointer}' +
+    '.tray>.pri:hover{filter:brightness(1.06)}.tray>.pri svg{width:16px;height:16px;color:currentColor}' +
+    '.tray .hd2[aria-disabled="true"]{opacity:.45;cursor:default}' +
+    '.menu{position:absolute}' +
+    // The Text view | Picture view switch (D64), on the bar and on the small
+    // bar. Not .sw: that is the box's south-west handle.
+    '.msw{display:flex;background:#1e3a66;border-radius:10px;padding:3px}' +
+    '.msw button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font:700 13px ' + SANS + ';color:#c9d4e6;cursor:pointer}' +
+    '.msw button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:currentColor}' +
     '.msw button:hover{background:rgba(255,255,255,.12)}' +
     '.msw button[aria-pressed="true"]{background:#fff;color:#002147;cursor:default}' +
     '.msw button:focus-visible{outline:2px solid #DC9400;outline-offset:1px}' +
-    '.dock{position:absolute;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:0 16px 0 2px;border-radius:12px;background:#002147;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.22);font:600 12.5px ' + SANS + ';white-space:nowrap;pointer-events:auto}' +
-    '.dock .msw{margin:4px 2px}' +
+    '.dock{position:absolute;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:14px;background:#0d2a52;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.22);font:600 12.5px ' + SANS + ';white-space:nowrap;pointer-events:auto}' +
     '.dock .dl b{font:700 11px ' + MONO + ';background:rgba(255,255,255,.18);border-radius:5px;padding:1px 6px}' +
     // Text mode: only the small bar, and the page under it is the page.
     ':host(.text){pointer-events:none}' +
@@ -281,6 +252,7 @@
 
   var host = null, shadow = null, els = null;
   var lang = 'en';
+  var professor = 'Mentor'; // the desk's professor on this page, once known
   var kept = []; // [{id, n, rect}] picture cards from this page, rect in page coordinates
   var current = null; // the box being drawn, page coordinates
   var hover = null; // {el, rect (viewport)} the picture under the pointer
@@ -455,7 +427,7 @@
 
   function switchHtml() {
     return '<span class="msw" role="group">' + switchModel('picture').map(function (b) {
-      return '<button type="button" data-mode="' + b.mode + '"></button>';
+      return '<button type="button" data-mode="' + b.mode + '">' + TT.sv(b.icon) + '<span></span></button>';
     }).join('') + '</span>';
   }
 
@@ -464,7 +436,7 @@
     shadow = host.attachShadow({ mode: 'closed' });
     var menu = menuRows(0, null).map(function (row) {
       if (row.sep) return '<hr>';
-      return '<button type="button" role="menuitem" data-act="' + row.act + '">' + icon(row.icon) + '<span></span></button>';
+      return '<button type="button" role="menuitem" data-act="' + row.act + '">' + TT.sv(row.icon) + '<span></span>' + (row.tag ? '<small></small>' : '') + '</button>';
     }).join('');
     shadow.innerHTML =
       '<style>' + CSS + '</style>' + M.sprite(['h-eyes']) +
@@ -475,11 +447,11 @@
       '<span class="hint top" role="status" hidden></span>' +
       '<span class="hint top note" role="status" hidden></span>' +
       '<div class="dock" role="toolbar" hidden>' + switchHtml() + '<span class="dl" role="status"></span></div>' +
-      '<div class="tray" role="toolbar" hidden>' + switchHtml() +
-      '<button type="button" class="pri" data-act="plus">' + icon('crop') + '<span></span></button>' +
-      '<i></i><button type="button" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="hf">' + M.use('h-eyes', 16) + '</span><span></span></button>' +
+      '<div class="tray hbar" role="toolbar" hidden>' + switchHtml() +
+      '<button type="button" class="pri" data-act="plus">' + TT.sv('plus') + '<span></span></button>' +
+      '<button type="button" class="hd2" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="eyes">' + M.use('h-eyes', 20) + '</span><span></span></button>' +
       '</div>' +
-      '<div class="menu" role="menu" hidden>' + menu + '</div>';
+      '<div class="menu hmenu" role="menu" hidden>' + menu + '</div>';
     var q = function (s) { return shadow.querySelector(s); };
     els = {
       layer: q('.layer'), dim: q('.dim'), outs: q('.outs'),
@@ -507,13 +479,18 @@
 
   function labels() {
     var b = els.btn;
-    b.plus.querySelector('span').textContent = tr('addPicture');
+    b.plus.querySelector('span').textContent = tr('webAddPicture');
     Array.prototype.forEach.call(shadow.querySelectorAll('.msw'), function (sw) {
       sw.setAttribute('aria-label', tr('modeSwitchLabel'));
-      switchModel('picture').forEach(function (m) { sw.querySelector('[data-mode="' + m.mode + '"]').textContent = tr(m.label); });
+      switchModel('picture').forEach(function (m) { sw.querySelector('[data-mode="' + m.mode + '"] span').textContent = tr(m.label); });
     });
-    b.heddy.querySelector('span:last-child').textContent = tr('barHeddy');
-    menuRows(0, null).forEach(function (row) { if (!row.sep) b[row.act].querySelector('span').textContent = tr(row.label); });
+    b.heddy.querySelector('span:last-child').textContent = tr('barHeddyMenu');
+    menuRows(0, null).forEach(function (row) {
+      if (row.sep) return;
+      b[row.act].querySelector('span').textContent = tr(row.label, professor);
+      var tag = b[row.act].querySelector('small');
+      if (tag) tag.textContent = tr('menuInDesk');
+    });
   }
 
   /** A pill made of text and one key, e.g. "Drag over a picture · [Esc] to stop". */
@@ -794,8 +771,9 @@
     });
   }
 
-  /** Explain this picture, Make a card, Ask Heddy about it: on the box being
-   *  drawn (cut now, kept nowhere), else on the last picture kept. */
+  /** Ask {professor} about it, Make a card (D84): on the box being drawn
+   *  (cut now, kept nowhere), else on the last picture kept. The desk opens
+   *  its Ask view on it; box mode ends, its pictures stay as cards. */
   function useTool(act) {
     var m = current ? boxMessage() : null;
     var last = kept[kept.length - 1];
@@ -807,7 +785,8 @@
     go.then(function (reply) {
       busy = false;
       if (!host) return;
-      if (reply.ok) return close();
+      // The desk now shows the Ask view; the page goes back to Text view.
+      if (reply.ok) return toText();
       failed(reply);
     });
   }
@@ -966,9 +945,10 @@
 
   function open(opts) {
     if (host) close();
-    return Promise.all([I.currentLang(), send({ type: 'heddy-box:state' })]).then(function (got) {
+    return Promise.all([I.currentLang(), send({ type: 'heddy-box:state' }), send({ type: 'heddy-page:professor' })]).then(function (got) {
       lang = got[0];
       tr = I.translator(lang);
+      if (got[2] && typeof got[2].name === 'string' && got[2].name) professor = got[2].name;
       var st = got[1] && got[1].ok ? got[1] : { images: [] };
       kept = (st.images || []).map(function (x) { return { id: x.id, n: x.n, rect: x.rect }; });
       pageKey = samePageKey(location.href);

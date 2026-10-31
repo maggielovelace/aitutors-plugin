@@ -1,8 +1,8 @@
-// Heddy's panel (owner, 2026-10-30): the toolbar icon no longer opens a
-// default_popup, which Chrome closes the moment focus leaves it. A click
-// draws popup.html in a frame inside the page, top right, and it stays until
-// its ✕, Esc, or a second click. Where Chrome keeps extensions out, the same
-// popup opens in a small window instead.
+// Heddy's panel (owner, 2026-10-30; Round 9, D78, D79): a click draws
+// popup.html in a frame inside the page, and it stays until its ✕, Esc, or a
+// second click. On an ordinary page the frame is the desk, docked on the
+// right with the page narrowed. Where Chrome keeps extensions out, the
+// toolbar popup shows the same panel; no window ever opens.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -10,7 +10,7 @@ import { load, read } from './helpers.mjs';
 
 globalThis.HeddyProtocol = load('./lib/protocol.js');
 globalThis.HeddyConfig = load('./lib/config.js');
-const { createPanel, PANEL_FILES, WINDOWS_KEY, WINDOW } = load('./lib/panel.js');
+const { createPanel, PANEL_FILES, popupPath } = load('./lib/panel.js');
 const { createSnap } = load('./lib/snap.js');
 const { createCourier } = load('./lib/courier.js');
 const { createCidStore } = load('./lib/cid-store.js');
@@ -22,7 +22,7 @@ const STORE = { id: 11, windowId: 1, url: 'https://chromewebstore.google.com/det
 // ─── lib/panel.js, the background's side ────────────────────────────────────
 
 function fakeChrome({ forbidden = [] } = {}) {
-  const calls = { injected: [], sent: [], windows: [], removed: [] };
+  const calls = { injected: [], sent: [], windows: [], removed: [], popups: [], opened: [] };
   const open = {}; // tabId → panel shown in that page
   const session = {};
   const live = new Set();
@@ -44,10 +44,11 @@ function fakeChrome({ forbidden = [] } = {}) {
       },
     },
     windows: {
-      get: async (id) => { if (id === 1) return { id: 1, left: 100, top: 40, width: 1440, height: 900 }; if (live.has(id)) return { id }; throw new Error('No window'); },
-      getLastFocused: async () => ({ id: 1, left: 100, top: 40, width: 1440, height: 900 }),
-      create: async (o) => { calls.windows.push(o); live.add(77); return { id: 77 }; },
-      remove: async (id) => { calls.removed.push(id); live.delete(id); },
+      create: async (o) => { calls.windows.push(o); return { id: 77 }; },
+    },
+    action: {
+      setPopup: async (o) => { calls.popups.push(o); },
+      openPopup: async (o) => { calls.opened.push(o); },
     },
   };
   return { chrome, calls, session, open, live };
@@ -64,36 +65,34 @@ test('a click on the icon injects the panel into the active tab and toggles it',
   assert.equal(f.calls.windows.length, 0, 'no window on a page Heddy may draw on');
 });
 
-test('on a page Chrome keeps from extensions, the popup opens in a small window top right; a second click closes it', async () => {
+test('on a page Chrome keeps from extensions, the toolbar popup shows the panel (D79): set for that tab and opened; never a window (D78)', async () => {
   const f = fakeChrome({ forbidden: [11] });
   const panel = createPanel({ chrome: f.chrome });
-  assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'window', open: true });
-  const w = f.calls.windows[0];
-  assert.equal(w.url, `${EXT}/popup/popup.html?tab=11&host=window&kind=store`, 'the window is told the kind of page (D61)');
-  assert.equal(w.type, 'popup');
-  assert.equal(w.focused, true);
-  assert.equal(w.width, WINDOW.width);
-  assert.equal(w.left, 100 + 1440 - WINDOW.width - WINDOW.right);
-  assert.equal(w.top, 40 + WINDOW.top);
-  assert.deepEqual(f.session[WINDOWS_KEY], { 11: 77 });
-  assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'window', open: false });
-  assert.deepEqual(f.calls.removed, [77]);
-  assert.deepEqual(f.session[WINDOWS_KEY], {});
+  assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'popup', open: true });
+  assert.deepEqual(f.calls.popups, [{ tabId: 11, popup: 'popup/popup.html?tab=11&host=popup&kind=store' }], 'told the kind of page (D61)');
+  assert.equal(popupPath(11, 'store'), 'popup/popup.html?tab=11&host=popup&kind=store');
+  assert.deepEqual(f.calls.opened, [{ windowId: 1 }]);
+  assert.equal(f.calls.windows.length, 0);
+  // Where Chrome will not let an extension open its popup, the next click shows it.
+  delete f.chrome.action.openPopup;
+  assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'popup', open: false });
+  f.chrome.action.openPopup = async () => { throw new Error('not allowed'); };
+  assert.deepEqual(await panel.clicked(STORE), { ok: true, where: 'popup', open: false });
+  assert.equal(f.calls.windows.length, 0);
 });
 
-test('a fallback window the child closed is forgotten, and the next click opens a fresh one', async () => {
+test('a tab whose popup Heddy set gets the icon’s click back when it goes to another page', async () => {
   const f = fakeChrome({ forbidden: [11] });
   const panel = createPanel({ chrome: f.chrome });
   await panel.clicked(STORE);
-  f.live.delete(77);
-  await panel.windowRemoved(77);
-  assert.deepEqual(f.session[WINDOWS_KEY], {});
-  await panel.clicked(STORE);
-  assert.equal(f.calls.windows.length, 2);
-  // A stale id (the worker missed onRemoved) also opens a fresh window.
-  f.live.delete(77);
-  await panel.clicked(STORE);
-  assert.equal(f.calls.windows.length, 3);
+  await panel.tabUpdated(11, { status: 'loading' });
+  assert.equal(f.calls.popups.length, 1, 'not on a status change');
+  await panel.tabUpdated(11, { url: 'https://www.ordnancesurvey.co.uk/' });
+  assert.deepEqual(f.calls.popups.at(-1), { tabId: 11, popup: '' });
+  await panel.tabUpdated(11, { url: 'https://example.com/' });
+  assert.equal(f.calls.popups.length, 2, 'only once');
+  await panel.tabUpdated(9, { url: 'https://example.com/' });
+  assert.equal(f.calls.popups.length, 2, 'never for a tab Heddy did not set');
 });
 
 test('hide takes the panel off a page and resolves; a page without one resolves too', async () => {
@@ -116,7 +115,7 @@ test('+ Picture from the panel: box mode is drawn BESIDE the panel (R5b); so is 
   };
   const sent = [];
   chrome.tabs.sendMessage = async (tabId, m) => { order.push(m.type); sent.push(m); return { ok: true }; };
-  const snap = createSnap({ chrome, crop: { clampBox: (r) => r }, tools: {}, makers: {}, sender: {}, later: (fn) => fn(), showPanel: async (tab) => { order.push(`show:${tab.id}`); } });
+  const snap = createSnap({ chrome, crop: { clampBox: (r) => r }, tools: {}, makers: {}, later: (fn) => fn(), showPanel: async (tab) => { order.push(`show:${tab.id}`); } });
   // The panel's frame has a sender.tab (the page it sits in) and an extension URL.
   const frame = { id: 'heddy', url: `${EXT}/popup/popup.html?tab=9&host=panel`, tab: ARTICLE, frameId: 3 };
   const r = await snap.internal({ type: 'heddy-ui:snap', mode: 'box', tabId: 9 }, frame);
@@ -128,7 +127,7 @@ test('+ Picture from the panel: box mode is drawn BESIDE the panel (R5b); so is 
   assert.deepEqual(sent.at(-1), { type: 'heddy-box:start', whole: true, keep: true });
 });
 
-test('the panel’s frame names its tab like the old popup: a capture from it is not refused for its own URL', async () => {
+test('the panel’s frame names its tab like the old popup: Full desk from it is not refused for its own URL', async () => {
   const VIDEO = 'Fq2aPn3x_-A';
   const calls = [];
   const chrome = {
@@ -142,11 +141,9 @@ test('the panel’s frame names its tab like the old popup: a capture from it is
   };
   const courier = createCourier({ chrome, store: createCidStore(), randomUUID: () => '0f8fad5b-d9cb-469f-a165-70867728950e' });
   const frame = { id: 'heddy', url: `${EXT}/popup/popup.html?tab=7&host=panel`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/watch?v=${VIDEO}` }, frameId: 4 };
-  const r = await courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'keep', tabId: 7, windowId: 1 }, frame);
+  const r = await courier.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: null, then: 'classroom', tabId: 7, windowId: 1 }, frame);
   assert.equal(r.ok, true);
   assert.equal(calls[0].openerTabId, 7);
-  const page = await courier.internal({ type: 'heddy-ui:page', url: ARTICLE.url, markdown: '# m', tabId: 9, windowId: 1 }, { ...frame, tab: ARTICLE });
-  assert.equal(page.ok, true, 'Save page to Jotters from the panel on an article');
 });
 
 // ─── content/panel.js, in the page ──────────────────────────────────────────
@@ -162,7 +159,7 @@ function page() {
   function el(tag) {
     const e = {
       tag, attrs: {}, style: { setProperty(k, v, prio) { this[k] = `${v} !${prio}`; } }, children: [], className: '', title: '',
-      classList: { set: new Set(), add(c) { this.set.add(c); }, contains(c) { return this.set.has(c); } },
+      classList: { set: new Set(), add(c) { this.set.add(c); }, remove(c) { this.set.delete(c); }, toggle(c, on) { if (on) this.set.add(c); else this.set.delete(c); }, contains(c) { return this.set.has(c); } },
       setAttribute(k, v) { this.attrs[k] = v; },
       appendChild(c) { this.children.push(c); return c; },
       attachShadow(o) { this.shadowMode = o.mode; this.shadow = el('#shadow'); return this.shadow; },
@@ -179,7 +176,16 @@ function page() {
     document: {
       createElement: el,
       body: { appendChild: (c) => { appended.push(c); return c; } },
-      documentElement: { appendChild: (c) => { appended.push(c); return c; } },
+      documentElement: {
+        appendChild: (c) => { appended.push(c); return c; },
+        style: {
+          props: {},
+          setProperty(k, v, prio) { this.props[k] = { v, prio: prio || '' }; },
+          getPropertyValue(k) { return this.props[k] ? this.props[k].v : ''; },
+          getPropertyPriority(k) { return this.props[k] ? this.props[k].prio : ''; },
+          removeProperty(k) { delete this.props[k]; },
+        },
+      },
       addEventListener: on('doc'),
       removeEventListener: off('doc'),
     },
@@ -190,6 +196,8 @@ function page() {
     setInterval: () => 1,
     clearInterval: () => {},
     requestAnimationFrame: (fn) => fn(),
+    Event: class { constructor(type) { this.type = type; } },
+    dispatchEvent: () => true,
     chrome: {
       runtime: {
         id: 'heddy',
@@ -256,6 +264,26 @@ test('the frame sizes itself and closes itself; a message from anyone else is ig
   assert.equal(p.appended.length, 0);
 });
 
+test('the web desk docks on the right, full height, and narrows the page by its 410 px; closing gives the page its margin back (D79)', async () => {
+  const p = page();
+  const html = p.ctx.document.documentElement.style;
+  html.setProperty('margin-right', '20px', '');
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  const frame = p.frame();
+  p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'size', dock: true } });
+  assert.ok(frame.classList.contains('dock'));
+  assert.ok(frame.classList.contains('on'));
+  assert.deepEqual(html.props['margin-right'], { v: '410px', prio: 'important' }, 'the page is narrowed, never covered');
+  const host = p.host();
+  assert.equal(host.style.width, '410px !important');
+  assert.equal(host.style.top, '0 !important');
+  assert.equal(host.style.bottom, '0 !important');
+  const css = host.shadow.children.find((c) => c.tag === 'style').textContent;
+  assert.match(css, /\.f\.dock \{ position: absolute; top: 12px; right: 12px; bottom: 12px; width: 398px !important;/, 'the artifact’s 12 px gutter');
+  p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'close' } });
+  assert.deepEqual(html.props['margin-right'], { v: '20px', prio: '' }, 'the page’s own margin, back');
+});
+
 test('a new selection in the page is a hint to the frame (no data), sent to the frame’s own origin', async () => {
   const p = page();
   await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
@@ -309,7 +337,7 @@ test('a second injection draws nothing twice', () => {
 
 const popup = read('popup/popup.js');
 
-test('the popup closes the panel (or its window) where it used to close itself', () => {
+test('the popup closes the panel (or the toolbar popup) where it used to close itself', () => {
   assert.doesNotMatch(popup.replace(/else window\.close\(\);/, ''), /window\.close\(\)/, 'window.close only inside closeUi');
   assert.match(popup, /if \(HOST === 'panel'\) window\.parent\.postMessage\(\{ heddyPanel: 'close' \}, '\*'\);\s*else window\.close\(\);/);
   assert.match(popup, /mountButton\(\$\('snap'\), \{ chrome: chrome, tr: tr, tab: tab, close: closeUi \}\)/);
@@ -329,10 +357,12 @@ test('the popup acts on the tab it is given (?tab=), not on its own window’s a
   assert.match(popup, /HOST !== 'panel' \|\| e\.source !== window\.parent/, 'hints only from the page that holds it');
 });
 
-test('the frame does not act on a selection itself (the page adds it, D65); the background’s "changed" redraws the cards, never during an action', () => {
+test('the frame does not act on a selection itself (the page adds it, D65); the background’s "changed" redraws the desk’s cards, never during a save', () => {
   assert.doesNotMatch(popup, /heddyPanel === 'selection'/);
-  assert.match(popup, /if \(m && m\.type === 'heddy-cards:changed' && view && m\.tabId === view\.tab\.id\) refreshCards\(m\.note\);/);
-  assert.match(popup, /if \(!view \|\| busyNow\(\)\) return;/);
+  const desk = read('popup/web-desk.js');
+  assert.match(desk, /if \(m\.type === 'heddy-cards:changed'\) refresh\(m\.note\);/);
+  assert.match(desk, /function refresh\(note\) \{\s*if \(st\.saving\) return;/);
+  assert.match(popup, /if \(HOST === 'panel'\) window\.parent\.postMessage\(\{ heddyPanel: 'size', dock: true \}, '\*'\);/, 'the desk asks to be docked');
 });
 
 test('the panel is put on <html>, last, so box mode can sit just under it; away() hides it for a screenshot without reloading it', async () => {

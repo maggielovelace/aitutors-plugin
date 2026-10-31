@@ -1,5 +1,7 @@
-// heddy:box and heddy:tool (D20 tool, D32, D33), exactly the shapes in
-// COMMON.md / the site's lib/capture/protocol.ts, and the windows they open.
+// heddy:box (D32, D33), exactly the shape in COMMON.md / the site's
+// lib/capture/protocol.ts, and the checks every page-borne value passes.
+// Round 9 (D78, D84): heddy:tool and its windows are gone; the tools open the
+// desk's Ask view (tests/round9.test.mjs).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './helpers.mjs';
@@ -9,8 +11,6 @@ globalThis.HeddyConfig = load('./lib/config.js');
 globalThis.HeddyCrop = load('./lib/crop.js');
 const T = load('./lib/tools.js');
 const K = globalThis.HeddyCrop;
-const { createCourier, PAGE_FILES } = load('./lib/courier.js');
-const { createCidStore } = load('./lib/cid-store.js');
 
 const CID = '0f8fad5b-d9cb-469f-a165-70867728950e';
 const PNG = K.base64FromBytes(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13]));
@@ -73,122 +73,15 @@ test('url is http(s) only; title and context are capped at 300 and cleaned', () 
   assert.equal(b({ context: 'a\u0000b\nc' }).context, 'a b c');
 });
 
-test('heddy:tool on a picture: quote is empty; explain and card take exactly one, ask up to four', () => {
-  const t = (tool, images) => T.buildTool({ cid: CID, tool, url: URL_, title: 't', quote: 'ignored', context: 'c', images });
-  const one = t('explain', [IMG]);
-  assert.deepEqual(Object.keys(one).sort(), ['cid', 'context', 'images', 'quote', 'title', 'tool', 'type', 'url', 'v']);
-  assert.equal(one.type, 'heddy:tool');
-  assert.equal(one.quote, '');
-  assert.throws(() => t('explain', [IMG, IMG]));
-  assert.throws(() => t('card', [IMG, IMG]));
-  assert.equal(t('card', [IMG]).images.length, 1);
-  assert.equal(t('ask', [IMG, IMG, IMG, IMG]).images.length, 4);
-  assert.throws(() => t('ask', [IMG, IMG, IMG, IMG, IMG]));
-  assert.throws(() => t('ask', []));
-  assert.throws(() => t('jot', [IMG]), 'not a tool');
-});
-
-test('heddy:tool on words: the quote is required, and no images key', () => {
-  const m = T.buildTool({ cid: CID, tool: 'ask', url: URL_, title: 't', quote: ' 2 cm represents 1 km ', context: 'On a 1:50 000 map' });
-  assert.deepEqual(Object.keys(m).sort(), ['cid', 'context', 'quote', 'title', 'tool', 'type', 'url', 'v']);
-  assert.equal(m.quote, '2 cm represents 1 km');
-  assert.throws(() => T.buildTool({ cid: CID, tool: 'ask', url: URL_, title: 't', quote: '  ', context: '' }));
-});
-
-test('windows: jot → /capture/jot, explain and ask → /capture/room, card → /capture/card', () => {
-  assert.equal(T.pageFor('jot'), 'jot');
-  assert.equal(T.pageFor('explain'), 'room');
-  assert.equal(T.pageFor('ask'), 'room');
-  assert.equal(T.pageFor('card'), 'card');
-  assert.throws(() => T.pageFor('toString'));
-});
-
-function fakeChrome() {
-  const calls = { windows: [], tabMessages: [], injected: [] };
-  const session = {};
-  const chrome = {
-    runtime: { id: 'heddy' },
-    storage: {
-      session: { get: async (k) => ({ [k]: session[k] }), set: async (o) => Object.assign(session, o) },
-      local: { get: async () => ({}) },
-    },
-    windows: {
-      get: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
-      getLastFocused: async () => ({ id: 1, left: 0, top: 0, width: 1440, height: 900 }),
-      create: async (spec) => { calls.windows.push(spec); return { id: 42 }; },
-    },
-    action: { setIcon: async () => {} },
-    tabs: { get: async (id) => ({ id, url: URL_ }), sendMessage: async (tabId, m) => { calls.tabMessages.push({ tabId, m }); } },
-    scripting: { executeScript: async (o) => { calls.injected.push(o); } },
-  };
-  return { chrome, calls, session };
-}
-
-function setup() {
-  const f = fakeChrome();
-  const store = createCidStore();
-  const courier = createCourier({ chrome: f.chrome, store, randomUUID: () => CID, setTimeout: () => {} });
-  const sender = T.createSender({ openCapture: courier.openCapture });
-  return { ...f, courier, sender };
-}
-
-const windowSender = (page) => ({ origin: 'https://aitutors.me', url: `https://aitutors.me/capture/${page}?cid=${CID}`, tab: { id: 900, windowId: 42 } });
-
-test('Round 5: the sender has no heddy:box (pictures go as cards in heddy:save); the builder stays for the protocol', () => {
-  const s = setup();
-  assert.equal(s.sender.box, undefined);
-  assert.equal(typeof T.buildBox, 'function');
-});
-
-test('Explain and Ask open /capture/room; Make a card opens /capture/card', async () => {
-  for (const [tool, page] of [['explain', 'room'], ['ask', 'room'], ['card', 'card']]) {
-    const s = setup();
-    await s.sender.tool({ tool, url: URL_, title: 't', quote: '', context: '', images: [IMG] }, { tabId: 7, windowId: 1 });
-    assert.equal(s.calls.windows[0].url, `https://aitutors.me/capture/${page}?cid=${CID}`, tool);
-  }
-});
-
-test('a payload the builder refuses opens no window and holds nothing', async () => {
-  const s = setup();
-  const r = await s.sender.tool({ tool: 'explain', url: URL_, title: 't', images: [IMG, IMG] }, { tabId: 7, windowId: 1 });
-  assert.deepEqual(r, { ok: false });
-  assert.equal(s.calls.windows.length, 0);
-  assert.equal(Object.keys((s.session.heddyCids || { held: {} }).held).length, 0);
-});
-
-test('a tool’s result puts nothing on the page (its window is the answer)', async () => {
-  const s = setup();
-  await s.sender.tool({ tool: 'explain', url: URL_, title: 't', quote: 'q', context: '' }, { tabId: 7, windowId: 1 });
-  await s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, windowSender('room'));
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, windowSender('room'));
-  assert.equal(s.calls.tabMessages.length, 0);
-  assert.equal(s.calls.injected.length, 0);
-});
-
-test('on words, the context keeps 300 each side of the quote', () => {
-  const ctx = 'b'.repeat(300) + ' … ' + 'a'.repeat(300);
-  const m = T.buildTool({ cid: CID, tool: 'explain', url: URL_, title: 't', quote: 'q', context: ctx });
-  assert.equal(m.context, ctx);
-  assert.equal(T.buildTool({ cid: CID, tool: 'explain', url: URL_, title: 't', quote: 'q', context: ctx + 'zzz' }).context.length, 603);
-});
-
-test('sendTool asks the background with the words, and reports ok', async () => {
-  const sent = [];
-  globalThis.chrome = { runtime: { sendMessage: async (m) => { sent.push(m); return { ok: true }; } } };
-  try {
-    const r = await T.sendTool('explain', { url: URL_, title: 't', quote: 'q', context: 'c' });
-    assert.deepEqual(r, { ok: true });
-    assert.deepEqual(sent, [{ type: 'heddy-ui:tool', tool: 'explain', url: URL_, title: 't', quote: 'q', context: 'c' }]);
-    globalThis.chrome = { runtime: { sendMessage: () => { throw new Error('Extension context invalidated'); } } };
-    assert.deepEqual(await T.sendTool('ask', {}), { ok: false });
-  } finally {
-    delete globalThis.chrome;
-  }
-});
-
 test('the 4-picture payload at the cap still fits Chrome messaging (64 MiB)', () => {
   const png = bigPng(1000000);
   const m = T.buildBox({ cid: CID, url: URL_, title: 't', images: [0, 1, 2, 3].map(() => ({ png, box: BOX })), context: '' });
   const size = JSON.stringify(m).length;
   assert.ok(size < 6 * 1024 * 1024, `about 5.3 MB, got ${size}`);
+});
+
+test('Round 9: no tool window and no window sender (D78); the pure checks stay', () => {
+  for (const gone of ['buildTool', 'pageFor', 'createSender', 'sendTool', 'buildCardUndo', 'PAGES']) assert.equal(T[gone], undefined, gone);
+  assert.equal(typeof T.buildBox, 'function');
+  assert.deepEqual(T.TOOLS, ['explain', 'card', 'ask']);
 });

@@ -11,7 +11,8 @@ import { ROOT, load, read, manifest, shippedFiles } from './helpers.mjs';
 import { renderFontData, FACES } from '../scripts/build-fonts.mjs';
 
 const WOFF2 = ['fonts/manrope-latin.woff2', 'fonts/manrope-latin-ext.woff2'];
-const PAGE_SURFACES = ['lib/toast.js', 'content/youtube.js', 'content/page-tray.js', 'content/box-mode.js', 'lib/snap.js'];
+// The words bar (content/page-tray.js) draws with lib/tray-tools.js's CSS since Round 9.
+const PAGE_SURFACES = ['lib/toast.js', 'content/youtube.js', 'lib/tray-tools.js', 'content/box-mode.js', 'lib/snap.js'];
 
 test('the font files and their licence are in fonts/, and they are real woff2', () => {
   for (const f of WOFF2) {
@@ -57,6 +58,8 @@ for (const css of ['popup/popup.css', 'options/options.css']) {
 }
 
 test('every page surface uses the one stack, which leads with the private family', () => {
+  assert.match(read('content/page-tray.js'), /var CSS = ':host\{all:initial;position:absolute;z-index:2147483647\}' \+ TT\.CSS/, 'the words bar takes its type from lib/tray-tools.js');
+  assert.doesNotMatch(read('content/page-tray.js'), /Manrope/);
   const F = load('./lib/fonts.js');
   assert.equal(F.SANS, '"Heddy Manrope",Manrope,Roboto,Arial,sans-serif');
   for (const f of PAGE_SURFACES) {

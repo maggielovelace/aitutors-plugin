@@ -1,6 +1,6 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js');
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js', 'lib/desk-api.js', 'lib/desk-ask.js', 'lib/heddy-api.js', 'lib/web-routes.js');
 
 var cards = null;
 var courier = HeddyCourier.createCourier({
@@ -9,43 +9,54 @@ var courier = HeddyCourier.createCourier({
   collect: function (tab) { return cards.collect(tab); },
   store: HeddyCidStore.createCidStore(),
   randomUUID: function () { return crypto.randomUUID(); },
-  // Save to Jotters saved: those cards leave the panel's list (lib/cards.js).
-  saved: function (meta) { return cards && cards.saved(meta); },
 });
 
-// The toolbar icon opens Heddy's panel in the page (lib/panel.js), or a small
-// window where Chrome keeps extensions out; it stays until it is closed.
+// The toolbar icon opens Heddy's panel in the page (lib/panel.js): the desk,
+// docked on the right. Where Chrome keeps extensions out, the toolbar popup
+// shows it instead (D79); no window opens (D78).
 var panel = HeddyPanel.createPanel({ chrome: chrome });
 
 chrome.action.onClicked.addListener(function (tab) {
   panel.clicked(tab);
 });
 
-chrome.windows.onRemoved.addListener(function (windowId) {
-  panel.windowRemoved(windowId);
-});
-
-// Snap a picture and the three tools (lib/snap.js, lib/tools.js). They open
-// their windows through the courier, which answers heddy:ready and
-// heddy:result for them like any other kind.
-var sender = HeddyTools.createSender({ openCapture: courier.openCapture });
+// Snap a picture (lib/snap.js): box mode beside the desk.
 var snap = HeddySnap.createSnap({
   chrome: chrome,
   crop: HeddyCrop,
   tools: HeddyTools,
   makers: { createImageBitmap: createImageBitmap.bind(self), OffscreenCanvas: OffscreenCanvas, Blob: Blob },
-  sender: sender,
   // A picture added from the page's own menu or the whole-tab press lands
   // as a card, so the panel opens beside box mode to show it.
   showPanel: panel.show,
 });
 
-// The panel's numbered cards and Save to Jotters (lib/cards.js, Round 5).
+// The desk on a YouTube watch page (Round 8, D69–D72): its four requests to
+// aitutors.me go from here, with the browser's own aitutors.me cookie, as
+// lib/who.js's /me does (lib/desk-api.js).
+var desk = HeddyDeskApi.createDeskApi({ chrome: chrome, fetchImpl: fetch.bind(self) });
+
+// Round 9 (D78–D86): every save, Undo, card, jot, clip and the Ask view's
+// conversation, as requests from here on the same cookie (lib/heddy-api.js,
+// lib/web-routes.js). Nothing opens a window.
+var heddyApi = HeddyApi.createHeddyApi({ call: desk.call, origin: desk.origin, fetchImpl: fetch.bind(self), extensionId: chrome.runtime.id });
+var routes = HeddyWebRoutes.createWebRoutes({
+  chrome: chrome,
+  api: heddyApi,
+  cards: {
+    saveWeb: function (tab, article) { return cards.saveWeb(tab, article); },
+    undoSave: function (tab, saveId) { return cards.undoSave(tab, saveId); },
+  },
+  showPanel: panel.show,
+  saveJots: desk.saveJots,
+});
+
+// The desk's Sources: the numbered cards and the save (lib/cards.js).
 cards = HeddyCards.createCards({
   chrome: chrome,
   crop: HeddyCrop,
-  openCapture: courier.openCapture,
-  sender: sender,
+  api: heddyApi,
+  ask: routes.ask,
   randomUUID: function () { return crypto.randomUUID(); },
   pageFiles: HeddyCourier.PAGE_FILES,
   capture: snap.cropOne,
@@ -56,7 +67,7 @@ cards = HeddyCards.createCards({
   },
 });
 
-// The /capture window asks for its payload (heddy:ready) and reports
+// Full desk's /capture tab asks for its payload (heddy:ready) and reports
 // (heddy:result). Only origins in the manifest's externally_connectable can
 // reach this, and the courier checks the sender again.
 chrome.runtime.onMessageExternal.addListener(function (message, sender, sendResponse) {
@@ -75,7 +86,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 // Heddy's own popup, the YouTube content script and the page tray.
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  var mine = snap.internal(message, sender) || cards.internal(message, sender);
+  var mine = routes.internal(message, sender) || desk.internal(message, sender) || snap.internal(message, sender) || cards.internal(message, sender);
   if (mine) {
     mine.then(function (reply) { sendResponse(reply); }, function () { sendResponse(null); });
     return true;
@@ -87,14 +98,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   return true;
 });
 
+// The desk's Ask view: one Port per conversation, the site's lines streamed
+// back to it (lib/web-routes.js).
+chrome.runtime.onConnect.addListener(function (port) {
+  routes.connected(port);
+});
+
 chrome.tabs.onUpdated.addListener(function (tabId, change, tab) {
   courier.tabUpdated(tabId, change, tab);
   cards.tabUpdated(tabId, change);
+  panel.tabUpdated(tabId, change);
 });
 
 chrome.tabs.onRemoved.addListener(function (tabId) {
   cards.tabGone(tabId);
   courier.tabRemoved(tabId);
+  routes.tabGone(tabId);
+  panel.tabGone(tabId);
 });
 
 // Right-click an image → "Add picture to Heddy" (D30, D55). The menu's
