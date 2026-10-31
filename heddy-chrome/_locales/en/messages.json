@@ -603,5 +603,10 @@
   "insightsLocked": {
     "message": "$NAME$ writes a note on each part for children who have $SUBJECT$ on their plan.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" }, "subject": { "content": "$2", "example": "Physics" } }
-  }
+  },
+  "askEmpty": {
+    "message": "I'm watching along. Ask me anything about this bit, or pick a line in the Digest and press Ask $NAME$.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "deskOpenInJotterTitle": { "message": "Opens your Jotter on aitutors.me in a new tab" }
 }

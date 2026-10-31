@@ -207,6 +207,8 @@
           talk.appendChild(cardDraft(it, i));
         }
       });
+      // Nothing said yet: the desk's opening line (Classroom's room.empty), as the tutor.
+      if (!state.items.length && !state.error && opts.emptyText) talk.appendChild(el(doc, 'div', 'tu', opts.emptyText()));
       if (state.error) talk.appendChild(errorLine(state.error));
       if (!state.busy && typeof state.turnsLeft === 'number') talk.appendChild(el(doc, 'span', 'left', tr('askTurnsLeft', String(state.turnsLeft))));
       if (stick) talk.scrollTop = talk.scrollHeight;

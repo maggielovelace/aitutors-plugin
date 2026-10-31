@@ -603,5 +603,10 @@
   "insightsLocked": {
     "message": "计划里有$SUBJECT$的孩子，$NAME$ 会为每一段写一条笔记。",
     "placeholders": { "name": { "content": "$1", "example": "Newton" }, "subject": { "content": "$2", "example": "Physics" } }
-  }
+  },
+  "askEmpty": {
+    "message": "我陪你一起看。这一段有什么想问的都可以，或者在精读里选一句，按「问 $NAME$」。",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "deskOpenInJotterTitle": { "message": "在新标签页打开 aitutors.me 上的笔记本" }
 }
