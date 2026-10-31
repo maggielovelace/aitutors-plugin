@@ -34,7 +34,11 @@
 
   var CSS = [
     ':host{all:initial;display:block;box-sizing:border-box;margin:0 0 8px;z-index:2}',
-    ':host(.column){position:sticky;top:var(--heddy-top,68px);width:410px;max-width:calc(100% + 24px)}',
+    // The column's own width, never wider (the owner's window cut the header
+    // and the tabs off): at most the artifact's 410 px. The tabs fit narrower
+    // columns by the container rules below.
+    ':host(.column){position:sticky;top:var(--heddy-top,68px);width:100%;max-width:410px;min-width:0}',
+    ':host{container-type:inline-size}',
     ':host(.below){width:100%;margin:12px 0}',
     '*{box-sizing:border-box}',
     'button{all:unset;box-sizing:border-box;cursor:pointer}',
@@ -156,6 +160,10 @@
     // under the desk, in YouTube's own type
     '.more{display:inline-block;margin-top:8px;font:600 12.5px Roboto,Arial,sans-serif;color:#3ea6ff;padding:2px}',
     ':host(.light) .more{color:#065fd4}',
+    // A narrow column (YouTube at ~1100–1300 px windows gives 330–400 px):
+    // the five tabs and the header still fit, the subtitle goes first.
+    '@container (max-width:400px){.tabs{padding:0 8px;gap:0}.tab{padding:0 5px;gap:4px;font-size:13px}.tab small{padding:1px 5px}.hd{gap:7px;padding:0 10px}.x{margin-left:6px;gap:9px}.vr{padding:10px}.full{padding:0 9px}}',
+    '@container (max-width:350px){.tab .vi{display:none}.tab{padding:0 6px}.hd small{display:none}.full .vi{display:none}}',
     '[hidden]{display:none !important}',
   ].join('\n');
 

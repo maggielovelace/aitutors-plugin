@@ -47,9 +47,20 @@
 
   /** 'column' while YouTube draws two columns and is not in theatre mode;
    *  'below' otherwise (D69). */
+  // Narrower than this, the right column cannot hold the desk (YouTube's
+  // newer watch page puts a ~110 px rail of icons there): under the player.
+  var MIN_COLUMN = 300;
+
+  /** flexy: { twoColumns, theater, column: {width, right} | null, viewportW }.
+   *  The column only when YouTube shows two columns AND the column is wide
+   *  enough and inside the window (the owner's desk ran off its right edge). */
   function layoutFor(flexy) {
     var f = flexy || {};
-    return f.twoColumns && !f.theater ? 'column' : 'below';
+    if (!f.twoColumns || f.theater) return 'below';
+    var c = f.column;
+    if (c && num(c.width) && c.width < MIN_COLUMN) return 'below';
+    if (c && num(c.right) && num(f.viewportW) && c.right > f.viewportW + 1) return 'below';
+    return 'column';
   }
 
   /**
@@ -251,6 +262,7 @@
     BELOW_H: BELOW_H,
     VIEWS: VIEWS,
     layoutFor: layoutFor,
+    MIN_COLUMN: MIN_COLUMN,
     deskHeight: deskHeight,
     lineAt: lineAt,
     press: press,

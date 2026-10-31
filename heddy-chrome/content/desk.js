@@ -208,17 +208,36 @@
      *  mode, a narrow window), and size it. Called on every refresh. */
     function place() {
       if (!host || !st) return;
-      var layout = D.layoutFor(flexyState());
-      var parent = layout === 'column' ? doc.querySelector(SEL.secondaryColumn) : doc.querySelector(SEL.belowPlayer);
-      if (!parent) return;
-      if (host.parentNode !== parent || parent.firstElementChild !== host) parent.insertBefore(host, parent.firstChild);
-      host.classList.toggle('column', layout === 'column');
-      host.classList.toggle('below', layout !== 'column');
+      var fs = flexyState();
+      var col = doc.querySelector(SEL.secondaryColumn);
+      var cr = col ? col.getBoundingClientRect() : null;
+      fs.column = cr && cr.width ? { width: cr.width, right: cr.right } : null;
+      fs.viewportW = doc.documentElement.clientWidth || root.innerWidth;
+      var layout = D.layoutFor(fs);
+      if (!put(layout)) return;
+      // Where it actually landed: a column too narrow or running past the
+      // window (YouTube's newer rail of icons) sends it under the player.
+      if (layout === 'column') {
+        var hr = host.getBoundingClientRect();
+        if (D.layoutFor({ twoColumns: true, column: { width: hr.width, right: hr.right }, viewportW: fs.viewportW }) !== 'column') {
+          layout = 'below';
+          if (!put(layout)) return;
+        }
+      }
       host.classList.toggle('light', !deps.isDark());
       var top = mastheadH() + 12;
       host.style.setProperty('--heddy-top', top + 'px');
       hideSuggestions(!st.showSuggestions);
       size(layout, top);
+    }
+
+    function put(layout) {
+      var parent = layout === 'column' ? doc.querySelector(SEL.secondaryColumn) : doc.querySelector(SEL.belowPlayer);
+      if (!parent) return false;
+      if (host.parentNode !== parent || parent.firstElementChild !== host) parent.insertBefore(host, parent.firstChild);
+      host.classList.toggle('column', layout === 'column');
+      host.classList.toggle('below', layout !== 'column');
+      return true;
     }
 
     function size(layout, top) {
@@ -451,6 +470,7 @@
     function drawJot(pn) {
       var sc = el('div', 'sc');
       if (signedOut()) signInLine(sc);
+      if (st.video.status === 'forbidden') sc.appendChild(el('div', 'si', tr('deskForbidden', chrome.runtime.id)));
       var jk = btn('jk', ic('jot'));
       var words = el('span', null, tr('deskJkBtn'));
       words.appendChild(el('small', null, tr('deskJkSub')));
@@ -542,7 +562,9 @@
       return c;
     }
 
-    function say(text) {
+    /** A line under the Jot card. `stay`: it stays until the next jot, or
+     *  the child closes the desk (the owner saw a 3.5 s line go unread). */
+    function say(text, stay) {
       if (!st) return;
       st.say = text;
       clearTimeout(sayTimer);
@@ -550,7 +572,7 @@
         ui.say.textContent = text || '';
         ui.say.hidden = !text;
       }
-      if (text) sayTimer = setTimeout(function () { say(null); }, SAY_MS);
+      if (text && !stay) sayTimer = setTimeout(function () { say(null); }, SAY_MS);
     }
 
     function addNote() {
@@ -563,6 +585,7 @@
       }
       st.jots = next;
       st.noteT = null;
+      st.say = null;
       ui.field.value = '';
       saveJots();
       label();
@@ -642,6 +665,7 @@
       extra: function () { return { t: now() }; },
       site: function () { return 'youtube.com'; },
       fallbackName: profName,
+      extensionId: function () { return chrome.runtime.id; },
       keepCard: function (m) { return deps.send(Object.assign({ type: 'heddy-web:card', t: now() }, m)).then(function (r) { return r || { ok: false }; }); },
       keepJot: function (m) { return deps.send(Object.assign({ type: 'heddy-web:jot', t: now() }, m)).then(function (r) { return r || { ok: false }; }); },
       undo: function (m) { return deps.send(Object.assign({ type: 'heddy-web:undo' }, m)).then(function (r) { return r || { ok: false }; }); },
@@ -987,9 +1011,13 @@
             loadTranscript();
             loadInsights();
           } else {
-            st.video.status = r && r.error === 'unauthenticated' ? 'signedOut' : 'error';
+            // 'forbidden': aitutors.me does not know this copy of Heddy (an
+            // unpacked build whose id is not on the site's list). Said
+            // plainly, with the id, rather than failing quietly everywhere.
+            st.video.status = r && r.error === 'unauthenticated' ? 'signedOut' : r && r.error === 'forbidden' ? 'forbidden' : 'error';
             st.insights.status = 'unavailable';
             if (st.video.status === 'error') loadTranscript();
+            if (st.video.status === 'forbidden') st.transcript = { status: 'error', lines: [] };
           }
           label();
           drawPanel();
@@ -1028,7 +1056,17 @@
         if (!st) return;
         var t = st.transcript;
         if (t.status !== 'ok' || !t.lines.length) {
-          say(t.status === 'loading' ? tr('digestReading', profName()) : tr('deskNoTranscript'));
+          if (t.status === 'loading') return say(tr('digestReading', profName()));
+          // No transcript (no captions, signed out, refused): H still does
+          // something visible. The note box takes the player's time now, the
+          // cursor goes there, and the line says so until a jot is made.
+          var at = now();
+          if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
+          st.noteT = at;
+          say(tr('deskNoTranscriptNote', P.clockOf(at)), true);
+          if (ui.field) ui.field.placeholder = tr('deskJotPlaceholder', P.clockOf(at));
+          // After the key's own event: focused now, the H itself would be typed.
+          setTimeout(function () { if (ui && ui.field && ui.field.isConnected) ui.field.focus(); }, 0);
           return;
         }
         var r = D.press({ jots: st.jots, last: st.last }, { now: Date.now(), t: now(), lines: t.lines, id: newId() });
@@ -1036,6 +1074,7 @@
         if (r.result === 'full') return say(tr('deskJotsFull'));
         st.jots = r.jots;
         st.last = r.last;
+        st.say = null;
         saveJots();
         label();
         if (st.tab === 'jot') drawPanel();
