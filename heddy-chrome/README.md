@@ -4,14 +4,21 @@
 
 *Keep what you find.* Works with [aitutors.me](https://aitutors.me).
 
-Heddy puts two buttons on every YouTube video page, straight after Share:
+Heddy puts one button on every YouTube video page, straight after Share:
+**Watch with Heddy**. It opens the **Professor's desk** in YouTube's
+suggestions column (under the player in theatre mode or a narrow window):
+Classroom's desk, with **Jot** (press **H** for the line being spoken, twice
+quickly for the line before, or type a note), the **Digest** (the transcript
+in English, Bilingual or Chinese, following the player; tap a line to jump),
+Insights where aitutors.me has them, and the crest to ask the professor.
+**Save to My Jotters** saves the jots to the video's Jotter; **Full desk**
+keeps the video in *My Clips* and opens it in Classroom with them. The desk
+speaks English or Chinese (its EN | 中 is Heddy's Language setting), and 📌
+opens it on every video.
 
-- **Watch with Heddy** keeps the video in *My Clips* and opens it in
-  Classroom on aitutors.me, with the professor for that subject.
-- **Add to My Clips** keeps it for later.
-
-The same two buttons are in Heddy's panel, with a choice of *Whole video* or
-*From m:ss*, so they work even if YouTube changes its page. Click Heddy's
+**Add to My Clips** is Heddy's panel on a YouTube video: the video's
+thumbnail and exact link, a film strip of its frames with a gold window to
+drag from both ends, and *Whole · The last 30 s · From now*. Click Heddy's
 toolbar icon and the panel opens at the top right of the page. It stays there
 while you scroll, select or click the page, and closes on its ✕, on Esc, or
 on a second click of the icon. On pages Chrome keeps extensions out of
@@ -19,18 +26,20 @@ on a second click of the icon. On pages Chrome keeps extensions out of
 
 Heddy is a courier. It keeps no account, key or token: every tap opens a
 page on aitutors.me, and that page checks the video and saves it under the
-child's own account, with one tap there. Its one request of its own asks
-aitutors.me who is signed in, for the study pass in its settings and the
-account row in its panel, and keeps nothing it hears.
-Watch with Heddy and Add to My Clips open it in a new tab beside the video,
+child's own account, with one tap there. Its own requests go only to
+aitutors.me, with the browser's aitutors.me sign-in: who is signed in (the
+study pass and the panel's account row), and the desk's professor,
+transcript, insights and *Save to My Jotters* (`lib/desk-api.js`).
+Full desk and Add to My Clips open it in a new tab beside the video,
 which Heddy closes once the video is kept, bringing you back to it; the
 other captures open a small window. **Reads a page only when you ask it to** — see [PRIVACY.md](PRIVACY.md).
 
 And on any page:
 
-- **H on a YouTube video** jots the line being spoken into the video's
-  Jotter. Press H twice quickly to take the line before as well. YouTube's
-  own keys, J included, keep doing what they always did.
+- **H on a YouTube video**, while the desk is open, jots the line being
+  spoken into the desk's Jot tab. Press H twice quickly to take the line
+  before as well. With the desk closed H does nothing, and YouTube's own keys,
+  J included, always keep doing what they did.
 - **Collect, then Save to Jotters.** Click Heddy's icon and its panel stays
   on the page while you read. While it is open, **select words and each
   selection is added by itself** as the next card (stretch or shrink it
@@ -135,8 +144,10 @@ npm test
 ```
 
 Node 20 or later, no dependencies. The tests pin the permissions, forbid any
-network call in the shipped files but the one who-is-signed-in request
-(`lib/who.js`), check that each `cid` is answered once and
+network call in the shipped files but the who-is-signed-in request
+(`lib/who.js`) and the desk's four (`lib/desk-api.js`), pin the desk's words
+to Classroom's catalog (`tests/classroom-words.test.mjs`, which reads a
+checkout of aitutors.me at `$HEDDY_SITE_REPO` and skips without one), check that each `cid` is answered once and
 expires at 10 minutes, and check every message against the site's validator.
 
 `scripts/build-fonts.mjs` rewrites `lib/font-data.js` from `fonts/*.woff2`
