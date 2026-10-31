@@ -25,9 +25,9 @@ const WATCH = `https://www.youtube.com/watch?v=${VIDEO}`;
 const PAGE = 'https://www.deeplearning.ai/courses/';
 const PNG = globalThis.HeddyCrop.base64FromBytes(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13]));
 
-test('the version is 0.6.0, and Round 9 asks for no new permission', () => {
+test('Round 9 asked for no new permission (the version: tests/round11.test.mjs)', () => {
   const m = manifest();
-  assert.equal(m.version, '0.6.0');
+  assert.notEqual(m.version, '0.5.0');
   assert.deepEqual(m.permissions, ['activeTab', 'scripting', 'contextMenus', 'commands', 'storage']);
   assert.deepEqual(m.host_permissions, ['https://www.youtube.com/watch*', 'https://aitutors.me/*', 'https://*.aitutors.me/*']);
 });
@@ -206,7 +206,7 @@ test('openAsk is the one way in: it hands the desk the context and the intent, n
   assert.deepEqual(got, [{ ctx: { about: 'video' }, intent: 'ask' }, { ctx: { about: 'picture', n: 1 }, intent: 'ask' }]);
   assert.equal(A.openAsk({}, null), false);
   const yt = read('content/desk.js');
-  assert.match(yt, /root\.HeddyDeskAsk\.openAsk\(\{ about: 'video' \}, api, 'ask'\);/, 'the YouTube crest (D84: everywhere, YouTube too)');
+  assert.match(yt, /var ctx = \{ about: 'video', atLabel: P\.clockOf\(t\) \};[\s\S]*root\.HeddyDeskAsk\.openAsk\(ctx, api, 'ask'\);/, 'the YouTube crest (D84: everywhere, YouTube too; Round 11: about 1:09)');
   assert.doesNotMatch(yt, /heddy-ui:tool/, 'never the room window');
 });
 
@@ -535,14 +535,15 @@ test('layout: the desk takes the column’s own width (≤ 410 px, never wider),
   assert.equal(D.layoutFor({ twoColumns: true, theater: true }), 'below');
   const shell = read('lib/desk-shell.js');
   assert.match(shell, /':host\(\.column\)\{position:sticky;top:var\(--heddy-top,68px\);width:100%;max-width:410px;min-width:0\}'/);
-  assert.match(shell, /@container \(max-width:350px\)\{\.tab \.vi\{display:none\}[^']*\.hd small\{display:none\}/, 'the subtitle goes first, then the tab icons');
+  assert.match(shell, /@container \(max-width:350px\)\{[^']*\.tab \.vi\{width:15px;height:15px\}[^']*\.hd small\{display:none\}/, 'the subtitle goes first; the tab icons shrink, never go (Round 11)');
   assert.doesNotMatch(shell.replace(/letter-spacing:[.\d]+em/g, ''), /\d(r?em)\b/, 'px only: the owner’s Chrome has a 24 px root font');
   assert.match(read('content/desk.js'), /tab: 'jot',/, 'the desk opens on Jot');
 });
 
 test('H with no transcript still does something you can see: the note box takes the time, and the line stays until a jot', () => {
   const desk = read('content/desk.js');
-  assert.match(desk, /say\(tr\('deskNoTranscriptNote', P\.clockOf\(at\)\), true\);/);
+  assert.match(desk, /tell\(tr\('deskNoTranscriptNote', P\.clockOf\(at\)\), key\);/);
+  assert.match(desk, /function tell\(text, key\) \{\n      say\(text, true\);/);
   assert.match(desk, /if \(text && !stay\) sayTimer = setTimeout/);
   assert.match(desk, /setTimeout\(function \(\) \{ if \(ui && ui\.field && ui\.field\.isConnected\) ui\.field\.focus\(\); \}, 0\);/, 'focused after the key, so the H is not typed');
   assert.equal(I.t('en', 'deskNoTranscriptNote', '0:31'), 'No transcript to jot from here. Type what you heard: it is kept at 0:31.');

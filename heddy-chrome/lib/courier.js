@@ -31,7 +31,7 @@
   // What the background injects into a tab that reached a watch page by
   // YouTube's in-page navigation (the manifest's content script only runs on
   // a full load of a watch URL). Same list as the manifest's content_scripts.
-  var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'lib/desk-model.js', 'lib/film-strip.js', 'lib/desk-ask.js', 'lib/ask-view.js', 'lib/desk-shell.js', 'content/youtube-selectors.js', 'content/desk.js', 'content/youtube.js'];
+  var CONTENT_FILES = ['lib/font-data.js', 'lib/fonts.js', 'lib/font-desk-data.js', 'lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/marks.js', 'lib/toast.js', 'lib/jot-key.js', 'lib/desk-model.js', 'lib/film-strip.js', 'lib/desk-ask.js', 'lib/ask-view.js', 'lib/desk-shell.js', 'lib/desk-tray.js', 'content/youtube-selectors.js', 'content/desk.js', 'content/youtube.js'];
   // The desk's jots carried by Full desk (D71): at most this many ids, which
   // leave the desk's store once the site has kept the clip.
   var MAX_JOT_IDS = 200;

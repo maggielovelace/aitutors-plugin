@@ -9,7 +9,9 @@ Heddy puts one button on every YouTube video page, straight after Share:
 suggestions column (under the player in theatre mode or a narrow window):
 Classroom's desk, with **Jot** (press **H** for the line being spoken, twice
 quickly for the line before, or type a note), the **Digest** (the transcript
-in English, Bilingual or Chinese, following the player; tap a line to jump),
+in English, Bilingual or Chinese, following the player; tap a time to jump,
+and select words or click a line for Classroom's tray: Jot it · Explain ·
+Make a card · Ask the professor · › Play from here · Copy),
 Insights where aitutors.me has them, and the crest to ask the professor.
 **Save to My Jotters** saves the jots to the video's Jotter; **Full desk**
 keeps the video in *My Clips* and opens it in Classroom with them. The desk
@@ -44,7 +46,9 @@ And on any page:
 
 - **H on a YouTube video**, while the desk is open, jots the line being
   spoken into the desk's Jot tab. Press H twice quickly to take the line
-  before as well. With the desk closed H does nothing, and YouTube's own keys,
+  before as well. It works on any of the desk's tabs, while the video plays
+  and in fullscreen (a small "Jotted" note shows on the video), never while
+  you type. With the desk closed H does nothing, and YouTube's own keys,
   J included, always keep doing what they did.
 - **Collect, then Save to Jotters.** Click Heddy's icon and its panel stays
   on the page while you read. While it is open, **select words and each
@@ -152,7 +156,7 @@ YouTube page ──tap──▶ Heddy ──opens──▶ aitutors.me/capture/c
 - `_locales/` — English and 简体中文. After editing them, run
   `node scripts/build-messages.mjs` (the settings switch reads a bundled copy).
 
-- `fonts/` — Manrope (SIL OFL 1.1), bundled; see Licence below.
+- `fonts/` — Manrope, JetBrains Mono and Source Serif 4 (SIL OFL 1.1), bundled; see Licence below.
 - `store/` — the Web Store listing (English and 简体中文), the privacy-practices
   answers and the screenshots. Not part of the package.
 
@@ -185,4 +189,9 @@ icons are not covered.
 The Manrope typeface in `fonts/` (and its bytes in `lib/font-data.js`) is
 © The Manrope Project Authors and is licensed under the SIL Open Font
 License 1.1 — see [fonts/OFL.txt](fonts/OFL.txt). It is bundled, not
-downloaded: the extension makes no request for it.
+downloaded: the extension makes no request for it. The desk's JetBrains Mono
+(© The JetBrains Mono Project Authors, [fonts/OFL-JetBrainsMono.txt](fonts/OFL-JetBrainsMono.txt))
+and Source Serif 4 (© The Source Serif 4 Project Authors,
+[fonts/OFL-SourceSerif4.txt](fonts/OFL-SourceSerif4.txt)), latin subsets in
+`fonts/` and as bytes in `lib/font-desk-data.js`, are under the same licence
+and bundled the same way.

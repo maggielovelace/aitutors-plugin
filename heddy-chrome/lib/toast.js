@@ -22,6 +22,19 @@
   function model(msg, lang, tr) {
     if (!msg || typeof msg !== 'object') return null;
     switch (msg.kind) {
+      case 'desk_jot':
+        // H with the desk out of sight (Round 11: another tab, fullscreen):
+        // "Jotted · 2:48" and the line, on the video.
+        return {
+          wide: true,
+          title: tr('deskJotToast', P.clockOf(typeof msg.t === 'number' ? msg.t : 0)),
+          quote: typeof msg.quote === 'string' && msg.quote ? tr('toastQuote', msg.quote) : null,
+          ms: CLIP_MS,
+        };
+      case 'desk_say':
+        // The desk's line for an H it could not jot (nothing being said, no
+        // transcript yet), where the desk is out of sight.
+        return typeof msg.text === 'string' && msg.text ? { title: msg.text, ms: NOTE_MS } : null;
       case 'cant_keep':
         return { title: tr('toastCantKeep'), ms: CLIP_MS };
       case 'clip': {
@@ -147,7 +160,7 @@
     '.t b{font:700 14px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif}' +
     '.t span{font:500 12px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#5d6878}' +
     '.t q{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;quotes:none;margin-top:4px;' +
-    'font:500 13px/1.45 "Source Serif 4",Georgia,serif;color:#14253f;overflow-wrap:anywhere}' +
+    'font:500 13px/1.45 "Heddy Serif","Source Serif 4",Georgia,serif;color:#14253f;overflow-wrap:anywhere}' +
     '.o{display:flex;flex-direction:column;align-items:flex-end;gap:8px;align-self:center}' +
     '.toast.wide .o{align-self:flex-start}' +
     '.o button{all:unset;cursor:pointer;font:700 13px/1.35 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#1f6a40;white-space:nowrap}' +
@@ -158,6 +171,8 @@
   /**
    * deps: { document, marks (HeddyMarks), onOpen(href), onUndo(jotId, jotterId|null),
    *         onUndoCards(cardIds) (Make a card's Undo),
+   *         mount() → where the toast goes (the fullscreen element while
+   *         there is one; the page's root otherwise),
    *         setTimeout, clearTimeout }
    */
   function createToaster(deps) {
@@ -230,7 +245,7 @@
         }
         box.appendChild(o);
       }
-      doc.documentElement.appendChild(host);
+      (deps.mount && deps.mount() || doc.documentElement).appendChild(host);
       current = { host: host, timer: later(hide, m.ms) };
       return host;
     }

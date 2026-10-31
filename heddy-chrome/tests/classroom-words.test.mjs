@@ -24,6 +24,9 @@ const skip = present ? false : `no aitutors.me catalog at ${file('en-GB')} (set 
 
 // plugin key → the path under classroom.*; `fix` turns the site's string into
 // the desk's where the desk differs on purpose (H, not J: YouTube keeps J).
+// Not pinned, on purpose: digestZhFailed. Classroom's "try again tomorrow"
+// is its 24 h window; the desk's stretch is retried after 10 minutes (Round
+// 11, site PR #1192), so the desk says "in a few minutes" (owner's words).
 const PINS = [
   ['deskTabQuiz', 'tabs.quiz'],
   ['deskTabJot', 'tabs.jot'],
@@ -49,11 +52,46 @@ const PINS = [
   ['digestTranscript', 'digest.transcript'],
   ['digestReading', 'digest.reading'],
   ['digestReadingZh', 'digest.readingZh'],
-  ['digestZhFailed', 'digest.zhFailed'],
   ['digestFailed', 'digest.failed'],
   ['digestTryAgain', 'digest.tryAgain'],
   ['digestLockedTitle', 'digest.locked.title'],
   ['digestSeek', 'digest.seek'],
+  // Pi's tray (Round 11): Classroom's DigestTray / DigestTrayMore words.
+  ['digestActionsLabel', 'digest.actionsLabel'],
+  ['digestActJot', 'digest.actions.jot'],
+  ['digestActExplain', 'digest.actions.explain'],
+  ['digestActCard', 'digest.actions.card'],
+  ['digestMoreOpen', 'digest.more.open'],
+  ['digestMoreLabel', 'digest.more.label'],
+  ['digestMorePlay', 'digest.more.play'],
+  ['digestMoreCopy', 'digest.more.copy'],
+  ['digestMoreCopied', 'digest.more.copied'],
+  ['digestMoreCopyFailed', 'digest.more.copyFailed'],
+  // The parity audit (Round 11): the jot pop-up, search, the fine line,
+  // Jump to now, the insights card and Add to my Jots.
+  ['deskNoteSaved', 'jot.noteSaved'],
+  ['deskJotUndo', 'jot.undo'],
+  ['deskJotDeleted', 'jot.deleted'],
+  ['deskOpenInJotter', 'jot.openInJotter'],
+  ['digestMatchesOne', 'digest.matches.one'],
+  ['digestMatchesMany', 'digest.matches.other'],
+  ['digestOnlyChannel', 'digest.onlyChannel'],
+  ['digestOnlyChannelHide', 'digest.onlyChannelHide'],
+  ['digestJumpNow', 'digest.jumpNow'],
+  ['overviewOpenLink', 'overview.openLink'],
+  ['overviewUnfold', 'overview.unfold'],
+  ['overviewFold', 'overview.fold'],
+  ['insightsAdd', 'insights.add'],
+  ['insightsAdded', 'insights.added'],
+  // Round 11b: chapters, the locked block (D92), Write notes.
+  ['digestMoreChapter', 'digest.more.chapter'],
+  ['digestSelectChapter', 'digest.selectChapter'],
+  ['digestLockedCta', 'digest.locked.cta'],
+  ['digestKeepWatching', 'digest.locked.keepWatching'],
+  ['insightsWritingFine', 'overview.writingFine'],
+  ['insightsNoTranscript', 'insights.noTranscript'],
+  ['overviewWriteNotes', 'overview.writeNotes'],
+  ['insightsLocked', 'insights.locked'],
   ['insightsHead', 'digest.overview'],
   ['insightsBand', 'insights.band'],
   ['insightsWriting', 'insights.writing'],

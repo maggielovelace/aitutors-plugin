@@ -675,7 +675,7 @@
         }
       },
       "digestZhFailed": {
-        "message": "The Chinese lines did not come through — try again tomorrow."
+        "message": "The Chinese lines did not come through — try again in a few minutes."
       },
       "digestFailed": {
         "message": "$NAME$ could not read the transcript just now.",
@@ -721,6 +721,36 @@
             "example": "0:31"
           }
         }
+      },
+      "digestActionsLabel": {
+        "message": "What to do with this line"
+      },
+      "digestActJot": {
+        "message": "Jot it"
+      },
+      "digestActExplain": {
+        "message": "Explain"
+      },
+      "digestActCard": {
+        "message": "Make a card"
+      },
+      "digestMoreOpen": {
+        "message": "More"
+      },
+      "digestMoreLabel": {
+        "message": "More for these words"
+      },
+      "digestMorePlay": {
+        "message": "Play from here"
+      },
+      "digestMoreCopy": {
+        "message": "Copy"
+      },
+      "digestMoreCopied": {
+        "message": "Copied"
+      },
+      "digestMoreCopyFailed": {
+        "message": "Couldn't copy"
       },
       "insightsHead": {
         "message": "$NAME$'s insights",
@@ -1387,6 +1417,15 @@
           }
         }
       },
+      "deskJotToast": {
+        "message": "Jotted · $TIME$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
+          }
+        }
+      },
       "deskWhyLoading": {
         "message": "Reading this video's transcript. A long video takes a little while; H waits for it."
       },
@@ -1407,6 +1446,149 @@
       },
       "deskFullFailed": {
         "message": "Full desk didn't open. Try again."
+      },
+      "deskNoteSaved": {
+        "message": "Note saved"
+      },
+      "deskJotUndo": {
+        "message": "Undo"
+      },
+      "deskJotDeleted": {
+        "message": "Jot deleted."
+      },
+      "deskOpenInJotter": {
+        "message": "Open in Jotter"
+      },
+      "digestMatchesOne": {
+        "message": "1 match",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "1"
+          }
+        }
+      },
+      "digestMatchesMany": {
+        "message": "$N$ matches",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "digestOnlyChannel": {
+        "message": "We only use a channel's own captions. We never make a copy of the video to write our own."
+      },
+      "digestOnlyChannelHide": {
+        "message": "Hide this note"
+      },
+      "digestJumpNow": {
+        "message": "Jump to now"
+      },
+      "deskReadingFine": {
+        "message": "Usually under ten seconds."
+      },
+      "overviewOpenLink": {
+        "message": "Open $NAME$'s insights",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "overviewUnfold": {
+        "message": "Show $NAME$'s insights",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "overviewFold": {
+        "message": "Hide $NAME$'s insights",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "insightsAdd": {
+        "message": "Add to my Jots"
+      },
+      "insightsAdded": {
+        "message": "Added"
+      },
+      "insightsFrom": {
+        "message": "From insights"
+      },
+      "askAboutAt": {
+        "message": "Ask $NAME$ · about $T$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          },
+          "t": {
+            "content": "$2",
+            "example": "1:09"
+          }
+        }
+      },
+      "askPhShort": {
+        "message": "Ask $NAME$…",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "digestMoreChapter": {
+        "message": "Select the whole chapter"
+      },
+      "digestSelectChapter": {
+        "message": "Select the chapter “$TITLE$”",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Intro"
+          }
+        }
+      },
+      "digestLockedCta": {
+        "message": "See plans"
+      },
+      "digestLockedCtaTitle": {
+        "message": "Opens aitutors.me in a new tab"
+      },
+      "digestKeepWatching": {
+        "message": "Keep watching"
+      },
+      "insightsWritingFine": {
+        "message": "Once per video. Usually under ten seconds."
+      },
+      "insightsNoTranscript": {
+        "message": "No transcript for this part."
+      },
+      "overviewWriteNotes": {
+        "message": "Write notes"
+      },
+      "insightsLocked": {
+        "message": "$NAME$ writes a note on each part for children who have $SUBJECT$ on their plan.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          },
+          "subject": {
+            "content": "$2",
+            "example": "Physics"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -2083,7 +2265,7 @@
         }
       },
       "digestZhFailed": {
-        "message": "中文没有传过来——明天再试吧。"
+        "message": "中文这次没出来——过几分钟再试。"
       },
       "digestFailed": {
         "message": "$NAME$现在读不到文字稿。",
@@ -2129,6 +2311,36 @@
             "example": "0:31"
           }
         }
+      },
+      "digestActionsLabel": {
+        "message": "用这句话做什么"
+      },
+      "digestActJot": {
+        "message": "记一笔"
+      },
+      "digestActExplain": {
+        "message": "讲一讲"
+      },
+      "digestActCard": {
+        "message": "做成闪卡"
+      },
+      "digestMoreOpen": {
+        "message": "更多"
+      },
+      "digestMoreLabel": {
+        "message": "更多操作"
+      },
+      "digestMorePlay": {
+        "message": "从这里播放"
+      },
+      "digestMoreCopy": {
+        "message": "复制"
+      },
+      "digestMoreCopied": {
+        "message": "已复制"
+      },
+      "digestMoreCopyFailed": {
+        "message": "没能复制"
       },
       "insightsHead": {
         "message": "$NAME$ 的见解",
@@ -2795,6 +3007,15 @@
           }
         }
       },
+      "deskJotToast": {
+        "message": "已记下 · $TIME$",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "2:48"
+          }
+        }
+      },
       "deskWhyLoading": {
         "message": "正在读这个视频的文字稿。视频长，要等一会儿；按 H 会等它读完。"
       },
@@ -2815,6 +3036,149 @@
       },
       "deskFullFailed": {
         "message": "完整书桌没打开，再试一次。"
+      },
+      "deskNoteSaved": {
+        "message": "已记下"
+      },
+      "deskJotUndo": {
+        "message": "撤销"
+      },
+      "deskJotDeleted": {
+        "message": "随记已删除。"
+      },
+      "deskOpenInJotter": {
+        "message": "在笔记本里打开"
+      },
+      "digestMatchesOne": {
+        "message": "$N$ 处匹配",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "1"
+          }
+        }
+      },
+      "digestMatchesMany": {
+        "message": "$N$ 处匹配",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          }
+        }
+      },
+      "digestOnlyChannel": {
+        "message": "我们只用频道自己的字幕，从不复制视频来自己写。"
+      },
+      "digestOnlyChannelHide": {
+        "message": "隐藏这条说明"
+      },
+      "digestJumpNow": {
+        "message": "跳到当前"
+      },
+      "deskReadingFine": {
+        "message": "通常不到十秒。"
+      },
+      "overviewOpenLink": {
+        "message": "打开 $NAME$ 的见解",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "overviewUnfold": {
+        "message": "展开 $NAME$ 的见解",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "overviewFold": {
+        "message": "收起 $NAME$ 的见解",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "insightsAdd": {
+        "message": "加到我的随记"
+      },
+      "insightsAdded": {
+        "message": "已添加"
+      },
+      "insightsFrom": {
+        "message": "来自见解"
+      },
+      "askAboutAt": {
+        "message": "问 $NAME$ · 关于 $T$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          },
+          "t": {
+            "content": "$2",
+            "example": "1:09"
+          }
+        }
+      },
+      "askPhShort": {
+        "message": "问 $NAME$……",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          }
+        }
+      },
+      "digestMoreChapter": {
+        "message": "选中整章"
+      },
+      "digestSelectChapter": {
+        "message": "选中这一章「$TITLE$」",
+        "placeholders": {
+          "title": {
+            "content": "$1",
+            "example": "Intro"
+          }
+        }
+      },
+      "digestLockedCta": {
+        "message": "看看计划"
+      },
+      "digestLockedCtaTitle": {
+        "message": "在新标签页打开 aitutors.me"
+      },
+      "digestKeepWatching": {
+        "message": "继续看视频"
+      },
+      "insightsWritingFine": {
+        "message": "每个视频只写一次，通常不到十秒。"
+      },
+      "insightsNoTranscript": {
+        "message": "这一段没有文字稿。"
+      },
+      "overviewWriteNotes": {
+        "message": "写笔记"
+      },
+      "insightsLocked": {
+        "message": "计划里有$SUBJECT$的孩子，$NAME$ 会为每一段写一条笔记。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Newton"
+          },
+          "subject": {
+            "content": "$2",
+            "example": "Physics"
+          }
+        }
       }
     }
   };

@@ -9,10 +9,16 @@
 // fonts it used before.
 //
 //   SANS          the font-family stack every page surface uses
+//   MONO, SERIF   the desk's stamps/labels and quotes (Round 11: "Heddy Mono"
+//                 and "Heddy Serif", JetBrains Mono and Source Serif 4, from
+//                 lib/font-desk-data.js on YouTube only)
 //   load(doc)     register the faces in doc.fonts, once per document
+//   add(doc, faces)  register more faces ({family, weight, base64, ...}), once each
 (function (root) {
   var FAMILY = 'Heddy Manrope';
   var SANS = '"Heddy Manrope",Manrope,Roboto,Arial,sans-serif';
+  var MONO = '"Heddy Mono","JetBrains Mono",ui-monospace,Menlo,monospace';
+  var SERIF = '"Heddy Serif","Source Serif 4",Georgia,"Times New Roman",serif';
   var DESCRIPTORS = { weight: '500 800', style: 'normal', display: 'swap' };
 
   function bytes(base64) {
@@ -46,7 +52,25 @@
     return added;
   }
 
-  var api = { FAMILY: FAMILY, SANS: SANS, load: load };
+  var added = root.HeddyFontFiles || (root.HeddyFontFiles = {});
+
+  /** More faces, each registered once per page (a reinjection adds none). */
+  function add(doc, faces, FontFaceCtor) {
+    var FF = FontFaceCtor || root.FontFace;
+    if (!doc || !doc.fonts || typeof FF !== 'function' || !Array.isArray(faces)) return 0;
+    var n = 0;
+    faces.forEach(function (face) {
+      if (!face || added[face.file]) return;
+      try {
+        doc.fonts.add(new FF(face.family, bytes(face.base64), { weight: face.weight, style: 'normal', display: 'swap', unicodeRange: face.unicodeRange }));
+        added[face.file] = true;
+        n++;
+      } catch (e) { /* the system-font fallback stands */ }
+    });
+    return n;
+  }
+
+  var api = { FAMILY: FAMILY, SANS: SANS, MONO: MONO, SERIF: SERIF, load: load, add: add };
   root.HeddyFonts = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else if (typeof document !== 'undefined') load(document);

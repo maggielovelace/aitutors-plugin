@@ -252,7 +252,7 @@
     "message": "$NAME$ is writing the Chinese lines…",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
   },
-  "digestZhFailed": { "message": "The Chinese lines did not come through — try again tomorrow." },
+  "digestZhFailed": { "message": "The Chinese lines did not come through — try again in a few minutes." },
   "digestFailed": {
     "message": "$NAME$ could not read the transcript just now.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
@@ -272,6 +272,16 @@
     "message": "Play from $T$",
     "placeholders": { "t": { "content": "$1", "example": "0:31" } }
   },
+  "digestActionsLabel": { "message": "What to do with this line" },
+  "digestActJot": { "message": "Jot it" },
+  "digestActExplain": { "message": "Explain" },
+  "digestActCard": { "message": "Make a card" },
+  "digestMoreOpen": { "message": "More" },
+  "digestMoreLabel": { "message": "More for these words" },
+  "digestMorePlay": { "message": "Play from here" },
+  "digestMoreCopy": { "message": "Copy" },
+  "digestMoreCopied": { "message": "Copied" },
+  "digestMoreCopyFailed": { "message": "Couldn't copy" },
   "insightsHead": {
     "message": "$NAME$'s insights",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
@@ -526,6 +536,10 @@
     "message": "Reading this video's transcript: your press at $TIME$ is jotted as soon as it's here.",
     "placeholders": { "time": { "content": "$1", "example": "0:31" } }
   },
+  "deskJotToast": {
+    "message": "Jotted · $TIME$",
+    "placeholders": { "time": { "content": "$1", "example": "2:48" } }
+  },
 
   "deskWhyLoading": { "message": "Reading this video's transcript. A long video takes a little while; H waits for it." },
   "deskWhyNone": { "message": "This video has no captions, so H can't jot its lines. Write your notes below." },
@@ -534,5 +548,60 @@
     "placeholders": { "name": { "content": "$1", "example": "Mentor" } }
   },
   "deskWhyError": { "message": "Heddy couldn't read this video's transcript. Write notes below, or try again." },
-  "deskFullFailed": { "message": "Full desk didn't open. Try again." }
+  "deskFullFailed": { "message": "Full desk didn't open. Try again." },
+
+  "deskNoteSaved": { "message": "Note saved" },
+  "deskJotUndo": { "message": "Undo" },
+  "deskJotDeleted": { "message": "Jot deleted." },
+  "deskOpenInJotter": { "message": "Open in Jotter" },
+  "digestMatchesOne": {
+    "message": "1 match",
+    "placeholders": { "n": { "content": "$1", "example": "1" } }
+  },
+  "digestMatchesMany": {
+    "message": "$N$ matches",
+    "placeholders": { "n": { "content": "$1", "example": "3" } }
+  },
+  "digestOnlyChannel": { "message": "We only use a channel's own captions. We never make a copy of the video to write our own." },
+  "digestOnlyChannelHide": { "message": "Hide this note" },
+  "digestJumpNow": { "message": "Jump to now" },
+  "deskReadingFine": { "message": "Usually under ten seconds." },
+  "overviewOpenLink": {
+    "message": "Open $NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "overviewUnfold": {
+    "message": "Show $NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "overviewFold": {
+    "message": "Hide $NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "insightsAdd": { "message": "Add to my Jots" },
+  "insightsAdded": { "message": "Added" },
+  "insightsFrom": { "message": "From insights" },
+  "askAboutAt": {
+    "message": "Ask $NAME$ · about $T$",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" }, "t": { "content": "$2", "example": "1:09" } }
+  },
+  "askPhShort": {
+    "message": "Ask $NAME$…",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestMoreChapter": { "message": "Select the whole chapter" },
+  "digestSelectChapter": {
+    "message": "Select the chapter “$TITLE$”",
+    "placeholders": { "title": { "content": "$1", "example": "Intro" } }
+  },
+  "digestLockedCta": { "message": "See plans" },
+  "digestLockedCtaTitle": { "message": "Opens aitutors.me in a new tab" },
+  "digestKeepWatching": { "message": "Keep watching" },
+  "insightsWritingFine": { "message": "Once per video. Usually under ten seconds." },
+  "insightsNoTranscript": { "message": "No transcript for this part." },
+  "overviewWriteNotes": { "message": "Write notes" },
+  "insightsLocked": {
+    "message": "$NAME$ writes a note on each part for children who have $SUBJECT$ on their plan.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" }, "subject": { "content": "$2", "example": "Physics" } }
+  }
 }

@@ -31,4 +31,7 @@ its own name and icons.
 Fonts excluded. The Manrope typeface in fonts/ (and the same font data in
 lib/font-data.js) is not covered by this licence. It is Copyright 2018 The
 Manrope Project Authors and is licensed under the SIL Open Font License,
-Version 1.1; see fonts/OFL.txt.
+Version 1.1; see fonts/OFL.txt. Likewise JetBrains Mono (Copyright 2020 The
+JetBrains Mono Project Authors; fonts/OFL-JetBrainsMono.txt) and Source Serif 4
+(Copyright 2014 The Source Serif 4 Project Authors; fonts/OFL-SourceSerif4.txt),
+in fonts/ and lib/font-desk-data.js, under the SIL Open Font License 1.1.
