@@ -288,6 +288,21 @@ test('the crest’s Ask carries the video at this second as its address, through
   assert.equal(sent[1].input.url, 'https://example.com/a', 'any other page keeps its address');
 });
 
+test('Ask goes through ONE function, lib/desk-ask.js openAsk, so the in-desk room can replace it', async () => {
+  const K = load('./lib/desk-ask.js');
+  const sent = [];
+  const send = async (m) => { sent.push(m); return { ok: true }; };
+  await K.openAsk({ line: 'Which one hits the ground first?', title: 'Meet Newton', youtubeId: VIDEO, t: 31.8 }, send);
+  await K.openAsk({ line: null, title: 'Meet Newton', youtubeId: VIDEO, t: 3 }, send);
+  assert.deepEqual(sent, [
+    { type: 'heddy-ui:tool', tool: 'ask', quote: 'Which one hits the ground first?', context: '', t: 31.8 },
+    { type: 'heddy-ui:tool', tool: 'ask', quote: 'Meet Newton', context: '', t: 3 },
+  ]);
+  const desk = read('content/desk.js');
+  assert.match(desk, /root\.HeddyDeskAsk\.openAsk\(/);
+  assert.doesNotMatch(desk, /heddy-ui:tool/, 'the desk itself never names the room window');
+});
+
 // ─── source pins (the page surfaces need a browser; looked at headless) ────
 
 const yt = read('content/youtube.js');
@@ -359,6 +374,6 @@ test('the desk’s requests: one place, aitutors.me paths only, and nothing stor
 
 test('the desk ships on every watch page, in the manifest and in the background’s re-injection list', () => {
   const js = manifest().content_scripts[0].js;
-  for (const f of ['lib/config.js', 'lib/desk-model.js', 'lib/film-strip.js', 'content/desk.js']) assert.ok(js.includes(f), f);
+  for (const f of ['lib/config.js', 'lib/desk-model.js', 'lib/film-strip.js', 'lib/desk-ask.js', 'content/desk.js']) assert.ok(js.includes(f), f);
   assert.ok(js.indexOf('content/desk.js') < js.indexOf('content/youtube.js'));
 });

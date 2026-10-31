@@ -718,13 +718,13 @@
       });
     }
 
-    /** The crest (artifact ③): Ask {professor} in Heddy's room window, with the
-     *  video at this second and the line being spoken (the contract's § 6). */
+    /** The crest (artifact ③): Ask {professor}, with the video at this second
+     *  and the line being spoken. Where it opens is lib/desk-ask.js's business. */
     function ask() {
       if (!st) return;
-      var i = D.lineAt(st.transcript.lines, now());
-      var quote = i >= 0 ? st.transcript.lines[i].text : deps.title() || deps.youtubeId();
-      deps.send({ type: 'heddy-ui:tool', tool: 'ask', quote: quote, context: '', t: now() });
+      var t = now();
+      var i = D.lineAt(st.transcript.lines, t);
+      root.HeddyDeskAsk.openAsk({ line: i >= 0 ? st.transcript.lines[i].text : null, title: deps.title(), youtubeId: st.id, t: t }, deps.send);
     }
 
     /** A page on aitutors.me in a new tab; the background checks the path. */

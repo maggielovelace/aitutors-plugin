@@ -44,6 +44,7 @@
         "lib/jot-key.js",
         "lib/desk-model.js",
         "lib/film-strip.js",
+        "lib/desk-ask.js",
         "content/youtube-selectors.js",
         "content/desk.js",
         "content/youtube.js"
