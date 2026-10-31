@@ -228,7 +228,8 @@ test('§ 1 save: the answer is checked; the href must be a Jotter’s, else it i
   assert.deepEqual(s.calls[0], { method: 'POST', path: '/api/learn/heddy/save', body });
   assert.deepEqual(H.parseSave({ status: 200, data: { ...ok.data, href: 'https://evil.example/' } }), { ok: false, error: 'failed' });
   assert.deepEqual(H.parseSave({ status: 401, data: null }), { ok: false, error: 'signed_out' });
-  assert.deepEqual(H.parseSave({ status: 403, data: { error: 'forbidden' } }), { ok: false, error: 'signed_out' }, 'a grown-up: sign in as the child');
+  assert.deepEqual(H.parseSave({ status: 403, data: { ok: false, error: 'signed_out' } }), { ok: false, error: 'signed_out' }, 'a grown-up: sign in as the child');
+  assert.deepEqual(H.parseSave({ status: 403, data: { error: 'forbidden' } }), { ok: false, error: 'forbidden' }, 'an id the site does not know: no sign-in helps');
   assert.deepEqual(H.parseSave({ status: 413, data: { ok: false, error: 'too_big' } }), { ok: false, error: 'too_big' });
   assert.deepEqual(H.parseSave({ status: 400, data: { ok: false, error: '<b>' } }), { ok: false, error: 'failed' });
 });
@@ -387,17 +388,35 @@ test('on YouTube the source is the video at the player’s second', () => {
   assert.equal(W.sourceOf({ url: 'chrome://extensions/' }), null);
 });
 
-test('Add to My Clips from the popup (D86): a request, then "Added to My Clips · Open" on the video; no tab', async () => {
+test('Add to My Clips from the popup (D86, owner: C1 + C3’s toast): a request; the popup gets the Added card’s fields, the video the toast with Open · Undo; no tab', async () => {
   const s = routesSetup({ url: WATCH, title: 'Meet Professor Newton - YouTube' });
-  const r = await s.routes.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 21, endSec: 73, then: 'keep', tabId: 7 }, s.frame);
-  assert.deepEqual(r, { ok: true, duplicate: false });
-  assert.deepEqual(s.calls.api.at(-1), ['clip', { youtubeId: VIDEO, title: 'Meet Professor Newton', startSec: 21, endSec: 73 }]);
-  assert.deepEqual(s.calls.tabMessages, [{ tabId: 7, m: { type: 'heddy-ui:toast', kind: 'clip_added', duplicate: false, startSec: 21, notices: ['off_map'], href: `${PROD}/study/clips/m/m1` } }]);
+  s.routes = W.createWebRoutes({
+    chrome: { runtime: { id: 'heddy', sendMessage: async (m) => { s.calls.told.push(m); } }, tabs: { get: async (id) => ({ id, windowId: 1, url: WATCH, title: 'Meet Professor Newton - YouTube' }), sendMessage: async (tabId, m) => { s.calls.tabMessages.push({ tabId, m }); } }, storage: { local: { get: async () => ({}) } } },
+    api: {
+      clip: async (b) => { s.calls.api.push(['clip', b]); return { ok: true, momentId: 'm1', href: '/study/clips/m/m1', duplicate: false, startSec: 69, endSec: 124, durationSec: 175, notices: ['new_channel'] }; },
+      undo: async (b) => { s.calls.api.push(['undo', b]); return { ok: true }; },
+    },
+    cards: {}, showPanel: async () => {},
+  });
+  const r = await s.routes.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, startSec: 69, endSec: 124, then: 'keep', tabId: 7 }, s.frame);
+  assert.deepEqual(r, { ok: true, duplicate: false, momentId: 'm1', startSec: 69, endSec: 124, durationSec: 175, notices: ['new_channel'], href: `${PROD}/study/clips/m/m1` });
+  assert.deepEqual(s.calls.api.at(-1), ['clip', { youtubeId: VIDEO, title: 'Meet Professor Newton', startSec: 69, endSec: 124 }]);
+  const toast = s.calls.tabMessages[0].m;
   const T = load('./lib/toast.js');
-  const m = T.model(s.calls.tabMessages[0].m, 'en', I.translator('en'));
-  assert.deepEqual([m.title, m.line, m.open.label], ['Added to My Clips', "from 0:21 · Off your map: in Mentor's Classroom", 'Open']);
+  const m = T.model(toast, 'en', I.translator('en'));
+  assert.deepEqual([m.title, m.line, m.warn, m.open.label, m.undo], ['Added to My Clips · 1:09 – 2:04', 'New channel · your grown-up will be told', true, 'Open', { label: 'Undo', momentId: 'm1' }]);
+  // One Undo undoes both: from the toast (the page) or the popup (Heddy's page).
+  assert.deepEqual(await s.routes.internal({ type: 'heddy-ui:undo-clip', momentId: 'm1' }, s.page), { ok: true });
+  assert.deepEqual(s.calls.api.at(-1), ['undo', { kind: 'clip', momentId: 'm1' }]);
+  assert.deepEqual(s.calls.tabMessages.at(-1).m, { type: 'heddy-ui:toast', kind: 'clip_undone' });
+  assert.deepEqual(s.calls.told.at(-1), { type: 'heddy-clip:undone', tabId: 7, momentId: 'm1' }, 'the popup hears it');
+  assert.deepEqual(await s.routes.internal({ type: 'heddy-web:undo', kind: 'clip', momentId: 'm1', tabId: 7 }, s.frame), { ok: true });
+  assert.equal(T.model({ kind: 'clip_added', duplicate: true, momentId: 'm1' }, 'en', I.translator('en')).undo, null, 'a duplicate has nothing to undo');
   assert.deepEqual(await s.routes.internal({ type: 'heddy-ui:capture', youtubeId: 'Fq2aPn3x_-A', then: 'keep', tabId: 7 }, s.frame), { ok: false }, 'only the video the tab shows');
   assert.equal(s.routes.internal({ type: 'heddy-ui:capture', youtubeId: VIDEO, then: 'classroom' }, s.page), undefined, 'Full desk stays the courier’s');
+  const pop = read('popup/popup.js');
+  assert.match(pop, /function addedCard\(r, ctx\) \{/, 'the Added card is its own function');
+  assert.doesNotMatch(pop.slice(pop.indexOf("go.addEventListener('click'"), pop.indexOf('function secWord')), /closeUi\(\)/, 'the popup stays open on Added');
 });
 
 test('the toasts’ Undo goes from the background (D78): a jot, cards; then the toast that says so', async () => {
@@ -493,9 +512,39 @@ test('Keep as a jot on YouTube goes to the video at t, never with a picture (sit
   assert.deepEqual(r.calls.api.at(-1)[1], { url: `${WATCH}&t=52`, title: 'Meet Newton', text: 'They land together.', draftToken: 'k1', quote: 'Explain this video', t: 52 });
 });
 
-test('a 403 that names the route’s own refusal is that refusal; any other 403 is signed out (site 1, 7)', () => {
+test('a 403 that names the route’s own refusal is that refusal; an unknown copy is forbidden; any other 403 is signed out (site 1, 7)', () => {
   assert.deepEqual(H.parseCard({ status: 403, data: { ok: false, error: 'invalid' } }), { ok: false, error: 'invalid' });
   assert.deepEqual(H.parseCard({ status: 403, data: { ok: false, error: 'no_seat' } }), { ok: false, error: 'no_seat' });
-  assert.deepEqual(H.parseCard({ status: 403, data: { error: 'forbidden' } }), { ok: false, error: 'signed_out' });
+  assert.deepEqual(H.parseCard({ status: 403, data: { ok: false, error: 'signed_out' } }), { ok: false, error: 'signed_out' });
+  assert.deepEqual(H.parseCard({ status: 403, data: { error: 'forbidden' } }), { ok: false, error: 'forbidden' });
   assert.deepEqual(H.parseJot({ status: 200, data: { ok: true, jotId: null, jotterId: 'j1' } }), { ok: true, jotId: null, jotterId: 'j1' }, 'kept, with no Undo');
+});
+
+// ─── the owner's 0.5.0 test in real Chrome (2026-10-31) ────────────────────
+
+test('layout: the desk takes the column’s own width (≤ 410 px, never wider), or goes under the player when the column cannot hold it', () => {
+  const D = load('./lib/desk-model.js');
+  assert.equal(D.layoutFor({ twoColumns: true, column: { width: 368, right: 1264 }, viewportW: 1280 }), 'column');
+  assert.equal(D.layoutFor({ twoColumns: true, column: { width: 110, right: 1280 }, viewportW: 1280 }), 'below', 'YouTube’s rail of icons');
+  assert.equal(D.layoutFor({ twoColumns: true, column: { width: 400, right: 1400 }, viewportW: 1280 }), 'below', 'off the window’s edge');
+  assert.equal(D.layoutFor({ twoColumns: true, theater: true }), 'below');
+  const shell = read('lib/desk-shell.js');
+  assert.match(shell, /':host\(\.column\)\{position:sticky;top:var\(--heddy-top,68px\);width:100%;max-width:410px;min-width:0\}'/);
+  assert.match(shell, /@container \(max-width:350px\)\{\.tab \.vi\{display:none\}[^']*\.hd small\{display:none\}/, 'the subtitle goes first, then the tab icons');
+  assert.doesNotMatch(shell.replace(/letter-spacing:[.\d]+em/g, ''), /\d(r?em)\b/, 'px only: the owner’s Chrome has a 24 px root font');
+  assert.match(read('content/desk.js'), /tab: 'jot',/, 'the desk opens on Jot');
+});
+
+test('H with no transcript still does something you can see: the note box takes the time, and the line stays until a jot', () => {
+  const desk = read('content/desk.js');
+  assert.match(desk, /say\(tr\('deskNoTranscriptNote', P\.clockOf\(at\)\), true\);/);
+  assert.match(desk, /if \(text && !stay\) sayTimer = setTimeout/);
+  assert.match(desk, /setTimeout\(function \(\) \{ if \(ui && ui\.field && ui\.field\.isConnected\) ui\.field\.focus\(\); \}, 0\);/, 'focused after the key, so the H is not typed');
+  assert.equal(I.t('en', 'deskNoTranscriptNote', '0:31'), 'No transcript to jot from here. Type what you heard: it is kept at 0:31.');
+});
+
+test('a copy of Heddy aitutors.me does not know (403 forbidden) is said plainly, with its id, everywhere', () => {
+  assert.match(read('content/desk.js'), /if \(st\.video\.status === 'forbidden'\) sc\.appendChild\(el\('div', 'si', tr\('deskForbidden', chrome\.runtime\.id\)\)\);/);
+  assert.match(I.t('en', 'deskForbidden', 'abc'), /^aitutors\.me doesn't know this copy of Heddy \(id abc\)/);
+  assert.ok(A.ERRORS.includes('forbidden'));
 });

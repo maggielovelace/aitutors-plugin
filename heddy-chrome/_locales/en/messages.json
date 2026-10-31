@@ -489,6 +489,36 @@
   "subjGEOG": { "message": "Geography" },
   "savedNoArticle": { "message": "The article's text wasn't kept this time; your snippets and pictures were." },
   "clipLimit": { "message": "That's today's limit for adding videos. Try again tomorrow." },
-  "toastNoticeNewChannel": { "message": "A grown-up will be told about this channel" },
-  "toastNoticeOffMap": { "message": "Off your map: in Mentor's Classroom" }
+  "toastNoticeNewChannel": { "message": "New channel · your grown-up will be told" },
+  "toastNoticeOffMap": { "message": "Off your map: in Mentor's Classroom" },
+
+  "deskNoTranscriptNote": {
+    "message": "No transcript to jot from here. Type what you heard: it is kept at $TIME$.",
+    "placeholders": { "time": { "content": "$1", "example": "0:31" } }
+  },
+  "deskForbidden": {
+    "message": "aitutors.me doesn't know this copy of Heddy (id $ID$), so the desk can't load or save. Install Heddy from the Chrome Web Store, or ask a grown-up to add this id on aitutors.me.",
+    "placeholders": { "id": { "content": "$1", "example": "abcdefghijklmnopabcdefghijklmnop" } }
+  },
+
+  "clipAdding": { "message": "Adding…" },
+  "rangePart": {
+    "message": "$A$ → $B$ · $SPAN$",
+    "placeholders": { "a": { "content": "$1", "example": "1:09" }, "b": { "content": "$2", "example": "2:04" }, "span": { "content": "$3", "example": "55 s" } }
+  },
+  "rangeFrom": {
+    "message": "From $A$",
+    "placeholders": { "a": { "content": "$1", "example": "1:09" } }
+  },
+  "rangeWhole": {
+    "message": "Whole video · $LEN$",
+    "placeholders": { "len": { "content": "$1", "example": "2:55" } }
+  },
+  "rangeWholeNoLen": { "message": "Whole video" },
+  "chkPlaysPart": { "message": "Plays on aitutors.me, only this part" },
+  "chkPlays": { "message": "Plays on aitutors.me" },
+  "openInMyClips": { "message": "Open in My Clips ↗" },
+  "addedHint": { "message": "Heddy didn't open anything. Keep watching." },
+  "toastClipUndone": { "message": "Taken out of My Clips" },
+  "toastClipUndoFailed": { "message": "Couldn't take that out of My Clips." }
 }

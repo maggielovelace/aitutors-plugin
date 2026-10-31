@@ -1296,10 +1296,87 @@
         "message": "That's today's limit for adding videos. Try again tomorrow."
       },
       "toastNoticeNewChannel": {
-        "message": "A grown-up will be told about this channel"
+        "message": "New channel · your grown-up will be told"
       },
       "toastNoticeOffMap": {
         "message": "Off your map: in Mentor's Classroom"
+      },
+      "deskNoTranscriptNote": {
+        "message": "No transcript to jot from here. Type what you heard: it is kept at $TIME$.",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "0:31"
+          }
+        }
+      },
+      "deskForbidden": {
+        "message": "aitutors.me doesn't know this copy of Heddy (id $ID$), so the desk can't load or save. Install Heddy from the Chrome Web Store, or ask a grown-up to add this id on aitutors.me.",
+        "placeholders": {
+          "id": {
+            "content": "$1",
+            "example": "abcdefghijklmnopabcdefghijklmnop"
+          }
+        }
+      },
+      "clipAdding": {
+        "message": "Adding…"
+      },
+      "rangePart": {
+        "message": "$A$ → $B$ · $SPAN$",
+        "placeholders": {
+          "a": {
+            "content": "$1",
+            "example": "1:09"
+          },
+          "b": {
+            "content": "$2",
+            "example": "2:04"
+          },
+          "span": {
+            "content": "$3",
+            "example": "55 s"
+          }
+        }
+      },
+      "rangeFrom": {
+        "message": "From $A$",
+        "placeholders": {
+          "a": {
+            "content": "$1",
+            "example": "1:09"
+          }
+        }
+      },
+      "rangeWhole": {
+        "message": "Whole video · $LEN$",
+        "placeholders": {
+          "len": {
+            "content": "$1",
+            "example": "2:55"
+          }
+        }
+      },
+      "rangeWholeNoLen": {
+        "message": "Whole video"
+      },
+      "chkPlaysPart": {
+        "message": "Plays on aitutors.me, only this part"
+      },
+      "chkPlays": {
+        "message": "Plays on aitutors.me"
+      },
+      "openInMyClips": {
+        "message": "Open in My Clips ↗"
+      },
+      "addedHint": {
+        "message": "Heddy didn't open anything. Keep watching."
+      },
+      "toastClipUndone": {
+        "message": "Taken out of My Clips"
+      },
+      "toastClipUndoFailed": {
+        "message": "Couldn't take that out of My Clips."
       }
     },
     "zh_CN": {
@@ -2597,10 +2674,87 @@
         "message": "今天加视频的次数到上限了，明天再试。"
       },
       "toastNoticeNewChannel": {
-        "message": "会告诉家长这个频道"
+        "message": "新频道 · 会告诉你的家长"
       },
       "toastNoticeOffMap": {
         "message": "不在你的学习地图上：放在 Mentor 的教室"
+      },
+      "deskNoTranscriptNote": {
+        "message": "这里没有文字稿可记。把你听到的写下来，会记在 $TIME$。",
+        "placeholders": {
+          "time": {
+            "content": "$1",
+            "example": "0:31"
+          }
+        }
+      },
+      "deskForbidden": {
+        "message": "aitutors.me 不认识这份 Heddy（编号 $ID$），书桌没法加载或保存。请从 Chrome 网上应用店安装 Heddy，或请家长在 aitutors.me 加上这个编号。",
+        "placeholders": {
+          "id": {
+            "content": "$1",
+            "example": "abcdefghijklmnopabcdefghijklmnop"
+          }
+        }
+      },
+      "clipAdding": {
+        "message": "正在加……"
+      },
+      "rangePart": {
+        "message": "$A$ → $B$ · $SPAN$",
+        "placeholders": {
+          "a": {
+            "content": "$1",
+            "example": "1:09"
+          },
+          "b": {
+            "content": "$2",
+            "example": "2:04"
+          },
+          "span": {
+            "content": "$3",
+            "example": "55 s"
+          }
+        }
+      },
+      "rangeFrom": {
+        "message": "从 $A$ 开始",
+        "placeholders": {
+          "a": {
+            "content": "$1",
+            "example": "1:09"
+          }
+        }
+      },
+      "rangeWhole": {
+        "message": "整个视频 · $LEN$",
+        "placeholders": {
+          "len": {
+            "content": "$1",
+            "example": "2:55"
+          }
+        }
+      },
+      "rangeWholeNoLen": {
+        "message": "整个视频"
+      },
+      "chkPlaysPart": {
+        "message": "在 aitutors.me 上播放，只放这一段"
+      },
+      "chkPlays": {
+        "message": "在 aitutors.me 上播放"
+      },
+      "openInMyClips": {
+        "message": "在「我的短片」里打开 ↗"
+      },
+      "addedHint": {
+        "message": "Heddy 没有打开任何页面，继续看吧。"
+      },
+      "toastClipUndone": {
+        "message": "已从「我的短片」拿掉"
+      },
+      "toastClipUndoFailed": {
+        "message": "没能从「我的短片」拿掉。"
       }
     }
   };
