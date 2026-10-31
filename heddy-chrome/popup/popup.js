@@ -498,31 +498,50 @@
     err.hidden = true;
     var go = el('button', 'go');
     go.type = 'button';
+    var adding = false;
     go.addEventListener('click', function () {
+      if (adding) return;
+      adding = true;
       go.setAttribute('aria-busy', 'true');
+      go.textContent = '';
+      go.appendChild(el('span', 'spin'));
+      go.appendChild(el('span', null, tr('clipAdding')));
+      err.hidden = true;
       var m = { type: 'heddy-ui:capture', youtubeId: youtubeId, startSec: null, then: 'keep', tabId: tab.id, windowId: tab.windowId };
       if (range && duration) Object.assign(m, F.captureFields(range, duration));
-      // A request from Heddy's background, no tab (D86): the toast "Added
-      // to My Clips · Open" shows on the video.
+      // A request from Heddy's background, no tab (D86, owner: C1 + C3's
+      // toast): the popup stays and shows the Added card, and at the same
+      // moment the toast shows on the video. One Undo undoes both.
       chrome.runtime.sendMessage(m).then(function (reply) {
-        if (reply && reply.ok) return closeUi();
+        if (reply && reply.ok) {
+          // Everything under the video gives way to the Added card.
+          [chips, film, lens, go, hint, err].forEach(function (x) { x.remove(); });
+          body.appendChild(addedCard(reply, { tab: tab, duration: duration }));
+          return;
+        }
+        adding = false;
         go.removeAttribute('aria-busy');
+        paint();
         var why = reply && reply.error;
         err.textContent = tr(why === 'signed_out' ? 'clipSignedOut' : why === 'no_captions' ? 'toastNoCaptions' : why === 'cant_keep' ? 'toastCantKeep' : why === 'limit' ? 'clipLimit' : 'clipFailed');
         err.hidden = false;
       }).catch(function () {
+        adding = false;
         go.removeAttribute('aria-busy');
+        paint();
         err.textContent = tr('clipFailed');
         err.hidden = false;
       });
     });
     body.appendChild(go);
-    body.appendChild(el('p', 'hint', tr('addsToMyClips')));
+    var hint = el('p', 'hint', tr('addsToMyClips'));
+    body.appendChild(hint);
     body.appendChild(err);
 
     function secWord(n) { return tr('spanSec', n); }
 
     function paint() {
+      if (adding) return;
       var isWhole = !range || !duration || (range.start === 0 && range.end >= Math.floor(duration));
       var chip = range && duration ? F.chipOf(range, nowT, duration) : 'whole';
       Object.keys(chipEls).forEach(function (k) {
@@ -596,6 +615,82 @@
         drawFrames(film, HeddyFilmStrip.pickLevel(levels, 40), duration);
       });
     }
+  }
+
+  // ─── Add to My Clips: the Added card (owner's pick C1, 2026-10-31) ────────
+  //
+  // Kept in this one function so the design can change without touching the
+  // request: "✓ Added to My Clips", the range pill, the checks (plays on
+  // aitutors.me; a new channel is told to the grown-up), Open in My Clips ↗
+  // (a tab only on tap) · Undo, and "Heddy didn't open anything. Keep
+  // watching." The toast on the video says the same, and its Undo is this one
+  // (lib/web-routes.js undoClip): either undoes both.
+
+  /** "1:09 → 2:04 · 55 s", "From 1:09", "Whole video · 2:55". */
+  function rangeText(r, duration) {
+    var F = HeddyFilmStrip;
+    var secWord = function (n) { return tr('spanSec', n); };
+    var s = typeof r.startSec === 'number' ? r.startSec : 0;
+    var e = typeof r.endSec === 'number' ? r.endSec : null;
+    var len = typeof r.durationSec === 'number' ? r.durationSec : duration;
+    if (e !== null) return tr('rangePart', P.clockOf(s), P.clockOf(e), F.spanText(e - s, secWord));
+    if (s > 0) return tr('rangeFrom', P.clockOf(s));
+    return len ? tr('rangeWhole', P.clockOf(len)) : tr('rangeWholeNoLen');
+  }
+
+  function addedCard(r, ctx) {
+    var box = el('div', 'added');
+    var ok = el('div', 'ok');
+    ok.setAttribute('role', 'status');
+    var h = el('div', 'h');
+    h.appendChild(el('i', null, '✓'));
+    h.appendChild(document.createTextNode(r.duplicate ? tr('toastAlreadyInClips') : tr('toastAddedToClips')));
+    ok.appendChild(h);
+    ok.appendChild(el('span', 'rangepill', rangeText(r, ctx.duration)));
+    var checks = el('ul', 'chk2');
+    var part = typeof r.endSec === 'number' || (typeof r.startSec === 'number' && r.startSec > 0);
+    checks.appendChild(el('li', null, part ? tr('chkPlaysPart') : tr('chkPlays')));
+    if (Array.isArray(r.notices) && r.notices.indexOf('new_channel') >= 0) checks.appendChild(el('li', 'w', tr('toastNoticeNewChannel')));
+    ok.appendChild(checks);
+    var row = el('div', 'row2');
+    var open = el('button', 'o', tr('openInMyClips'));
+    open.type = 'button';
+    open.addEventListener('click', function () {
+      Promise.resolve(chrome.runtime.sendMessage({ type: 'heddy-ui:open', href: r.href })).catch(function () {});
+    });
+    row.appendChild(open);
+    // A library video is adopted, not a clip of the child's own: nothing to undo.
+    var undo = null;
+    if (r.momentId && !r.duplicate) {
+      undo = el('button', 'n', tr('toastUndo'));
+      undo.type = 'button';
+      undo.addEventListener('click', function () {
+        if (undo.getAttribute('aria-busy') === 'true') return;
+        undo.setAttribute('aria-busy', 'true');
+        chrome.runtime.sendMessage({ type: 'heddy-web:undo', kind: 'clip', momentId: r.momentId, tabId: ctx.tab.id }).then(function (x) {
+          undo.removeAttribute('aria-busy');
+          if (x && x.ok) undone();
+        }, function () { undo.removeAttribute('aria-busy'); });
+      });
+      row.appendChild(undo);
+    }
+    ok.appendChild(row);
+    box.appendChild(ok);
+    var hint = el('p', 'hint', tr('addedHint'));
+    box.appendChild(hint);
+    function undone() {
+      if (!ok.isConnected) return;
+      h.lastChild.textContent = tr('toastClipUndone');
+      ok.classList.add('gone');
+      checks.remove();
+      row.remove();
+      hint.textContent = '';
+    }
+    // The toast's Undo did it: the card says so too.
+    chrome.runtime.onMessage.addListener(function (m) {
+      if (m && m.type === 'heddy-clip:undone' && m.momentId === r.momentId) undone();
+    });
+    return box;
   }
 
   // ─── start ─────────────────────────────────────────────────────────────────

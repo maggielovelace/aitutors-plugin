@@ -36,17 +36,27 @@
           ms: CLIP_MS,
         };
       }
-      case 'clip_added':
-        // Add to My Clips from the popup (Round 9, D86): a request, no tab,
-        // and this toast on the video; Open is the one tap that leaves.
+      case 'clip_added': {
+        // Add to My Clips from the popup (owner: C1 + C3's toast): "Added to
+        // My Clips · 1:09 – 2:04", a line for a new channel, Open · Undo.
+        // The Undo is the popup's too (lib/web-routes.js undoClip).
+        var s = typeof msg.startSec === 'number' ? msg.startSec : null;
+        var e = typeof msg.endSec === 'number' ? msg.endSec : null;
+        var head = msg.duplicate === true ? tr('toastAlreadyInClips') : tr('toastAddedToClips');
+        var range = s !== null && e !== null ? P.clockOf(s) + ' – ' + P.clockOf(e) : s ? tr('toastFrom', P.clockOf(s)) : null;
         return {
-          title: msg.duplicate === true ? tr('toastAlreadyInClips') : tr('toastAddedToClips'),
-          line: [typeof msg.startSec === 'number' && msg.startSec > 0 ? tr('toastFrom', P.clockOf(msg.startSec)) : null]
-            .concat((Array.isArray(msg.notices) ? msg.notices : []).map(function (n) { return n === 'new_channel' ? tr('toastNoticeNewChannel') : n === 'off_map' ? tr('toastNoticeOffMap') : null; }))
-            .filter(Boolean).join(' · ') || null,
+          title: range ? head + ' · ' + range : head,
+          line: (Array.isArray(msg.notices) && msg.notices.indexOf('new_channel') >= 0) ? tr('toastNoticeNewChannel') : null,
+          warn: Array.isArray(msg.notices) && msg.notices.indexOf('new_channel') >= 0,
           open: typeof msg.href === 'string' ? { label: tr('toastOpen'), href: msg.href } : null,
-          ms: CLIP_MS,
+          undo: typeof msg.momentId === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(msg.momentId) && msg.duplicate !== true ? { label: tr('toastUndo'), momentId: msg.momentId } : null,
+          ms: NOTE_MS,
         };
+      }
+      case 'clip_undone':
+        return { title: tr('toastClipUndone'), ms: DONE_MS };
+      case 'clip_undo_failed':
+        return { title: tr('toastClipUndoFailed'), ms: NOTE_MS };
       case 'signed_out':
         return {
           title: tr('toastSignInClips'),
@@ -127,6 +137,7 @@
 
   var CSS =
     ':host{all:initial;position:fixed;top:16px;right:24px;z-index:2147483647}' +
+    '.t span.w{color:#9a6b12;font-weight:600}' +
     '.toast{box-sizing:border-box;width:380px;display:flex;align-items:flex-start;gap:11px;padding:11px 13px;' +
     'background:#fdfcf8;border:1px solid #d9d2c3;border-radius:12px;color:#002147;box-shadow:0 12px 30px rgba(0,0,0,.28);' +
     'font-family:"Heddy Manrope",Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
@@ -189,6 +200,8 @@
       t.querySelector('b').textContent = m.title;
       if (m.line) {
         var line = doc.createElement('span');
+        // A check that needs a grown-up's eye (a new channel): the artifact's amber.
+        if (m.warn) line.className = 'w';
         line.textContent = m.line;
         t.appendChild(line);
       }
@@ -200,7 +213,10 @@
       if (m.undo || m.open) {
         var o = doc.createElement('span');
         o.className = 'o';
-        if (m.undo && m.undo.cardIds) {
+        if (m.undo && m.undo.momentId) {
+          var momentId = m.undo.momentId;
+          o.appendChild(action('', m.undo.label, function () { hide(); if (deps.onUndoClip) deps.onUndoClip(momentId); }));
+        } else if (m.undo && m.undo.cardIds) {
           var cardIds = m.undo.cardIds;
           o.appendChild(action('', m.undo.label, function () { hide(); if (deps.onUndoCards) deps.onUndoCards(cardIds); }));
         } else if (m.undo) {

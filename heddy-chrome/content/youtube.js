@@ -139,6 +139,7 @@
     onOpen: function (href) { send({ type: 'heddy-ui:open', href: href }); },
     onUndo: function (jotId, jotterId) { send({ type: 'heddy-ui:undo', jotId: jotId, jotterId: jotterId }); },
     onUndoCards: function (cardIds) { send({ type: 'heddy-ui:undo-card', cardIds: cardIds }); },
+    onUndoClip: function (momentId) { send({ type: 'heddy-ui:undo-clip', momentId: momentId }); },
   });
 
   function onToast(msg) {
