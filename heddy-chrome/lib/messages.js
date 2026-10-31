@@ -1386,6 +1386,27 @@
             "example": "0:31"
           }
         }
+      },
+      "deskWhyLoading": {
+        "message": "Reading this video's transcript. A long video takes a little while; H waits for it."
+      },
+      "deskWhyNone": {
+        "message": "This video has no captions, so H can't jot its lines. Write your notes below."
+      },
+      "deskWhyLocked": {
+        "message": "Jotting what's said needs a subject on your plan for $NAME$. You can still write notes below.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "deskWhyError": {
+        "message": "Heddy couldn't read this video's transcript. Write notes below, or try again."
+      },
+      "deskFullFailed": {
+        "message": "Full desk didn't open. Try again."
       }
     },
     "zh_CN": {
@@ -2773,6 +2794,27 @@
             "example": "0:31"
           }
         }
+      },
+      "deskWhyLoading": {
+        "message": "正在读这个视频的文字稿。视频长，要等一会儿；按 H 会等它读完。"
+      },
+      "deskWhyNone": {
+        "message": "这个视频没有字幕，H 没法记下说的话。在下面写笔记吧。"
+      },
+      "deskWhyLocked": {
+        "message": "要记下视频里说的话，你的方案里得有 $NAME$ 的这门课。下面照样可以写笔记。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "Mentor"
+          }
+        }
+      },
+      "deskWhyError": {
+        "message": "Heddy 没读到这个视频的文字稿。在下面写笔记，或者再试一次。"
+      },
+      "deskFullFailed": {
+        "message": "完整书桌没打开，再试一次。"
       }
     }
   };

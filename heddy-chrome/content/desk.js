@@ -473,6 +473,7 @@
       var sc = el('div', 'sc');
       if (signedOut()) signInLine(sc);
       if (st.video.status === 'forbidden') sc.appendChild(el('div', 'si', tr('deskForbidden', chrome.runtime.id)));
+      else if (!signedOut()) transcriptReason(sc);
       var jk = btn('jk', ic('jot'));
       var words = el('span', null, tr('deskJkBtn'));
       words.appendChild(el('small', null, tr('deskJkSub')));
@@ -541,6 +542,24 @@
       pn.appendChild(cp);
       ui.field = field;
       tick();
+    }
+
+    /** Why H cannot jot a spoken line on this video, said on the Jot tab for
+     *  as long as it is true (the owner's 0.5.0 test: a 3.5 s line went
+     *  unseen): reading (a long video's first read takes a while), no
+     *  captions, no seat, or a read that failed, with Try again. */
+    function transcriptReason(into) {
+      var s = st.transcript.status;
+      var key = { loading: 'deskWhyLoading', none: 'deskWhyNone', locked: 'deskWhyLocked', error: 'deskWhyError' }[s];
+      if (!key || (s === 'loading' && st.video.status !== 'ok')) return;
+      var si = el('div', 'si');
+      si.appendChild(el('span', null, tr(key, profName())));
+      if (s === 'error') {
+        var again = btn('', null, tr('digestTryAgain'));
+        again.addEventListener('click', function () { st.retried = false; loadTranscript(); if (st.tab === 'jot') drawPanel(); });
+        si.appendChild(again);
+      }
+      into.appendChild(si);
     }
 
     /** The Saved card (D83, D86): Open my Jotter ↗ is the only tab, on tap. */
@@ -663,17 +682,41 @@
       st.busy.full = true;
       ui.full.setAttribute('aria-busy', 'true');
       var jots = st.jots.slice();
+      // From Heddy's background (owner, 2026-10-31): the whole video kept, the
+      // jots saved, then one tab straight to Classroom; no /capture page.
       deps.send({
-        type: 'heddy-ui:capture',
+        type: 'heddy-desk:full',
         youtubeId: st.id,
-        startSec: null,
-        then: 'classroom',
+        title: deps.title(),
+        channel: deps.channel(),
+        durationSec: duration(),
         jots: D.wireJots(jots),
-        jotIds: jots.map(function (j) { return j.id; }),
-      }).then(function () {
+        t: now(),
+        lang: lang === 'zh_CN' ? 'zh' : 'en',
+      }).then(function (r) {
         if (!st) return;
         st.busy.full = false;
         ui.full.removeAttribute('aria-busy');
+        if (r && r.ok) {
+          // Only once the site says it kept them do the jots leave the desk.
+          if (typeof r.jotsSaved === 'number') {
+            st.jots = D.removeIds(st.jots, jots.map(function (j) { return j.id; }));
+            st.last = null;
+            saveJots();
+            label();
+            if (st.tab === 'jot') drawPanel();
+          }
+          return;
+        }
+        if (r && r.error === 'signed_out') {
+          st.video.status = 'signedOut';
+          st.tab = 'jot';
+          label();
+          drawPanel();
+          return;
+        }
+        if (st.tab !== 'jot') { st.tab = 'jot'; label(); drawPanel(); }
+        say(tr(r && r.error === 'forbidden' ? 'deskForbidden' : r && r.error === 'no_captions' ? 'toastNoCaptions' : r && r.error === 'cant_keep' ? 'toastCantKeep' : 'deskFullFailed', chrome.runtime.id), true);
       });
     }
 
@@ -849,7 +892,7 @@
       if (!st) return;
       var id = st.id;
       st.transcript = { status: 'loading', lines: [] };
-      if (st.tab === 'digest') drawPanel();
+      if (st.tab === 'digest' || st.tab === 'jot') drawPanel();
       deps.send({ type: 'heddy-desk:transcript', youtubeId: id, title: deps.title() }).then(function (r) {
         if (!st || st.id !== id) return;
         if (r && r.ok) st.transcript = { status: r.status, lines: r.lines || [] };

@@ -166,6 +166,42 @@
       });
     }
 
+    // ─── Full desk ↗ (D71; owner, 2026-10-31: no /capture tab) ──────────
+
+    /** The Classroom for the kept clip, at the player's second (the site's
+     *  lib/jotters/video-spread.ts: savedClipDoorHref for the child's own
+     *  clip, videoDoorHref for a library video, ?from=heddy), else My Clips. */
+    function classroomPath(r, youtubeId, t, zh) {
+      var sec = '&t=' + Math.max(0, Math.floor(typeof t === 'number' && isFinite(t) ? t : 0)) + '&from=heddy';
+      var pre = zh ? '/zh' : '';
+      if (r.momentId) return pre + '/study/clips/m/' + encodeURIComponent(r.momentId) + '?classroom=1' + sec;
+      if (r.topicId) return pre + '/study/clips/' + encodeURIComponent(r.topicId) + '?v=' + encodeURIComponent(youtubeId) + '&classroom=1' + sec;
+      return pre + r.href;
+    }
+
+    /** Full desk: the whole video to My Clips (§ 3), the desk's jots to the
+     *  video's Jotter (Round 8 § 4), then ONE tab, straight to Classroom, and
+     *  the video paused. No /capture page, so no handshake can fail. */
+    function fullDesk(tab, m) {
+      var vid = P.youtubeIdFromUrl(tab.url);
+      if (!vid || vid !== m.youtubeId) return Promise.resolve({ ok: false });
+      return api.clip({ youtubeId: vid, title: titleOf(tab), startSec: null, endSec: null }).then(function (r) {
+        if (!r.ok) return { ok: false, error: r.error };
+        var jots = Array.isArray(m.jots) && m.jots.length && deps.saveJots
+          ? deps.saveJots(vid, { jots: m.jots, title: m.title, channel: m.channel, durationSec: m.durationSec }).catch(function () { return { ok: false }; })
+          : Promise.resolve(null);
+        return jots.then(function (j) {
+          return origin().then(function (o) {
+            var url = o + classroomPath(r, vid, m.t, m.lang === 'zh');
+            tellTab(tab.id, { type: 'heddy-ui:pause' });
+            return Promise.resolve()
+              .then(function () { return chrome.tabs.create({ url: url, openerTabId: tab.id, index: tab.index + 1, windowId: tab.windowId, active: true }); })
+              .then(function () { return { ok: true, jotsSaved: j && j.ok ? j.saved : null }; }, function () { return { ok: false, error: 'failed' }; });
+          });
+        });
+      });
+    }
+
     // ─── Keep card, Keep as a jot ────────────────────────────────────────
 
     function keepCard(tab, m) {
@@ -203,7 +239,7 @@
     // ─── messages ────────────────────────────────────────────────────────
 
     var FROM_DESK = { 'heddy-web:save': 1, 'heddy-web:undo-save': 1, 'heddy-web:ask-pending': 1 };
-    var FROM_PAGE = { 'heddy-page:ask': 1, 'heddy-page:professor': 1 };
+    var FROM_PAGE = { 'heddy-page:ask': 1, 'heddy-page:professor': 1, 'heddy-desk:full': 1 };
 
     /** chrome.runtime.onMessage. Resolves to the reply, or undefined for a
      *  message that is not ours. */
@@ -232,6 +268,8 @@
           case 'heddy-ui:undo-clip':
             // The Added toast's Undo, from the video's page.
             return undoClip(tab, message.momentId);
+          case 'heddy-desk:full':
+            return fullDesk(tab, message);
           case 'heddy-page:professor':
             // Heddy ▾ names the page's professor once the desk has met them.
             return { ok: true, name: professors[tab.id] || 'Mentor' };

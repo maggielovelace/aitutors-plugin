@@ -55,6 +55,8 @@ test('D78: tabs.create only where a child taps a link that says it leaves (Full 
     'popup/popup.js': 2,
     // the options page's links.
     'options/options.js': 1,
+    // Full desk ↗: one tab straight to Classroom (owner, 2026-10-31; no /capture page).
+    'lib/web-routes.js': 1,
   };
   const seen = {};
   for (const f of shippedFiles().filter((x) => /\.js$/.test(x))) {
@@ -71,7 +73,10 @@ test('D78: tabs.create only where a child taps a link that says it leaves (Full 
 });
 
 test('D78: the desk’s Save to My Jotters and every Round 9 route open nothing by themselves', () => {
-  for (const f of ['lib/desk-api.js', 'lib/heddy-api.js', 'lib/web-routes.js', 'lib/cards.js', 'lib/tools.js', 'lib/snap.js', 'lib/panel.js', 'popup/web-desk.js', 'lib/ask-view.js', 'content/desk.js', 'content/page-tray.js', 'content/box-mode.js']) {
+  const wr = code('lib/web-routes.js');
+  assert.ok(wr.indexOf('chrome.tabs.create') > wr.indexOf('function fullDesk') && wr.indexOf('chrome.tabs.create') < wr.indexOf('function keepCard'), 'web-routes opens a tab only in Full desk');
+  assert.doesNotMatch(wr, /windows\.|openCapture/);
+  for (const f of ['lib/desk-api.js', 'lib/heddy-api.js', 'lib/cards.js', 'lib/tools.js', 'lib/snap.js', 'lib/panel.js', 'popup/web-desk.js', 'lib/ask-view.js', 'content/desk.js', 'content/page-tray.js', 'content/box-mode.js']) {
     assert.doesNotMatch(code(f), /tabs\.create|windows\.|openCapture/, f);
   }
 });
@@ -560,4 +565,43 @@ test('every desk and Round 9 request names Heddy’s id in X-Heddy-Id: Chrome se
   await ask.ask({}, () => {}).done;
   assert.equal(f.seen[0].init.headers['X-Heddy-Id'], 'dfodgnhipffpkldflfjcelbafjogjheo');
   assert.equal(DA.TRANSCRIPT_TIMEOUT_MS, 60000, 'a long video’s first transcript gets a minute');
+});
+
+test('Full desk ↗ (owner, 2026-10-31): the whole video kept (§ 3), the jots saved, then ONE tab straight to Classroom at this second, and the video paused; no /capture page', async () => {
+  const calls = { api: [], tabs: [], tabMessages: [], jots: [] };
+  const tab = { id: 7, index: 3, windowId: 1, url: WATCH, title: 'GCSE Maths - YouTube' };
+  const routes = W.createWebRoutes({
+    chrome: { runtime: { id: 'heddy', sendMessage: async () => {} }, tabs: { get: async () => tab, sendMessage: async (id, m) => { calls.tabMessages.push(m); }, create: async (o) => { calls.tabs.push(o); return { id: 9 }; } }, storage: { local: { get: async () => ({}) } } },
+    api: { clip: async (b) => { calls.api.push(b); return { ok: true, momentId: 'm1', topicId: null, href: '/study/clips/m/m1' }; } },
+    cards: {}, showPanel: async () => {},
+    saveJots: async (id, m) => { calls.jots.push({ id, m }); return { ok: true, saved: 2, href: `/study/jotters/v/${id}` }; },
+  });
+  const page = { id: 'heddy', url: WATCH, tab, frameId: 0 };
+  const r = await routes.internal({ type: 'heddy-desk:full', youtubeId: VIDEO, title: 'GCSE Maths', jots: [{ t: 1, kind: 'note', text: 'x' }], t: 731.6, lang: 'en' }, page);
+  assert.deepEqual(r, { ok: true, jotsSaved: 2 });
+  assert.deepEqual(calls.api, [{ youtubeId: VIDEO, title: 'GCSE Maths', startSec: null, endSec: null }], 'the whole video');
+  assert.equal(calls.jots[0].id, VIDEO);
+  assert.deepEqual(calls.tabs, [{ url: `${PROD}/study/clips/m/m1?classroom=1&t=731&from=heddy`, openerTabId: 7, index: 4, windowId: 1, active: true }]);
+  assert.deepEqual(calls.tabMessages, [{ type: 'heddy-ui:pause' }]);
+  // a library video: its topic's Classroom; Chinese: the /zh door
+  const lib = W.createWebRoutes({
+    chrome: { runtime: { id: 'heddy', sendMessage: async () => {} }, tabs: { get: async () => tab, sendMessage: async () => {}, create: async (o) => { calls.tabs.push(o); } }, storage: { local: { get: async () => ({}) } } },
+    api: { clip: async () => ({ ok: true, momentId: null, topicId: 'forces', href: '/study/clips/forces?v=' + VIDEO }) }, cards: {}, showPanel: async () => {},
+  });
+  await lib.internal({ type: 'heddy-desk:full', youtubeId: VIDEO, t: 5, lang: 'zh' }, page);
+  assert.equal(calls.tabs.at(-1).url, `${PROD}/zh/study/clips/forces?v=${VIDEO}&classroom=1&t=5&from=heddy`);
+  // signed out: no tab; the desk shows its Sign in line
+  const out = W.createWebRoutes({ chrome: { runtime: { id: 'heddy' }, tabs: { get: async () => tab, create: async (o) => { calls.tabs.push(o); } }, storage: { local: { get: async () => ({}) } } }, api: { clip: async () => ({ ok: false, error: 'signed_out' }) }, cards: {}, showPanel: async () => {} });
+  const n = calls.tabs.length;
+  assert.deepEqual(await out.internal({ type: 'heddy-desk:full', youtubeId: VIDEO }, page), { ok: false, error: 'signed_out' });
+  assert.equal(calls.tabs.length, n);
+  assert.deepEqual(await routes.internal({ type: 'heddy-desk:full', youtubeId: 'Fq2aPn3x_-A' }, page), { ok: false }, 'only the video the tab shows');
+  assert.doesNotMatch(read('content/desk.js'), /type: 'heddy-ui:capture'/, 'the desk never asks for a /capture page');
+});
+
+test('the Jot tab says why H cannot jot, for as long as it is true: reading, no captions, no seat, or a failed read with Try again', () => {
+  const desk = read('content/desk.js');
+  assert.match(desk, /var key = \{ loading: 'deskWhyLoading', none: 'deskWhyNone', locked: 'deskWhyLocked', error: 'deskWhyError' \}\[s\];/);
+  assert.match(desk, /else if \(!signedOut\(\)\) transcriptReason\(sc\);/);
+  assert.match(desk, /if \(r && r\.ok && r\.signedIn === false\)[^]*?\} else if \(r && r\.ok\) \{[^]*?loadTranscript\(\);/, 'the transcript is asked for as the desk opens, whatever the tab');
 });

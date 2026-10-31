@@ -187,6 +187,22 @@
       return function (r) { return r.status >= 200 && r.status < 300 ? parse(r.data) : errorFor(r.status); };
     }
 
+    /** § 4: the desk's jots to the video's Jotter (Save to My Jotters, and
+     *  Full desk's jots). */
+    function saveJots(id, message) {
+      var jots;
+      try { jots = P.jotsOf(message.jots); } catch (e) { return Promise.resolve({ ok: false, error: 'bad_jots' }); }
+      if (!jots.length) return Promise.resolve({ ok: false, error: 'bad_jots' });
+      var body = {
+        youtubeId: id,
+        title: text(message.title, 300),
+        channel: text(message.channel, 200),
+        durationSec: num(message.durationSec) && message.durationSec > 0 ? Math.round(message.durationSec) : null,
+        jots: jots,
+      };
+      return call('POST', PATHS.jots, null, body).then(answer(parseSaved));
+    }
+
     /** The desk's message, from the watch page of the video it names. */
     function internal(message, sender) {
       if (!message || typeof message !== 'object' || typeof message.type !== 'string' || message.type.indexOf('heddy-desk:') !== 0) return undefined;
@@ -205,27 +221,16 @@
         }
         case 'heddy-desk:insights':
           return call('GET', PATHS.insights, { v: id, lang: message.lang === 'zh' ? 'zh' : 'en' }).then(answer(parseInsights));
-        case 'heddy-desk:save-jots': {
-          var jots;
-          try { jots = P.jotsOf(message.jots); } catch (e) { return Promise.resolve({ ok: false, error: 'bad_jots' }); }
-          if (!jots.length) return Promise.resolve({ ok: false, error: 'bad_jots' });
-          var body = {
-            youtubeId: id,
-            title: text(message.title, 300),
-            channel: text(message.channel, 200),
-            durationSec: num(message.durationSec) && message.durationSec > 0 ? Math.round(message.durationSec) : null,
-            jots: jots,
-          };
+        case 'heddy-desk:save-jots':
           // Round 9 (D86): no tab opens by itself. The desk shows the Saved
           // card, and its Open my Jotter ↗ is the one tap that leaves.
-          return call('POST', PATHS.jots, null, body).then(answer(parseSaved));
-        }
+          return saveJots(id, message);
         default:
           return Promise.resolve({ ok: false });
       }
     }
 
-    return { internal: internal, call: call, origin: origin };
+    return { internal: internal, call: call, origin: origin, saveJots: saveJots };
   }
 
   var api = {

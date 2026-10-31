@@ -48,6 +48,7 @@ var routes = HeddyWebRoutes.createWebRoutes({
     undoSave: function (tab, saveId) { return cards.undoSave(tab, saveId); },
   },
   showPanel: panel.show,
+  saveJots: desk.saveJots,
 });
 
 // The desk's Sources: the numbered cards and the save (lib/cards.js).
