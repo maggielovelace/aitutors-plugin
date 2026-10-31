@@ -50,7 +50,7 @@
     'button{all:unset;box-sizing:border-box;cursor:pointer}',
     'button:focus-visible,input:focus-visible{outline:2px solid var(--sc);outline-offset:2px}',
     '.cd{--surface:#fdfcf8;--sunk:#efe9dd;--ink:#14253f;--muted:#6c7888;--line:#e2ddd1;--line-strong:#cfd6df;--ink-deep:#002147;--ink-soft:#4b5b73;--bad:#b4232c;--sc:' + SC + ';--sc-soft:' + SC_SOFT + ';--bgc:#f6f2ea;',
-    '  background:var(--surface);color:var(--ink);display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;overflow:hidden;font:500 13.5px/1.45 ' + SANS + ';-webkit-font-smoothing:antialiased;color-scheme:light}',
+    '  background:var(--surface);color:var(--ink);display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;overflow:clip;font:500 13.5px/1.45 ' + SANS + ';-webkit-font-smoothing:antialiased;color-scheme:light}',
     '.cd[lang="zh-Hans"]{font-family:' + ZH_SANS + '}',
     '.cd[lang="zh-Hans"] .tab,.cd[lang="zh-Hans"] .hd b{font-family:' + ZH_SANS + '}',
     '.vi{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}',
@@ -79,8 +79,13 @@
     '.full .vi{width:14px;height:14px}',
     '.full[aria-busy="true"]{opacity:.6;cursor:progress}',
     // the tab row (clip-desk.css)
-    '.tabs{position:relative;height:48px;display:flex;align-items:stretch;gap:2px;padding:0 12px;border-bottom:1px solid var(--line);flex:none}',
-    '.tab{position:relative;display:inline-flex;align-items:center;gap:6px;padding:0 7px;font:700 14px/1 ' + SANS + ';color:var(--muted);white-space:nowrap}',
+    // clip-desk.css .cp-desk__tabs / .cp-desk__tab, literally (Round 12): a
+    // 48 px row, 16 px in, 4 px between tabs, each tab 10 px each side. The
+    // row never scrolls or clips sideways (overflow:clip cannot be scrolled,
+    // even by focus); it fits by the narrow steps below.
+    '.tabs{position:relative;height:48px;display:flex;align-items:stretch;gap:4px;padding:0 16px;border-bottom:1px solid var(--line);flex:none;min-width:0;overflow:clip;background:var(--surface)}',
+    '.tab{position:relative;display:inline-flex;align-items:center;gap:6px;padding:0 10px;font:700 14px/1 ' + SANS + ';color:var(--muted);white-space:nowrap}',
+    '.tab:focus-visible{outline:2px solid var(--sc);outline-offset:-6px;border-radius:10px}',
     '.tab[aria-selected="true"]{color:var(--ink-deep)}',
     // ONE pill (clip-desk.css .cp-desk__ind), placed from the selected tab's
     // box and slid 200 ms; until it is placed the selected tab draws it.
@@ -302,13 +307,17 @@
     ':host(.light) .more{color:#065fd4}',
     // A narrow column (YouTube at ~1100–1300 px windows gives 330–400 px):
     // the five tabs and the header still fit, the subtitle goes first.
-    '@container (max-width:400px){.tabs{padding:0 8px;gap:0}.tab{padding:0 5px;gap:4px;font-size:13px}.tab small{padding:1px 5px}.hd{gap:7px;padding:0 10px}.x{margin-left:6px;gap:9px}.vr{padding:10px}.full{padding:0 9px}}',
+    '@container (max-width:400px){.hd{gap:7px;padding:0 10px}.x{margin-left:6px;gap:9px}.vr{padding:10px}.full{padding:0 9px}}',
+    // Classroom's narrow row (clip-desk.css ≤ 600 px): 8 px in, 2 px between,
+    // 6 px each side, 4 px icon gap, 13 px words, 15 px icons.
+    '@container (max-width:380px){.tabs{padding:0 8px;gap:2px}.tab{gap:4px;padding:0 6px;font-size:13px}.tab .vi{width:15px;height:15px}}',
     // Narrower still: the tabs keep Classroom's icons (the owner's 0.6.0
     // test: a desk with no tab icons is not Classroom's), drawn smaller.
     // Classroom's phone values (clip-desk.css ≤ 600 px), and one more step
     // under 335 px so 320 px still fits; an icon is never hidden.
-    '@container (max-width:350px){.tabs{padding:0 8px;gap:2px}.tab{padding:0 6px;gap:4px;font-size:13px}.tab .vi{width:15px;height:15px}.tab small{padding:1px 4px}.hd small{display:none}}',
-    '@container (max-width:335px){.tabs{padding:0 6px;gap:0}.tab{padding:0 4px}.tab .vi{width:14px;height:14px}}',
+    '@container (max-width:350px){.hd small{display:none}}',
+    // Narrower than any Classroom row: one more step, never hiding an icon.
+    '@container (max-width:310px){.tabs{padding:0 6px;gap:0}.tab{padding:0 4px}.tab .vi{width:14px;height:14px}}',
     '[hidden]{display:none !important}',
   ].join('\n');
 

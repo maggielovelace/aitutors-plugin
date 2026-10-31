@@ -174,6 +174,16 @@
       if (v && isFinite(t)) v.currentTime = Math.max(0, t);
     }
 
+    /** A Digest line's time (Round 12, owner): plays from there, starting the
+     *  video if it was paused. */
+    function seekPlay(t) {
+      seek(t);
+      var v = video();
+      if (v && v.paused) {
+        try { var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) { /* the page's player refused */ }
+      }
+    }
+
     // ─── the professor ───────────────────────────────────────────────────────
 
     function profName() {
@@ -357,7 +367,9 @@
       var tabs = el('div', 'tabs');
       tabs.setAttribute('role', 'tablist');
       var tabEls = {};
-      [['quiz', 'quiz'], ['jot', 'jot'], ['digest', 'digest'], ['insights', 'insights']].forEach(function (t) {
+      // No quiz on this video (8a: none yet), so no Quiz tab, as Classroom
+      // draws none (Round 12, owner): Jot · Digest · Insights and the crest.
+      [['jot', 'jot'], ['digest', 'digest'], ['insights', 'insights']].forEach(function (t) {
         var b = btn('tab', ic(t[1]));
         b.setAttribute('role', 'tab');
         b.appendChild(el('span'));
@@ -525,14 +537,14 @@
       ui.close.setAttribute('aria-label', tr('deskClose'));
       ui.full.lastChild.textContent = tr('deskFull');
       ui.full.title = tr('deskFullTitle');
-      var names = { quiz: 'deskTabQuiz', jot: 'deskTabJot', digest: 'deskTabDigest', insights: 'deskTabInsights' };
+      var names = { jot: 'deskTabJot', digest: 'deskTabDigest', insights: 'deskTabInsights' };
       Object.keys(ui.tabs).forEach(function (k) {
         var b = ui.tabs[k];
         b.querySelector('span').textContent = tr(names[k]);
         b.setAttribute('aria-selected', String(st.tab === k));
         b.setAttribute('aria-disabled', String(!tabLive(k)));
         // A tab with nothing behind it says why, and is never selected (D77).
-        if (!tabLive(k)) b.title = tr(k === 'quiz' ? 'deskQuizSoon' : 'deskInsightsSoon');
+        if (!tabLive(k)) b.title = tr('deskInsightsSoon');
         else b.removeAttribute('title');
       });
       ui.tabs.jot.querySelector('small').textContent = String(st.jots.length);
@@ -577,7 +589,7 @@
     /** The tabs the arrows walk, in the row's order: the ones that open, then
      *  the crest (the Ask tab, D80). */
     function shownTabs() {
-      return ['quiz', 'jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
+      return ['jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
     }
 
     /** ←/→ (Classroom's onKey): the next or previous shown tab, wrapping,
@@ -594,7 +606,8 @@
         pickTab(next);
       }
       var b = next === 'ask' ? ui.crest : ui.tabs[next];
-      if (b) b.focus();
+      // Focus never scrolls the row (the owner saw it scrolled sideways).
+      if (b) b.focus({ preventScroll: true });
     }
 
     function signedOut() {
@@ -630,7 +643,7 @@
       if (st.tab === 'digest') return drawDigest(pn);
       if (st.tab === 'insights' && tabLive('insights')) return drawInsights(pn);
       var n = el('div', 'note');
-      n.appendChild(el('p', 'empty', st.tab === 'quiz' ? tr('deskQuizSoon') : tr('deskInsightsSoon')));
+      n.appendChild(el('p', 'empty', tr('deskInsightsSoon')));
       pn.appendChild(n);
     }
 
@@ -1467,7 +1480,7 @@
       ts.type = 'button';
       ts.title = tr('digestSeek', P.clockOf(l.t));
       ts.setAttribute('aria-label', ts.title);
-      ts.addEventListener('click', function () { seek(l.t); });
+      ts.addEventListener('click', function () { seekPlay(l.t); });
       row.appendChild(ts);
       var tx = el('span', 'tx');
       tx.setAttribute('role', 'button');

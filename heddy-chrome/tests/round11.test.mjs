@@ -18,9 +18,9 @@ const T = load('./lib/toast.js');
 const A = load('./lib/desk-ask.js');
 const I = globalThis.HeddyI18n;
 
-test('the version is 0.7.0, and Round 11 asks for no new permission', () => {
+test('Round 11 asks for no new permission (the version: tests/round12.test.mjs)', () => {
   const m = manifest();
-  assert.equal(m.version, '0.7.0');
+  assert.notEqual(m.version, '0.6.0');
   assert.deepEqual(m.permissions, ['activeTab', 'scripting', 'contextMenus', 'commands', 'storage']);
   assert.ok(m.content_scripts[0].js.indexOf('lib/desk-tray.js') < m.content_scripts[0].js.indexOf('content/desk.js'), 'the tray loads before the desk');
 });
@@ -109,7 +109,7 @@ test('Play from here seeks the player; Copy writes the clipboard inside the clic
 
 test('a Digest line is a stamp that seeks and words that open the tray; Space there never reaches YouTube', () => {
   const desk = read('content/desk.js');
-  assert.match(desk, /ts\.addEventListener\('click', function \(\) \{ seek\(l\.t\); \}\);/);
+  assert.match(desk, /ts\.addEventListener\('click', function \(\) \{ seekPlay\(l\.t\); \}\);/);
   assert.match(desk, /tx\.addEventListener\('pointerup'/);
   assert.match(desk, /t\.getAttribute\('role'\) === 'button'\)\) && \(e\.key === ' ' \|\| e\.key === 'Enter'\)/);
   assert.match(desk, /shadow\.getSelection/, 'the selection is read inside the closed shadow root');
@@ -196,10 +196,10 @@ test('the failure line says “a few minutes”, not “tomorrow”', () => {
 
 test('every tab carries Classroom’s icon at every column width (none is hidden in a narrow column)', () => {
   const desk = read('content/desk.js');
-  assert.match(desk, /\[\['quiz', 'quiz'\], \['jot', 'jot'\], \['digest', 'digest'\], \['insights', 'insights'\]\]\.forEach\(function \(t\) \{\n        var b = btn\('tab', ic\(t\[1\]\)\);/);
+  assert.match(desk, /\[\['jot', 'jot'\], \['digest', 'digest'\], \['insights', 'insights'\]\]\.forEach\(function \(t\) \{\n        var b = btn\('tab', ic\(t\[1\]\)\);/);
   const SH = load('./lib/desk-shell.js');
   assert.doesNotMatch(SH.CSS, /\.tab \.vi\{display:none\}/);
-  for (const k of ['quiz', 'jot', 'digest', 'insights']) assert.ok(SH.IC[k], k);
+  for (const k of ['jot', 'digest', 'insights']) assert.ok(SH.IC[k], k);
 });
 
 test('←/→ on a desk tab move to the next or previous shown tab, wrapping, and are claimed; elsewhere YouTube keeps them', () => {
@@ -207,7 +207,7 @@ test('←/→ on a desk tab move to the next or previous shown tab, wrapping, an
   assert.match(desk, /\(e\.key === 'ArrowRight' \|\| e\.key === 'ArrowLeft'\) && t && t\.getAttribute && t\.getAttribute\('role'\) === 'tab'\)/, 'only when a desk tab is the target');
   assert.match(desk, /if \(type === 'keydown'\) \{ e\.preventDefault\(\); stepTab\(e\.key === 'ArrowRight' \? 1 : -1\); \}\n            e\.stopPropagation\(\);/);
   assert.match(desk, /var next = shown\[\(\(i < 0 \? 0 : i\) \+ dir \+ shown\.length\) % shown\.length\];/, 'wraps');
-  assert.match(desk, /return \['quiz', 'jot', 'digest', 'insights'\]\.filter\(tabLive\)\.concat\(\['ask'\]\);/, 'the crest is the Ask tab, last');
+  assert.match(desk, /return \['jot', 'digest', 'insights'\]\.filter\(tabLive\)\.concat\(\['ask'\]\);/, 'the crest is the Ask tab, last');
   assert.match(desk, /ui\.tabs\[k\]\.tabIndex = st\.tab === k \? 0 : -1;/, 'roving tabindex');
   assert.doesNotMatch(read('content/youtube.js'), /ArrowRight|ArrowLeft/, 'the page’s own listener never touches the arrows');
 });
@@ -217,9 +217,11 @@ test('←/→ on a desk tab move to the next or previous shown tab, wrapping, an
 const SH = load('./lib/desk-shell.js');
 const desk = read('content/desk.js');
 
-test('#1 icons are never hidden: Classroom’s phone values at ≤ 350 px, one more step at ≤ 335 px', () => {
-  assert.match(SH.CSS, /@container \(max-width:350px\)\{\.tabs\{padding:0 8px;gap:2px\}\.tab\{padding:0 6px;gap:4px;font-size:13px\}\.tab \.vi\{width:15px;height:15px\}/);
-  assert.match(SH.CSS, /@container \(max-width:335px\)\{\.tabs\{padding:0 6px;gap:0\}\.tab\{padding:0 4px\}\.tab \.vi\{width:14px;height:14px\}\}/);
+test('#1 icons are never hidden: Classroom’s row, its narrow values at ≤ 380 px, one more step at ≤ 310 px (Round 12)', () => {
+  assert.match(SH.CSS, /\.tabs\{position:relative;height:48px;display:flex;align-items:stretch;gap:4px;padding:0 16px;/);
+  assert.match(SH.CSS, /\.tab\{position:relative;display:inline-flex;align-items:center;gap:6px;padding:0 10px;font:700 14px\/1 /);
+  assert.match(SH.CSS, /@container \(max-width:380px\)\{\.tabs\{padding:0 8px;gap:2px\}\.tab\{gap:4px;padding:0 6px;font-size:13px\}\.tab \.vi\{width:15px;height:15px\}\}/);
+  assert.match(SH.CSS, /@container \(max-width:310px\)\{\.tabs\{padding:0 6px;gap:0\}\.tab\{padding:0 4px\}\.tab \.vi\{width:14px;height:14px\}\}/);
   assert.doesNotMatch(SH.CSS, /\.vi\{display:none\}/);
 });
 
@@ -253,7 +255,7 @@ test('#3 one pill slides 200 ms cubic-bezier(.2,.7,.2,1); the panel comes in 10 
 test('#4 a tab with nothing behind it is drawn disabled, says why, and never takes the pill', () => {
   assert.match(SH.CSS, /\.tab\[aria-disabled="true"\]\{cursor:default;color:color-mix\(in srgb,var\(--muted\) 55%,transparent\)\}/);
   assert.match(desk, /b\.addEventListener\('click', function \(\) \{ if \(tabLive\(t\[0\]\)\) pickTab\(t\[0\]\); \}\);/);
-  assert.match(desk, /if \(!tabLive\(k\)\) b\.title = tr\(k === 'quiz' \? 'deskQuizSoon' : 'deskInsightsSoon'\);/);
+  assert.match(desk, /if \(!tabLive\(k\)\) b\.title = tr\('deskInsightsSoon'\);/);
 });
 
 test('#5 the jot pop-up after every jot: “● Note saved · 0:31 — title”, the line, Undo · Save to My Jotters (then Open in Jotter ↗), 5 s, 56 px under the desk’s top', () => {
