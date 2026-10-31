@@ -5,11 +5,6 @@
 
   "watchWithHeddy": { "message": "Watch with Heddy" },
   "addToMyClips": { "message": "Add to My Clips" },
-  "wholeVideo": { "message": "Whole video" },
-  "fromTime": {
-    "message": "From $TIME$",
-    "placeholders": { "time": { "content": "$1", "example": "1:52" } }
-  },
   "thisVideo": { "message": "This YouTube video" },
 
   "footerLock": { "message": "Reads a page only when you ask it to." },
@@ -30,11 +25,8 @@
   "menuClipPage": { "message": "Save page to Jotters" },
   "imageLabel": { "message": "Image" },
 
-  "jHint": { "message": "jots the line being spoken" },
 
   "clipThisPage": { "message": "Save page to Jotters" },
-  "jotLineSpoken": { "message": "Jot the line being spoken" },
-  "jotLineSpokenSub": { "message": "New video? It's added first." },
   "firstTimePage": { "message": "Save words, pictures or a whole page to Jotters" },
   "pageEmpty": { "message": "This page has no text to save." },
 
@@ -213,5 +205,132 @@
   "aboutPrivacy": { "message": "Privacy" },
   "aboutPrivacyLink": { "message": "What Heddy reads, and when" },
   "trayAddCard": { "message": "+ Add" },
-  "menuAddPicture": { "message": "Add picture to Heddy" }
+  "menuAddPicture": { "message": "Add picture to Heddy" },
+
+  "deskSub": { "message": "aitutors for KS3 & GCSE" },
+  "deskLang": { "message": "Heddy's language" },
+  "deskPin": { "message": "Open the desk on every video" },
+  "deskClose": { "message": "Close the desk and bring back YouTube's suggestions" },
+  "deskTimeOnTab": {
+    "message": "$NOW$ / $LENGTH$ · on this tab",
+    "placeholders": { "now": { "content": "$1", "example": "0:31" }, "length": { "content": "$2", "example": "2:54" } }
+  },
+  "deskFull": { "message": "Full desk" },
+  "deskFullTitle": { "message": "Save it to My Clips and open it in Classroom" },
+  "deskTabQuiz": { "message": "Quiz" },
+  "deskTabJot": { "message": "Jot" },
+  "deskTabDigest": { "message": "Digest" },
+  "deskTabInsights": { "message": "Insights" },
+  "deskQuizSoon": { "message": "A quiz for this video is coming" },
+  "deskInsightsSoon": { "message": "Insights for this video are coming" },
+  "deskAsk": {
+    "message": "Ask $NAME$",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "deskJkBtn": { "message": "Jot the line being spoken" },
+  "deskJkSub": { "message": "press H or click Jot below; again for the line before" },
+  "deskNoLine": { "message": "Nothing is being said right now. Play the video, then press H." },
+  "deskNoTranscript": { "message": "There is no transcript to jot from. Write a note below." },
+  "deskJotsFull": { "message": "That's 200 jots. Save them to My Jotters first." },
+  "deskJotsHead": { "message": "Jots in this video" },
+  "deskSaveJotters": { "message": "Save to My Jotters" },
+  "deskSaving": { "message": "Saving…" },
+  "deskSaveFailed": { "message": "Those jots did not save. Try again." },
+  "deskJotsEmpty": { "message": "Nothing jotted yet. Press H while you watch, or write a note below." },
+  "deskJotPlaceholder": {
+    "message": "Jot at $T$…",
+    "placeholders": { "t": { "content": "$1", "example": "0:31" } }
+  },
+  "deskJotButton": { "message": "Jot" },
+  "deskJotDelete": { "message": "Delete" },
+  "deskJotReplay": {
+    "message": "Play from $T$",
+    "placeholders": { "t": { "content": "$1", "example": "0:31" } }
+  },
+  "deskSignedOut": { "message": "Sign in to aitutors.me to save your jots and read along." },
+  "deskSignIn": { "message": "Sign in" },
+  "deskFoot": {
+    "message": "Professor $NAME$'s desk",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "deskTaller": { "message": "Make the desk taller" },
+  "deskShorter": { "message": "Back to the video's height" },
+  "deskShowSuggestions": { "message": "Show YouTube's suggestions ▾" },
+  "deskHideSuggestions": { "message": "Hide YouTube's suggestions ▴" },
+  "digestViewEn": { "message": "English" },
+  "digestViewBi": { "message": "Bilingual" },
+  "digestViewZh": { "message": "Chinese" },
+  "digestViewsLabel": { "message": "Transcript language" },
+  "digestSearch": { "message": "Search" },
+  "digestSearchLabel": { "message": "Search the transcript" },
+  "digestNoMatches": { "message": "No line has those words." },
+  "digestTranscript": {
+    "message": "Transcript · $FROM$ – $TO$ · follows the player",
+    "placeholders": { "from": { "content": "$1", "example": "0:00" }, "to": { "content": "$2", "example": "2:54" } }
+  },
+  "digestReading": {
+    "message": "$NAME$ is reading the transcript…",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestReadingZh": {
+    "message": "$NAME$ is writing the Chinese lines…",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestZhFailed": { "message": "The Chinese lines did not come through — try again tomorrow." },
+  "digestFailed": {
+    "message": "$NAME$ could not read the transcript just now.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestTryAgain": { "message": "Try again" },
+  "digestLockedTitle": {
+    "message": "$NAME$ has not read this transcript yet",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestLockedBody": {
+    "message": "$NAME$ reads a new transcript for children who have this subject on their plan.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "digestNoCaptionsTitle": { "message": "This video has no captions" },
+  "digestNoCaptionsBody": { "message": "The channel has not published captions for it, so there is no transcript to read along with. You can still jot." },
+  "digestSeek": {
+    "message": "Play from $T$",
+    "placeholders": { "t": { "content": "$1", "example": "0:31" } }
+  },
+  "insightsHead": {
+    "message": "$NAME$'s insights",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "insightsBand": {
+    "message": "$FROM$–$TO$ min",
+    "placeholders": { "from": { "content": "$1", "example": "0:00" }, "to": { "content": "$2", "example": "2:54" } }
+  },
+  "insightsWriting": {
+    "message": "$NAME$ is writing…",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "insightsFailed": {
+    "message": "$NAME$ could not write this part just now.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "clipCopy": { "message": "Copy" },
+  "clipCopied": { "message": "Copied" },
+  "chipWhole": { "message": "Whole" },
+  "chipLast30": { "message": "The last 30 s" },
+  "chipFromNow": { "message": "From now" },
+  "spanSec": {
+    "message": "$N$ s",
+    "placeholders": { "n": { "content": "$1", "example": "52" } }
+  },
+  "clipRange": {
+    "message": "$FROM$ → $TO$ · $SPAN$",
+    "placeholders": { "from": { "content": "$1", "example": "0:00" }, "to": { "content": "$2", "example": "2:54" }, "span": { "content": "$3", "example": "52 s" } }
+  },
+  "addPart": {
+    "message": "Add $SPAN$ to My Clips",
+    "placeholders": { "span": { "content": "$1", "example": "52 s" } }
+  },
+  "opensInMyClips": { "message": "Opens it in My Clips." },
+  "filmLabel": { "message": "The part to add: drag either end" },
+  "filmStart": { "message": "Start of the part" },
+  "filmEnd": { "message": "End of the part" }
 }

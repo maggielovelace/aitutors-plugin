@@ -452,6 +452,6 @@ test('every Round 7 string exists in both languages, the English free of Chinese
   }
 });
 
-test('the version is 0.4.0', () => {
-  assert.equal(manifest().version, '0.4.0');
+test('the version moved on from 0.4.0 (Round 8 is 0.5.0: tests/round8.test.mjs)', () => {
+  assert.notEqual(manifest().version, '0.4.0');
 });

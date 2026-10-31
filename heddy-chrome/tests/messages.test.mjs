@@ -41,8 +41,8 @@ test('the lookup switches language and fills placeholders', async () => {
   const { createRequire } = await import('node:module');
   const req = createRequire(import.meta.url);
   const I = req('../lib/i18n.js');
-  assert.equal(I.t('en', 'fromTime', '1:52'), 'From 1:52');
-  assert.equal(I.t('zh_CN', 'fromTime', '1:52'), '从 1:52 开始');
+  assert.equal(I.t('en', 'deskJotPlaceholder', '1:52'), 'Jot at 1:52…');
+  assert.equal(I.t('zh_CN', 'deskJotPlaceholder', '1:52'), '在 1:52 记一笔……');
   assert.equal(I.t('zh_CN', 'noSuchKey'), 'noSuchKey');
   assert.equal(I.langForUi('zh-CN'), 'zh_CN');
   assert.equal(I.langForUi('en-GB'), 'en');
