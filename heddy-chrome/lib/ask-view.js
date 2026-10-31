@@ -274,6 +274,7 @@
         // explained (contract Changes, site 6); a picture goes as itself.
         var a = state.attach;
         var m = { text: it.text, draftToken: it.token };
+        if (typeof it.t === 'number') m.t = it.t;
         if (a && a.kind === 'image') m.png = a.png;
         else m.quote = A.jotQuote(state, i);
         opts.keepJot(m).then(function (r) {
@@ -312,8 +313,8 @@
       if (code === 'safeguarding') return el(doc, 'p', 'aerr safe', state.message || tr('askErrFailed', name()));
       if (code === 'no_subject') return subjectChips();
       var p = el(doc, 'p', 'aerr');
-      var key = { signed_out: 'askErrSignedOut', no_seat: 'askErrNoSeat', cap: 'askErrCap', keep: 'askKeepFailed' }[code] || 'askErrFailed';
-      p.appendChild(el(doc, 'span', null, tr(key, name())));
+      var key = { signed_out: 'askErrSignedOut', no_seat: 'askErrNoSeat', cap: 'askErrCap', keep: 'askKeepFailed', forbidden: 'deskForbidden' }[code] || 'askErrFailed';
+      p.appendChild(el(doc, 'span', null, code === 'forbidden' ? tr(key, opts.extensionId ? opts.extensionId() : '') : tr(key, name())));
       if (code === 'signed_out') {
         var b = btn(doc, '', tr('askSignIn'));
         b.addEventListener('click', function () { opts.signIn(); });
@@ -364,6 +365,11 @@
     function send(intent, text) {
       var next = A.start(state, intent, text);
       if (!next) return;
+      var extra = opts.extra ? opts.extra() : {};
+      // The video's second when this was asked: Keep as a jot lands there in
+      // the video's Jotter (contract Changes, site 14), not where the player
+      // has got to by the time the child keeps it.
+      if (typeof extra.t === 'number') next.items[next.items.length - 1].t = extra.t;
       state = next;
       drawTalk();
       busyLook();
@@ -419,7 +425,7 @@
         drawTalk();
         busyLook();
       });
-      p.postMessage(Object.assign({ intent: intent, state: { about: state.about, n: state.n, attach: state.attach, subject: state.subject, items: items }, lang: opts.lang() }, opts.extra ? opts.extra() : {}));
+      p.postMessage(Object.assign({ intent: intent, state: { about: state.about, n: state.n, attach: state.attach, subject: state.subject, items: items }, lang: opts.lang() }, extra));
     }
 
     return {

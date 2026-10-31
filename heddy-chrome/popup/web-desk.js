@@ -577,6 +577,7 @@
           return call({ type: 'heddy-cards:get' }).then(function (g) { if (g.ok) setState(g, true); else draw(); });
         }
         if (r.error === 'signed_out') st.error = { key: 'saveSignedOut', signIn: true };
+        else if (r.error === 'forbidden') st.error = { key: 'deskForbidden', args: [chrome.runtime.id] };
         else if (r.error === 'too_big') st.error = { key: 'saveTooBig' };
         else if (r.error === 'empty') st.error = { key: 'pageEmpty' };
         else st.error = n ? { key: n === 1 ? 'saveFailedOne' : 'saveFailedN', args: [String(n)] } : { key: 'saveFailedPage' };
@@ -676,6 +677,7 @@
       extra: function () { return { tabId: tab.id }; },
       site: function () { return hostLabel(tab.url); },
       fallbackName: profName,
+      extensionId: function () { return chrome.runtime.id; },
       keepCard: function (m) { return call(Object.assign({ type: 'heddy-web:card' }, m)); },
       keepJot: function (m) { return call(Object.assign({ type: 'heddy-web:jot' }, m)); },
       undo: function (m) { return call(Object.assign({ type: 'heddy-web:undo' }, m)); },

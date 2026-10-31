@@ -134,17 +134,35 @@
       return api.clip({ youtubeId: m.youtubeId, title: titleOf(tab), startSec: m.startSec, endSec: m.endSec }).then(function (r) {
         return origin().then(function (o) {
           var toast;
+          var full = r.ok ? o + r.href : null;
           if (r.ok) {
-            // What the site kept (site 13), else what was asked for.
+            // What the site kept (site 13), else what was asked for; the
+            // toast and the popup's Added card (owner: C1 + C3's toast).
             var from = r.startSec != null ? r.startSec : m.startSec == null ? null : Math.floor(m.startSec);
-            toast = { type: 'heddy-ui:toast', kind: 'clip_added', duplicate: r.duplicate, startSec: from, notices: r.notices || [], href: o + r.href };
+            toast = { type: 'heddy-ui:toast', kind: 'clip_added', duplicate: r.duplicate, startSec: from, endSec: r.endSec, notices: r.notices || [], momentId: r.momentId, href: full };
           }
           else if (r.error === 'no_captions') toast = { type: 'heddy-ui:toast', kind: 'no_captions' };
           else if (r.error === 'cant_keep') toast = { type: 'heddy-ui:toast', kind: 'cant_keep' };
           else if (r.error === 'signed_out') toast = { type: 'heddy-ui:toast', kind: 'signed_out', href: o + '/auth/login?door=kid' };
           if (toast) tellTab(tab.id, toast);
-          return r.ok ? { ok: true, duplicate: r.duplicate } : { ok: false, error: r.error };
+          return r.ok
+            ? { ok: true, duplicate: r.duplicate, momentId: r.momentId, startSec: r.startSec, endSec: r.endSec, durationSec: r.durationSec, notices: r.notices || [], href: full }
+            : { ok: false, error: r.error };
         });
+      });
+    }
+
+    /** One Undo for the popup's Added card and the toast on the video: the
+     *  toast says so, and an open popup hears it (heddy-clip:undone). */
+    function undoClip(tab, momentId) {
+      return api.undo({ kind: 'clip', momentId: momentId }).then(function (r) {
+        if (r.ok) {
+          tellTab(tab.id, { type: 'heddy-ui:toast', kind: 'clip_undone' });
+          Promise.resolve(chrome.runtime.sendMessage({ type: 'heddy-clip:undone', tabId: tab.id, momentId: momentId })).catch(function () {});
+        } else {
+          tellTab(tab.id, { type: 'heddy-ui:toast', kind: 'clip_undo_failed' });
+        }
+        return { ok: r.ok };
       });
     }
 
@@ -193,7 +211,7 @@
       if (!message || typeof message !== 'object' || typeof message.type !== 'string') return undefined;
       var type = message.type;
       var mine = FROM_DESK[type] || FROM_PAGE[type] || type === 'heddy-web:card' || type === 'heddy-web:jot' || type === 'heddy-web:undo'
-        || type === 'heddy-ui:undo' || type === 'heddy-ui:undo-card' || (type === 'heddy-ui:capture' && message.then === 'keep');
+        || type === 'heddy-ui:undo' || type === 'heddy-ui:undo-card' || type === 'heddy-ui:undo-clip' || (type === 'heddy-ui:capture' && message.then === 'keep');
       if (!mine) return undefined;
       if (!sender || sender.id !== chrome.runtime.id) return Promise.resolve({ ok: false });
       if (FROM_DESK[type] && !own(sender)) return Promise.resolve({ ok: false });
@@ -207,9 +225,13 @@
           case 'heddy-web:card': return keepCard(tab, message);
           case 'heddy-web:jot': return keepJot(tab, message);
           case 'heddy-web:undo':
-            // The Ask view's Undo on a kept card or jot.
+            // The Ask view's Undo on a kept card or jot; the popup's on a clip.
+            if (message.kind === 'clip') return undoClip(tab, message.momentId);
             if (message.kind !== 'card' && message.kind !== 'jot') return { ok: false };
             return api.undo(message);
+          case 'heddy-ui:undo-clip':
+            // The Added toast's Undo, from the video's page.
+            return undoClip(tab, message.momentId);
           case 'heddy-page:professor':
             // Heddy ▾ names the page's professor once the desk has met them.
             return { ok: true, name: professors[tab.id] || 'Mentor' };

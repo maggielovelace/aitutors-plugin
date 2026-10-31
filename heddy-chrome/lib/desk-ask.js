@@ -27,7 +27,7 @@
   var INTENTS = ['ask', 'explain', 'card'];
   // The site's codes (contract Changes, site 3–4). 'safeguarding' carries the
   // room's Childline line, drawn verbatim and never retried.
-  var ERRORS = ['signed_out', 'no_seat', 'cap', 'failed', 'no_subject', 'safeguarding'];
+  var ERRORS = ['signed_out', 'no_seat', 'cap', 'failed', 'no_subject', 'safeguarding', 'forbidden'];
   // The subjects a child may pick when nothing maps (site 3), and their professors.
   var SUBJECTS = ['MATH', 'ENLA', 'BIOL', 'CHEM', 'PHYS', 'HIST', 'GEOG'];
   var SUBJECT = /^[A-Z]{3,5}$/;
@@ -259,7 +259,7 @@
         return Object.assign({}, state, { professor: { code: ev.code, name: ev.name } });
       case 'delta':
         if (at < 0 || !state.busy) return state;
-        items[at] = Object.assign({}, items[at], { text: (items[at].text + ev.text).slice(0, MAX_ANSWER) });
+        items[at] = Object.assign({}, items[at], { text: (items[at].text + ev.text).slice(0, MAX_ANSWER) });  // (keeps its `t`)
         return Object.assign({}, state, { items: items });
       case 'card':
         items.push({ who: 'card', front: ev.front, back: ev.back, token: ev.draftToken, kept: false });

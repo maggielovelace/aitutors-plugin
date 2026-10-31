@@ -55,6 +55,8 @@
   function failure(r, allowed) {
     var e = r.data && typeof r.data.error === 'string' ? r.data.error : null;
     if (r.status === 401) return { ok: false, error: 'signed_out' };
+    // The site does not know this copy of Heddy (its id): no sign-in helps.
+    if (r.status === 403 && e === 'forbidden') return { ok: false, error: 'forbidden' };
     // A 403 is a grown-up (signed_out), or a route's own refusal it names
     // (a forged token's 'invalid', 'no_seat'; contract Changes, site 1, 7).
     if (r.status === 403) return { ok: false, error: e && e !== 'forbidden' && allowed.indexOf(e) >= 0 ? e : 'signed_out' };
@@ -204,7 +206,12 @@
         })
         .then(function (res) {
           if (!res) return fail('failed');
-          if (res.status === 401 || res.status === 403) return fail('signed_out');
+          if (res.status === 401) return fail('signed_out');
+          if (res.status === 403) {
+            // A grown-up is signed out for this; an unknown copy of Heddy is 'forbidden'.
+            return Promise.resolve(typeof res.json === 'function' ? res.json() : null).catch(function () { return null; })
+              .then(function (d) { fail(d && d.error === 'forbidden' ? 'forbidden' : 'signed_out'); });
+          }
           if (res.status < 200 || res.status >= 300 || !res.body || typeof res.body.getReader !== 'function') return fail('failed');
           var reader = res.body.getReader();
           var dec = new TextDecoder();
