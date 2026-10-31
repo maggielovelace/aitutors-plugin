@@ -101,7 +101,8 @@ aitutors.me 上没有任何功能依赖 Heddy：没有它，孩子照样可以�
 现在是谁登录（`GET /api/learn/heddy/me`，由浏览器带上你在 aitutors.me 的登录
 Cookie，Heddy 自己不读也不存这个 Cookie）。回答最多是孩子的名字、年级和科目；
 Heddy 只把它显示出来，不保存，也不发给任何别处。你点「截一张图」、右键图片或按 Ctrl Shift K 时，它才截下屏幕上能看到的部分，只保留你框出的那一块。
-在 Chrome 网上应用店里，这些都申报为「网站内容」：只在你让它读时（存到 Jotters、加入卡片、截一张图、讲解、做成卡片、问 Heddy）才收集，只交给 aitutors.me、存在你自己的账号里；绝不出售，不用于广告或信用评估，除 aitutors.me 自己的处理外不与任何第三方分享。完整说明见 [PRIVACY.md](PRIVACY.md)（英文）。
+从 0.6.0 版起，Heddy 不再打开任何窗口或标签页，除非你点了写明会离开的链接（打开我的 Jotter ↗、提示里的「打开」、登录、完整书桌 ↗）：保存、撤销、留下卡片、留作随记、加进「我的短片」和书桌里的提问，都由 Heddy 的后台发给 aitutors.me（`/api/learn/heddy/save`、`/undo`、`/clip`、`/ask`、`/card`、`/jot`），由浏览器带上你的登录 Cookie，Heddy 自己不读也不存。
+在 Chrome 网上应用店里，这些都申报为「网站内容」：只在你让它读时（存到我的 Jotters、加到来源、截一张图、问老师、做张卡片）才收集，只交给 aitutors.me、存在你自己的账号里；绝不出售，不用于广告或信用评估，除 aitutors.me 自己的处理外不与任何第三方分享。完整说明见 [PRIVACY.md](PRIVACY.md)（英文）。
 
 ## 测试
 
