@@ -147,15 +147,11 @@ function setup(session = fakeSession()) {
     },
     contextMenus: { remove: async () => {}, create: (o) => { calls.menus.push(o); } },
   };
-  const sender = {
-    box: async (input, where) => { calls.boxes.push({ input, where }); return { ok: true }; },
-    tool: async (input, where) => { calls.tools.push({ input, where }); return { ok: true }; },
-  };
   const crop = {
     ...K,
     cropShot: async (shot, rects, vw, vh) => rects.map((r) => ({ png: PNG, box: K.webBox(r, vw, vh) })),
   };
-  const snap = S.createSnap({ chrome, sender, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID, showPanel: async (t) => { calls.shown.push(t.id); } });
+  const snap = S.createSnap({ chrome, crop, tools: T, later: c.later, clear: c.clear, randomUUID: () => ID, showPanel: async (t) => { calls.shown.push(t.id); } });
   const fromPage = { id: 'heddy', frameId: 0, tab };
   return { snap, calls, tab, fromPage, clock: c, chrome, session };
 }
@@ -227,15 +223,6 @@ test('the menu item is on images only, titled “Add picture to Heddy”', async
   assert.match((await import('./helpers.mjs')).read('background.js'), /snap\.installMenu\(HeddyI18n\.t\(lang, 'menuAddPicture'\)\)/);
   await s.snap.installMenu('Add picture to Heddy');
   assert.deepEqual(s.calls.menus, [{ id: S.MENU_ID, title: 'Add picture to Heddy', contexts: ['image'] }]);
-});
-
-test('the words tray’s Explain takes the address and title from the tab, not the page', async () => {
-  const s = setup();
-  await s.snap.internal({ type: 'heddy-ui:tool', tool: 'explain', url: 'https://evil.example/', title: 'x', quote: '2 cm is 1 km', context: 'c' }, s.fromPage);
-  assert.equal(s.calls.tools[0].input.url, s.tab.url);
-  assert.equal(s.calls.tools[0].input.title, s.tab.title);
-  assert.equal(s.calls.tools[0].input.quote, '2 cm is 1 km');
-  assert.deepEqual(s.calls.tools[0].where, { tabId: 7, windowId: 3 }, 'the sending tab, not a named one');
 });
 
 test('the snap icon is the crop-corners glyph at 20 px, stroke 2.6, round caps and joins', () => {
@@ -318,22 +305,12 @@ test('without a clipboard API the pending crop is still handled (no unhandled re
   assert.deepEqual(unhandled, []);
 });
 
-test('the popup’s Explain names its tab: address and title from that tab', async () => {
-  const s = setup();
-  await s.snap.internal({ type: 'heddy-ui:tool', tool: 'card', tabId: 7, quote: 'q', context: 'c' }, { id: 'heddy' });
-  assert.equal(s.calls.tools[0].input.tool, 'card');
-  assert.equal(s.calls.tools[0].input.url, s.tab.url);
-  assert.deepEqual(s.calls.tools[0].where, { tabId: 7, windowId: 3 });
-});
 
-test('the card toast’s Undo: heddy-ui:undo-card from the page → undoCards on that tab; bad ids open nothing', async () => {
+test('Round 9: the words bar’s Picture view starts box mode on its own page (beside the desk); the tool and Undo windows are gone', async () => {
   const s = setup();
-  const calls = [];
-  s.snap = S.createSnap({ chrome: s.chrome, crop: K, tools: T, sender: { undoCards: async (cardIds, where) => { calls.push({ cardIds, where }); return { ok: true }; } } });
-  const ids = ['a1000000-0000-4000-8000-000000000001'];
-  assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: ids }, s.fromPage), { ok: true });
-  assert.deepEqual(calls, [{ cardIds: ids, where: { tabId: 7, windowId: 3 } }]);
-  assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: ['x'] }, s.fromPage), { ok: false });
-  assert.deepEqual(await s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: ids }, { id: 'heddy' }), { ok: false }, 'only from a page');
-  assert.equal(calls.length, 1);
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-page:picture' }, s.fromPage), { ok: true });
+  assert.deepEqual(s.calls.shown, [7], 'the desk opens beside box mode');
+  assert.deepEqual(await s.snap.internal({ type: 'heddy-page:picture', tabId: 7 }, { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html' }), { ok: false }, 'only from the page itself');
+  assert.equal(s.snap.internal({ type: 'heddy-ui:tool', tool: 'explain', quote: 'q' }, s.fromPage), undefined);
+  assert.equal(s.snap.internal({ type: 'heddy-ui:undo-card', cardIds: [] }, s.fromPage), undefined);
 });

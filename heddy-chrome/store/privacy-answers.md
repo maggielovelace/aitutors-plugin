@@ -17,12 +17,12 @@ justification here.
 | Permission | Justification |
 |---|---|
 | `activeTab` | Heddy reads the current tab only after the student asks: by opening the popup, choosing a right-click menu item, or pressing a shortcut. activeTab also lets Snap a picture take a screenshot of the visible tab (chrome.tabs.captureVisibleTab) at that moment, so the student can box a diagram. No tab is read without that gesture. |
-| `scripting` | Injects Heddy's own files into the tab the student asked about: to read the selected words (and up to 300 characters either side) or the page's readable text, to show the tray of tools beside a selection, to draw the box for Snap a picture, and to redraw the two buttons when YouTube moves to a new video without reloading the page. No remote code is injected. |
-| `storage` | Keeps a few preferences on the device: the language (English or 简体中文), the last Whole video / From m:ss choice, whether the first-time popup and the H hint have been seen, and a developer switch. chrome.storage.session holds a hand-over for the aitutors.me window (forgotten once taken, or after 10 minutes) and pictures boxed for one jot until they are sent. |
+| `scripting` | Injects Heddy's own files into the tab the student asked about: to read the selected words (and up to 300 characters either side) or the page's readable text, to show the tray of tools beside a selection, to draw the box for Snap a picture, to redraw the Watch with Heddy button and the desk when YouTube moves to a new video without reloading the page, and, in the toolbar popup on a YouTube video, to read the player's time and YouTube's storyboard (preview frames) and move the video when the strip is dragged (MAIN world, a read of the player's own response only). No remote code is injected. |
+| `storage` | Keeps a few preferences on the device: the language (English or 简体中文), the desk's 📌, height and Digest view, the desk's unsaved jots per video (until Save to My Jotters or Full desk), whether the first-time popup has been seen, and a developer switch. chrome.storage.session holds Full desk's hand-over (forgotten once taken, or after 10 minutes) and the snippets and pictures picked on a page until they are saved (and, after a save, for its Undo). |
 | `contextMenus` | Adds "Save to Jotters" when the student right-clicks selected words, and "Add picture to Heddy" when they right-click a picture; each adds a card to Heddy's panel. |
 | `commands` | Ctrl Shift K starts Snap a picture (press it twice for the whole screen). Heddy's buttons under a selection have a command with no default key, so the student can set their own at chrome://extensions/shortcuts. |
 | Host `https://www.youtube.com/watch*` | Draws Watch with Heddy and Add to My Clips on YouTube video pages, and takes H for the line being spoken. It reads the video id from the address, and the player's time and the video's title only when the student taps or presses H. Nothing else on YouTube. |
-| Host `https://aitutors.me/*`, `https://*.aitutors.me/*` | The windows Heddy opens on aitutors.me, where the student keeps what they found under their own account. Only these pages may ask Heddy for a hand-over (externally_connectable). The subdomains are aitutors.me's own preview sites. |
+| Host `https://aitutors.me/*`, `https://*.aitutors.me/*` | The requests Heddy's background makes to aitutors.me when the student saves, asks or undoes something, with the browser's own sign-in, so it is kept under their own account; and Full desk's tab. Only these pages may ask Heddy for a hand-over (externally_connectable). The subdomains are aitutors.me's own preview sites. |
 
 Not requested: `tabs`, `history`, `cookies`, `webRequest`,
 `declarativeNetRequest`, `sidePanel`, `<all_urls>`. No
@@ -52,14 +52,15 @@ What the dashboard asks, and the answer to each.
 | Website content | **Yes** |
 
 Website content (owner ruling, 2026-10-30): **Yes**, and only on the
-student's own action: Save to Jotters, + Text or + Add, Save page to Jotters, Snap a picture, or Explain /
-Make a card / Ask Heddy. Heddy then reads the words, page or picture they
-chose and hands it, inside Chrome, to the aitutors.me window in front of
-them; it goes only to aitutors.me, under the student's own account. It is
-never sold, never used for advertising or to decide creditworthiness, and not
-shared with third parties beyond aitutors.me's own processing. Heddy itself
-sends nothing to any server, keeps no copy after the hand-over, and has no
-analytics or error reporting.
+student's own action: Save to my Jotters, + Text, Add to Sources, Snap a
+picture, Ask {professor} or Make a card. Since version 0.6.0 (no windows) Heddy's
+background sends the words, page text or picture they chose to aitutors.me
+(`/api/learn/heddy/save`, `/ask`, `/card`, `/jot`, `/clip`, `/undo`), with the
+browser's own aitutors.me sign-in, under the student's own account; Heddy holds
+no credential and never reads the cookie. It is never sold, never used for
+advertising or to decide creditworthiness, and not shared with third parties
+beyond aitutors.me's own processing. Heddy sends nothing anywhere else, keeps
+no copy after a save, and has no analytics or error reporting.
 
 Who is signed in (D60): the settings page and the panel on a page Heddy
 can't save from send one `GET https://aitutors.me/api/learn/heddy/me`, with

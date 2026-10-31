@@ -62,70 +62,11 @@ async function claim(s) {
   return s.courier.external({ type: 'heddy:ready', v: 1, cid: CID }, page());
 }
 
-test('H opens /capture/jot in a window that does not take focus, with heddy:moment — still a window, never a tab (owner, 2026-10-30)', async () => {
+test('H no longer opens a window (Round 8, D74): heddy-ui:moment is not a message the courier answers', async () => {
   const s = setup();
-  const r = await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
-  assert.deepEqual(r, { ok: true, cid: CID });
-  assert.equal(s.calls.windows[0].url, `${PROD}/capture/jot?cid=${CID}`);
-  assert.equal(s.calls.windows[0].type, 'popup');
-  assert.equal(s.calls.windows[0].focused, false);
-  assert.equal(s.calls.tabsCreated.length, 0, 'a tab would flash on every press');
-  assert.deepEqual(await claim(s), { type: 'heddy:moment', v: 1, cid: CID, youtubeId: VIDEO, t: 168, tEnd: 171 });
-});
-
-test('J’s saved result: the tick, then "Note saved" with the quote, Undo’s jot id and Open in Jotter', async () => {
-  const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 170, title: 'GCSE Maths - Using Scales on Maps' }, fromYouTube);
-  await claim(s);
-  const reply = await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, t: 168, jotId: JOT, quote: 'On a 1:50 000 map, 2 cm represents 1 km on the ground.' }, page());
-  assert.deepEqual(reply, { ok: true });
-  assert.equal(s.calls.icons.at(-1).path[16], 'icons/toolbar-saved-16.png');
-  assert.deepEqual(s.calls.tabMessages, [{
-    tabId: 7,
-    m: {
-      type: 'heddy-ui:toast', kind: 'note', t: 168, quote: 'On a 1:50 000 map, 2 cm represents 1 km on the ground.', jotId: JOT,
-      topic: null, topicLang: null, title: 'GCSE Maths - Using Scales on Maps', href: `${PROD}/study/jotters/v/${VIDEO}`,
-    },
-  }]);
-});
-
-test('J’s refusals stay in the window: no toast for Keep and jot, cant_keep or an unknown video', async () => {
-  for (const error of ['unknown_video', 'cant_keep', 'cannot_keep', null]) {
-    const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, fromYouTube);
-    await claim(s);
-    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error }, page());
-    assert.equal(s.calls.tabMessages.length, 0, String(error));
-    assert.equal(s.calls.icons.length, 0);
-  }
-});
-
-test('J only for the video the page shows, and never from Shorts, an embed or a page that is not Heddy', async () => {
-  const s = setup();
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: 'abcdefghijk', t: 3 }, fromYouTube), { ok: false });
-  const shorts = { id: 'heddy', url: `https://www.youtube.com/shorts/${VIDEO}`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/shorts/${VIDEO}` } };
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, shorts), { ok: false });
-  const embed = { id: 'heddy', url: `https://www.youtube.com/embed/${VIDEO}`, tab: { id: 7, windowId: 1, url: `https://www.youtube.com/embed/${VIDEO}` } };
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, embed), { ok: false });
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: -1 }, fromYouTube), { ok: false });
-  assert.equal(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 3 }, { ...fromYouTube, id: 'other' }), null);
+  assert.equal(await s.courier.internal({ type: 'heddy-ui:moment', youtubeId: VIDEO, t: 168.4, tEnd: 171.2, title: 'x' }, fromYouTube), null);
   assert.equal(s.calls.windows.length, 0);
-});
-
-test('Undo: heddy:undo in a window without focus; then "Jot deleted." or "Couldn’t undo that note."', async () => {
-  for (const [ok, kind] of [[true, 'undone'], [false, 'undo_failed']]) {
-    const s = setup();
-    const r = await s.courier.internal({ type: 'heddy-ui:undo', jotId: JOT }, fromYouTube);
-    assert.equal(r.ok, true);
-    assert.equal(s.calls.windows[0].url, `${PROD}/capture/jot?cid=${CID}`);
-    assert.equal(s.calls.windows[0].focused, false);
-    assert.deepEqual(await claim(s), { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT });
-    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok }, page());
-    assert.deepEqual(s.calls.tabMessages, [{ tabId: 7, m: { type: 'heddy-ui:toast', kind } }]);
-    assert.equal(s.calls.icons.length, 0, 'no tick for an undo');
-  }
-  const s = setup();
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:undo', jotId: 'nope' }, fromYouTube), { ok: false });
+  assert.equal(s.calls.tabsCreated.length, 0);
 });
 
 test('Round 5: nothing writes a jot from a page any more; heddy-ui:jot opens nothing', async () => {
@@ -135,29 +76,6 @@ test('Round 5: nothing writes a jot from a page any more; heddy-ui:jot opens not
   assert.equal(s.calls.windows.length, 0);
   const src = (await import('node:fs')).readFileSync(new URL('../lib/courier.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /buildJot\(/, 'the courier never builds heddy:jot');
-});
-
-test('a page can only clip itself; the popup names its tab', async () => {
-  const s = setup();
-  assert.deepEqual(await s.courier.internal({ type: 'heddy-ui:page', url: 'https://evil.example/', markdown: 'm' }, fromArticle), { ok: false });
-  assert.equal(s.calls.windows.length, 0);
-  const r = await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, markdown: '# m', tabId: 9, windowId: 1 }, { id: 'heddy' });
-  assert.equal(r.ok, true);
-});
-
-test('Save page to Jotters: heddy:page to /capture/page; past 200 KB, the first part with cut: true', async () => {
-  const s = setup();
-  const r = await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales\n\nOn a 1:50 000 map…' }, fromArticle);
-  assert.equal(r.ok, true);
-  assert.equal(s.calls.windows[0].url, `${PROD}/capture/page?cid=${CID}`);
-  assert.equal((await claim(s)).type, 'heddy:page');
-  const big = setup();
-  const cut = await big.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Long', markdown: 'a'.repeat(1000) + '\n\n' + 'b'.repeat(200 * 1024) }, fromArticle);
-  assert.equal(cut.ok, true);
-  assert.equal(big.calls.windows.length, 1);
-  const payload = await claim(big);
-  assert.equal(payload.cut, true);
-  assert.equal(payload.markdown, 'a'.repeat(1000));
 });
 
 test('"Save to Jotters" on a selection adds it as a card (and the panel opens, lib/cards.js); the command shows the tray; neither writes a jot', async () => {
@@ -200,88 +118,10 @@ test('Open goes to the child’s Jotter as well as My Clips, on the capture orig
 
 const JOTTER = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
 
-test('Open in Jotter without a valid jotterId goes to the Jotters shelf', async () => {
-  for (const jotterId of [undefined, '../../admin', 'abc']) {
-    const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
-    await claim(s);
-    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotId: JOT, jotterId }, page());
-    assert.equal(s.calls.tabMessages[0].m.href, `${PROD}/study/jotters`, String(jotterId));
-  }
-});
-
-test('Save page to Jotters saved: "Saved to Jotters · title", Open in Jotter, and the cut line only when cut', async () => {
-  for (const [markdown, cut] of [['# Short', false], ['a'.repeat(10) + '\n\n' + 'b'.repeat(200 * 1024), true]]) {
-    const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Understanding map scales', markdown }, fromArticle);
-    await claim(s);
-    await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: JOTTER }, page());
-    assert.deepEqual(s.calls.tabMessages, [{ tabId: 9, m: { type: 'heddy-ui:toast', kind: 'clipped', title: 'Understanding map scales', cut, href: `${PROD}/study/jotters/${JOTTER}` } }]);
-  }
-});
-
-test('a refused Jot it or Save page to Jotters stays in its window: no toast', async () => {
+test('Round 9 (D78): Undo and Save page are not the courier’s; nothing it is sent opens a window', async () => {
   const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:jot', url: ARTICLE, quote: 'q' }, fromArticle);
-  await claim(s);
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'too_long' }, page());
-  assert.equal(s.calls.tabMessages.length, 0);
-});
-
-test('Undo of a web jot names its Jotter; Undo of an H jot sends jotId alone; a bad jotterId opens nothing', async () => {
-  const web = setup();
-  await web.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: JOTTER }, fromArticle);
-  assert.deepEqual(await claim(web), { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT, jotterId: JOTTER });
-  const h = setup();
-  await h.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: null }, fromYouTube);
-  assert.deepEqual(await claim(h), { type: 'heddy:undo', v: 1, cid: CID, jotId: JOT });
-  const bad = setup();
-  assert.deepEqual(await bad.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: '../admin' }, fromArticle), { ok: false });
-  assert.equal(bad.calls.windows.length, 0);
-});
-
-test('Cancel or Close in a capture window (heddy:result cancelled): Heddy closes that window, no toast, cid dropped', async () => {
-  const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
-  await claim(s);
-  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
-  assert.deepEqual(s.calls.windowsRemoved, [42]);
-  assert.equal(s.calls.tabMessages.length, 0);
-  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true }, page()), null, 'dropped');
-});
-
-test('a Save page to Jotters the site refuses after its file check (not_study, too_long, unreadable, failed): no Saved to Jotters toast, the window stays; Close then closes it', async () => {
-  for (const error of ['not_study', 'too_long', 'unreadable', 'failed']) {
-    const s = setup();
-    await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
-    await claim(s);
-    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error }, page()), { ok: true }, error);
-    assert.equal(s.calls.tabMessages.length, 0, `${error}: no toast`);
-    assert.deepEqual(s.calls.windowsRemoved, [], `${error}: the window stays`);
-    assert.equal(s.calls.icons.length, 0, `${error}: no tick`);
-    assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
-    assert.deepEqual(s.calls.windowsRemoved, [42], `${error}: Close afterwards closes it`);
-  }
-});
-
-test('a Save page to Jotters ok that comes ~30 s after the tap (the site waited for its file check) still gets the Saved to Jotters toast', async () => {
-  let now = 1_000_000;
-  const s = setup({ store: createCidStore({ now: () => now }) });
-  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
-  await claim(s);
-  now += 30_000;
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: true, jotterId: '6ba7b810-9dad-41d1-80b4-00c04fd430c8' }, page());
-  assert.equal(s.calls.tabMessages.at(-1).m.kind, 'clipped');
-});
-
-
-test('Close under a failure that was already reported still closes the window', async () => {
-  const s = setup();
-  await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, title: 'Map scales', markdown: '# Map scales' }, fromArticle);
-  await claim(s);
-  await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'save_failed' }, page());
-  assert.deepEqual(s.calls.windowsRemoved, [], 'a failure leaves it open');
-  assert.equal(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page(77)), null, 'not from another window');
-  assert.deepEqual(await s.courier.external({ type: 'heddy:result', v: 1, cid: CID, ok: false, error: 'cancelled' }, page()), { ok: true });
-  assert.deepEqual(s.calls.windowsRemoved, [42]);
+  assert.equal(await s.courier.internal({ type: 'heddy-ui:undo', jotId: JOT, jotterId: null }, fromYouTube), null);
+  assert.equal(await s.courier.internal({ type: 'heddy-ui:page', url: ARTICLE, markdown: '# m' }, fromArticle), null);
+  assert.equal(s.calls.windows.length, 0);
+  assert.equal(s.calls.tabsCreated.length, 0);
 });

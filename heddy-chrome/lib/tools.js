@@ -1,37 +1,25 @@
-// lib/tools.js — heddy:box and heddy:tool, and the window each one opens
-// (PRD-v0.96.0 D15, D20 tool, D32, D33; artifact R3b · 03, R2 · 05b).
+// lib/tools.js — the checks every page-borne value passes before it leaves
+// Heddy (PRD-v0.96.0 D15, D20, D32, D33): an address, a title, a WebBox, a
+// PNG crop; the three tools' names; and heddy:box's builder.
 //
-//   heddy:box  {v:1, cid, url, title, images:[{png, box}], context}   1–4 images → /capture/jot
+//   heddy:box  {v:1, cid, url, title, images:[{png, box}], context}   1–4 images
 //              (the builder only: since Round 5 Heddy sends pictures as cards
-//              in heddy:save, lib/cards.js; the site keeps heddy:box for older installs)
-//   heddy:tool {v:1, cid, tool, url, title, quote, context, images?}
-//              explain → /capture/room, ask → /capture/room, card → /capture/card
-//              images: exactly 1 for explain and card, 1–4 for ask; quote is ''
-//              when the tool carries pictures, and required when it carries words.
+//              in the save, lib/cards.js; the site keeps heddy:box for older installs)
 //
-// The builders throw on anything the site's parser would refuse, so a bad
-// payload is never handed over. Page text is untrusted: it is cut to its cap
-// and stripped of control characters here, and the site validates it again
-// and gives it to a model only as a delimited data block (D23).
-//
-// createSender is the background's half (hold the payload, open the window).
-// sendTool is the page's half, for the words tray: it asks the background,
-// which knows the tab, to do the rest.
+// Round 9 (D78, D84): the tools no longer open /capture/room or /capture/card
+// windows. Ask about it and Make a card open the desk's Ask view
+// (lib/desk-ask.js, lib/web-routes.js), so heddy:tool's builder and the
+// window sender are gone. Page text is untrusted: it is cut to its cap and
+// stripped of control characters here, and the site validates it again and
+// gives it to a model only as a delimited data block (D23).
 (function (root) {
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
-  var C = root.HeddyConfig || (typeof require === 'function' && require('./config.js'));
   var K = root.HeddyCrop || (typeof require === 'function' && require('./crop.js'));
 
   var MAX_URL = 2048;
   var MAX_TITLE = 300;
   var MAX_CONTEXT = 300;
-  var MAX_QUOTE = 20000;
-  // On words, context is the words before, ' … ', the words after, each
-  // at most 300 (D20, as Jot it sends it).
-  var MAX_WORDS_CONTEXT = 300 + 3 + 300;
   var TOOLS = ['explain', 'card', 'ask'];
-  // Where each payload goes (D20, D32; R2 · 05b's table).
-  var PAGES = { jot: 'jot', explain: 'room', ask: 'room', card: 'card' };
   // How many pictures each one takes (D33: Explain and Make a card are single).
   var MAX_PICTURES = { jot: 4, ask: 4, explain: 1, card: 1 };
   // A base64 PNG starts with the PNG signature, 89 50 4E 47 0D 0A 1A 0A.
@@ -100,105 +88,16 @@
     };
   }
 
-  /** heddy:tool, for /capture/room or /capture/card: words or pictures. */
-  function buildTool(input) {
-    if (TOOLS.indexOf(input.tool) < 0) throw new Error('bad tool');
-    var b = base(input);
-    var out = { type: 'heddy:tool', v: b.v, cid: b.cid, tool: input.tool, url: b.url, title: b.title, quote: '', context: cleanText(input.context, MAX_CONTEXT) };
-    if (input.images !== undefined && input.images !== null) {
-      out.images = cleanImages(input.images, MAX_PICTURES[input.tool]);
-    } else {
-      out.context = cleanText(input.context, MAX_WORDS_CONTEXT);
-      var quote = cleanText(input.quote, MAX_QUOTE);
-      if (!quote) throw new Error('bad quote');
-      out.quote = quote;
-    }
-    return out;
-  }
-
-  /** heddy:undo for cards: {v:1, cid, cardIds} with 1–10 UUIDs. */
-  function buildCardUndo(input) {
-    if (!P.isCaptureId(input.cid)) throw new Error('bad cid');
-    var ids = P.cardIdsOf(input.cardIds);
-    if (!ids) throw new Error('bad cardIds');
-    return { type: 'heddy:undo', v: P.PROTOCOL_VERSION, cid: input.cid, cardIds: ids };
-  }
-
-  /** The /capture page for 'jot' or a tool. */
-  function pageFor(kind) {
-    if (!Object.prototype.hasOwnProperty.call(PAGES, kind)) throw new Error('bad kind');
-    return PAGES[kind];
-  }
-
-  /** The background's half: the courier's openCapture holds the payload in
-   *  the cid store (it answers the window's heddy:ready) and opens the
-   *  window, focused. kind 'box' or 'tool' tells heddy:result what it was.
-   *  deps: {openCapture} */
-  function createSender(deps) {
-    return {
-      /** Undo on the "Card made" toast: heddy:undo {cardIds} in a window
-       *  that does not take focus (the owner's ruling, 2026-10-29). */
-      undoCards: function (cardIds, where) {
-        var w = where || {};
-        return deps.openCapture({
-          page: 'card',
-          kind: 'card_undo',
-          windowId: w.windowId,
-          focused: false,
-          build: function (cid) { return buildCardUndo({ cid: cid, cardIds: cardIds }); },
-          meta: { tabId: w.tabId },
-        });
-      },
-      /** heddy:tool → /capture/room or /capture/card. */
-      tool: function (input, where) {
-        var w = where || {};
-        var page;
-        try { page = pageFor(input && input.tool); } catch (e) { return Promise.resolve({ ok: false }); }
-        return deps.openCapture({
-          page: page,
-          // 'card' or 'room': heddy:result means something different for each.
-          kind: page,
-          windowId: w.windowId,
-          build: function (cid) { return buildTool(Object.assign({}, input, { cid: cid })); },
-          meta: { tabId: w.tabId, title: cleanText(input && input.title, MAX_TITLE) },
-        });
-      },
-    };
-  }
-
-  /** The page's half, for the words tray: Explain, Make a card or Ask Heddy
-   *  on a selection. words = {url, title, quote, context}. The background
-   *  takes the address from the tab itself. Resolves to {ok}. */
-  function sendTool(tool, words) {
-    var w = words || {};
-    var message = { type: 'heddy-ui:tool', tool: tool, url: w.url, title: w.title, quote: w.quote, context: w.context };
-    try {
-      return Promise.resolve(root.chrome.runtime.sendMessage(message)).then(
-        function (reply) { return reply && reply.ok ? { ok: true } : { ok: false }; },
-        function () { return { ok: false }; }
-      );
-    } catch (e) {
-      // Heddy was reloaded under the page.
-      return Promise.resolve({ ok: false });
-    }
-  }
-
   var api = {
     MAX_TITLE: MAX_TITLE,
     MAX_CONTEXT: MAX_CONTEXT,
     TOOLS: TOOLS,
-    PAGES: PAGES,
     MAX_PICTURES: MAX_PICTURES,
     cleanUrl: cleanUrl,
     cleanText: cleanText,
     isWebBox: isWebBox,
     isPng: isPng,
     buildBox: buildBox,
-    buildTool: buildTool,
-    buildCardUndo: buildCardUndo,
-    pageFor: pageFor,
-    createSender: createSender,
-    sendTool: sendTool,
   };
   root.HeddyTools = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

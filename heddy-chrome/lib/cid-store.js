@@ -18,9 +18,9 @@
     var now = opts.now || Date.now;
     var holdMs = opts.holdMs || HOLD_MS;
     var resultMs = opts.resultMs || RESULT_MS;
-    // cid → { payload, createdAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut, cards }
+    // cid → { payload, createdAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut, cards, jotIds }
     var held = {};
-    // cid → { claimedAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut, cards }
+    // cid → { claimedAt, origin, windowId, captureTabId, tabId, then, youtubeId, startSec, kind, title, cut, cards, jotIds }
     var claimed = {};
     // cid → { doneAt, origin, windowId, captureTabId, tabId } after its result:
     // only so a later Cancel or Close on the same page can still close it.
@@ -43,6 +43,14 @@
     function cardIds(x) {
       if (!Array.isArray(x)) return null;
       var ids = x.filter(function (id) { return typeof id === 'string' && id.length <= 64; }).slice(0, 15);
+      return ids.length ? ids : null;
+    }
+
+    /** Round 8: the desk's jot ids Full desk carried (D71), cleared from the
+     *  desk's store once the site keeps the clip. At most 200. */
+    function jotIds(x) {
+      if (!Array.isArray(x)) return null;
+      var ids = x.filter(function (id) { return typeof id === 'string' && id.length <= 64; }).slice(0, 200);
       return ids.length ? ids : null;
     }
 
@@ -80,6 +88,7 @@
           // Round 5: the card ids a heddy:save carried, cleared from the
           // panel's list once the site says they are saved.
           cards: cardIds(entry.cards),
+          jotIds: jotIds(entry.jotIds),
         };
       },
 
@@ -122,7 +131,7 @@
         var e = held[k];
         if (!e || e.origin !== sender.origin || !sameWindow(e, sender)) return null;
         delete held[k];
-        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true, cards: cardIds(e.cards) };
+        claimed[k] = { claimedAt: now(), origin: e.origin, windowId: e.windowId, captureTabId: e.captureTabId == null ? null : e.captureTabId, tabId: e.tabId, then: e.then, youtubeId: e.youtubeId, startSec: e.startSec, kind: e.kind || 'clip', title: e.title == null ? null : e.title, cut: e.cut === true, cards: cardIds(e.cards), jotIds: jotIds(e.jotIds) };
         return e.payload;
       },
 

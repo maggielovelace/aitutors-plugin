@@ -1,17 +1,22 @@
-// content/page-tray.js — the tray under a selection on any page (PRD-v0.96.0
-// D5, D7 as amended by D17, D16, D25, D54, D55; artifact Round 3 · Direction A).
+// content/page-tray.js — the bar under selected words on any page (PRD-v0.96.0
+// § 1i, D85; artifact round-8-youtube-desk.html #web, frame r9f1t).
 //
-// Injected only on a gesture: the jot-selection command (no default key; the
-// child binds one), the selection's "Save to Jotters" menu item, or the panel. That is activeTab
-// (D3): Heddy may run on a page only after the child asks, so there is no
-// bubble waiting over a selection before that first gesture. Round 1's
-// always-on bubble (D7) is a deliberate casualty of D3, not an omission.
+// Injected only on a gesture: the toolbar icon (the desk), the jot-selection
+// command (no default key; the child binds one), or the selection's "Save to
+// Jotters" menu item. That is activeTab (D3): Heddy may run on a page only
+// after the child asks.
 //
-// Once here it reads the selection (the quote, at most 300 characters of the
-// words either side, the page's title and address) and draws the tray under
-// it: + Add (filled amber; Round 5, it was Jot it), Explain, Make a card, Ask
-// Heddy, and › (Copy · Select the whole paragraph · Save page to Jotters). The tools come from lib/tray-tools.js, which Phase 3 extends.
-// Everything from the page is read as text and only ever set as textContent.
+// Selected words get the same bar and the same drop-down as a picture
+// (lib/tray-tools.js): [Text view | Picture view] · Heddy ▾, and Heddy ▾ is
+// Ask {professor} about this · Make a card (each "in Heddy's desk"), then
+// Copy words · Select the whole paragraph. With the desk closed the menu
+// starts with Add to Sources, which opens the desk; with it open the words
+// were already added by themselves (D65). The old tray (+ Add · Explain ·
+// Make a card · Ask Heddy ›) is gone, and nothing here opens a window (D78).
+//
+// It reads the selection (the quote, at most 300 characters of the words
+// either side) and sends it only to Heddy's background. Everything from the
+// page is read as text and only ever set as textContent.
 (function () {
   if (globalThis.__heddyPage) return;
 
@@ -20,15 +25,13 @@
   var T = globalThis.HeddyToast;
   var P = globalThis.HeddyProtocol;
   var X = globalThis.HeddyExtract;
-  var TOOLS = globalThis.HeddyTrayTools.TOOLS;
-  var MENU = globalThis.HeddyTrayTools.MENU;
+  var TT = globalThis.HeddyTrayTools;
 
   var CONTEXT_SIDE = 300;
   var lang = 'en';
   var tr = I.translator(lang);
   var tray = null; // { host, shadow, sel }
   var langReady = I.currentLang().then(function (l) { lang = l; tr = I.translator(l); }, function () {});
-  var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
 
   function send(message) {
     try {
@@ -38,10 +41,8 @@
     }
   }
 
-  // The toasts after a save ("Saved to Jotters · title", Open in Jotter), a
-  // room's "Jot it with this" ("Jotted", the quote, Undo, Open in Jotter) and
-  // Save page to Jotters ("Saved to Jotters · title", Open in Jotter): the windows on
-  // aitutors.me close once they have saved, and the page says what was kept.
+  // The toasts the background sends this page (an Undo's answer; a toast's
+  // Open is the one tap that leaves the page, D78).
   var toaster = T.createToaster({
     document: document,
     marks: M,
@@ -141,9 +142,9 @@
 
   // ─── the actions ───────────────────────────────────────────────────────────
 
-  /** + Add (D55): the words become the next card in the panel, which opens
-   *  on them. The selection is put back first: the background reads it from
-   *  the page (content/cards-layer.js). */
+  /** Add to Sources (D85, the desk closed): the words become the next card
+   *  and the desk opens on them. The selection is put back first: the
+   *  background reads it from the page (content/cards-layer.js). */
   function add(s) {
     hideTray();
     if (!s) return Promise.resolve({ ok: false });
@@ -155,13 +156,21 @@
     return send({ type: 'heddy-cards:collect' });
   }
 
-  /** Explain, Make a card or Ask Heddy on the words (lib/tools.js). */
-  function tool(id, s) {
+  /** Ask {professor} about this, Make a card (D84): the desk opens its Ask
+   *  view on these words. The background knows the tab, its address and
+   *  its title; only the words travel. */
+  function ask(intent, s) {
     hideTray();
     if (!s) return Promise.resolve({ ok: false });
-    var c = P.contextOf(s.before, s.after);
-    var context = c.before && c.after ? c.before + ' … ' + c.after : c.before || c.after;
-    return globalThis.HeddyTools.sendTool(id, { url: s.url, title: s.title, quote: s.quote, context: context });
+    return send({ type: 'heddy-page:ask', intent: intent, quote: s.quote, before: s.before, after: s.after });
+  }
+
+  /** Picture view: box mode on this page (the desk's Picture mode, D64). */
+  function pictureView() {
+    hideTray();
+    var b = globalThis.__heddyBoxMode;
+    if (b && b.start) return b.start();
+    return send({ type: 'heddy-page:picture' });
   }
 
   function hidden(el) {
@@ -177,15 +186,6 @@
   function extract() {
     var page = X.extractPage(document, { base: location.href, isHidden: hidden, imageLabel: tr('imageLabel') });
     return { url: location.href, title: page.title, markdown: page.markdown, images: page.images };
-  }
-
-  function clipPage() {
-    hideTray();
-    var page = extract();
-    return send({ type: 'heddy-ui:page', url: page.url, title: page.title, markdown: page.markdown }).then(function (reply) {
-      if (reply && reply.error === 'empty') toaster.show({ title: tr('pageEmpty'), ms: T.NOTE_MS });
-      return reply;
-    });
   }
 
   function selectParagraph(s) {
@@ -205,28 +205,12 @@
     } catch (e) { /* the page can still copy with ⌘C */ }
   }
 
-  // ─── the tray (artifact .r2tray / .r3menu, Direction A) ────────────────────
+  // ─── the bar (artifact .hbar / .hmenu, frame r9f1t) ────────────────────────
 
-  var CSS =
-    ':host{all:initial;position:absolute;z-index:2147483647}' +
-    '.bar{display:flex;align-items:stretch;gap:2px;padding:4px;border-radius:12px;background:#002147;color:#fff;' +
-    'box-shadow:0 10px 26px rgba(0,0,0,.22);white-space:nowrap;line-height:1;font-family:"Heddy Manrope",Manrope,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
-    '.bar button{all:unset;box-sizing:border-box;display:grid;justify-items:center;align-content:center;gap:5px;min-width:76px;height:50px;padding:0 8px;' +
-    'border-radius:9px;font:700 11.5px "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#fff;cursor:pointer}' +
-    '.bar button.pri{background:#DC9400;color:#002147}' +
-    '.bar button.more{min-width:36px}' +
-    '.bar button.more[aria-expanded="true"],.bar button:not(.pri):hover{background:rgba(255,255,255,.16)}' +
-    '.bar button.pri:hover{filter:brightness(1.06)}' +
-    '.bar button:focus-visible{outline:2px solid #f2ead8;outline-offset:1px}' +
-    'svg{display:block;flex:none}' +
-    '.hf{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center}' +
-    '.menu{position:absolute;left:0;top:64px;display:grid;gap:1px;min-width:220px;padding:5px;border-radius:11px;background:#fdfcf8;' +
-    'border:1px solid #d9d2c3;box-shadow:0 12px 30px rgba(0,0,0,.18);font:600 13px/1.2 "Heddy Manrope",Manrope,Roboto,Arial,sans-serif;color:#002147}' +
-    '.menu[hidden]{display:none}' +
-    '.menu button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;cursor:pointer;font:inherit;color:inherit;white-space:nowrap}' +
-    '.menu button:hover,.menu button:focus-visible{background:#efe9dc}' +
-    '.menu small{margin-left:auto;font:600 11px "JetBrains Mono",ui-monospace,Menlo,monospace;color:#80868b}' +
-    '.menu i{height:1px;background:#e3dccd;margin:3px 4px;display:block}';
+  var CSS = ':host{all:initial;position:absolute;z-index:2147483647}' + TT.CSS +
+    '.hmenu{left:0;top:56px}';
+
+  var professor = 'Mentor';
 
   function hideTray() {
     if (!tray) return;
@@ -234,77 +218,90 @@
     tray = null;
   }
 
+  function deskOpen() {
+    var p = globalThis.__heddyPanel;
+    return !!(p && p.isOpen && p.isOpen());
+  }
+
+  /** The bar under the selection. Returns false with nothing selected. */
   function showTray() {
     var s = readSelection();
     hideTray();
     if (!s) return false;
     var host = document.createElement('heddy-tray');
     var shadow = host.attachShadow({ mode: 'closed' });
-    var marks = TOOLS.map(function (t) { return t.mark; }).concat(['h-chev']).concat(MENU.filter(function (m) { return m.mark; }).map(function (m) { return m.mark; }));
     // Constant markup only; labels go in as text below.
-    shadow.innerHTML = '<style>' + CSS + '</style>' + M.sprite(marks) + '<div class="bar" role="toolbar"></div><div class="menu" role="menu" hidden></div>';
-    var bar = shadow.querySelector('.bar');
+    shadow.innerHTML = '<style>' + CSS + '</style><div class="hbar" role="toolbar"><span class="sg" role="group"></span>' +
+      '<button type="button" class="hd2" aria-haspopup="menu" aria-expanded="false"><span class="eyes">' + M.use('h-eyes', 20) + '</span><span></span></button></div>' +
+      '<div class="hmenu" role="menu" hidden></div>' + M.sprite(['h-eyes']);
+    var bar = shadow.querySelector('.hbar');
     bar.setAttribute('aria-label', tr('trayLabel'));
-    TOOLS.forEach(function (tool) {
+    var sg = shadow.querySelector('.sg');
+    sg.setAttribute('aria-label', tr('modeSwitchLabel'));
+    TT.switchRows('text').forEach(function (row) {
       var b = document.createElement('button');
       b.type = 'button';
-      if (tool.primary) b.className = 'pri';
-      b.insertAdjacentHTML('beforeend', tool.badge ? '<span class="hf">' + M.use(tool.mark, 16) + '</span>' : M.use(tool.mark, 18));
-      b.appendChild(document.createTextNode(tr(tool.label)));
-      b.addEventListener('click', function () { run(tool.id, s); });
-      bar.appendChild(b);
+      b.setAttribute('aria-pressed', String(row.pressed));
+      b.insertAdjacentHTML('beforeend', TT.sv(row.icon));
+      b.appendChild(document.createTextNode(tr(row.label)));
+      if (row.mode === 'picture') b.addEventListener('click', pictureView);
+      sg.appendChild(b);
     });
-    var more = document.createElement('button');
-    more.type = 'button';
-    more.className = 'more';
-    more.setAttribute('aria-haspopup', 'menu');
-    more.setAttribute('aria-expanded', 'false');
-    more.setAttribute('aria-label', tr('trayMore'));
-    more.insertAdjacentHTML('beforeend', M.use('h-chev', 18));
-    bar.appendChild(more);
-
-    var menu = shadow.querySelector('.menu');
-    MENU.forEach(function (item) {
-      if (item.ruleBefore) menu.appendChild(document.createElement('i'));
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.setAttribute('role', 'menuitem');
-      if (item.mark) b.insertAdjacentHTML('beforeend', M.use(item.mark, 16));
-      b.appendChild(document.createTextNode(tr(item.label)));
-      if (item.kbd) {
-        var k = document.createElement('small');
-        k.textContent = isMac ? '⌘C' : 'Ctrl C';
-        b.appendChild(k);
-      }
-      b.addEventListener('click', function () { run(item.id, s); });
-      menu.appendChild(b);
-    });
-    more.addEventListener('click', function () {
+    var heddy = shadow.querySelector('.hd2');
+    heddy.lastChild.textContent = tr('barHeddyMenu');
+    var menu = shadow.querySelector('.hmenu');
+    function drawMenu() {
+      menu.textContent = '';
+      TT.menuFor('words', { deskOpen: deskOpen() }).forEach(function (row) {
+        if (row.sep) return menu.appendChild(document.createElement('hr'));
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('role', 'menuitem');
+        b.insertAdjacentHTML('beforeend', TT.sv(row.icon));
+        b.appendChild(document.createTextNode(tr(row.label, professor)));
+        if (row.tag) {
+          var k = document.createElement('small');
+          k.textContent = tr('menuInDesk');
+          b.appendChild(k);
+        }
+        b.addEventListener('click', function () { run(row.act, s); });
+        menu.appendChild(b);
+      });
+    }
+    drawMenu();
+    heddy.addEventListener('click', function () {
       var open = menu.hidden;
+      if (open) drawMenu();
+      // Under Heddy ▾, its left edge on the button's (the artifact's r9f1t).
+      menu.style.left = heddy.offsetLeft + 'px';
       menu.hidden = !open;
-      more.setAttribute('aria-expanded', String(open));
+      heddy.setAttribute('aria-expanded', String(open));
     });
     shadow.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.stopPropagation(); hideTray(); }
     });
+    // The professor's name, once the background knows it for this page.
+    send({ type: 'heddy-page:professor' }).then(function (r) {
+      if (r && typeof r.name === 'string' && r.name && r.name !== professor) {
+        professor = r.name;
+        if (tray && tray.host === host) drawMenu();
+      }
+    });
 
     // Under the selection, 8 px below its last line, kept inside the window.
-    var left = Math.max(8, Math.min(s.rect.left, document.documentElement.clientWidth - 300));
+    var left = Math.max(8, Math.min(s.rect.left, document.documentElement.clientWidth - 320));
     host.style.left = Math.round(left + window.scrollX) + 'px';
     host.style.top = Math.round(s.rect.bottom + window.scrollY + 8) + 'px';
     document.documentElement.appendChild(host);
     tray = { host: host, shadow: shadow, sel: s };
-    var first = bar.querySelector('button');
-    if (first) first.focus({ preventScroll: true });
     return true;
   }
 
   function run(id, s) {
     if (id === 'add') return add(s);
-    if (id === 'explain' || id === 'card' || id === 'ask') return tool(id, s);
+    if (id === 'ask' || id === 'card') return ask(id, s);
     if (id === 'copy') return copy(s);
     if (id === 'paragraph') return selectParagraph(s);
-    if (id === 'clip') return clipPage();
     return null;
   }
 
@@ -341,6 +338,11 @@
     selection: function () {
       var s = readSelection();
       return s ? payloadOf(s) : null;
+    },
+    // The desk's selection watcher (content/panel.js) shows the bar under
+    // words it has just added (D85).
+    showBar: function () {
+      return langReady.then(showTray);
     },
     extract: function () {
       return langReady.then(extract);

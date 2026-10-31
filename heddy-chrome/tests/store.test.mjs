@@ -89,7 +89,7 @@ test('website content is declared Yes (owner, 2026-10-30), with no fallback, and
   const src = read('store/privacy-answers.md');
   assert.match(src, /^\| Website content \| \*\*Yes\*\* \|$/m);
   assert.doesNotMatch(src, /If the reviewer/);
-  for (const k of ['Save to Jotters', 'Save page to Jotters', 'Snap a picture', 'Ask Heddy', 'only to aitutors.me', 'never sold']) assert.ok(src.includes(k), k);
+  for (const k of ['Save to my Jotters', 'Add to Sources', 'Snap a picture', 'Ask {professor}', 'to aitutors.me', 'never sold', 'no credential']) assert.ok(src.includes(k), k);
   assert.match(read('PRIVACY.md'), /declared as \*\*website content\*\*/);
   assert.match(read('README.zh-CN.md'), /申报为「网站内容」/);
 });

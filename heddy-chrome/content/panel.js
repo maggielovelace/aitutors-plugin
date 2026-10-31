@@ -1,12 +1,18 @@
 // content/panel.js — Heddy's panel in the page (lib/panel.js; owner,
 // 2026-10-30). Injected on the toolbar click (activeTab), never declared.
 //
-// It draws one thing: a frame holding popup/popup.html, top right under the
-// toolbar, fixed, above everything, in a closed shadow root so the page's CSS
-// and scripts cannot reach it. The popup inside is the real extension page,
-// so its chrome.* calls work as they did in the toolbar popup. It stays while
-// the child scrolls, selects or clicks the page, and goes only on its ✕, on
-// Esc (here or in the panel), or on a second click of the icon.
+// It draws one thing: a frame holding popup/popup.html, fixed, above
+// everything, in a closed shadow root so the page's CSS and scripts cannot
+// reach it. The popup inside is the real extension page, so its chrome.*
+// calls work as they did in the toolbar popup. It stays while the child
+// scrolls, selects or clicks the page, and goes only on its ✕, on Esc (here
+// or in the panel), or on a second click of the icon.
+//
+// Round 9 (D79): on an ordinary web page the frame is the desk
+// (popup/web-desk.js), docked on the right, full height, 410 px with the
+// artifact's 12 px gutter, and the page is narrowed by the same 410 px so the
+// desk never covers what the child is selecting. Elsewhere (the first-time
+// state, YouTube's Add to My Clips) it floats top right as before.
 //
 // Box mode (content/box-mode.js) runs beside it: it draws itself just under
 // this frame and hides the frame (away) only while a screenshot is taken.
@@ -29,6 +35,8 @@
 
   var INSET = 12;
   var WIDTH = 360;
+  // The docked desk's column (artifact .web .dock: 410 px, 12 px around the card).
+  var DOCK = 410;
   var SELECTION_MS = 250;
   var URL_MS = 700;
 
@@ -40,6 +48,7 @@
   var lastUrl = '';
   var autoTimer = null;
   var lastAuto = null; // {id, at}: the card auto-added most recently
+  var docked = null; // while docked: the page's own margin-right, to give back
 
   var CSS = [
     ':host { all: initial; }',
@@ -47,6 +56,11 @@
     '  border-radius: 12px; background: #fdfcf8; color-scheme: light; visibility: hidden;',
     '  box-shadow: 0 14px 36px rgba(0, 20, 50, .28), 0 0 0 1px rgba(0, 33, 71, .12); }',
     '.f.on { visibility: visible; }',
+    // Docked: the card fills the column, inside its 12 px gutter (the desk
+    // draws its own 1 px border and 16 px corners).
+    '.f.dock { position: absolute; top: ' + INSET + 'px; right: ' + INSET + 'px; bottom: ' + INSET + 'px; width: ' + (DOCK - INSET) + 'px !important;',
+    // A frame is a replaced element: top + bottom alone leave it 150 px tall.
+    '  height: calc(100vh - ' + 2 * INSET + 'px) !important; max-height: none; border-radius: 16px; box-shadow: none; background: transparent; }',
   ].join('\n');
 
   function tell(message) {
@@ -56,12 +70,52 @@
   function onMessage(e) {
     if (!frame || e.source !== frame.contentWindow || !e.data || typeof e.data !== 'object') return;
     var m = e.data;
-    if (m.heddyPanel === 'size' && typeof m.h === 'number' && isFinite(m.h) && m.h > 0) {
+    if (m.heddyPanel === 'size' && m.dock === true) {
+      dock(true);
+      frame.classList.add('on');
+    } else if (m.heddyPanel === 'size' && typeof m.h === 'number' && isFinite(m.h) && m.h > 0) {
+      dock(false);
       frame.style.height = Math.ceil(Math.min(m.h, 2000)) + 'px';
+      // 400 on a YouTube video (Add to My Clips, artifact P2), else 360.
+      var w = (m.w === 400 ? 400 : WIDTH) + 'px';
+      frame.style.width = w;
+      host.style.setProperty('width', w, 'important');
       frame.classList.add('on');
     } else if (m.heddyPanel === 'close') {
       close();
     }
+  }
+
+  /** The desk docked on the right, and the page narrowed beside it (D79);
+   *  or back to floating, with the page's own margin given back. */
+  function dock(on) {
+    if (!host || !frame || on === !!docked) return;
+    var html = document.documentElement;
+    frame.classList.toggle('dock', on);
+    if (on) {
+      docked = { value: html.style.getPropertyValue('margin-right'), priority: html.style.getPropertyPriority('margin-right') };
+      html.style.setProperty('margin-right', DOCK + 'px', 'important');
+      ['top: 0', 'right: 0', 'bottom: 0', 'height: 100vh', 'width: ' + DOCK + 'px'].forEach(function (d) {
+        var kv = d.split(': ');
+        host.style.setProperty(kv[0], kv[1], 'important');
+      });
+    } else {
+      undock();
+      host.style.setProperty('top', INSET + 'px', 'important');
+      host.style.setProperty('right', INSET + 'px', 'important');
+      host.style.setProperty('bottom', 'auto', 'important');
+      host.style.setProperty('height', 'auto', 'important');
+    }
+    // The page reflowed: box mode and the card numbers follow.
+    try { root.dispatchEvent(new Event('resize')); } catch (e) { /* no matter */ }
+  }
+
+  function undock() {
+    if (!docked) return;
+    var html = document.documentElement;
+    if (docked.value) html.style.setProperty('margin-right', docked.value, docked.priority);
+    else html.style.removeProperty('margin-right');
+    docked = null;
   }
 
   /** 'picture' while box mode is drawing, else 'text'. */
@@ -125,6 +179,8 @@
       if (!host || mode() !== 'text') return;
       var now = selectionNow();
       if (!now || !sameRange(now.range, first.range) || !A.acceptable(now)) return;
+      // The same bar as under a picture, under the words (D85).
+      if (root.__heddyPage && root.__heddyPage.showBar) root.__heddyPage.showBar();
       var layer = root.__heddyCards;
       var t = Date.now();
       var replace = A.replaceTarget(lastAuto, t, !!(lastAuto && layer && layer.overlaps(lastAuto.id, now.range)));
@@ -170,6 +226,8 @@
     frame = document.createElement('iframe');
     frame.className = 'f';
     frame.title = 'Heddy';
+    // Copy on the YouTube state copies the video's link (D76).
+    frame.allow = 'clipboard-write';
     frame.src = chrome.runtime.getURL('popup/popup.html') + '?tab=' + encodeURIComponent(String(tabId)) + '&host=panel';
     var o = /^[a-z-]+:\/\/[^/]+/.exec(frame.src);
     frameOrigin = o ? o[0] : '*';
@@ -199,6 +257,7 @@
     clearTimeout(selTimer);
     clearTimeout(autoTimer);
     clearInterval(urlTimer);
+    undock();
     host.remove();
     host = null;
     frame = null;

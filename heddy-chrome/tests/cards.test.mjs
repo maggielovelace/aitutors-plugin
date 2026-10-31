@@ -1,7 +1,7 @@
-// The panel's numbered cards and Save to Jotters (Round 5: D54, D55, D58).
-// The limits (10 snippets, 4 pictures, one page), the heddy:save message
-// against the shared contract, and the background's list: kept per tab in
-// storage.session, cleared by another page, numbers sent to the page.
+// The desk's numbered cards and the save (Round 5: D54, D55, D58; Round 9:
+// D81–D83). The limits (10 snippets, 4 pictures, one article), the save body
+// against the Round 9 contract's § 1, and the background's list: kept per tab
+// in storage.session, cleared by another page, numbers sent to the page.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './helpers.mjs';
@@ -24,28 +24,23 @@ const BOX = { kind: 'web', vw: 1280, vh: 800, x: 200, y: 166, w: 270, h: 136 };
 const text = (quote = 'Building scientific knowledge', pos = { block: 1, offset: 0 }) => ({ kind: 'text', quote, before: 'Before.', after: 'After.', pos });
 const image = (pos = { block: 2, offset: 0 }) => ({ kind: 'image', png: PNG, box: BOX, before: 'A scale bar', after: 'Next words', pos });
 
-test('heddy:save is exactly {v, cid, type, url, title, then, items}, items in the panel’s order', () => {
-  const m = C.buildSave({ cid: CID, url: PAGE + '#top', title: '  Sparx  Science – Home ', then: 'save', items: [text(), image(), { kind: 'page', markdown: '# Hi' }] });
-  assert.deepEqual(Object.keys(m), ['v', 'cid', 'type', 'url', 'title', 'then', 'items']);
-  assert.equal(m.v, 1);
-  assert.equal(m.type, 'heddy:save');
+test('the save body (contract § 1) is exactly {url, title, items, article?}, items in the desk’s order', () => {
+  const m = C.buildWebSave({ url: PAGE + '#top', title: '  Sparx  Science – Home ', items: [text(), image()], article: { markdown: '# Hi' } });
+  assert.deepEqual(Object.keys(m), ['url', 'title', 'items', 'article']);
   assert.equal(m.url, PAGE, 'without its #fragment');
   assert.equal(m.title, 'Sparx Science – Home');
-  assert.deepEqual(m.items.map((i) => i.kind), ['text', 'image', 'page']);
+  assert.deepEqual(m.items.map((i) => i.kind), ['text', 'image']);
   assert.deepEqual(Object.keys(m.items[0]), ['kind', 'quote', 'before', 'after', 'pos']);
   assert.deepEqual(Object.keys(m.items[1]), ['kind', 'png', 'box', 'before', 'after', 'pos']);
-  assert.deepEqual(Object.keys(m.items[2]), ['kind', 'markdown']);
+  assert.equal(m.items[1].png, PNG, 'raw base64, as the site’s validator takes it');
+  assert.deepEqual(m.article, { markdown: '# Hi' });
   assert.deepEqual(m.items[0].pos, { block: 1, offset: 0 });
   assert.deepEqual(m.items[1].box, BOX);
-});
-
-test('then is "save" or "jot", nothing else', () => {
-  assert.equal(C.buildSave({ cid: CID, url: PAGE, title: '', then: 'jot', items: [text()] }).then, 'jot');
-  for (const then of ['keep', '', undefined, 'JOT']) assert.throws(() => C.buildSave({ cid: CID, url: PAGE, title: '', then, items: [text()] }), String(then));
+  assert.equal('article' in C.buildWebSave({ url: PAGE, title: '', items: [text()] }), false, 'no article unless asked');
 });
 
 test('a quote is at most 4000 characters, keeps its line breaks; before and after at most 300, cut away from the quote', () => {
-  const m = C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [{ kind: 'text', quote: ' line one\nline\u0007 two ' + 'x'.repeat(5000), before: 'b'.repeat(400) + 'END', after: 'START' + 'a'.repeat(400), pos: { block: 0, offset: 3 } }] });
+  const m = C.buildWebSave({ url: PAGE, title: '', items: [{ kind: 'text', quote: ' line one\nline\u0007 two ' + 'x'.repeat(5000), before: 'b'.repeat(400) + 'END', after: 'START' + 'a'.repeat(400), pos: { block: 0, offset: 3 } }] });
   const it = m.items[0];
   assert.equal(it.quote.length, 4000);
   assert.ok(it.quote.startsWith('line one\nline two'), 'control characters out, the line break kept, trimmed');
@@ -55,34 +50,34 @@ test('a quote is at most 4000 characters, keeps its line breaks; before and afte
   assert.ok(it.after.startsWith('START'));
 });
 
-test('a page item is cut past 200 KB of UTF-8, and says cut: true', () => {
+test('the article is cut past 200 KB of UTF-8, and says cut: true', () => {
   const big = ('A paragraph of words. '.repeat(40) + '\n\n').repeat(400);
-  const m = C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [{ kind: 'page', markdown: big }] });
-  assert.equal(m.items[0].cut, true);
-  assert.ok(globalThis.HeddyProtocol.utf8Bytes(m.items[0].markdown) <= 200 * 1024);
-  assert.throws(() => C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [{ kind: 'page', markdown: '   ' }] }), /empty/);
+  const m = C.buildWebSave({ url: PAGE, title: '', items: [], article: { markdown: big } });
+  assert.equal(m.article.cut, true);
+  assert.ok(globalThis.HeddyProtocol.utf8Bytes(m.article.markdown) <= 200 * 1024);
+  assert.throws(() => C.buildWebSave({ url: PAGE, title: '', items: [], article: { markdown: '   ' } }), /empty/);
 });
 
-test('at most 10 text, 4 image and 1 page item; none at all is refused', () => {
+test('at most 10 text and 4 image items; nothing at all is refused, nothing picked with the article is the page alone', () => {
   const ten = Array.from({ length: 10 }, (_, i) => text(`q${i}`, { block: i, offset: 0 }));
   const four = Array.from({ length: 4 }, () => image());
-  assert.equal(C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [...ten, ...four, { kind: 'page', markdown: 'x' }] }).items.length, 15);
-  assert.throws(() => C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [...ten, text('eleven')] }), /too many/);
-  assert.throws(() => C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [...four, image()] }), /too many/);
-  assert.throws(() => C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [{ kind: 'page', markdown: 'a' }, { kind: 'page', markdown: 'b' }] }), /too many/);
-  assert.throws(() => C.buildSave({ cid: CID, url: PAGE, title: '', then: 'save', items: [] }), /empty/);
+  assert.equal(C.buildWebSave({ url: PAGE, title: '', items: [...ten, ...four], article: { markdown: 'x' } }).items.length, 14);
+  assert.throws(() => C.buildWebSave({ url: PAGE, title: '', items: [...ten, text('eleven')] }), /too many/);
+  assert.throws(() => C.buildWebSave({ url: PAGE, title: '', items: [...four, image()] }), /too many/);
+  assert.throws(() => C.buildWebSave({ url: PAGE, title: '', items: [{ kind: 'page', markdown: 'a' }] }), /bad kind/, 'the article is not an item');
+  assert.throws(() => C.buildWebSave({ url: PAGE, title: '', items: [] }), /empty/);
+  assert.deepEqual(C.buildWebSave({ url: PAGE, title: '', items: [], article: { markdown: '# Page' } }).items, []);
 });
 
-test('anything the site would refuse throws: a bad cid, url, pos, picture or kind', () => {
-  const ok = { cid: CID, url: PAGE, title: '', then: 'save' };
-  assert.throws(() => C.buildSave({ ...ok, cid: 'nope', items: [text()] }));
-  assert.throws(() => C.buildSave({ ...ok, url: 'chrome://extensions', items: [text()] }));
-  assert.throws(() => C.buildSave({ ...ok, items: [text('q', { block: -1, offset: 0 })] }), /bad pos/);
-  assert.throws(() => C.buildSave({ ...ok, items: [text('q', { block: 1 })] }), /bad pos/);
-  assert.throws(() => C.buildSave({ ...ok, items: [text('   ')] }), /no quote/);
-  assert.throws(() => C.buildSave({ ...ok, items: [{ ...image(), png: 'data:image/png;base64,' + PNG }] }), /bad image/);
-  assert.throws(() => C.buildSave({ ...ok, items: [{ ...image(), box: { ...BOX, kind: 'yt' } }] }), /bad image/);
-  assert.throws(() => C.buildSave({ ...ok, items: [{ kind: 'video' }] }), /bad kind/);
+test('anything the site would refuse throws: a bad url, pos, picture or kind', () => {
+  const ok = { url: PAGE, title: '' };
+  assert.throws(() => C.buildWebSave({ ...ok, url: 'chrome://extensions', items: [text()] }));
+  assert.throws(() => C.buildWebSave({ ...ok, items: [text('q', { block: -1, offset: 0 })] }), /bad pos/);
+  assert.throws(() => C.buildWebSave({ ...ok, items: [text('q', { block: 1 })] }), /bad pos/);
+  assert.throws(() => C.buildWebSave({ ...ok, items: [text('   ')] }), /no quote/);
+  assert.throws(() => C.buildWebSave({ ...ok, items: [{ ...image(), png: 'data:image/png;base64,' + PNG }] }), /bad image/);
+  assert.throws(() => C.buildWebSave({ ...ok, items: [{ ...image(), box: { ...BOX, kind: 'yt' } }] }), /bad image/);
+  assert.throws(() => C.buildWebSave({ ...ok, items: [{ kind: 'video' }] }), /bad kind/);
 });
 
 // ─── the list's rules ───────────────────────────────────────────────────────
@@ -138,8 +133,8 @@ function fakeSession(data = {}) {
   };
 }
 
-function setup({ session = fakeSession(), selection = null, markdown = '# The page' } = {}) {
-  const calls = { injected: [], synced: [], told: [], opened: [], tools: [], captures: [], lines: [] };
+function setup({ session = fakeSession(), selection = null, markdown = '# The page', saveReply = null, undoReply = { ok: true } } = {}) {
+  const calls = { injected: [], synced: [], told: [], saves: [], undos: [], asks: [], captures: [], lines: [] };
   const tab = { id: 7, windowId: 3, url: PAGE + '#top', title: 'Sparx Science – Home' };
   let n = 0;
   const page = { selection };
@@ -166,8 +161,11 @@ function setup({ session = fakeSession(), selection = null, markdown = '# The pa
       if (!(rect.w >= 24 && rect.h >= 24)) throw new Error('too_small');
       return { png: PNG, box: K.webBox(rect, vw, vh) };
     },
-    openCapture: async (spec) => { calls.opened.push({ spec, payload: spec.build(CID) }); return { ok: true, cid: CID }; },
-    sender: { tool: async (input, where) => { calls.tools.push({ input, where }); return { ok: true }; } },
+    api: {
+      save: async (body) => { calls.saves.push(body); return saveReply || { ok: true, jotterId: 'j1', jotterTitle: 'Sparx Science', href: '/study/jotters/j1', saveId: 's1', counts: { snippets: 1, pictures: 1, article: !!body.article } }; },
+      undo: async (body) => { calls.undos.push(body); return undoReply; },
+    },
+    ask: async (t, ctx, intent) => { calls.asks.push({ tabId: t.id, ctx, intent }); return { ok: true }; },
     droppedText: async () => 'The page changed, so the cards you collected were cleared.',
     showLine: async (tabId, t) => { calls.lines.push({ tabId, t }); },
     showPanel: async (t) => { calls.shown = (calls.shown || []).concat(t.id); },
@@ -232,92 +230,90 @@ test('✕ removes a card and the rest renumber, on the page too', async () => {
   assert.deepEqual(s.calls.synced.at(-1), [{ id: 'c0ffee00-0000-4000-8000-000000000002', n: 1, kind: 'text' }]);
 });
 
-test('Save to Jotters: one heddy:save to /capture/save in a window, every card in the panel’s order, the card ids kept for the result', async () => {
+test('Save n to my Jotters (D82): one request from the background, every card in the desk’s order; no window (D78)', async () => {
   const s = setup({ selection: SEL('one', 3, 7) });
   await s.ask({ type: 'heddy-cards:add-text' });
   await keepBox(s);
-  assert.equal((await s.ask({ type: 'heddy-cards:save', then: 'save' })).ok, true);
-  const { spec, payload } = s.calls.opened[0];
-  assert.equal(spec.page, 'save');
-  assert.equal(spec.kind, 'save');
-  assert.equal(spec.asTab, undefined, 'a window, which the site closes');
-  assert.equal(spec.meta.then, 'save');
-  assert.deepEqual(spec.meta.cards, ['c0ffee00-0000-4000-8000-000000000001', 'c0ffee00-0000-4000-8000-000000000002']);
-  assert.equal(payload.type, 'heddy:save');
-  assert.equal(payload.url, PAGE);
-  assert.equal(payload.title, 'Sparx Science – Home');
-  assert.deepEqual(payload.items.map((i) => [i.kind, i.pos]), [['text', { block: 3, offset: 7 }], ['image', { block: 2, offset: 0 }]]);
-  assert.deepEqual(payload.items[0], { kind: 'text', quote: 'one', before: 'Words before.', after: 'Words after.', pos: { block: 3, offset: 7 } });
-  assert.equal(payload.items[1].before, 'A scale bar');
+  const r = await s.cards.saveWeb(s.tab, false);
+  assert.deepEqual(r, { ok: true, jotterTitle: 'Sparx Science', href: '/study/jotters/j1', saveId: 's1', counts: { snippets: 1, pictures: 1, article: false }, dropped: null });
+  const body = s.calls.saves[0];
+  assert.equal(body.url, PAGE);
+  assert.equal(body.title, 'Sparx Science – Home');
+  assert.equal('article' in body, false);
+  assert.deepEqual(body.items.map((i) => [i.kind, i.pos]), [['text', { block: 3, offset: 7 }], ['image', { block: 2, offset: 0 }]]);
+  assert.deepEqual(body.items[0], { kind: 'text', quote: 'one', before: 'Words before.', after: 'Words after.', pos: { block: 3, offset: 7 } });
+  assert.equal(body.items[1].before, 'A scale bar');
+  assert.deepEqual((await s.ask({ type: 'heddy-cards:get' })).cards, [], 'the list is emptied, ready for the next page (D83)');
+  assert.deepEqual(s.calls.told.at(-1), { type: 'heddy-cards:changed', tabId: 7 });
 });
 
-test('Save and jot now: then "jot", in a tab beside the page, which the site turns into the notebook', async () => {
-  const s = setup({ selection: SEL('one') });
+test('"Also keep the article’s text" adds the article; nothing picked saves the page’s article alone (D82)', async () => {
+  const s = setup({ markdown: '# Building scientific knowledge\n\nWords.', selection: SEL('one') });
+  await s.cards.saveWeb(s.tab, false);
+  assert.deepEqual(s.calls.saves[0].items, []);
+  assert.deepEqual(s.calls.saves[0].article, { markdown: '# Building scientific knowledge\n\nWords.' }, 'nothing picked: the page');
   await s.ask({ type: 'heddy-cards:add-text' });
-  await s.ask({ type: 'heddy-cards:save', then: 'jot' });
-  const { spec, payload } = s.calls.opened[0];
-  assert.equal(payload.then, 'jot');
-  assert.equal(spec.asTab, 7);
-  assert.equal(spec.meta.then, 'jot');
-});
-
-test('Save page to Jotters: a page item, alone with no card, or after the cards with “Save the whole page too”', async () => {
-  const s = setup({ markdown: '# Building scientific knowledge\n\nWords.' });
-  await s.ask({ type: 'heddy-cards:save', then: 'save', page: true });
-  assert.deepEqual(s.calls.opened[0].payload.items, [{ kind: 'page', markdown: '# Building scientific knowledge\n\nWords.' }]);
-  s.page.selection = SEL('one');
-  await s.ask({ type: 'heddy-cards:add-text' });
-  await s.ask({ type: 'heddy-cards:save', then: 'save', page: true });
-  assert.deepEqual(s.calls.opened[1].payload.items.map((i) => i.kind), ['text', 'page']);
+  await s.cards.saveWeb(s.tab, true);
+  assert.deepEqual(s.calls.saves[1].items.map((i) => i.kind), ['text']);
+  assert.equal(s.calls.saves[1].article.markdown, '# Building scientific knowledge\n\nWords.');
   const empty = setup({ markdown: '   ' });
-  assert.deepEqual(await empty.ask({ type: 'heddy-cards:save', then: 'save', page: true }), { ok: false, error: 'empty' });
-  assert.deepEqual(await empty.ask({ type: 'heddy-cards:save', then: 'save' }), { ok: false, error: 'empty' }, 'nothing to save');
-  assert.equal(empty.calls.opened.length, 0);
+  assert.deepEqual(await empty.cards.saveWeb(empty.tab, false), { ok: false, error: 'empty' }, 'nothing to save');
+  assert.equal(empty.calls.saves.length, 0);
 });
 
-test('the site saved: the cards that save carried leave the list, any added since stay', async () => {
+test('a failed save keeps the sources and says why (D83)', async () => {
+  for (const error of ['signed_out', 'too_big', 'failed']) {
+    const s = setup({ selection: SEL('one'), saveReply: { ok: false, error } });
+    await s.ask({ type: 'heddy-cards:add-text' });
+    assert.deepEqual(await s.cards.saveWeb(s.tab, false), { ok: false, error });
+    assert.equal((await s.ask({ type: 'heddy-cards:get' })).cards.length, 1, error);
+  }
+});
+
+test('Undo on the Saved card deletes the save and puts its cards back first, in their order; cards added since stay', async () => {
   const s = setup({ selection: SEL('one', 1) });
   await s.ask({ type: 'heddy-cards:add-text' });
-  await s.ask({ type: 'heddy-cards:save', then: 'save' });
-  s.page.selection = SEL('added while the window was open', 2);
+  s.page.selection = SEL('two', 2);
   await s.ask({ type: 'heddy-cards:add-text' });
-  await s.cards.saved(s.calls.opened[0].spec.meta);
-  const r = await s.ask({ type: 'heddy-cards:get' });
-  assert.deepEqual(r.cards.map((c) => [c.quote, c.n]), [['added while the window was open', 1]]);
-  assert.deepEqual(s.calls.synced.at(-1).map((c) => c.n), [1]);
+  await s.cards.saveWeb(s.tab, false);
+  s.page.selection = SEL('added after the save', 5);
+  await s.ask({ type: 'heddy-cards:add-text' });
+  const r = await s.cards.undoSave(s.tab, 's1');
+  assert.deepEqual(s.calls.undos, [{ kind: 'save', saveId: 's1' }]);
+  assert.deepEqual(r.cards.map((c) => [c.quote, c.n]), [['one', 1], ['two', 2], ['added after the save', 3]]);
+  const no = setup({ selection: SEL('one'), undoReply: { ok: false, error: 'failed' } });
+  await no.ask({ type: 'heddy-cards:add-text' });
+  await no.cards.saveWeb(no.tab, false);
+  assert.deepEqual(await no.cards.undoSave(no.tab, 's1'), { ok: false, error: 'failed' });
+  assert.equal((await no.ask({ type: 'heddy-cards:get' })).cards.length, 0, 'a failed Undo changes nothing');
+});
+
+test('the desk’s save is not the panel’s message any more: heddy-cards:save and heddy-cards:tool are refused', async () => {
+  const s = setup({ selection: SEL('one') });
+  await s.ask({ type: 'heddy-cards:add-text' });
+  assert.equal(await s.ask({ type: 'heddy-cards:save', then: 'save' }), undefined);
+  assert.equal(await s.ask({ type: 'heddy-cards:tool', tool: 'explain' }), undefined);
+  assert.equal(s.calls.saves.length, 0);
 });
 
 test('the crop bar no longer saves (D64): heddy-box:save is not the cards’ message any more', async () => {
   const s = setup({ selection: SEL('one') });
   await s.ask({ type: 'heddy-cards:add-text' });
   assert.equal(await s.ask({ type: 'heddy-box:save', box: null }, s.box), undefined);
-  assert.equal(s.calls.opened.length, 0);
+  assert.equal(s.calls.saves.length, 0);
 });
 
-test('Explain · Make a card · Ask Heddy act on card 1: words as words, a picture as a picture', async () => {
-  const s = setup({ selection: SEL('Maps are models.') });
-  await s.ask({ type: 'heddy-cards:add-text' });
-  await keepBox(s);
-  await s.ask({ type: 'heddy-cards:tool', tool: 'explain' });
-  assert.deepEqual(s.calls.tools[0].input, { tool: 'explain', url: s.tab.url, title: s.tab.title, quote: 'Maps are models.', context: 'Words before. … Words after.' });
-  assert.deepEqual(s.calls.tools[0].where, { tabId: 7, windowId: 3 });
-  const p = setup();
-  await keepBox(p);
-  await p.ask({ type: 'heddy-cards:tool', tool: 'card' });
-  assert.equal(p.calls.tools[0].input.quote, '');
-  assert.equal(p.calls.tools[0].input.images.length, 1);
-  assert.deepEqual(await p.ask({ type: 'heddy-cards:tool', tool: 'delete-everything' }), { ok: false });
-});
-
-test('the Heddy ▾ menu on the box being drawn cuts it and keeps nothing; with no box, the last picture kept', async () => {
+test('Heddy ▾ on the box being drawn (D84, D85) opens the desk’s Ask view on it and keeps nothing; with no box, on the last picture kept, numbered', async () => {
   const s = setup();
   await s.ask({ type: 'heddy-box:tool', tool: 'ask', box: { rect: { x: 0, y: 0, w: 100, h: 100 }, vw: 1280, vh: 800, context: 'cap' } }, s.box);
-  assert.equal(s.calls.tools[0].input.images.length, 1);
+  assert.deepEqual(s.calls.asks[0], { tabId: 7, ctx: { about: 'picture', n: null, attach: { kind: 'image', png: PNG } }, intent: 'ask' });
   assert.equal((await s.ask({ type: 'heddy-cards:get' })).cards.length, 0, 'nothing kept');
+  s.page.selection = SEL('first');
+  await s.ask({ type: 'heddy-cards:add-text' });
   const k = await keepBox(s);
-  await s.ask({ type: 'heddy-box:tool', tool: 'explain', cardId: k.id }, s.box);
-  assert.equal(s.calls.tools[1].input.tool, 'explain');
-  assert.equal(s.calls.tools[1].input.context, 'A scale bar');
+  await s.ask({ type: 'heddy-box:tool', tool: 'card', cardId: k.id }, s.box);
+  assert.deepEqual(s.calls.asks[1], { tabId: 7, ctx: { about: 'picture', n: 2, attach: { kind: 'image', png: PNG } }, intent: 'card' }, 'about picture 2');
+  assert.deepEqual(await s.ask({ type: 'heddy-box:tool', tool: 'delete-everything' }, s.box), { ok: false });
 });
 
 test('going to another page clears the list (a #fragment is the same page), and the new page says so once it loads', async () => {
@@ -371,7 +367,7 @@ test('"Save to Jotters" on a selection and the tray’s + Add collect: the words
   const r = await s.ask({ type: 'heddy-cards:collect' }, s.box);
   assert.deepEqual([r.ok, r.n], [true, 1]);
   assert.deepEqual(s.calls.shown, [7]);
-  assert.equal(s.calls.opened.length, 0, 'no capture window');
+  assert.equal(s.calls.saves.length, 0, 'nothing saved');
   s.page.selection = null;
   const none = await s.cards.collect(s.tab);
   assert.equal(none.error, 'no_selection');
@@ -385,6 +381,5 @@ test('no path a child can tap builds heddy:jot or heddy:box any more (the site k
     const src = r(f);
     assert.doesNotMatch(src, /\bbuildJot\(|\bbuildBox\(|sender\.box\(|type: 'heddy-ui:jot'/, f);
   }
-  const tools = r('lib/tools.js');
-  assert.doesNotMatch(tools.slice(tools.indexOf('function createSender')), /buildBox\(/, 'the sender has no box');
+  assert.doesNotMatch(r('lib/tools.js'), /function createSender/, 'no window sender at all (D78)');
 });

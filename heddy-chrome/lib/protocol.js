@@ -4,16 +4,23 @@
 // patterns below are copied from there and must stay equal to them.
 //
 //   page  → Heddy  {type:'heddy:ready',  v:1, cid}
-//   Heddy → page   {type:'heddy:add',    v:1, cid, youtubeId, startSec, then}   (the reply, once)
+//   Heddy → page   {type:'heddy:add',    v:1, cid, youtubeId, startSec, then, endSec?, jots?}   (the reply, once)
 //   Heddy → page   {type:'heddy:moment', v:1, cid, youtubeId, t, tEnd?}        J on YouTube
 //   Heddy → page   {type:'heddy:undo',   v:1, cid, jotId, jotterId?}            Undo on the toast
 //   Heddy → page   {type:'heddy:jot',    v:1, cid, url, title, quote, context}  Jot it
 //   Heddy → page   {type:'heddy:page',   v:1, cid, url, title, markdown, cut?}  Save page to Jotters (older builds)
 //   Heddy → page   {type:'heddy:save',   v:1, cid, url, title, then, items}     Save to Jotters (lib/cards.js)
-//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?, saveIds?, title?}
+//   page  → Heddy  {type:'heddy:result', v:1, cid, ok, error?, quote?, t?, jotId?, jotterId?, saveIds?, title?, jotsSaved?}
 //
 // heddy:save's result names the saves it made (`saveIds`) and the Jotter's
 // `title`; a refusal of a clip may be 'no_captions' (D59).
+//
+// heddy:add's two optional fields (Round 8, D71, D75; the contract's § 5):
+// `endSec`, where the part ends (the popup's film strip): after startSec
+// (after 0 with no start), at most 6 h, rounded up to a whole second; and `jots`, the desk's jots
+// carried by Full desk (then 'classroom' only): at most 200 of
+// {t, kind:'line'|'note', text}, t ≥ 0 to 0.1 s, text at most 2000 characters.
+// The site's parser (lib/capture/protocol.ts) applies the same rules.
 //
 // `tEnd` on heddy:moment is the player time of the LAST J in a chain of
 // presses each within 2.5 s of the one before (PRD-v0.97.0 D11); `t` is the
@@ -48,6 +55,12 @@
   var MAX_PAGE_BYTES = 200 * 1024;
   // heddy:moment's tEnd may be at most this many seconds after t (site rule).
   var MAX_SPAN = 120;
+  // heddy:add's endSec and jots (Round 8): a part ends within 6 h; Full desk
+  // carries at most 200 jots of at most 2000 characters each.
+  var MAX_END = 6 * 60 * 60;
+  var MAX_JOTS = 200;
+  var MAX_JOT_TEXT = 2000;
+  var JOT_KINDS = ['line', 'note'];
 
   function isCaptureId(x) {
     return typeof x === 'string' && UUID.test(x);
@@ -79,6 +92,23 @@
     return s >= 1 ? s : null;
   }
 
+  /** The desk's jots as heddy:add and POST /api/learn/heddy/desk/jots carry
+   *  them: each {t, kind, text} with t to 0.1 s and the text's control
+   *  characters out (line breaks stay: they are the child's), empty ones
+   *  dropped. Throws on anything else, or on more than 200. */
+  function jotsOf(list) {
+    if (!Array.isArray(list) || list.length > MAX_JOTS) throw new Error('bad jots');
+    var out = [];
+    list.forEach(function (j) {
+      if (!j || typeof j !== 'object' || JOT_KINDS.indexOf(j.kind) < 0 || !isSeconds(j.t) || typeof j.text !== 'string') throw new Error('bad jot');
+      var text = j.text.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim();
+      if (!text) return;
+      if (text.length > MAX_JOT_TEXT) text = text.slice(0, MAX_JOT_TEXT);
+      out.push({ t: Math.round(j.t * 10) / 10, kind: j.kind, text: text });
+    });
+    return out;
+  }
+
   /** heddy:add, built so that the site's parseHeddyMessage accepts it. Throws
    *  on anything it would refuse, so a bad payload is never handed over. */
   function buildAdd(input) {
@@ -87,7 +117,7 @@
     if (!isYoutubeId(input.youtubeId)) throw new Error('bad youtubeId');
     if (startSec !== null && !isSeconds(startSec)) throw new Error('bad startSec');
     if (THEN.indexOf(input.then) < 0) throw new Error('bad then');
-    return {
+    var out = {
       type: 'heddy:add',
       v: PROTOCOL_VERSION,
       cid: input.cid,
@@ -95,6 +125,20 @@
       startSec: startSec === null ? null : Math.floor(startSec),
       then: input.then,
     };
+    if (input.endSec != null) {
+      // The site's rule (contract Changes, site 5): the raw end after the raw
+      // start (after 0 with none), at most 6 h, then rounded UP to a second.
+      var end = input.endSec;
+      if (typeof end !== 'number' || !isFinite(end) || end > MAX_END) throw new Error('bad endSec');
+      if (end <= (startSec === null ? 0 : startSec)) throw new Error('bad endSec');
+      out.endSec = Math.ceil(end);
+    }
+    if (input.jots != null) {
+      if (input.then !== 'classroom') throw new Error('jots only with classroom');
+      var jots = jotsOf(input.jots);
+      if (jots.length) out.jots = jots;
+    }
+    return out;
   }
 
   /** heddy:moment: J on a watch page. `tEnd` (the last press of a chain) is
@@ -271,6 +315,9 @@
         // heddy:save (Round 5): the saves made, and the Jotter's title for the toast.
         saveIds: saveIdsOf(data.saveIds),
         title: typeof data.title === 'string' && flat(data.title) ? flat(data.title).slice(0, MAX_TITLE) : null,
+        // Full desk (Round 8): how many of the carried jots the window saved;
+        // absent when that save failed or there were none.
+        jotsSaved: typeof data.jotsSaved === 'number' && Number.isInteger(data.jotsSaved) && data.jotsSaved >= 0 && data.jotsSaved <= MAX_JOTS ? data.jotsSaved : null,
       };
     }
     return null;
@@ -303,6 +350,10 @@
     youtubeIdFromUrl: youtubeIdFromUrl,
     startSecFor: startSecFor,
     buildAdd: buildAdd,
+    jotsOf: jotsOf,
+    MAX_END: MAX_END,
+    MAX_JOTS: MAX_JOTS,
+    MAX_JOT_TEXT: MAX_JOT_TEXT,
     buildMoment: buildMoment,
     buildUndo: buildUndo,
     buildJot: buildJot,

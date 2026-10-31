@@ -1,5 +1,6 @@
-// The bar under a cropped picture (D58 as Round 7's D64 has it): the
-// [Text | Picture] switch · + Picture (gold) · Heddy ▾, the Heddy menu, and
+// The bar under a cropped picture (D58 as Round 7's D64 and Round 9's D85
+// have it): the [Text view | Picture view] switch · + Picture (gold) ·
+// Heddy ▾, the Heddy menu, and
 // the small bar Text mode leaves. Its states as pure rules, plus source pins
 // for what needs a page to see.
 import { test } from 'node:test';
@@ -53,45 +54,52 @@ test('Text mode: only the small bar, "Select words: each one is added"; nothing 
   assert.equal(zh.textModeLine.message, '选中文字：每段都会加进来');
 });
 
-test('the switch: Text then Picture, the one that is on pressed', () => {
-  assert.deepEqual(B.switchModel('text').map((b) => [b.mode, b.pressed]), [['text', true], ['picture', false]]);
-  assert.deepEqual(B.switchModel('picture').map((b) => [b.mode, b.pressed]), [['text', false], ['picture', true]]);
-  assert.deepEqual(B.switchModel('text').map((b) => en[b.label].message), ['Text', 'Picture']);
-  assert.deepEqual(B.switchModel('text').map((b) => zh[b.label].message), ['文字', '图片']);
+test('the switch: Text view then Picture view, the one that is on pressed, with the artifact’s line icons (D85)', () => {
+  assert.deepEqual(B.switchModel('picture').map((b) => [b.mode, b.pressed, b.icon]), [['text', false, 'text'], ['picture', true, 'pic']]);
+  assert.deepEqual(B.switchModel('text').map((b) => b.pressed), [true, false]);
+  assert.deepEqual(B.switchModel('text').map((b) => en[b.label].message), ['Text view', 'Picture view']);
+  assert.deepEqual(B.switchModel('text').map((b) => zh[b.label].message), ['文字视图', '图片视图']);
 });
 
-test('the Heddy menu: Explain this picture, Make a card, Ask Heddy about it, a rule, Copy picture, Whole visible page', () => {
+test('Heddy ▾ (D85): Ask {professor} about it · Make a card, each "in Heddy’s desk", a rule, Copy picture · Whole visible page; no Explain', () => {
   const rows = B.menuRows(0, BOX);
-  assert.deepEqual(rows.map((r) => r.sep ? '—' : r.act), ['explain', 'card', 'ask', '—', 'copy', 'whole']);
-  assert.deepEqual(rows.filter((r) => !r.sep).map((r) => en[r.label].message), ['Explain this picture', 'Make a card', 'Ask Heddy about it', 'Copy picture', 'Whole visible page']);
-  assert.deepEqual(rows.filter((r) => !r.sep).map((r) => r.icon), ['search', 'star', 'quill', 'page', 'crop'], 'the artifact’s icons');
+  assert.deepEqual(rows.map((r) => r.sep ? '—' : r.act), ['ask', 'card', '—', 'copy', 'whole']);
+  const I = load('./lib/i18n.js');
+  assert.deepEqual(rows.filter((r) => !r.sep).map((r) => I.t('en', r.label, 'Mentor')), ['Ask Mentor about it', 'Make a card', 'Copy picture', 'Whole visible page']);
+  assert.deepEqual(rows.filter((r) => !r.sep).map((r) => !!r.tag), [true, true, false, false]);
+  assert.equal(en.menuInDesk.message, 'in Heddy’s desk'.replace('’', "'"));
+  assert.deepEqual(rows.filter((r) => !r.sep).map((r) => r.icon), ['ask', 'card', 'copy', 'page'], 'the artifact’s SV icons');
+  assert.ok(!rows.some((r) => r.act === 'explain'), 'Explain is a chip in Ask now');
 });
 
 test('the menu with nothing to act on, and with four pictures kept', () => {
   const none = B.menuRows(0, null);
-  assert.deepEqual(none.filter((r) => !r.sep && r.disabled).map((r) => r.act), ['explain', 'card', 'ask', 'copy']);
-  assert.equal(B.menuRows(1, null).find((r) => r.act === 'explain').disabled, false, 'the last kept picture');
+  assert.deepEqual(none.filter((r) => !r.sep && r.disabled).map((r) => r.act), ['ask', 'card', 'copy']);
+  assert.equal(B.menuRows(1, null).find((r) => r.act === 'ask').disabled, false, 'the last kept picture');
   assert.equal(B.menuRows(4, null).find((r) => r.act === 'whole').disabled, true, 'no room for the whole page');
   assert.equal(B.menuRows(3, null).find((r) => r.act === 'whole').disabled, false);
 });
 
-test('the bar is the switch, then gold + Picture, a rule, Heddy with the eyes; no Save to Jotters (D64)', () => {
-  const tray = src.slice(src.indexOf("'<div class=\"tray\""), src.indexOf("'<div class=\"menu\""));
+test('the bar is the artifact’s .hbar: the switch, gold + Picture, then Heddy ▾ with the eyes; no Save to Jotters (D64, D85)', () => {
+  const tray = src.slice(src.indexOf("'<div class=\"tray hbar\""), src.indexOf("'<div class=\"menu hmenu\""));
   const acts = [...tray.matchAll(/data-act="(\w+)"/g)].map((m) => m[1]);
   assert.deepEqual(acts, ['plus', 'heddy']);
-  assert.match(tray, /'<div class="tray" role="toolbar" hidden>' \+ switchHtml\(\) \+\s*'<button type="button" class="pri" data-act="plus">' \+ icon\('crop'\)/);
+  assert.match(tray, /'<div class="tray hbar" role="toolbar" hidden>' \+ switchHtml\(\) \+\s*'<button type="button" class="pri" data-act="plus">' \+ TT\.sv\('plus'\)/);
   assert.match(src, /'<div class="dock" role="toolbar" hidden>' \+ switchHtml\(\)/, 'the small bar has the same switch');
-  assert.doesNotMatch(src, /saveToJotters|heddy-box:save|saveAll|icon\('save'\)/, 'saving happens only in the panel');
-  assert.match(tray, /<i><\/i><button type="button" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="hf">' \+ M\.use\('h-eyes', 16\)/);
-  assert.match(src, /\.tray>button\.pri\{background:#DC9400;color:#002147\}/, 'gold');
+  assert.doesNotMatch(src, /saveToJotters|heddy-box:save|saveAll/, 'saving happens only in the desk');
+  assert.match(tray, /<button type="button" class="hd2" data-act="heddy" aria-haspopup="menu" aria-expanded="false"><span class="eyes">' \+ M\.use\('h-eyes', 20\)/);
+  assert.match(src, /\.tray>\.pri\{[^}]*background:#DC9400;color:#002147/, 'gold');
+  const TT = load('./lib/tray-tools.js');
+  assert.match(TT.CSS, /\.hbar\{display:flex;gap:6px;align-items:center;background:#0d2a52;border-radius:14px;padding:6px/, 'the artifact’s .hbar');
+  assert.match(TT.CSS, /\.hmenu\{position:absolute;box-sizing:border-box;width:300px;background:#fff;border:1px solid #d9dde3;border-radius:14px/, 'the artifact’s .hmenu');
 });
 
-test('the bar’s words, in both languages (D64)', () => {
-  assert.match(src, /b\.plus\.querySelector\('span'\)\.textContent = tr\('addPicture'\)/);
-  assert.match(src, /b\.heddy\.querySelector\('span:last-child'\)\.textContent = tr\('barHeddy'\)/);
+test('the bar’s words, in both languages (D85)', () => {
+  assert.match(src, /b\.plus\.querySelector\('span'\)\.textContent = tr\('webAddPicture'\)/, 'the + is the icon, not the label');
+  assert.match(src, /b\.heddy\.querySelector\('span:last-child'\)\.textContent = tr\('barHeddyMenu'\)/);
+  assert.match(src, /b\[row\.act\]\.querySelector\('span'\)\.textContent = tr\(row\.label, professor\)/, 'the professor’s name');
   assert.match(src, /sw\.setAttribute\('aria-label', tr\('modeSwitchLabel'\)\)/);
-  assert.deepEqual(['modeText', 'modePicture', 'addPicture', 'barHeddy'].map((k) => en[k].message), ['Text', 'Picture', '+ Picture', 'Heddy ▾']);
-  assert.deepEqual(['modeText', 'modePicture', 'addPicture', 'barHeddy'].map((k) => zh[k].message), ['文字', '图片', '+ 图片', 'Heddy ▾']);
+  assert.deepEqual(['webAddPicture', 'barHeddyMenu', 'menuInDesk'].map((k) => zh[k].message), ['图片', 'Heddy ▾', '在 Heddy 书桌里']);
 });
 
 test('+ Picture is hidden by the model; the pill reads "Box mode · N kept · Esc to stop"', () => {
