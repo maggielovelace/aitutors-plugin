@@ -360,6 +360,41 @@
     return -1;
   }
 
+  // ─── the desk's width (Round 12, D100) ──────────────────────────────────
+  // The desk's left edge is a handle: 360–640 px, Classroom's 410 px by
+  // default (clip-desk.css, `minmax(0, 870px) 410px`). YouTube's right column
+  // widens to match while the desk is open; the video takes what is left,
+  // and never less than PRIMARY_MIN (else the desk keeps what fits).
+  var DESK_W = { min: 360, max: 640, def: 410 };
+  var PRIMARY_MIN = 480;
+  // YouTube's page around its two columns: the outer margins and the gap.
+  var PAGE_CHROME = 72;
+
+  /** A width to keep: whole px in [min, max], or the default. */
+  function deskWidth(w) {
+    return num(w) ? Math.round(Math.min(DESK_W.max, Math.max(DESK_W.min, w))) : DESK_W.def;
+  }
+
+  /** The width the desk can have in a window this wide: the chosen width,
+   *  less whatever would squeeze the video under PRIMARY_MIN; never under
+   *  the minimum (then YouTube's own layout decides, D69). */
+  function deskWidthFor(w, viewportW) {
+    var want = deskWidth(w);
+    if (!num(viewportW)) return want;
+    return Math.max(DESK_W.min, Math.min(want, Math.floor(viewportW - PAGE_CHROME - PRIMARY_MIN)));
+  }
+
+  /** The style Heddy puts in YouTube's page while the desk is open: the
+   *  sidebar width YouTube reads, on the two-column watch page only (never
+   *  theatre, fullscreen or the one-column layout). Removing it restores
+   *  YouTube exactly. */
+  function sidebarCss(px) {
+    var w = Math.round(px) + 'px';
+    var on = 'ytd-watch-flexy[is-two-columns_]:not([theater]):not([fullscreen])';
+    return on + '{--ytd-watch-flexy-sidebar-width:' + w + ' !important;--ytd-watch-flexy-sidebar-min-width:' + w + ' !important}' +
+      on + ' #secondary{width:' + w + ' !important;min-width:' + w + ' !important;max-width:' + w + ' !important;flex-basis:' + w + ' !important}';
+  }
+
   /** Is Heddy still installed under this script? chrome.runtime.id goes when
    *  Heddy is reloaded or removed; touching it may then throw. */
   function alive(chromeApi) {
@@ -420,6 +455,11 @@
     viewFor: viewFor,
     matches: matches,
     foldText: foldText,
+    DESK_W: DESK_W,
+    PRIMARY_MIN: PRIMARY_MIN,
+    deskWidth: deskWidth,
+    deskWidthFor: deskWidthFor,
+    sidebarCss: sidebarCss,
     MAX_CHAPTERS: MAX_CHAPTERS,
     secondsOf: secondsOf,
     chaptersOf: chaptersOf,

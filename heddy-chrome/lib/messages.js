@@ -1601,6 +1601,12 @@
       },
       "deskOpenInJotterTitle": {
         "message": "Opens your Jotter on aitutors.me in a new tab"
+      },
+      "deskWidthLabel": {
+        "message": "Desk width"
+      },
+      "deskWidthTitle": {
+        "message": "Drag to make the desk wider or narrower · double-click for the usual width"
       }
     },
     "zh_CN": {
@@ -3203,6 +3209,12 @@
       },
       "deskOpenInJotterTitle": {
         "message": "在新标签页打开 aitutors.me 上的笔记本"
+      },
+      "deskWidthLabel": {
+        "message": "书桌宽度"
+      },
+      "deskWidthTitle": {
+        "message": "拖动可以把书桌拉宽或变窄 · 双击恢复默认宽度"
       }
     }
   };

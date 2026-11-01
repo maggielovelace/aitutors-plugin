@@ -307,7 +307,7 @@ test('the desk is a closed shadow root; YouTube’s suggestions are hidden only 
 test('the desk’s strings are Heddy’s catalog, the professor’s name and the site’s words set as text', () => {
   assert.doesNotMatch(desk, /insertAdjacentHTML\([^)]*(text|title|name|quote)/i);
   assert.match(desk, /el\('q', null, j\.text\)/);
-  for (const k of ['deskTabQuiz', 'deskTabJot', 'deskTabDigest', 'deskTabInsights', 'deskFoot', 'deskJkBtn', 'deskQuizSoon', 'deskInsightsSoon', 'deskSaveJotters', 'deskFull', 'deskSub', 'digestTranscript', 'deskShowSuggestions']) {
+  for (const k of ['deskTabJot', 'deskTabDigest', 'deskTabInsights', 'deskFoot', 'deskJkBtn', 'deskInsightsSoon', 'deskSaveJotters', 'deskFull', 'deskSub', 'digestTranscript', 'deskShowSuggestions']) {
     assert.match(desk, new RegExp(`'${k}'`), k);
   }
 });

@@ -9,7 +9,7 @@ Heddy puts one button on every YouTube video page, straight after Share:
 suggestions column (under the player in theatre mode or a narrow window):
 Classroom's desk, with **Jot** (press **H** for the line being spoken, twice
 quickly for the line before, or type a note), the **Digest** (the transcript
-in English, Bilingual or Chinese, following the player; tap a time to jump,
+in English, Bilingual or Chinese, following the player; tap a time to play from there,
 and select words or click a line for Classroom's tray: Jot it · Explain ·
 Make a card · Ask the professor · › Play from here · Copy),
 Insights where aitutors.me has them, and the crest to ask the professor.
