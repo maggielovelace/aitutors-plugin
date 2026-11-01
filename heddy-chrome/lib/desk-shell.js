@@ -43,7 +43,14 @@
     // The column's own width, never wider (the owner's window cut the header
     // and the tabs off): at most the artifact's 410 px. The tabs fit narrower
     // columns by the container rules below.
-    ':host(.column){position:sticky;top:var(--heddy-top,68px);width:100%;max-width:410px;min-width:0}',
+    // The child's width (D100), Classroom's 410 px by default; YouTube's
+    // column is widened to it by content/desk.js while the desk is open.
+    ':host(.column){position:sticky;top:var(--heddy-top,68px);width:100%;max-width:var(--heddy-w,410px);min-width:0}',
+    // The left edge's handle: 12 px wide, a grip on hover, focus or drag.
+    '.rz{position:absolute;z-index:3;left:-8px;top:0;bottom:0;width:12px;cursor:col-resize;touch-action:none;outline:none}',
+    '.rz::after{content:"";position:absolute;left:4px;top:50%;width:4px;height:44px;margin-top:-22px;border-radius:2px;background:#9aa4b2;opacity:0;transition:opacity .15s}',
+    '.rz:hover::after,.rz:focus-visible::after,.rz[data-drag]::after{opacity:1}',
+    '.rz:focus-visible::after{background:#3ea6ff}',
     ':host{container-type:inline-size}',
     ':host(.below){width:100%;margin:12px 0}',
     '*{box-sizing:border-box}',

@@ -36,7 +36,10 @@
   var TICK_MS = 250;
   var SAY_MS = 3500;
   var FOLLOW_PAUSE_MS = 4000;
-  var PREF = { tall: 'deskTall', pin: 'deskPin', view: 'digestView', note: 'digestNoteOpen', fine: 'digestFineHidden' };
+  var PREF = { tall: 'deskTall', pin: 'deskPin', view: 'digestView', note: 'digestNoteOpen', fine: 'digestFineHidden', width: 'deskWidth' };
+  // The style Heddy adds to YouTube's page while the desk is open (D100).
+  var WIDTH_STYLE_ID = 'heddy-desk-width';
+  var WIDTH_STEP = 10;
   // The desk's look (lib/desk-shell.js): the colours, Classroom's icons, the CSS.
   var SH = root.HeddyDeskShell;
   var SC = SH.SC;
@@ -86,7 +89,7 @@
     var askAt = null; // the line's start an Ask from the tray is about
 
     var st = null; // the open desk's state, per video
-    var prefs = { tall: false, pin: false, view: null, noteOpen: false, fineHidden: false };
+    var prefs = { tall: false, pin: false, view: null, noteOpen: false, fineHidden: false, width: null };
 
     function fresh(id) {
       return {
@@ -244,6 +247,10 @@
       fs.column = cr && cr.width ? { width: cr.width, right: cr.right } : null;
       fs.viewportW = doc.documentElement.clientWidth || root.innerWidth;
       var layout = D.layoutFor(fs);
+      // D100: in YouTube's right column the desk has the child's width, and
+      // the column widens to it (the video shrinks); elsewhere YouTube's own.
+      if (layout === 'column') applyWidth(fs.viewportW);
+      else clearWidth();
       if (!put(layout)) return;
       // Where it actually landed: a column too narrow or running past the
       // window (YouTube's newer rail of icons) sends it under the player.
@@ -251,6 +258,7 @@
         var hr = host.getBoundingClientRect();
         if (D.layoutFor({ twoColumns: true, column: { width: hr.width, right: hr.right }, viewportW: fs.viewportW }) !== 'column') {
           layout = 'below';
+          clearWidth();
           if (!put(layout)) return;
         }
       }
@@ -259,6 +267,102 @@
       host.style.setProperty('--heddy-top', top + 'px');
       hideSuggestions(!st.showSuggestions);
       size(layout, top);
+    }
+
+    // ─── the desk's width (D100) ─────────────────────────────────────────────
+
+    var widthNow = null; // the width the page's style says, while it is there
+
+    /** The child's width (or Classroom's 410 px), as much of it as fits. */
+    function applyWidth(viewportW) {
+      var w = D.deskWidthFor(prefs.width, viewportW);
+      host.style.setProperty('--heddy-w', w + 'px');
+      if (ui && ui.rz) {
+        ui.rz.hidden = false;
+        ui.rz.setAttribute('aria-valuenow', String(w));
+      }
+      if (widthNow === w && doc.getElementById(WIDTH_STYLE_ID)) return;
+      var tag = doc.getElementById(WIDTH_STYLE_ID);
+      if (!tag) {
+        tag = doc.createElement('style');
+        tag.id = WIDTH_STYLE_ID;
+        (doc.head || doc.documentElement).appendChild(tag);
+      }
+      tag.textContent = D.sidebarCss(w);
+      widthNow = w;
+      playerResized();
+    }
+
+    /** YouTube's page as it was: the style goes, the player sizes again. */
+    function clearWidth() {
+      if (ui && ui.rz) ui.rz.hidden = true;
+      if (host) host.style.removeProperty('--heddy-w');
+      var tag = doc.getElementById(WIDTH_STYLE_ID);
+      if (!tag) return;
+      tag.remove();
+      widthNow = null;
+      playerResized();
+    }
+
+    /** YouTube sizes its player on the window's resize. */
+    function playerResized() {
+      try { root.dispatchEvent(new Event('resize')); } catch (e) { /* no player to tell */ }
+    }
+
+    function setWidth(w, keep) {
+      prefs.width = D.deskWidth(w);
+      if (keep) setLocal(PREF.width, prefs.width);
+      place();
+    }
+
+    /** The desk's left edge (D100): drag it, ←/→ when focused, a double-click
+     *  is Classroom's 410 px again. */
+    function buildHandle() {
+      var rz = el('div', 'rz');
+      rz.setAttribute('role', 'separator');
+      rz.setAttribute('aria-orientation', 'vertical');
+      rz.setAttribute('aria-valuemin', String(D.DESK_W.min));
+      rz.setAttribute('aria-valuemax', String(D.DESK_W.max));
+      rz.tabIndex = 0;
+      var drag = null;
+      var raf = 0;
+      rz.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        rz.setPointerCapture(e.pointerId);
+        drag = { x: e.clientX, w: host.getBoundingClientRect().width };
+        rz.setAttribute('data-drag', '');
+      });
+      rz.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        // The edge is on the left: dragging left widens the desk.
+        var next = drag.w + (drag.x - e.clientX);
+        if (raf) return;
+        raf = root.requestAnimationFrame(function () { raf = 0; setWidth(next, false); });
+      });
+      function end() {
+        if (!drag) return;
+        drag = null;
+        rz.removeAttribute('data-drag');
+        setLocal(PREF.width, prefs.width);
+      }
+      rz.addEventListener('pointerup', end);
+      rz.addEventListener('pointercancel', end);
+      rz.addEventListener('dblclick', function () {
+        prefs.width = null;
+        Promise.resolve().then(function () { return chrome.storage.local.remove(PREF.width); }).catch(function () {});
+        place();
+      });
+      rz.addEventListener('keydown', function (e) {
+        var w = widthNow || D.DESK_W.def;
+        var next = e.key === 'ArrowLeft' ? w + WIDTH_STEP : e.key === 'ArrowRight' ? w - WIDTH_STEP : e.key === 'Home' ? D.DESK_W.min : e.key === 'End' ? D.DESK_W.max : null;
+        if (next === null) return;
+        // Claimed: YouTube's ←/→ would also seek the video.
+        e.preventDefault();
+        e.stopPropagation();
+        setWidth(next, true);
+      });
+      return rz;
     }
 
     function put(layout) {
@@ -412,6 +516,8 @@
       cd.appendChild(ft);
 
       shadow.appendChild(cd);
+      var rz = buildHandle();
+      shadow.appendChild(rz);
       var more = btn('more', null, '');
       more.addEventListener('click', function () {
         if (!st) return;
@@ -469,7 +575,7 @@
       doc.addEventListener('pointerdown', outside, true);
       doc.addEventListener('keydown', outside, true);
 
-      ui = { cd: cd, sub: sub, en: en, zh: zh, pin: pin, close: close, img: img, vt: vt, vtime: vtime, full: full, tabs: tabEls, crest: crest, pn: pn, fname: fname, gr: gr, more: more, row: tabs, ind: ind, shown: null, geo: null };
+      ui = { rz: rz, cd: cd, sub: sub, en: en, zh: zh, pin: pin, close: close, img: img, vt: vt, vtime: vtime, full: full, tabs: tabEls, crest: crest, pn: pn, fname: fname, gr: gr, more: more, row: tabs, ind: ind, shown: null, geo: null };
       // The row's boxes change without a tab change (a font arrives, the
       // column narrows): the pill is placed again, never animated.
       if (root.ResizeObserver) {
@@ -559,6 +665,8 @@
       ui.shown = st.tab;
       if (from !== st.tab) moved(from);
       else if (!ui.geo) ui.geo = placeInd();
+      ui.rz.setAttribute('aria-label', tr('deskWidthLabel'));
+      ui.rz.title = tr('deskWidthTitle');
       ui.fname.textContent = isMentor() ? tr('deskFootMentor') : tr('deskFoot', profName());
       ui.gr.setAttribute('aria-pressed', String(prefs.tall));
       ui.gr.title = prefs.tall ? tr('deskShorter') : tr('deskTaller');
@@ -2145,7 +2253,8 @@
 
       /** Load the device's choices: 📌, the chevron, the Digest's view. */
       loadPrefs: function () {
-        return local([PREF.tall, PREF.pin, PREF.view, PREF.note, PREF.fine]).then(function (got) {
+        return local([PREF.tall, PREF.pin, PREF.view, PREF.note, PREF.fine, PREF.width]).then(function (got) {
+          prefs.width = typeof got[PREF.width] === 'number' ? D.deskWidth(got[PREF.width]) : null;
           prefs.noteOpen = got[PREF.note] === true;
           prefs.fineHidden = got[PREF.fine] === true;
           prefs.tall = got[PREF.tall] === true;
@@ -2217,6 +2326,8 @@
         restoreSuggestions();
         if (host && host.parentNode) host.parentNode.removeChild(host);
         st = null;
+        // Last, with the desk gone: the resize it sends must not place it again.
+        clearWidth();
         if (!quiet) deps.onOpenChange(false);
       },
 

@@ -44,3 +44,39 @@ test('the Jot composer sits at the panel’s foot with nothing under it (no stic
   assert.doesNotMatch(cp, /sticky/);
   assert.match(cp, /margin-top:auto/);
 });
+
+// ─── D100: the desk's width is draggable ─────────────────────────────────
+
+const D = load('./lib/desk-model.js');
+
+test('D100 widths: 360–640 px, Classroom’s 410 px by default, never squeezing the video under 480 px', () => {
+  assert.deepEqual(D.DESK_W, { min: 360, max: 640, def: 410 });
+  assert.equal(D.deskWidth(), 410);
+  assert.equal(D.deskWidth(1000), 640);
+  assert.equal(D.deskWidth(100), 360);
+  assert.equal(D.deskWidth(455.6), 456);
+  assert.equal(D.deskWidthFor(640, 1500), 640);
+  assert.equal(D.deskWidthFor(640, 1000), 1000 - 72 - 480);
+  assert.equal(D.deskWidthFor(640, 800), 360, 'never under the minimum: YouTube’s own layout decides');
+});
+
+test('D100 the page’s style: only the two-column watch page, never theatre or fullscreen; removing it restores YouTube', () => {
+  const css = D.sidebarCss(520);
+  assert.match(css, /^ytd-watch-flexy\[is-two-columns_\]:not\(\[theater\]\):not\(\[fullscreen\]\)\{--ytd-watch-flexy-sidebar-width:520px !important;--ytd-watch-flexy-sidebar-min-width:520px !important\}/);
+  assert.match(css, /#secondary\{width:520px !important;min-width:520px !important;max-width:520px !important;flex-basis:520px !important\}$/);
+  assert.match(desk, /function clearWidth\(\) \{[\s\S]*tag\.remove\(\);[\s\S]*playerResized\(\);/);
+  assert.match(desk, /st = null;\n        \/\/ Last, with the desk gone: the resize it sends must not place it again\.\n        clearWidth\(\);/, 'closing restores the page, after the desk is gone (a live desk would put the style back on the resize)');
+  assert.match(desk, /if \(layout === 'column'\) applyWidth\(fs\.viewportW\);\n      else clearWidth\(\);/, 'under the player (theatre, one column) YouTube keeps its width');
+});
+
+test('D100 the handle: a separator with its values, a drag, ←/→ (claimed from YouTube), a double-click resets, remembered per computer', () => {
+  assert.match(desk, /rz\.setAttribute\('role', 'separator'\);/);
+  assert.match(desk, /rz\.setAttribute\('aria-valuemin', String\(D\.DESK_W\.min\)\);/);
+  assert.match(desk, /ui\.rz\.setAttribute\('aria-valuenow', String\(w\)\);/);
+  assert.match(desk, /var next = drag\.w \+ \(drag\.x - e\.clientX\);/, 'dragging the left edge left widens');
+  assert.match(desk, /e\.key === 'ArrowLeft' \? w \+ WIDTH_STEP : e\.key === 'ArrowRight' \? w - WIDTH_STEP/);
+  assert.match(desk, /e\.preventDefault\(\);\n        e\.stopPropagation\(\);\n        setWidth\(next, true\);/);
+  assert.match(desk, /rz\.addEventListener\('dblclick', function \(\) \{\n        prefs\.width = null;/);
+  assert.match(desk, /setLocal\(PREF\.width, prefs\.width\);/);
+  assert.match(SH.CSS, /\.rz\{position:absolute;z-index:3;left:-8px;top:0;bottom:0;width:12px;cursor:col-resize;/);
+});

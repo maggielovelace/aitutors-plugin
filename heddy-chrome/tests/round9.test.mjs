@@ -534,7 +534,7 @@ test('layout: the desk takes the column’s own width (≤ 410 px, never wider),
   assert.equal(D.layoutFor({ twoColumns: true, column: { width: 400, right: 1400 }, viewportW: 1280 }), 'below', 'off the window’s edge');
   assert.equal(D.layoutFor({ twoColumns: true, theater: true }), 'below');
   const shell = read('lib/desk-shell.js');
-  assert.match(shell, /':host\(\.column\)\{position:sticky;top:var\(--heddy-top,68px\);width:100%;max-width:410px;min-width:0\}'/);
+  assert.match(shell, /':host\(\.column\)\{position:sticky;top:var\(--heddy-top,68px\);width:100%;max-width:var\(--heddy-w,410px\);min-width:0\}'/, 'the column’s width, the child’s choice (D100) or Classroom’s 410 px');
   assert.match(shell, /@container \(max-width:380px\)\{[^']*\.tab \.vi\{width:15px;height:15px\}/, 'the tab icons shrink, never go (Round 11/12)');
   assert.match(shell, /@container \(max-width:350px\)\{\.hd small\{display:none\}\}/, 'the subtitle goes first');
   assert.doesNotMatch(shell.replace(/letter-spacing:[.\d]+em/g, ''), /\d(r?em)\b/, 'px only: the owner’s Chrome has a 24 px root font');

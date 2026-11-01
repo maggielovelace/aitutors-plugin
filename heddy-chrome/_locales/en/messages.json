@@ -608,5 +608,7 @@
     "message": "I'm watching along. Ask me anything about this bit, or pick a line in the Digest and press Ask $NAME$.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
   },
-  "deskOpenInJotterTitle": { "message": "Opens your Jotter on aitutors.me in a new tab" }
+  "deskOpenInJotterTitle": { "message": "Opens your Jotter on aitutors.me in a new tab" },
+  "deskWidthLabel": { "message": "Desk width" },
+  "deskWidthTitle": { "message": "Drag to make the desk wider or narrower · double-click for the usual width" }
 }
