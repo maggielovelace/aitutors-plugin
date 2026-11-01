@@ -921,11 +921,11 @@
      *  captions, no seat, or a read that failed, with Try again. */
     function transcriptReason(into) {
       var s = st.transcript.status;
-      var key = { loading: 'deskWhyLoading', none: 'deskWhyNone', locked: 'deskWhyLocked', error: 'deskWhyError' }[s];
+      var key = { loading: 'deskWhyLoading', none: 'deskWhyNone', locked: 'deskWhyLocked', error: 'deskWhyError', busy: 'deskTranscriptBusy' }[s];
       if (!key || (s === 'loading' && st.video.status !== 'ok')) return;
       var si = el('div', 'si');
       si.appendChild(el('span', null, tr(key, profName())));
-      if (s === 'error') {
+      if (s === 'error' || s === 'busy') {
         var again = btn('', null, tr('digestTryAgain'));
         again.addEventListener('click', function () { st.retried = false; loadTranscript(); if (st.tab === 'jot') drawPanel(); });
         si.appendChild(again);
@@ -1035,7 +1035,9 @@
     // cannot be seen (YouTube fullscreen, the desk scrolled away) the same
     // jot shows Heddy's toast on the video instead (lib/toast.js desk_jot).
 
-    var TOAST_MS = 5000;
+    // D110 (owner, Round 13c): 3 s from the last time the child looked at it;
+    // the pointer over it, or focus inside it, holds it.
+    var TOAST_MS = 3000;
     var UNDONE_MS = 1800;
     var toastTimer = null;
 
@@ -1051,18 +1053,36 @@
       if (ui) ui.toast = null;
     }
 
-    /** The pop-up's body, replacing any before it. */
+    /** The pop-up's body, replacing any before it, with Classroom's × (D110).
+     *  It goes `ms` after it shows; hover or focus inside holds it, and
+     *  leaving starts the `ms` again. */
     function showToast(fill, ms, anim) {
       hideToast();
       if (!ui) return;
+      var wait = ms || TOAST_MS;
       var t = el('div', 'jt');
       t.setAttribute('role', 'status');
       t.setAttribute('aria-live', 'polite');
       if (anim !== false) t.setAttribute('data-anim', '');
+      var x = btn('jx', ic('close'));
+      x.setAttribute('aria-label', tr('close'));
+      x.title = tr('close');
+      x.addEventListener('click', hideToast);
+      t.appendChild(x);
       fill(t);
+      var held = { hover: false, focus: false };
+      function hold() {
+        clearTimeout(toastTimer);
+        if (held.hover || held.focus) return;
+        toastTimer = setTimeout(hideToast, wait);
+      }
+      t.addEventListener('pointerenter', function () { held.hover = true; hold(); });
+      t.addEventListener('pointerleave', function () { held.hover = false; hold(); });
+      t.addEventListener('focusin', function () { held.focus = true; hold(); });
+      t.addEventListener('focusout', function (e) { if (!t.contains(e.relatedTarget)) { held.focus = false; hold(); } });
       ui.cd.appendChild(t);
       ui.toast = t;
-      toastTimer = setTimeout(hideToast, ms || TOAST_MS);
+      hold();
     }
 
     /** A jot was made (`id`). `key`: with H. */
@@ -1090,34 +1110,8 @@
           if (st.tab === 'jot') drawPanel();
           showToast(function (b) { b.appendChild(el('span', 'msg', tr('deskJotDeleted'))); }, UNDONE_MS, false);
         });
-        // Owner's pick (Round 11b): Save to My Jotters saves the desk's jots
-        // here, opening nothing; once saved the link becomes Open in Jotter ↗,
-        // which opens the Jotter in a tab and says so.
-        var save = el('button', 'jl', tr('deskSaveJotters'));
-        save.type = 'button';
-        save.addEventListener('click', function () {
-          if (save.getAttribute('aria-busy') === 'true') return;
-          save.setAttribute('aria-busy', 'true');
-          clearTimeout(toastTimer);
-          saveToJotters().then(function (r) {
-            if (!ui || !ui.toast || !ui.toast.contains(save)) return;
-            save.removeAttribute('aria-busy');
-            if (r && r.ok) {
-              var open = el('button', 'jl', tr('deskOpenInJotter'));
-              open.type = 'button';
-              open.title = tr('deskOpenInJotterTitle');
-              open.insertAdjacentHTML('beforeend', ' ' + ic('out'));
-              open.addEventListener('click', function () { hideToast(); openSite(r.href); });
-              save.replaceWith(open);
-              undo.remove();
-            } else {
-              save.textContent = tr('deskSaveFailed');
-            }
-            toastTimer = setTimeout(hideToast, TOAST_MS);
-          });
-        });
+        // D110: the pop-up keeps Undo only; Save to My Jotters is the Jot tab's.
         acts.appendChild(undo);
-        acts.appendChild(save);
         box.appendChild(acts);
       });
     }
@@ -1316,7 +1310,8 @@
         return;
       }
       if (!reading && t.status !== 'ok') {
-        var box = noteBox(null, tr('digestFailed', profName()));
+        // D108: the daily caption ceiling is said as itself, never as "could not read".
+        var box = noteBox(null, tr(t.status === 'busy' ? 'deskTranscriptBusy' : 'digestFailed', profName()));
         var again = btn('', null, tr('digestTryAgain'));
         again.addEventListener('click', function () { loadTranscript(); });
         box.appendChild(again);

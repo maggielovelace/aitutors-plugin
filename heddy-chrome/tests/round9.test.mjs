@@ -603,7 +603,7 @@ test('Full desk ↗ (owner, 2026-10-31): the whole video kept (§ 3), the jots s
 
 test('the Jot tab says why H cannot jot, for as long as it is true: reading, no captions, no seat, or a failed read with Try again', () => {
   const desk = read('content/desk.js');
-  assert.match(desk, /var key = \{ loading: 'deskWhyLoading', none: 'deskWhyNone', locked: 'deskWhyLocked', error: 'deskWhyError' \}\[s\];/);
+  assert.match(desk, /var key = \{ loading: 'deskWhyLoading', none: 'deskWhyNone', locked: 'deskWhyLocked', error: 'deskWhyError', busy: 'deskTranscriptBusy' \}\[s\];/, 'Round 13c D108 adds busy');
   assert.match(desk, /else if \(!signedOut\(\)\) transcriptReason\(sc\);/);
   assert.match(desk, /if \(r && r\.ok && r\.signedIn === false\)[^]*?\} else if \(r && r\.ok\) \{[^]*?loadTranscript\(\);/, 'the transcript is asked for as the desk opens, whatever the tab');
 });
