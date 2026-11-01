@@ -66,7 +66,7 @@ You need an aitutors.me account, signed in as the child in the same Chrome.
 
 | Asset | File |
 |---|---|
-| Store icon (128 × 128) | `icons/store-128.png` |
+| Store icon (128 × 128): the navy eyes crest at 96 px, 16 px transparent padding | `icons/store-128.png` |
 | Screenshot 1: the desk's Digest on a YouTube video | `store/screenshots/01-desk-digest.png` |
 | Screenshot 2: the desk's Quiz, with a hint | `store/screenshots/02-desk-quiz.png` |
 | Screenshot 3: the desk's Jot tab | `store/screenshots/03-desk-jot.png` |
