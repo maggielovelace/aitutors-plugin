@@ -6,7 +6,9 @@
 #   eyes-mark.svg        A · 02's eyes mark (D34): the idle toolbar icon
 #   eyes-mark-ready.svg  + a green dot: on a YouTube watch page
 #   eyes-mark-saved.svg  + a green tick: for 2 s after a save
-#   store-128.svg        Heddy's full face on cream with a gold ring: 128 px only
+#   store-128.png        the store and 128 px icon: the same navy eyes crest
+#                        (owner ruling 2026-11-01), drawn at 96 x 96 in the middle
+#                        of a transparent 128 x 128 canvas, Google's 16 px padding
 set -eu
 cd "$(dirname "$0")/../icons"
 for size in 16 32 48; do
@@ -17,5 +19,5 @@ for state in ready saved; do
     rsvg-convert -w "$size" -h "$size" "src/eyes-mark-$state.svg" -o "toolbar-$state-$size.png"
   done
 done
-rsvg-convert -w 128 -h 128 src/store-128.svg -o store-128.png
+rsvg-convert -w 96 -h 96 --page-width 128 --page-height 128 --left 16 --top 16 src/eyes-mark.svg -o store-128.png
 echo "icons rendered"

@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { inflateRawSync } from 'node:zlib';
+import { inflateRawSync, inflateSync } from 'node:zlib';
 import { join } from 'node:path';
 import { ROOT, read, manifest, shippedFiles } from './helpers.mjs';
 import { zip, entries, storeManifest } from '../scripts/package.mjs';
@@ -90,4 +90,48 @@ test('the manifest is store-ready: no key, localised name and description within
 test('dist/ is ignored by git and never scanned as shipped', () => {
   assert.match(read('.gitignore'), /^dist\/$/m);
   if (existsSync(join(ROOT, 'dist'))) assert.ok(!shippedFiles().some((f) => f.startsWith('dist/')));
+});
+
+/** RGBA rows of an 8-bit RGBA, non-interlaced PNG. */
+function rgba(file) {
+  const b = readFileSync(join(ROOT, file));
+  assert.equal(b[25], 6, `${file} is not RGBA`);
+  const w = b.readUInt32BE(16);
+  const h = b.readUInt32BE(20);
+  const idat = [];
+  for (let p = 8; p < b.length;) {
+    const len = b.readUInt32BE(p);
+    if (b.toString('latin1', p + 4, p + 8) === 'IDAT') idat.push(b.subarray(p + 8, p + 8 + len));
+    p += 12 + len;
+  }
+  const raw = inflateSync(Buffer.concat(idat));
+  const rows = [];
+  let prev = Buffer.alloc(w * 4);
+  for (let y = 0; y < h; y++) {
+    const f = raw[y * (w * 4 + 1)];
+    const line = Buffer.from(raw.subarray(y * (w * 4 + 1) + 1, (y + 1) * (w * 4 + 1)));
+    for (let i = 0; i < line.length; i++) {
+      const a = i >= 4 ? line[i - 4] : 0;
+      const up = prev[i];
+      const c = i >= 4 ? prev[i - 4] : 0;
+      const pa = Math.abs(up - c), pb = Math.abs(a - c), pc = Math.abs(a + up - 2 * c);
+      line[i] = (line[i] + [0, a, up, (a + up) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? up : c][f]) & 255;
+    }
+    rows.push(line);
+    prev = line;
+  }
+  return { w, h, at: (x, y) => [...rows[y].subarray(x * 4, x * 4 + 4)] };
+}
+
+test('the store icon is the navy eyes crest at 96 px inside a transparent 16 px border (owner, 2026-11-01)', () => {
+  const img = rgba('icons/store-128.png');
+  assert.deepEqual([img.w, img.h], [128, 128]);
+  for (let i = 0; i < 128; i++) {
+    for (const [x, y] of [[i, 0], [i, 15], [i, 112], [i, 127], [0, i], [15, i], [112, i], [127, i]]) assert.equal(img.at(x, y)[3], 0, `${x},${y} is not transparent`);
+  }
+  // The crest's navy (#002147) fills the square, opaque, from 16 to 111.
+  for (const [x, y] of [[20, 64], [107, 64], [64, 20], [64, 107]]) assert.deepEqual(img.at(x, y), [0x00, 0x21, 0x47, 255], `${x},${y}`);
+  const sh = read('scripts/render-icons.sh');
+  assert.match(sh, /rsvg-convert -w 96 -h 96 --page-width 128 --page-height 128 --left 16 --top 16 src\/eyes-mark\.svg -o store-128\.png/);
+  assert.ok(!existsSync(join(ROOT, 'icons/src/store-128.svg')), 'the gold-ring face is retired');
 });
