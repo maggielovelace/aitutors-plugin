@@ -116,3 +116,62 @@ test('it runs inside the desk: no window, no tab but the links that say they lea
   assert.match(src, /opts\.openSite\('\/study\/clips'\)/);
   assert.match(src, /opts\.seekPlay\(set\.range\.startSec\)/, 'Watch plays the part on YouTube’s own player');
 });
+
+// ─── Round 13b: the width drag and the pill ─────────────────────────────────
+
+const D = load('./lib/desk-model.js');
+
+function dragHarness(startW = 410, startX = 1000) {
+  const frames = [];
+  const applied = [];
+  const committed = [];
+  const drag = D.createWidthDrag({ startW, startX, raf: (fn) => frames.push(fn), apply: (w) => applied.push(w), commit: (w) => committed.push(w) });
+  return { drag, frames, applied, committed, flush: () => frames.splice(0).forEach((f) => f()) };
+}
+
+test('13b drag: the last move wins: many moves in one frame apply the latest, never a stale one', () => {
+  const h = dragHarness();
+  h.drag.move(990); // +10
+  h.drag.move(960); // +40
+  h.drag.move(865); // +135
+  assert.equal(h.frames.length, 1, 'one frame asked for, however many moves');
+  h.flush();
+  assert.deepEqual(h.applied, [545], 'the frame applies the pointer’s latest width (410 + 135)');
+  h.drag.move(963); // back to +37
+  h.flush();
+  assert.deepEqual(h.applied, [545, 447]);
+});
+
+test('13b drag: the drop commits the pointer’s own width, even before the frame comes', () => {
+  const h = dragHarness();
+  h.drag.move(950);
+  assert.equal(h.drag.end(902), 508, 'pointerup’s x is the last word: 410 + 98');
+  assert.deepEqual(h.committed, [508]);
+  assert.deepEqual(h.applied, [508]);
+  h.flush();
+  assert.deepEqual(h.applied, [508], 'a frame after the drop applies nothing stale');
+  assert.equal(h.drag.end(0), null, 'one drop only');
+});
+
+test('13b drag: clamped to 360–640; a click with no move commits the start width', () => {
+  const h = dragHarness();
+  h.drag.move(0);
+  h.flush();
+  assert.deepEqual(h.applied, [640]);
+  const c = dragHarness(410, 500);
+  assert.equal(c.drag.end(null), 410);
+  assert.equal(dragHarness(410, 0).drag.end(5000), 360);
+});
+
+test('13b drag in the desk: start from the width in the page, frames only write the width, the drop places once', () => {
+  assert.match(desk, /startW: widthNow \|\| host\.getBoundingClientRect\(\)\.width,/);
+  assert.match(desk, /apply: function \(w\) \{\n            prefs\.width = w;\n            if \(writeWidth\(D\.deskWidthFor\(w, vw\(\)\)\)\) playerResized\(\);\n            if \(ui\) ui\.geo = placeInd\(\);/, 'per frame: the width, the player once, the pill follows; no place()');
+  assert.match(desk, /d\.end\(e && e\.type === 'pointerup' \? e\.clientX : null\);\n        dragging = false;\n        rz\.removeAttribute\('data-drag'\);\n        place\(\);\n        playerResized\(\);/);
+  assert.match(desk, /resize: function \(\) \{ if \(st && !dragging\) place\(\); \}/, 'YouTube’s own resize does not re-place the desk mid-drag');
+  assert.doesNotMatch(desk, /if \(raf\) return;/, 'the dropping throttle is gone');
+});
+
+test('13b pill: it follows each tab’s own box (each tab and the crest observed) and every relabel', () => {
+  assert.match(desk, /Object\.keys\(tabEls\)\.forEach\(function \(k\) \{ ro\.observe\(tabEls\[k\]\); \}\);\n        ro\.observe\(crest\);/);
+  assert.match(desk, /if \(from !== st\.tab\) moved\(from\);\n[^\n]*\n[^\n]*\n      else ui\.geo = placeInd\(\);/, 'after label(): placed again, not animated');
+});

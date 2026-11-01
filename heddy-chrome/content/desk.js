@@ -274,15 +274,22 @@
 
     var widthNow = null; // the width the page's style says, while it is there
 
+    var dragging = false; // the edge is being dragged: no layout re-decision until the drop
+
     /** The child's width (or Classroom's 410 px), as much of it as fits. */
     function applyWidth(viewportW) {
-      var w = D.deskWidthFor(prefs.width, viewportW);
+      if (writeWidth(D.deskWidthFor(prefs.width, viewportW))) playerResized();
+    }
+
+    /** The desk and YouTube's column at `w`, nothing else (no layout
+     *  decision). Returns whether the page's style changed. */
+    function writeWidth(w) {
       host.style.setProperty('--heddy-w', w + 'px');
       if (ui && ui.rz) {
         ui.rz.hidden = false;
         ui.rz.setAttribute('aria-valuenow', String(w));
       }
-      if (widthNow === w && doc.getElementById(WIDTH_STYLE_ID)) return;
+      if (widthNow === w && doc.getElementById(WIDTH_STYLE_ID)) return false;
       var tag = doc.getElementById(WIDTH_STYLE_ID);
       if (!tag) {
         tag = doc.createElement('style');
@@ -291,7 +298,7 @@
       }
       tag.textContent = D.sidebarCss(w);
       widthNow = w;
-      playerResized();
+      return true;
     }
 
     /** YouTube's page as it was: the style goes, the player sizes again. */
@@ -325,27 +332,45 @@
       rz.setAttribute('aria-valuemin', String(D.DESK_W.min));
       rz.setAttribute('aria-valuemax', String(D.DESK_W.max));
       rz.tabIndex = 0;
+      // Round 13b: the latest pointer position wins (lib/desk-model.js
+      // createWidthDrag); each frame only writes the width (desk, YouTube's
+      // column, the pill) and tells the player once; the drop commits the
+      // pointer's own width and places the desk once.
       var drag = null;
-      var raf = 0;
+      function vw() { return doc.documentElement.clientWidth || root.innerWidth; }
       rz.addEventListener('pointerdown', function (e) {
         if (e.button !== 0) return;
         e.preventDefault();
         rz.setPointerCapture(e.pointerId);
-        drag = { x: e.clientX, w: host.getBoundingClientRect().width };
+        dragging = true;
         rz.setAttribute('data-drag', '');
+        drag = D.createWidthDrag({
+          startW: widthNow || host.getBoundingClientRect().width,
+          startX: e.clientX,
+          raf: function (fn) { root.requestAnimationFrame(fn); },
+          apply: function (w) {
+            prefs.width = w;
+            if (writeWidth(D.deskWidthFor(w, vw()))) playerResized();
+            if (ui) ui.geo = placeInd();
+          },
+          commit: function (w) {
+            prefs.width = w;
+            setLocal(PREF.width, w);
+          },
+        });
       });
       rz.addEventListener('pointermove', function (e) {
-        if (!drag) return;
-        // The edge is on the left: dragging left widens the desk.
-        var next = drag.w + (drag.x - e.clientX);
-        if (raf) return;
-        raf = root.requestAnimationFrame(function () { raf = 0; setWidth(next, false); });
+        if (drag) drag.move(e.clientX);
       });
-      function end() {
+      function end(e) {
         if (!drag) return;
+        var d = drag;
         drag = null;
+        d.end(e && e.type === 'pointerup' ? e.clientX : null);
+        dragging = false;
         rz.removeAttribute('data-drag');
-        setLocal(PREF.width, prefs.width);
+        place();
+        playerResized();
       }
       rz.addEventListener('pointerup', end);
       rz.addEventListener('pointercancel', end);
@@ -581,8 +606,13 @@
       // The row's boxes change without a tab change (a font arrives, the
       // column narrows): the pill is placed again, never animated.
       if (root.ResizeObserver) {
+        // Round 13b: each tab and the crest too: a tab's own box changes (the
+        // Jot count, EN | 中, the Quiz tab coming or going, a font) while the
+        // row's may not, and the pill must follow it.
         var ro = new root.ResizeObserver(function () { if (ui) ui.geo = placeInd(); });
         ro.observe(tabs);
+        Object.keys(tabEls).forEach(function (k) { ro.observe(tabEls[k]); });
+        ro.observe(crest);
       }
     }
 
@@ -667,7 +697,9 @@
       var from = ui.shown;
       ui.shown = st.tab;
       if (from !== st.tab) moved(from);
-      else if (!ui.geo) ui.geo = placeInd();
+      // Every relabel can move the selected tab (the Jot count, EN | 中, the
+      // set of tabs shown): the pill is placed again, not animated.
+      else ui.geo = placeInd();
       ui.rz.setAttribute('aria-label', tr('deskWidthLabel'));
       ui.rz.title = tr('deskWidthTitle');
       ui.fname.textContent = isMentor() ? tr('deskFootMentor') : tr('deskFoot', profName());
@@ -2429,7 +2461,8 @@
         wantZh();
       },
 
-      resize: function () { if (st) place(); },
+      // While the edge is dragged the desk is not placed again (the drop places it).
+      resize: function () { if (st && !dragging) place(); },
 
       /** D76: Heddy was reloaded under the page. */
       destroy: function () {

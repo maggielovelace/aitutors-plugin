@@ -73,10 +73,10 @@ test('D100 the handle: a separator with its values, a drag, ←/→ (claimed fro
   assert.match(desk, /rz\.setAttribute\('role', 'separator'\);/);
   assert.match(desk, /rz\.setAttribute\('aria-valuemin', String\(D\.DESK_W\.min\)\);/);
   assert.match(desk, /ui\.rz\.setAttribute\('aria-valuenow', String\(w\)\);/);
-  assert.match(desk, /var next = drag\.w \+ \(drag\.x - e\.clientX\);/, 'dragging the left edge left widens');
+  assert.equal(D.createWidthDrag({ startW: 410, startX: 500, raf() {}, apply() {}, commit() {} }).end(450), 460, 'dragging the left edge left widens (Round 13b: lib/desk-model.js createWidthDrag)');
   assert.match(desk, /e\.key === 'ArrowLeft' \? w \+ WIDTH_STEP : e\.key === 'ArrowRight' \? w - WIDTH_STEP/);
   assert.match(desk, /e\.preventDefault\(\);\n        e\.stopPropagation\(\);\n        setWidth\(next, true\);/);
   assert.match(desk, /rz\.addEventListener\('dblclick', function \(\) \{\n        prefs\.width = null;/);
-  assert.match(desk, /setLocal\(PREF\.width, prefs\.width\);/);
+  assert.match(desk, /setLocal\(PREF\.width, w\);/);
   assert.match(SH.CSS, /\.rz\{position:absolute;z-index:3;left:-8px;top:0;bottom:0;width:12px;cursor:col-resize;/);
 });
