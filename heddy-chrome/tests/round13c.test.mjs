@@ -118,3 +118,10 @@ test('D109: 409 none is "no quiz for this video" (Classroom’s unavailable line
   assert.match(desk, /if \(st\.transcript\.status === 'ok' && st\.video\.status === 'ok' && st\.video\.quiz !== 'ready'\) recheckQuiz\(id\);/);
   assert.match(desk, /st\.video\.quiz = r\.quiz;\n        label\(\);/, 'the Quiz tab appears without a reload');
 });
+
+test('D109 Mentor: a video with no subject gets Mentor’s quiz: Mentor’s name and colours, and no "{subject} revision record" line with an empty subject', () => {
+  const src = read('lib/desk-quiz.js');
+  assert.match(src, /var subj = opts\.subjectName\(\) \|\| set\.subject \|\| '';\n        if \(subj\) box\.appendChild/);
+  assert.match(desk, /function profName\(\) \{\n      var p = st && st\.video\.professor;\n      if \(!p\) return 'Mentor';/, 'the name is Mentor when the video has no professor');
+  assert.match(desk, /subjectName: function \(\) \{ var p = st && st\.video\.professor; return p && p\.code \? tr\('subj' \+ p\.code\) : ''; \}/);
+});

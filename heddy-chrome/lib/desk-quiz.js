@@ -534,7 +534,10 @@
         });
         box.appendChild(ul);
         if (res.correct === total) box.appendChild(el('p', 'vq-chip', tr('qzQuizzed')));
-        box.appendChild(el('p', 'vq-fine', '✓ ' + tr('qzRecorded', opts.subjectName() || set.subject || '')));
+        // "Added to your {subject} revision record.": a Mentor quiz (a video
+        // with no subject, owner 2026-11-01) has no subject to name, so no line.
+        var subj = opts.subjectName() || set.subject || '';
+        if (subj) box.appendChild(el('p', 'vq-fine', '✓ ' + tr('qzRecorded', subj)));
         var rrow = el('div', 'vq-row');
         if (res.misses > 0) {
           if (q.minted === null) {
