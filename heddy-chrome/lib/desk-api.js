@@ -300,6 +300,9 @@
           var act = message.action;
           if (QUIZ_ACTIONS.indexOf(act) < 0) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
           var qb = { action: act, youtubeId: id };
+          // r13c D109: the page's title names the subject of a video in no clip; sent on every action.
+          var qt = text(message.title, 300);
+          if (qt) qb.title = qt;
           if (act !== 'start') {
             if (typeof message.checkId !== 'string' || !UUID.test(message.checkId)) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
             qb.checkId = message.checkId;

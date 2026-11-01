@@ -57,7 +57,8 @@
     if (st === 401) return 'signedOut';
     if (st === 403 && (type === 'locked' || type === 'no-subscription')) return 'locked';
     if (st === 403 && type === 'quota') return 'quota';
-    if (st === 404) return 'unavailable';
+    // r13c D109: 409 { type: 'none' } is "no quiz for this video" (404 before).
+    if (st === 404 || (st === 409 && type === 'none')) return 'unavailable';
     if (st === 429) return 'cap';
     if (st === 403) return 'noPlan';
     return 'failed';

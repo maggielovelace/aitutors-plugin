@@ -96,3 +96,25 @@ test('13c: the words travel the whole way: Heddy ▾ → the pending ask → the
     assert.deepEqual(body.attach, { kind: 'text', quote: 'Gradient descent', before: 'We train with', after: 'on batches' }, `${intent}: POST ask carries the words`);
   }
 });
+
+// ─── D109: the quiz on any video ──────────────────────────────────────────
+
+test('D109: every quiz call carries the page’s title (it names the subject of a video in no clip)', async () => {
+  const A2 = load('./lib/desk-api.js');
+  const fetches = [];
+  const api = A2.createDeskApi({ chrome: { runtime: { id: 'heddy' }, storage: { local: { get: async () => ({}) } } }, fetchImpl: async (url, init) => { fetches.push(JSON.parse(init.body)); return { status: 409, json: async () => ({ type: 'none' }) }; } });
+  const V = 'Xq3aPn3x_-A';
+  const from = { id: 'heddy', url: `https://www.youtube.com/watch?v=${V}`, tab: { id: 1, url: `https://www.youtube.com/watch?v=${V}` } };
+  const r = await api.internal({ type: 'heddy-desk:quiz', youtubeId: V, action: 'start', title: 'Cell division explained' }, from);
+  assert.deepEqual(fetches[0], { action: 'start', youtubeId: V, title: 'Cell division explained' });
+  assert.deepEqual(r, { ok: false, status: 409, type: 'none' });
+  assert.match(desk, /type: 'heddy-desk:quiz', youtubeId: st\.id, title: deps\.title\(\)/);
+});
+
+test('D109: 409 none is "no quiz for this video" (Classroom’s unavailable line); the tab is asked again once the transcript is cached', () => {
+  const Q = load('./lib/desk-quiz.js');
+  assert.equal(Q.startOutcome({ ok: false, status: 409, type: 'none' }), 'unavailable');
+  assert.equal(Q.startOutcome({ ok: false, status: 409, type: 'busy' }), 'failed');
+  assert.match(desk, /if \(st\.transcript\.status === 'ok' && st\.video\.status === 'ok' && st\.video\.quiz !== 'ready'\) recheckQuiz\(id\);/);
+  assert.match(desk, /st\.video\.quiz = r\.quiz;\n        label\(\);/, 'the Quiz tab appears without a reload');
+});

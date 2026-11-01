@@ -1267,7 +1267,7 @@
       eyes: EYES,
       send: function (body) {
         if (!st) return Promise.resolve(null);
-        return deps.send(Object.assign({ type: 'heddy-desk:quiz', youtubeId: st.id }, body)).then(function (r) { return r || { ok: false, status: 0 }; });
+        return deps.send(Object.assign({ type: 'heddy-desk:quiz', youtubeId: st.id, title: deps.title() }, body)).then(function (r) { return r || { ok: false, status: 0 }; });
       },
       seekPlay: function (t) { seekPlay(t); },
       openSite: function (path) { openSite(path); },
@@ -1920,6 +1920,10 @@
         else if (r && r.error === 'unauthenticated') { st.video.status = 'signedOut'; st.transcript = { status: 'error', lines: [] }; }
         else st.transcript = { status: 'error', lines: [] };
         if (st.transcript.status === 'ok' && r.zh) addStretch(r.zh);
+        // r13c D109: the quiz reads the cached transcript only, so a video
+        // whose captions were not cached yet said `none`; now they are, ask
+        // again whether it has a quiz (the Quiz tab comes without a reload).
+        if (st.transcript.status === 'ok' && st.video.status === 'ok' && st.video.quiz !== 'ready') recheckQuiz(id);
         // H pressed while the transcript was on its way: each press is jotted
         // now, at the second it was pressed; without a transcript, the note box.
         var waiting = st.pressed;
@@ -1933,6 +1937,14 @@
           if (st.transcript.status === 'ok') waiting.forEach(function (at) { jotAt(at, true, key); });
           else noteFallback(waiting[waiting.length - 1], key);
         }
+      });
+    }
+
+    function recheckQuiz(id) {
+      deps.send({ type: 'heddy-desk:video', youtubeId: id, title: deps.title() }).then(function (r) {
+        if (!st || st.id !== id || !r || !r.ok || r.signedIn !== true || r.quiz === st.video.quiz) return;
+        st.video.quiz = r.quiz;
+        label();
       });
     }
 
