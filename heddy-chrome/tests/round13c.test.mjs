@@ -121,7 +121,22 @@ test('D109: 409 none is "no quiz for this video" (Classroom’s unavailable line
 
 test('D109 Mentor: a video with no subject gets Mentor’s quiz: Mentor’s name and colours, and no "{subject} revision record" line with an empty subject', () => {
   const src = read('lib/desk-quiz.js');
-  assert.match(src, /var subj = opts\.subjectName\(\) \|\| set\.subject \|\| '';\n        if \(subj\) box\.appendChild/);
+  assert.match(src, /var subj = opts\.subjectName\(\) \|\| set\.subject \|\| '';\n        if \(subj && !mentor\) box\.appendChild/);
   assert.match(desk, /function profName\(\) \{\n      var p = st && st\.video\.professor;\n      if \(!p\) return 'Mentor';/, 'the name is Mentor when the video has no professor');
   assert.match(desk, /subjectName: function \(\) \{ var p = st && st\.video\.professor; return p && p\.code \? tr\('subj' \+ p\.code\) : ''; \}/);
+});
+
+test('Mentor quiz (tutor.id mentor): no Add cards, no revision-record line, and a results line that says nothing about cards', () => {
+  const A3 = load('./lib/desk-api.js');
+  const r = A3.parseQuiz('start', 200, { checkId: '0f8fad5b-d9cb-469f-a165-70867728950e', tutor: { id: 'mentor', name: 'Mentor' }, subject: '', subjectCode: null, video: { startSec: 0, endSec: 60 }, questions: { predict: { prompt: 'P?', options: ['a', 'b'] }, questions: [{ prompt: 'Q', options: ['a', 'b'], hint: '' }] } });
+  assert.deepEqual(r.tutor, { id: 'mentor', name: 'Mentor' });
+  const src = read('lib/desk-quiz.js');
+  assert.match(src, /var mentor = !!\(set\.tutor && set\.tutor\.id === 'mentor'\);/);
+  assert.match(src, /if \(res\.misses > 0 && !mentor\) \{/, 'no Add cards');
+  assert.match(src, /if \(subj && !mentor\) box\.appendChild/, 'no revision-record line');
+  assert.match(src, /tr\(mentor \? 'qzResultsMentor' : res\.misses > 0 \? 'qzResults' : 'qzResultsAll'/);
+  assert.match(src, /var noCards = !!\(opts\.isMentor && opts\.isMentor\(\)\);/, 'the preparing lines say nothing about cards either');
+  assert.match(src, /if \(!noCards\) prep\.appendChild\(el\('p', 'vq-fine', tr\('qzPrepComing'/);
+  for (const l of ['en', 'zh_CN']) assert.doesNotMatch(I.t(l, 'qzResultsMentor', '2', '3', 'x'), /card|卡片|revision|复习/i, l);
+  assert.equal(I.t('en', 'qzResultsMentor', '2', '3', 'a guess'), "You found 2 of 3. Before watching you said a guess; now you've seen what the clip showed.");
 });

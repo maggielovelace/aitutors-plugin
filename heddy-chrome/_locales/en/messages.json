@@ -763,5 +763,9 @@
     "message": "$NAME$ has read a lot of transcripts today. Try again later.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
   },
-  "askYouPicked": { "message": "You picked" }
+  "askYouPicked": { "message": "You picked" },
+  "qzResultsMentor": {
+    "message": "You found $N$ of $TOTAL$. Before watching you said $GUESS$; now you've seen what the clip showed.",
+    "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" } }
+  }
 }

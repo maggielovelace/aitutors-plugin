@@ -1970,6 +1970,20 @@
       },
       "askYouPicked": {
         "message": "You picked"
+      },
+      "qzResultsMentor": {
+        "message": "You found $N$ of $TOTAL$. Before watching you said $GUESS$; now you've seen what the clip showed.",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          },
+          "total": {
+            "content": "$2"
+          },
+          "guess": {
+            "content": "$3"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -3941,6 +3955,20 @@
       },
       "askYouPicked": {
         "message": "你选的"
+      },
+      "qzResultsMentor": {
+        "message": "$TOTAL$ 题里你答对了 $N$ 题。看之前你猜的是「$GUESS$」，现在你已经看到短片怎么说了。",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          },
+          "total": {
+            "content": "$2"
+          },
+          "guess": {
+            "content": "$3"
+          }
+        }
       }
     }
   };

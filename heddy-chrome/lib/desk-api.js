@@ -164,7 +164,8 @@
         checkId: d.checkId,
         subjectCode: typeof d.subjectCode === 'string' && SUBJECT.test(d.subjectCode) ? d.subjectCode : null,
         subject: text(d.subject, 60),
-        tutor: { name: text(d.tutor && d.tutor.name, MAX_NAME) || null },
+        // r13c: tutor.id 'mentor' is a quiz on a video with no subject (no deck, no cards).
+        tutor: { id: text(d.tutor && d.tutor.id, 40) || null, name: text(d.tutor && d.tutor.name, MAX_NAME) || null },
         topic: { id: text(d.topic && d.topic.id, 80), name: text(d.topic && d.topic.name, 200) },
         range: { startSec: num(v.startSec) && v.startSec >= 0 ? v.startSec : 0, endSec: num(v.endSec) && v.endSec > 0 ? v.endSec : null },
         predict: predict,

@@ -1263,6 +1263,7 @@
       doc: doc,
       tr: function () { return tr; },
       name: profName,
+      isMentor: isMentor,
       subjectName: function () { var p = st && st.video.professor; return p && p.code ? tr('subj' + p.code) : ''; },
       eyes: EYES,
       send: function (body) {
