@@ -1967,6 +1967,9 @@
             "example": "Newton"
           }
         }
+      },
+      "askYouPicked": {
+        "message": "You picked"
       }
     },
     "zh_CN": {
@@ -3935,6 +3938,9 @@
             "example": "Newton"
           }
         }
+      },
+      "askYouPicked": {
+        "message": "你选的"
       }
     }
   };

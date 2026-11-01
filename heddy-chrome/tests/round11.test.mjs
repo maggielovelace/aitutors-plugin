@@ -91,7 +91,7 @@ test('Jot it: the chosen words as a line jot at the line’s start', () => {
 
 test('Explain, Make a card and Ask go to the desk’s Ask view, about the words, at the line’s start; Ask sends them as the first message', () => {
   const desk = read('content/desk.js');
-  assert.match(desk, /root\.HeddyDeskAsk\.openAsk\(\{ about: 'words', attach: attach, at: at \}, api, intent, intent === 'ask' \? sel\.words : undefined\);/);
+  assert.match(desk, /root\.HeddyDeskAsk\.openAsk\(\{ about: 'words', attach: attach, at: at, atLabel: P\.clockOf\(at\) \}, api, intent, intent === 'ask' \? sel\.words : undefined\);/);
   assert.match(desk, /extra: function \(\) \{ return \{ t: askAt !== null \? askAt : now\(\) \}; \}/);
   let got = null;
   A.openAsk({ about: 'words' }, { openAsk: (ctx, intent, text) => { got = { ctx, intent, text }; } }, 'ask', '  速度不变 ');

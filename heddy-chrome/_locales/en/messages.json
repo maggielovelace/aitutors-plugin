@@ -762,5 +762,6 @@
   "deskTranscriptBusy": {
     "message": "$NAME$ has read a lot of transcripts today. Try again later.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
-  }
+  },
+  "askYouPicked": { "message": "You picked" }
 }

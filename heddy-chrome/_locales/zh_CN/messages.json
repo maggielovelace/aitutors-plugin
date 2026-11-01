@@ -762,5 +762,6 @@
   "deskTranscriptBusy": {
     "message": "$NAME$今天已经读了很多文字稿。晚点再试。",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
-  }
+  },
+  "askYouPicked": { "message": "你选的" }
 }

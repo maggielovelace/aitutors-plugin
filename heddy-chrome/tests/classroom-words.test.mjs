@@ -92,6 +92,7 @@ const PINS = [
   ['insightsNoTranscript', 'insights.noTranscript'],
   ['overviewWriteNotes', 'overview.writeNotes'],
   ['insightsLocked', 'insights.locked'],
+  ['askYouPicked', 'room.youPicked'],
   // Round 13 (D104): the Quiz tab, Classroom's quiz words (paths outside classroom.* start with ../).
   ['qzButton', 'quizBubble.button'],
   ['qzStepPredict', 'quizBubble.steps.predict'],

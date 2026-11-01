@@ -1899,7 +1899,7 @@
       if (lines[sel.i - 1]) attach.before = lines[sel.i - 1].text;
       if (lines[sel.to + 1]) attach.after = lines[sel.to + 1].text;
       closeSel();
-      root.HeddyDeskAsk.openAsk({ about: 'words', attach: attach, at: at }, api, intent, intent === 'ask' ? sel.words : undefined);
+      root.HeddyDeskAsk.openAsk({ about: 'words', attach: attach, at: at, atLabel: P.clockOf(at) }, api, intent, intent === 'ask' ? sel.words : undefined);
     }
 
     function noteBox(title, body) {

@@ -48,3 +48,51 @@ test('D108: a transcript the site’s daily caption ceiling refused reads as bus
   assert.equal(I.t('en', 'deskTranscriptBusy', 'Newton'), 'Newton has read a lot of transcripts today. Try again later.');
   assert.equal(I.t('zh_CN', 'deskTranscriptBusy', '牛顿'), '牛顿今天已经读了很多文字稿。晚点再试。');
 });
+
+// ─── 13c bug: Heddy ▾ "Ask Mentor about this" on a web page ────────────────
+
+const A = load('./lib/desk-ask.js');
+globalThis.HeddyDeskAsk = A;
+const W = load('./lib/web-routes.js');
+
+test('13c: the picked words are in sight in the room: Classroom’s context chip (the page’s host, the words in quotes)', () => {
+  const s = A.fresh({ about: 'words', attach: { kind: 'text', quote: 'On a 1:50 000 map, 2 cm represents 1 km.' } });
+  assert.deepEqual(A.contextChip(s, 'deeplearning.ai'), { label: 'deeplearning.ai', quote: 'On a 1:50 000 map, 2 cm represents 1 km.' });
+  const yt = A.fresh({ about: 'words', atLabel: '1:09', attach: { kind: 'text', quote: 'They land at the same time.' } });
+  assert.deepEqual(A.contextChip(yt, 'youtube.com'), { label: '1:09', quote: 'They land at the same time.' }, 'on a video the label is the second (Classroom’s chip)');
+  assert.equal(A.contextChip(A.fresh({ about: 'video', atLabel: '1:09', attach: { kind: 'text', quote: 'x' } }), 'youtube.com'), null, 'the crest’s Ask carries its line on the bubble');
+  assert.equal(A.contextChip(A.fresh({ about: 'picture', attach: { kind: 'image', png: 'iVBORw0KGgo' } }), 'x'), null);
+  const view = read('lib/ask-view.js');
+  assert.match(view, /var chip = A\.contextChip\(state, site\);/);
+  assert.match(view, /qq\.appendChild\(doc\.createTextNode\(chip\.quote\)\);/, 'set as text');
+  assert.match(view, /'\.talk \.ctx\{align-self:stretch;display:grid;grid-template-columns:auto minmax\(0,1fr\);gap:8px;padding:8px 10px;border-radius:10px;background:var\(--sunk\);font:500 12\.5px\/1\.4 /);
+});
+
+test('13c: the words travel the whole way: Heddy ▾ → the pending ask → the desk → the port → POST ask’s attach (Ask, Explain, Make a card)', async () => {
+  const tab = { id: 7, windowId: 1, url: 'https://www.deeplearning.ai/courses/', title: 'Courses' };
+  const asked = [];
+  const routes = W.createWebRoutes({
+    chrome: { runtime: { id: 'heddy', sendMessage: async () => {} }, tabs: { get: async () => tab, sendMessage: async () => {} }, storage: { local: { get: async () => ({}) } } },
+    api: { ask: (body, onEvent) => { asked.push(body); onEvent({ type: 'done', turnsLeft: null }); return { done: Promise.resolve(), stop() {} }; } },
+    cards: {}, showPanel: async () => {}, now: () => 1000,
+  });
+  const page = { id: 'heddy', url: tab.url, tab, frameId: 0 };
+  const frame = { id: 'heddy', url: 'chrome-extension://heddy/popup/popup.html?tab=7&host=panel', tab, frameId: 3 };
+  for (const [menu, intent] of [['ask', 'ask'], ['ask', 'explain'], ['card', 'card']]) {
+    assert.deepEqual(await routes.internal({ type: 'heddy-page:ask', intent: menu, quote: 'Gradient descent', before: 'We train with', after: 'on batches' }, page), { ok: true });
+    // What the desk RECEIVES (web-desk.js takePending), not only what was sent.
+    const got = await routes.internal({ type: 'heddy-web:ask-pending', tabId: 7 }, frame);
+    assert.deepEqual(got.pending.ctx.attach, { kind: 'text', quote: 'Gradient descent', before: 'We train with', after: 'on batches' }, `${menu}: the desk gets the words`);
+    const state = A.fresh(got.pending.ctx);
+    assert.deepEqual(A.contextChip(state, 'deeplearning.ai').quote, 'Gradient descent');
+    // ask-view.js send(): the port message carries the attach.
+    const listeners = [];
+    const port = { name: W.PORT, sender: frame, onMessage: { addListener: (f) => listeners.push(f) }, onDisconnect: { addListener() {} }, postMessage() {}, disconnect() {} };
+    routes.connected(port);
+    listeners[0]({ intent, tabId: 7, lang: 'en', state: { about: state.about, n: state.n, attach: state.attach, subject: null, items: [{ who: 'me', text: intent === 'ask' ? 'What is it?' : 'Explain this' }] } });
+    await new Promise((r) => setTimeout(r, 0));
+    const body = asked.at(-1);
+    assert.equal(body.intent, intent);
+    assert.deepEqual(body.attach, { kind: 'text', quote: 'Gradient descent', before: 'We train with', after: 'on batches' }, `${intent}: POST ask carries the words`);
+  }
+});
