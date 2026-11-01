@@ -1,6 +1,6 @@
 # Chrome Web Store listing — English
 
-Built from PRD-v0.96.0 Appendix B, rewritten for what Phases 1–3 shipped.
+Built from PRD-v0.96.0 Appendix B, rewritten for what version 0.8.1 does.
 Paste each field as it stands. The summary must stay at 132 characters or
 fewer (`tests/store.test.mjs` checks it).
 
@@ -17,7 +17,7 @@ fewer (`tests/store.test.mjs` checks it).
 ## Summary
 
 <!-- summary:start -->
-Works with aitutors.me. Keep YouTube videos, lines, pages and pictures in your Jotter. Reads a page only when you ask.
+Works with aitutors.me. Study YouTube videos beside your professor, and keep words and pictures from any page in your Jotters.
 <!-- summary:end -->
 
 ## Description
@@ -25,31 +25,36 @@ Works with aitutors.me. Keep YouTube videos, lines, pages and pictures in your J
 <!-- description:start -->
 Works with aitutors.me.
 
-Heddy keeps what you find while you study and takes it to your professors on aitutors.me, with where it came from.
+Heddy sits beside what you are studying and takes what you find to your professors on aitutors.me, with where it came from. The professors help you work it out for yourself: they ask, hint and show a worked example of a similar problem, and leave your own answer to you.
 
 ON A YOUTUBE VIDEO
-• Watch with Heddy: keeps the video in My Clips and opens it in the Classroom on aitutors.me.
-• Add to My Clips: keeps it for later, from the start or from the moment you are at.
-• H: jots the line being spoken into the video's Jotter. Press it twice quickly to take the line before as well. YouTube's own keys keep working.
+Tap Watch with Heddy and the desk opens beside the video, in English or Chinese (EN | 中).
+• Jot: press H to jot the line being spoken (twice quickly for the line before too), or type a note. Save to My Jotters puts the jots in the video's Jotter, by their times.
+• Digest: the transcript, following the player, in English, Bilingual or Chinese. Tap a time to play from there, or select words to jot them, explain them, make a card or ask about them.
+• Insights: your professor's short note on each chapter of the video, as you reach it.
+• Quiz: a short quiz on the video, with a hint on each question. Questions you miss can become flashcards.
+• Ask: talk to your professor about the video, a line or a moment.
+• Full desk opens the video in the Classroom on aitutors.me with your jots. 📌 opens the desk on every video.
+• Add to My Clips, from Heddy's toolbar icon, keeps a video or part of it for later.
 
 ON ANY PAGE
-• Collect as you read: with Heddy's panel open, each selection of words is added by itself, or tap + Picture and draw a box (+ Text switches back to words). Each is a numbered card in Heddy's panel, with the same number on the page, and you can drag them into your own order. Keep up to 10 snippets and up to four pictures from the same page.
-• Save to Jotters puts them on the left page of that page's Jotter, in your order, ready to jot from. Save and jot now opens the notebook at them.
-• Explain, Make a card or Ask Heddy about what you found. Or right-click some words and choose "Save to Jotters" to add them as a card.
-• Save page to Jotters: keeps the readable part of a page as a source in your Jotters.
-• Snap a picture: draw a box round a diagram, chart or photo, then + Picture to keep it, or Heddy's menu: Explain this picture, Make a card, Ask Heddy about it, Copy picture. Right-click a picture and choose "Add picture to Heddy", or press Ctrl Shift K (twice to keep the whole screen).
+• Sources: click Heddy's icon and its panel opens beside the page. Select words and each selection is added as a numbered card, or tap + Picture and draw a box (+ Text switches back to words). Drag the cards into your own order. Keep up to 10 snippets and up to four pictures from one page.
+• Save n to my Jotters puts them on the left page of that page's Jotter, in your order, ready to jot from. Save this page to my Jotters keeps the readable part of the page as a source.
+• Ask: the panel's Ask tab is a conversation with Mentor or the page's professor about your words or picture. Explain and Make a card are one tap away, and you choose whether to keep the card.
+• Right-click words and choose Save to Jotters, or right-click a picture and choose Add picture to Heddy.
+• Snap a picture: draw a box round a diagram, chart or photo, then + Picture to keep it, or Explain this picture, Make a card, Ask about it or Copy picture. Press Ctrl Shift K (twice for the whole screen).
 
 AFTER YOU SAVE
-A small note on the page says what was kept, and Open in Jotter goes straight to it. After H on a video, Undo takes the note back.
+A small note says what was kept, and Open in Jotter goes straight to it. Changed your mind? Undo.
 
 YOU ARE IN CHARGE
-• Nothing is kept until you tap Keep on aitutors.me, under your own account.
-• Heddy reads a page only when you ask it to: its icon, the right-click menu or your shortcut.
-• Heddy holds no account, password, key or token.
-• Heddy's only request of its own asks aitutors.me who is signed in, to show your first name and year in its settings. It keeps nothing it hears, and has no analytics and no error reporting.
-• It keeps only a few preferences on your device, such as your language.
+• Heddy reads a page only when you ask: its icon, the desk, the right-click menu or your shortcut.
+• What you save is kept on aitutors.me, under your own account, and nowhere else.
+• Heddy holds no account, password, key or token. It sends nothing to anyone but aitutors.me, and has no analytics and no error reporting.
+• It keeps only a few settings on your device, such as your language and the desk's size, and the desk's jots until you save them.
+• Some features depend on the subjects on your aitutors.me plan.
 
-English and 简体中文: choose in Heddy's options.
+English and 简体中文: choose in Heddy's options, or with the desk's EN | 中.
 
 FOR SCHOOLS
 Managed Chromebooks may block extensions. To allow Heddy, add its extension ID to the allow-list in the Google Admin console. Nothing on aitutors.me depends on Heddy: without it, children add videos from Quick add as before.
@@ -62,13 +67,15 @@ You need an aitutors.me account, signed in as the child in the same Chrome.
 | Asset | File |
 |---|---|
 | Store icon (128 × 128) | `icons/store-128.png` |
-| Screenshot 1: YouTube buttons and the popup | `store/screenshots/01-youtube.png` |
-| Screenshot 2: the selection tray | `store/screenshots/02-selection-tray.png` |
-| Screenshot 3: Snap a picture, box mode | `store/screenshots/03-snap-picture.png` |
-| Screenshot 4: the Jotted toast with Undo | `store/screenshots/04-jotted-toast.png` |
-| Screenshot 5: installing | `store/screenshots/05-install.png` |
+| Screenshot 1: the desk's Digest on a YouTube video | `store/screenshots/01-desk-digest.png` |
+| Screenshot 2: the desk's Quiz, with a hint | `store/screenshots/02-desk-quiz.png` |
+| Screenshot 3: the desk's Jot tab | `store/screenshots/03-desk-jot.png` |
+| Screenshot 4: Sources on a web page | `store/screenshots/04-web-sources.png` |
+| Screenshot 5: Ask, with the page's professor | `store/screenshots/05-web-ask.png` |
 | Small promo tile (440 × 280) | `store/screenshots/promo-440x280.png` |
 
-The screenshots are English only. The same pictures can serve the zh-CN
-listing; the Web Store shows them for every language unless a language gets
-its own set. Re-render them with `store/render/render.mjs` (see its header).
+The screenshots are English only, rendered from the real 0.8.1 UI on neutral
+stand-in pages (no real site, video or child). The same pictures can serve
+the zh-CN listing; the Web Store shows them for every language unless a
+language gets its own set. Re-render them with `store/render/render.mjs` (see
+its header).

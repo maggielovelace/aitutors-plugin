@@ -9,7 +9,6 @@
   var PROD_ORIGIN = 'https://aitutors.me';
   var DEV_ORIGIN = 'http://localhost:3000';
   var DEV_KEY = 'devOrigin';
-  var START_KEY = 'startChoice';
   var FIRST_RUN_KEY = 'seenFirstRun';
   // About Heddy's privacy link (D60): PRIVACY.md in this public repository,
   // the same page the Web Store listing names.
@@ -80,7 +79,6 @@
     PROD_ORIGIN: PROD_ORIGIN,
     DEV_ORIGIN: DEV_ORIGIN,
     DEV_KEY: DEV_KEY,
-    START_KEY: START_KEY,
     FIRST_RUN_KEY: FIRST_RUN_KEY,
     PRIVACY_URL: PRIVACY_URL,
     WINDOW: WINDOW,

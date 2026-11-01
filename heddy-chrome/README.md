@@ -173,7 +173,10 @@ npm test
 
 Node 20 or later, no dependencies. The tests pin the permissions, forbid any
 network call in the shipped files but the who-is-signed-in request
-(`lib/who.js`) and the desk's four (`lib/desk-api.js`), pin the desk's words
+(`lib/who.js`), the desk's five (`lib/desk-api.js`) and the six saves and
+asks (`lib/heddy-api.js`), check that every one of those requests and every
+`chrome.storage` key is named in [PRIVACY.md](PRIVACY.md) and
+`store/privacy-answers.md`, pin the desk's words
 to Classroom's catalog (`tests/classroom-words.test.mjs`, which reads a
 checkout of aitutors.me at `$HEDDY_SITE_REPO` and skips without one), check that each `cid` is answered once and
 expires at 10 minutes, and check every message against the site's validator.
@@ -182,6 +185,23 @@ expires at 10 minutes, and check every message against the site's validator.
 (the page surfaces load Manrope from those bytes, so no font URL is exposed to
 the page). `scripts/render-icons.sh` redraws the PNG icons from `icons/src/*.svg` (needs
 `rsvg-convert`).
+
+## Packaging for the Chrome Web Store
+
+```bash
+cd heddy-chrome
+node scripts/package.mjs        # → dist/heddy-chrome-<version>.zip, with its contents and size
+PLAYWRIGHT=/path/to/playwright/index.mjs node scripts/verify-zip.mjs
+```
+
+The zip holds exactly what `scripts/shipped.mjs` lists (the files the tests
+scan), with `manifest.json` at its root: no tests, scripts, `store/`, SVG
+sources or READMEs. Its manifest drops `http://localhost:3000/*` from
+`externally_connectable` (`--dev` keeps it). `verify-zip.mjs` loads the zip
+unpacked in headless Chromium and fails on any install warning, manifest
+error, runtime error or page error. The listing, the privacy answers and the
+screenshots are in `store/`; `store/render/render.mjs` redraws the
+screenshots from the real UI.
 
 ## Licence
 

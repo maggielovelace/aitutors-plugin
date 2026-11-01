@@ -92,7 +92,7 @@ aitutors.me 上没有任何功能依赖 Heddy：没有它，孩子照样可以�
 **只有你让它读，它才会读页面。** Heddy 只在 YouTube 视频页
 （`https://www.youtube.com/watch…`）上读取视频 ID；书桌开着时，读视频的标题、频道、
 播放器的时间和时长，书桌开着时会收起 YouTube 的推荐，关上时放回来；文字稿不从页面读，
-由 aitutors.me 发来（`/api/learn/heddy/desk/…`，同样带上你的登录 Cookie）。
+由 aitutors.me 发来（`/api/learn/heddy/desk/…`，同样带上你的登录 Cookie）：书桌打开时会告诉 aitutors.me 这是哪个视频（开了 📌 就是你看的每个视频），并按章节取「要点」；你用「小测」时，会发出你选的答案。
 打开面板时，读视频的标题、频道、时长、当前时间和 YouTube 自己的预览画面给你看；
 缩略图和画面来自 YouTube 自己的 `i.ytimg.com`。随记在你保存之前只存在这台电脑上。在其他网页上，只有你打开面板、
 右键「存到 Jotters」或按你设的快捷键时，它才读你选中的文字和前后各最多
@@ -101,7 +101,7 @@ aitutors.me 上没有任何功能依赖 Heddy：没有它，孩子照样可以�
 现在是谁登录（`GET /api/learn/heddy/me`，由浏览器带上你在 aitutors.me 的登录
 Cookie，Heddy 自己不读也不存这个 Cookie）。回答最多是孩子的名字、年级和科目；
 Heddy 只把它显示出来，不保存，也不发给任何别处。你点「截一张图」、右键图片或按 Ctrl Shift K 时，它才截下屏幕上能看到的部分，只保留你框出的那一块。
-从 0.6.0 版起，Heddy 不再打开任何窗口或标签页，除非你点了写明会离开的链接（打开我的 Jotter ↗、提示里的「打开」、登录、完整书桌 ↗）：保存、撤销、留下卡片、留作随记、加进「我的短片」和书桌里的提问，都由 Heddy 的后台发给 aitutors.me（`/api/learn/heddy/save`、`/undo`、`/clip`、`/ask`、`/card`、`/jot`），由浏览器带上你的登录 Cookie，Heddy 自己不读也不存。
+从 0.6.0 版起，Heddy 不再打开任何窗口或标签页，除非你点了写明会离开的链接（打开我的 Jotter ↗、提示里的「打开」、登录、完整书桌 ↗）：保存、撤销、留下卡片、留作随记、加进「我的短片」和书桌里的提问，都由 Heddy 的后台发给 aitutors.me（`/api/learn/heddy/save`、`/undo`、`/clip`、`/ask`、`/card`、`/jot`），由浏览器带上你的登录 Cookie，Heddy 自己不读也不存。Heddy 一共只发这十二种请求，每一种发什么、存在本机的每一项是什么，都列在 [PRIVACY.md](PRIVACY.md)。
 在 Chrome 网上应用店里，这些都申报为「网站内容」：只在你让它读时（存到我的 Jotters、加到来源、截一张图、问老师、做张卡片）才收集，只交给 aitutors.me、存在你自己的账号里；绝不出售，不用于广告或信用评估，除 aitutors.me 自己的处理外不与任何第三方分享。完整说明见 [PRIVACY.md](PRIVACY.md)（英文）。
 
 ## 测试
