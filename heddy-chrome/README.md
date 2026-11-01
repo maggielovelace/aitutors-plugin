@@ -12,7 +12,9 @@ quickly for the line before, or type a note), the **Digest** (the transcript
 in English, Bilingual or Chinese, following the player; tap a time to play from there,
 and select words or click a line for Classroom's tray: Jot it · Explain ·
 Make a card · Ask the professor · › Play from here · Copy),
-Insights where aitutors.me has them, and the crest to ask the professor.
+Insights where aitutors.me has them, a **Quiz** when the video is in *My Clips*
+and has a quiz ready (Classroom's quiz, inside the desk), and the crest to ask
+the professor.
 **Save to My Jotters** saves the jots to the video's Jotter; **Full desk**
 keeps the video in *My Clips* and opens it in Classroom with them. The desk
 speaks English or Chinese (its EN | 中 is Heddy's Language setting), and 📌

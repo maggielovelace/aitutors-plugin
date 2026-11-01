@@ -32,6 +32,7 @@
   var C = root.HeddyConfig;
   var AV = root.HeddyAskView;
   var TR = root.HeddyDeskTray;
+  var QZ = root.HeddyDeskQuiz;
 
   var TICK_MS = 250;
   var SAY_MS = 3500;
@@ -411,7 +412,7 @@
     function build() {
       host = doc.createElement('heddy-desk');
       shadow = host.attachShadow({ mode: 'closed' });
-      shadow.innerHTML = '<style>' + CSS + '\n' + AV.CSS + '\n' + TR.CSS + '</style>';
+      shadow.innerHTML = '<style>' + CSS + '\n' + AV.CSS + '\n' + TR.CSS + '\n' + QZ.CSS + '</style>';
       var cd = el('section', 'cd');
       cd.setAttribute('aria-label', 'Heddy');
 
@@ -471,9 +472,10 @@
       var tabs = el('div', 'tabs');
       tabs.setAttribute('role', 'tablist');
       var tabEls = {};
-      // No quiz on this video (8a: none yet), so no Quiz tab, as Classroom
-      // draws none (Round 12, owner): Jot · Digest · Insights and the crest.
-      [['jot', 'jot'], ['digest', 'digest'], ['insights', 'insights']].forEach(function (t) {
+      // The Quiz tab is drawn only when the site says this video, in the
+      // child's My Clips, has a quiz `ready` (Round 13, D104); otherwise there
+      // is no Quiz tab, as Classroom draws none (D98): Jot · Digest · Insights.
+      [['quiz', 'quiz'], ['jot', 'jot'], ['digest', 'digest'], ['insights', 'insights']].forEach(function (t) {
         var b = btn('tab', ic(t[1]));
         b.setAttribute('role', 'tab');
         b.appendChild(el('span'));
@@ -643,14 +645,15 @@
       ui.close.setAttribute('aria-label', tr('deskClose'));
       ui.full.lastChild.textContent = tr('deskFull');
       ui.full.title = tr('deskFullTitle');
-      var names = { jot: 'deskTabJot', digest: 'deskTabDigest', insights: 'deskTabInsights' };
+      var names = { quiz: 'deskTabQuiz', jot: 'deskTabJot', digest: 'deskTabDigest', insights: 'deskTabInsights' };
+      ui.tabs.quiz.hidden = !tabLive('quiz');
       Object.keys(ui.tabs).forEach(function (k) {
         var b = ui.tabs[k];
         b.querySelector('span').textContent = tr(names[k]);
         b.setAttribute('aria-selected', String(st.tab === k));
         b.setAttribute('aria-disabled', String(!tabLive(k)));
         // A tab with nothing behind it says why, and is never selected (D77).
-        if (!tabLive(k)) b.title = tr('deskInsightsSoon');
+        if (!tabLive(k) && k === 'insights') b.title = tr('deskInsightsSoon');
         else b.removeAttribute('title');
       });
       ui.tabs.jot.querySelector('small').textContent = String(st.jots.length);
@@ -680,7 +683,7 @@
     }
 
     function tabLive(k) {
-      if (k === 'quiz') return false; // 8b (D77)
+      if (k === 'quiz') return st.video.quiz === 'ready'; // D104
       if (k === 'insights') return st.insights.status !== 'unknown' && st.insights.status !== 'unavailable';
       return true;
     }
@@ -697,7 +700,7 @@
     /** The tabs the arrows walk, in the row's order: the ones that open, then
      *  the crest (the Ask tab, D80). */
     function shownTabs() {
-      return ['jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
+      return ['quiz', 'jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
     }
 
     /** ←/→ (Classroom's onKey): the next or previous shown tab, wrapping,
@@ -746,7 +749,10 @@
       ui.chip = null;
       ui.say = null;
       askView.detach();
+      quizView.detach();
+      ui.cd.removeAttribute('data-rest');
       if (st.tab === 'ask') return askView.draw(pn);
+      if (st.tab === 'quiz' && tabLive('quiz')) return quizView.draw(pn);
       if (st.tab === 'jot') return drawJot(pn);
       if (st.tab === 'digest') return drawDigest(pn);
       if (st.tab === 'insights' && tabLive('insights')) return drawInsights(pn);
@@ -1224,6 +1230,24 @@
         st.video.professor = { code: p.code, name: p.name, nameZh: p.name, sc: c.sc, scSoft: c.scSoft };
         label();
       },
+    });
+
+    // The Quiz tab (lib/desk-quiz.js): Classroom's quiz, inside the desk.
+    var quizView = QZ.create({
+      doc: doc,
+      tr: function () { return tr; },
+      name: profName,
+      subjectName: function () { var p = st && st.video.professor; return p && p.code ? tr('subj' + p.code) : ''; },
+      eyes: EYES,
+      send: function (body) {
+        if (!st) return Promise.resolve(null);
+        return deps.send(Object.assign({ type: 'heddy-desk:quiz', youtubeId: st.id }, body)).then(function (r) { return r || { ok: false, status: 0 }; });
+      },
+      seekPlay: function (t) { seekPlay(t); },
+      openSite: function (path) { openSite(path); },
+      signIn: function () { openSite('/auth/login?door=kid'); },
+      // Classroom's resting motion keys on the desk at rest on the Quiz tab.
+      onRest: function (atRest) { if (ui) ui.cd.toggleAttribute('data-rest', atRest); },
     });
 
     /** A page on aitutors.me in a new tab; the background checks the path. */
@@ -2270,6 +2294,7 @@
         if (st && st.id === id) return;
         if (st) api.close(true);
         st = fresh(id);
+        quizView.reset();
         if (!host) build();
         ui.shown = null; // a new video: the pill is placed, not slid
         ui.geo = null;
@@ -2293,7 +2318,7 @@
             st.video = { status: 'signedOut', professor: null, jotterHref: null };
             st.insights.status = 'unavailable';
           } else if (r && r.ok) {
-            st.video = { status: 'ok', professor: r.professor, jotterHref: r.jotterHref };
+            st.video = { status: 'ok', professor: r.professor, jotterHref: r.jotterHref, quiz: r.quiz };
             loadTranscript();
           } else {
             // 'forbidden': aitutors.me does not know this copy of Heddy (an

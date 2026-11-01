@@ -610,5 +610,154 @@
   },
   "deskOpenInJotterTitle": { "message": "在新标签页打开 aitutors.me 上的笔记本" },
   "deskWidthLabel": { "message": "书桌宽度" },
-  "deskWidthTitle": { "message": "拖动可以把书桌拉宽或变窄 · 双击恢复默认宽度" }
+  "deskWidthTitle": { "message": "拖动可以把书桌拉宽或变窄 · 双击恢复默认宽度" },
+  "qzButton": {
+    "message": "让 $NAME$ 先问",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepPredict": {
+    "message": "1 $NAME$ 先问",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepWatch": {
+    "message": "2 你来看",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepCheck": {
+    "message": "3 再问三题",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepResults": {
+    "message": "4 你的发现",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNamePredict": {
+    "message": "$NAME$ 先问",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNameWatch": {
+    "message": "你来看",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNameCheck": {
+    "message": "再问三题",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNameResults": {
+    "message": "你的发现",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzRest": { "message": "按播放之前，我先问你一件事。看的时候记着它，看完我再问三题。" },
+  "qzPrep": {
+    "message": "稍等，我在挑要问你的问题。",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzWatch": { "message": "留心听。你的问题在这里等你。" },
+  "qzResults": {
+    "message": "$TOTAL$ 题你答对了 $N$ 题。看之前你猜的是「$GUESS$」，现在你已经看到短片怎么说了。答错的那题，可以做成卡片。",
+    "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" }, "name": { "content": "$4" } }
+  },
+  "qzResultsAll": {
+    "message": "$TOTAL$ 题你全答对了。看之前你猜的是「$GUESS$」，现在你已经看到短片怎么说了。这次没有要做成卡片的。",
+    "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" }, "name": { "content": "$4" } }
+  },
+  "qzNoGuess": { "message": "你跳过了猜测" },
+  "qzLock": {
+    "message": "就选这个，开始看",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzWatched": {
+    "message": "看完了 · 再问三题",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzSeeResults": {
+    "message": "看看我的发现",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzFree": {
+    "message": "免费：每周和 $NAME$ 问答 10 轮；订阅后不限次数。",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepsLabel": { "message": "步骤" },
+  "qzDialog": {
+    "message": "$PROFESSOR$ 的视频小测",
+    "placeholders": { "professor": { "content": "$1" } }
+  },
+  "qzSkip": { "message": "跳过" },
+  "qzHint": { "message": "提示" },
+  "qzTryAgain": { "message": "再试一次" },
+  "qzCorrect": { "message": "答对" },
+  "qzRight": { "message": "答对" },
+  "qzNotYet": { "message": "还没答对" },
+  "qzMisTag": {
+    "message": "误区：$M$",
+    "placeholders": { "m": { "content": "$1" } }
+  },
+  "qzAdding": { "message": "正在添加……" },
+  "qzNoPlan": { "message": "视频小测属于付费计划。" },
+  "qzTitle": { "message": "视频小测" },
+  "qzFailed": { "message": "小测暂时没能准备好，请稍后再试。" },
+  "qzUnavailable": { "message": "这个短片暂时没有小测。" },
+  "qzCap": { "message": "今天的辅导时间已经用完了，明天再来做这个小测吧。" },
+  "qzQuota": { "message": "这周的 10 次免费视频小测用完了，下周一再来；订阅后不限次数。" },
+  "qzWatchRange": {
+    "message": "从 $START$ 看到 $END$",
+    "placeholders": { "start": { "content": "$1" }, "end": { "content": "$2" } }
+  },
+  "qzWatchLead": {
+    "message": "你的猜测已经锁定。看完这一段，再告诉 $PROFESSOR$ 你准备好了。",
+    "placeholders": { "professor": { "content": "$1" } }
+  },
+  "qzWatchLeadSkipped": {
+    "message": "看完这一段，再告诉 $PROFESSOR$ 你准备好了。",
+    "placeholders": { "professor": { "content": "$1" } }
+  },
+  "qzReplay": { "message": "重播这一段" },
+  "qzQuestionOf": {
+    "message": "第 $I$ 题，共 $N$ 题",
+    "placeholders": { "i": { "content": "$1" }, "n": { "content": "$2" } }
+  },
+  "qzSubmit": { "message": "检查我的答案" },
+  "qzMissRow": {
+    "message": "$M$——这是一个误区：$WHY$",
+    "placeholders": { "m": { "content": "$1" }, "why": { "content": "$2" } }
+  },
+  "qzRecorded": {
+    "message": "已加入你的$SUBJECT$复习记录。",
+    "placeholders": { "subject": { "content": "$1" } }
+  },
+  "qzQuizzed": { "message": "已小测 ✓" },
+  "qzAddCardsOne": {
+    "message": "添加 $N$ 张卡片",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzAddCardsMany": {
+    "message": "添加 $N$ 张卡片",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzAddedOne": {
+    "message": "已添加 $N$ 张卡片",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzAddedMany": {
+    "message": "已添加 $N$ 张卡片",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzBack": { "message": "回到我的短片" },
+  "qzPrep1": { "message": "正在读这个短片的要点……" },
+  "qzPrep2": { "message": "正在挑三个值得一问的地方……" },
+  "qzPrep3": { "message": "正在写题目和提示……" },
+  "qzPrep4": { "message": "正在为每道题准备一张卡，以防你答错……" },
+  "qzPrepTime": {
+    "message": "大约 10 秒 · 已经 $N$ 秒",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzPrepSlow": { "message": "还在写，比平时慢一点。" },
+  "qzPrepComing": {
+    "message": "马上有 $N$ 道题，答错的每一道都会配一张卡。",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzOptRight": { "message": "正确" },
+  "qzOptPick": { "message": "你的选择" },
+  "qzNextQuestion": { "message": "下一题" }
 }

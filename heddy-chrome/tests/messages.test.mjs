@@ -13,6 +13,9 @@ test('English and 简体中文 have the same keys and placeholders', () => {
   assert.deepEqual(Object.keys(zh).sort(), Object.keys(en).sort());
   for (const k of Object.keys(en)) {
     assert.deepEqual(Object.keys(zh[k].placeholders || {}), Object.keys(en[k].placeholders || {}), k);
+    // The quiz's words (qz*) are Classroom's catalog verbatim (tests/classroom-words.test.mjs), whose
+    // Chinese sometimes drops the name ("2 你来看"): there a placeholder may go unused in zh_CN.
+    if (k.startsWith('qz')) continue;
     for (const name of Object.keys(en[k].placeholders || {})) {
       assert.match(zh[k].message, new RegExp(`\\$${name}\\$`, 'i'), `${k} in zh_CN uses $${name}$`);
     }

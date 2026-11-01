@@ -610,5 +610,154 @@
   },
   "deskOpenInJotterTitle": { "message": "Opens your Jotter on aitutors.me in a new tab" },
   "deskWidthLabel": { "message": "Desk width" },
-  "deskWidthTitle": { "message": "Drag to make the desk wider or narrower · double-click for the usual width" }
+  "deskWidthTitle": { "message": "Drag to make the desk wider or narrower · double-click for the usual width" },
+  "qzButton": {
+    "message": "Let $NAME$ ask first",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepPredict": {
+    "message": "1 $NAME$ asks",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepWatch": {
+    "message": "2 You watch",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepCheck": {
+    "message": "3 Ask more",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepResults": {
+    "message": "4 You found",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNamePredict": {
+    "message": "$NAME$ asks",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNameWatch": {
+    "message": "You watch",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNameCheck": {
+    "message": "Ask more",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzNameResults": {
+    "message": "You found",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzRest": { "message": "Before you press play, I'll ask you one thing. Hold onto it while you watch, then I'll ask three more." },
+  "qzPrep": {
+    "message": "Give me a moment. I'm choosing what to ask you.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzWatch": { "message": "Listen for it. Your question is waiting for you." },
+  "qzResults": {
+    "message": "You found $N$ of $TOTAL$. Before watching you said $GUESS$; now you've seen what the clip showed. Your miss is ready to become a card.",
+    "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" }, "name": { "content": "$4" } }
+  },
+  "qzResultsAll": {
+    "message": "You found $N$ of $TOTAL$. Before watching you said $GUESS$; now you've seen what the clip showed. Nothing to turn into a card this time.",
+    "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" }, "name": { "content": "$4" } }
+  },
+  "qzNoGuess": { "message": "you skipped the guess" },
+  "qzLock": {
+    "message": "Lock it in, then watch",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzWatched": {
+    "message": "Done · ask me three more",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzSeeResults": {
+    "message": "Show me what I found",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzFree": {
+    "message": "Free: 10 rounds with $NAME$ a week. A plan makes them unlimited.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "qzStepsLabel": { "message": "Steps" },
+  "qzDialog": {
+    "message": "$PROFESSOR$ video quiz",
+    "placeholders": { "professor": { "content": "$1" } }
+  },
+  "qzSkip": { "message": "Skip" },
+  "qzHint": { "message": "Hint" },
+  "qzTryAgain": { "message": "Try again" },
+  "qzCorrect": { "message": "correct" },
+  "qzRight": { "message": "right" },
+  "qzNotYet": { "message": "not yet" },
+  "qzMisTag": {
+    "message": "misconception: $M$",
+    "placeholders": { "m": { "content": "$1" } }
+  },
+  "qzAdding": { "message": "Adding…" },
+  "qzNoPlan": { "message": "The video quiz is part of a plan." },
+  "qzTitle": { "message": "Video quiz" },
+  "qzFailed": { "message": "The quiz could not be prepared just now. Try again in a moment." },
+  "qzUnavailable": { "message": "This clip has no quiz just now." },
+  "qzCap": { "message": "You have used today’s tutor time. Come back tomorrow for this quiz." },
+  "qzQuota": { "message": "You've used this week's 10 free video quizzes. They come back on Monday; a plan makes them unlimited." },
+  "qzWatchRange": {
+    "message": "Watch $START$ to $END$",
+    "placeholders": { "start": { "content": "$1" }, "end": { "content": "$2" } }
+  },
+  "qzWatchLead": {
+    "message": "Your guess is locked. Watch the part, then tell $PROFESSOR$ you are ready.",
+    "placeholders": { "professor": { "content": "$1" } }
+  },
+  "qzWatchLeadSkipped": {
+    "message": "Watch the part, then tell $PROFESSOR$ you are ready.",
+    "placeholders": { "professor": { "content": "$1" } }
+  },
+  "qzReplay": { "message": "Replay the bit" },
+  "qzQuestionOf": {
+    "message": "Question $I$ of $N$",
+    "placeholders": { "i": { "content": "$1" }, "n": { "content": "$2" } }
+  },
+  "qzSubmit": { "message": "Check my answer" },
+  "qzMissRow": {
+    "message": "$M$ — a misconception: $WHY$",
+    "placeholders": { "m": { "content": "$1" }, "why": { "content": "$2" } }
+  },
+  "qzRecorded": {
+    "message": "Added to your $SUBJECT$ revision record.",
+    "placeholders": { "subject": { "content": "$1" } }
+  },
+  "qzQuizzed": { "message": "Quizzed ✓" },
+  "qzAddCardsOne": {
+    "message": "Add $N$ card",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzAddCardsMany": {
+    "message": "Add $N$ cards",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzAddedOne": {
+    "message": "$N$ card added",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzAddedMany": {
+    "message": "$N$ cards added",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzBack": { "message": "Back to My Clips" },
+  "qzPrep1": { "message": "Reading the clip's key points…" },
+  "qzPrep2": { "message": "Choosing three things worth checking…" },
+  "qzPrep3": { "message": "Writing the questions and the hints…" },
+  "qzPrep4": { "message": "Writing a card for each one, in case you miss it…" },
+  "qzPrepTime": {
+    "message": "About 10 seconds · $N$ s so far",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzPrepSlow": { "message": "Still writing, a little slower than usual." },
+  "qzPrepComing": {
+    "message": "$N$ questions coming, and a card for each one you miss.",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "qzOptRight": { "message": "Right" },
+  "qzOptPick": { "message": "Your pick" },
+  "qzNextQuestion": { "message": "Next question" }
 }

@@ -91,7 +91,8 @@ test('every desk request goes to aitutors.me under /api/learn/heddy/desk/, with 
   const dev = deskSetup({ dev: true });
   await dev.api.internal({ type: 'heddy-desk:transcript', youtubeId: VIDEO }, fromYouTube);
   assert.equal(dev.calls.fetches[0].url, `http://localhost:3000/api/learn/heddy/desk/transcript?v=${VIDEO}`, 'no title, no &title=');
-  assert.deepEqual(Object.values(A.PATHS).map((p) => p.startsWith('/api/learn/heddy/desk/')), [true, true, true, true]);
+  assert.ok(Object.values(A.PATHS).every((p) => p.startsWith('/api/learn/heddy/desk/')), 'every desk path, incl. r13 quiz');
+  assert.deepEqual(Object.keys(A.PATHS).sort(), ['jots', 'keypoints', 'quiz', 'transcript', 'video']);
 });
 
 test('only the watch page of the video named may ask, and never one of Heddy’s own pages', async () => {
@@ -106,7 +107,7 @@ test('only the watch page of the video named may ask, and never one of Heddy’s
 
 test('§ 1: the professor, checked: colours must be hex, the Jotter link must be the video’s', () => {
   assert.deepEqual(A.parseVideo({ signedIn: true, youtubeId: VIDEO, professor: { code: 'PHYS', name: 'Newton', nameZh: 'Newton', sc: '#2f64d6', scSoft: '#e5ecfb' }, inMyClips: false, jotterHref: `/study/jotters/v/${VIDEO}` }), {
-    ok: true, signedIn: true, professor: { code: 'PHYS', name: 'Newton', nameZh: 'Newton', sc: '#2f64d6', scSoft: '#e5ecfb' }, inMyClips: false, jotterHref: `/study/jotters/v/${VIDEO}`,
+    ok: true, signedIn: true, professor: { code: 'PHYS', name: 'Newton', nameZh: 'Newton', sc: '#2f64d6', scSoft: '#e5ecfb' }, inMyClips: false, quiz: 'none', jotterHref: `/study/jotters/v/${VIDEO}`,
   });
   const odd = A.parseVideo({ signedIn: true, professor: { code: null, name: '', sc: 'red;background:url(x)', scSoft: '#zzzzzz' }, jotterHref: 'https://evil.example/x' });
   assert.deepEqual(odd.professor, { code: null, name: 'Mentor', nameZh: 'Mentor', sc: null, scSoft: null });

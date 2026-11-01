@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "Heddy",
   "description": "__MSG_extDescription__",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "default_locale": "en",
   "minimum_chrome_version": "116",
   "homepage_url": "https://aitutors.me",
@@ -49,6 +49,7 @@
         "lib/ask-view.js",
         "lib/desk-shell.js",
         "lib/desk-tray.js",
+        "lib/desk-quiz.js",
         "content/youtube-selectors.js",
         "content/desk.js",
         "content/youtube.js"

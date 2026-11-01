@@ -13,6 +13,9 @@
 //   GET  /api/learn/heddy/desk/transcript?v=&title=[&zh=1&from=] the Digest, zh stretches
 //   POST /api/learn/heddy/desk/keypoints                Insights: the professor's paragraph per
 //                                                       chapter (Round 11b, D93; r11b-contract)
+//   POST /api/learn/heddy/desk/quiz                     the Quiz tab (Round 13, D104): start,
+//                                                       answer, finish, add_cards; Classroom's
+//                                                       /api/videos/check, wrapped by the site
 //   POST /api/learn/heddy/desk/jots                     Save to My Jotters (the
 //                                                       desk then shows the Saved card, D86)
 //
@@ -24,7 +27,12 @@
   var C = root.HeddyConfig || (typeof require === 'function' && require('./config.js'));
 
   var BASE = '/api/learn/heddy/desk/';
-  var PATHS = { video: BASE + 'video', transcript: BASE + 'transcript', keypoints: BASE + 'keypoints', jots: BASE + 'jots' };
+  var PATHS = { video: BASE + 'video', transcript: BASE + 'transcript', keypoints: BASE + 'keypoints', quiz: BASE + 'quiz', jots: BASE + 'jots' };
+  var QUIZ_STATE = ['ready', 'none', 'locked'];
+  var QUIZ_ACTIONS = ['start', 'answer', 'finish', 'add_cards'];
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  // start may write a new set (one model call): it waits as long as the transcript.
+  var QUIZ_TIMEOUT_MS = 60000;
   var TIMEOUT_MS = 15000;
   // The transcript's first read of a long video goes through the site's
   // captions vendor (an hour-long video took the owner's desk past 15 s, and
@@ -85,6 +93,8 @@
         scSoft: typeof p.scSoft === 'string' && HEX.test(p.scSoft) ? p.scSoft : null,
       },
       inMyClips: data.inMyClips === true,
+      // r13 D104: the Quiz tab is drawn only for 'ready'.
+      quiz: QUIZ_STATE.indexOf(data.quiz) >= 0 ? data.quiz : 'none',
       jotterHref: typeof data.jotterHref === 'string' && JOTTER_HREF.test(data.jotterHref) ? data.jotterHref : null,
     };
   }
@@ -123,6 +133,49 @@
         };
       }),
     };
+  }
+
+  /** r13: a question as the desk draws it (prompt, options, hint, the time
+   *  its point is taught), or null. */
+  function quizQuestion(q) {
+    if (!q || typeof q !== 'object') return null;
+    var opts = Array.isArray(q.options) ? q.options.slice(0, 6).map(function (o) { return text(o, 600); }) : [];
+    if (!text(q.prompt, 1000) || opts.length < 2 || opts.some(function (o) { return !o; })) return null;
+    var out = { prompt: text(q.prompt, 1000), options: opts, hint: text(q.hint, 1000) || null };
+    if (num(q.atSec) && q.atSec >= 0) out.atSec = q.atSec;
+    return out;
+  }
+
+  /** r13: the quiz route's answer, kept to what the Quiz tab draws. The
+   *  status passes through (the tab's states are Classroom's, keyed on it). */
+  function parseQuiz(action, status, data) {
+    var d = data && typeof data === 'object' ? data : {};
+    if (status !== 200) return { ok: false, status: status, type: typeof d.type === 'string' ? d.type.slice(0, 40) : null };
+    if (action === 'start') {
+      // Classroom's shape is { predict, questions: [3] }; a bare array of questions has no Predict step.
+      var set = Array.isArray(d.questions) ? { questions: d.questions } : d.questions || {};
+      var qs = Array.isArray(set.questions) ? set.questions.slice(0, 5).map(quizQuestion) : [];
+      var predict = set.predict ? quizQuestion(Object.assign({}, set.predict, { hint: '' })) : null;
+      var v = d.video || {};
+      if (typeof d.checkId !== 'string' || !UUID.test(d.checkId) || !qs.length || qs.some(function (q) { return !q; })) return { ok: false, status: 502, type: 'bad-reply' };
+      return {
+        ok: true,
+        checkId: d.checkId,
+        subjectCode: typeof d.subjectCode === 'string' && SUBJECT.test(d.subjectCode) ? d.subjectCode : null,
+        subject: text(d.subject, 60),
+        tutor: { name: text(d.tutor && d.tutor.name, MAX_NAME) || null },
+        topic: { id: text(d.topic && d.topic.id, 80), name: text(d.topic && d.topic.name, 200) },
+        range: { startSec: num(v.startSec) && v.startSec >= 0 ? v.startSec : 0, endSec: num(v.endSec) && v.endSec > 0 ? v.endSec : null },
+        predict: predict,
+        questions: qs,
+      };
+    }
+    if (action === 'answer') {
+      if (typeof d.correct !== 'boolean' || !num(d.correctIndex)) return { ok: false, status: 502, type: 'bad-reply' };
+      return { ok: true, correct: d.correct, correctIndex: Math.floor(d.correctIndex), explanation: text(d.explanation, 2000), misconception: text(d.misconception, 300) || null };
+    }
+    if (action === 'finish') return { ok: true, correct: num(d.correct) ? Math.max(0, Math.floor(d.correct)) : 0, misses: num(d.misses) ? Math.max(0, Math.floor(d.misses)) : 0 };
+    return { ok: true, minted: num(d.minted) ? Math.max(0, Math.floor(d.minted)) : 0 };
   }
 
   /** The chapters the desk sends, checked again (r11b's rules). */
@@ -242,6 +295,21 @@
           if (from !== null) { q.zh = 1; q.from = from; }
           return call('GET', PATHS.transcript, q, undefined, TRANSCRIPT_TIMEOUT_MS).then(answer(parseTranscript));
         }
+        case 'heddy-desk:quiz': {
+          var act = message.action;
+          if (QUIZ_ACTIONS.indexOf(act) < 0) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
+          var qb = { action: act, youtubeId: id };
+          if (act !== 'start') {
+            if (typeof message.checkId !== 'string' || !UUID.test(message.checkId)) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
+            qb.checkId = message.checkId;
+          }
+          if (act === 'answer') {
+            if (!num(message.index) || !num(message.choice)) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
+            qb.index = Math.floor(message.index);
+            qb.choice = Math.floor(message.choice);
+          }
+          return call('POST', PATHS.quiz, null, qb, act === 'start' ? QUIZ_TIMEOUT_MS : TIMEOUT_MS).then(function (r) { return parseQuiz(act, r.status, r.data); });
+        }
         case 'heddy-desk:keypoints': {
           var chapters = chaptersBody(message.chapters);
           if (!chapters) return Promise.resolve({ ok: false, error: 'bad_request' });
@@ -267,6 +335,7 @@
     parseVideo: parseVideo,
     parseTranscript: parseTranscript,
     parseKeypoints: parseKeypoints,
+    parseQuiz: parseQuiz,
     parseSaved: parseSaved,
     createDeskApi: createDeskApi,
   };
