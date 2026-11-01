@@ -92,6 +92,66 @@ const PINS = [
   ['insightsNoTranscript', 'insights.noTranscript'],
   ['overviewWriteNotes', 'overview.writeNotes'],
   ['insightsLocked', 'insights.locked'],
+  // Round 13 (D104): the Quiz tab, Classroom's quiz words (paths outside classroom.* start with ../).
+  ['qzButton', 'quizBubble.button'],
+  ['qzStepPredict', 'quizBubble.steps.predict'],
+  ['qzStepWatch', 'quizBubble.steps.watch'],
+  ['qzStepCheck', 'quizBubble.steps.check'],
+  ['qzStepResults', 'quizBubble.steps.results'],
+  ['qzNamePredict', 'quizBubble.names.predict'],
+  ['qzNameWatch', 'quizBubble.names.watch'],
+  ['qzNameCheck', 'quizBubble.names.check'],
+  ['qzNameResults', 'quizBubble.names.results'],
+  ['qzRest', 'quizBubble.rest'],
+  ['qzPrep', 'quizBubble.prep'],
+  ['qzWatch', 'quizBubble.watch'],
+  ['qzResults', 'quizBubble.results'],
+  ['qzResultsAll', 'quizBubble.resultsAll'],
+  ['qzNoGuess', 'quizBubble.noGuess'],
+  ['qzLock', 'quizBubble.lock'],
+  ['qzWatched', 'quizBubble.watched'],
+  ['qzSeeResults', 'quizBubble.seeResults'],
+  ['qzFree', 'quizBubble.free'],
+  ['qzStepsLabel', '../check.stepsLabel'],
+  ['qzDialog', '../check.dialog'],
+  ['qzSkip', '../check.skip'],
+  ['qzHint', '../check.hint'],
+  ['qzTryAgain', '../check.tryAgain'],
+  ['qzCorrect', '../check.correct'],
+  ['qzRight', '../check.right'],
+  ['qzNotYet', '../check.notYet'],
+  ['qzMisTag', '../check.misconceptionTag'],
+  ['qzAdding', '../check.adding'],
+  ['qzNoPlan', '../check.noPlan'],
+  ['qzTitle', '../quiz.title'],
+  ['qzFailed', '../quiz.failed'],
+  ['qzUnavailable', '../quiz.unavailable'],
+  ['qzCap', '../quiz.cap'],
+  ['qzQuota', '../quiz.quota'],
+  ['qzWatchRange', '../quiz.watchRange'],
+  ['qzWatchLead', '../quiz.watchLead'],
+  ['qzWatchLeadSkipped', '../quiz.watchLeadSkipped'],
+  ['qzReplay', '../quiz.replay'],
+  ['qzQuestionOf', '../quiz.questionOf'],
+  ['qzSubmit', '../quiz.submit'],
+  ['qzMissRow', '../quiz.missRow'],
+  ['qzRecorded', '../quiz.recorded'],
+  ['qzQuizzed', '../quiz.quizzed'],
+  ['qzAddCardsOne', '../quiz.addCards.one'],
+  ['qzAddCardsMany', '../quiz.addCards.other'],
+  ['qzAddedOne', '../quiz.added.one'],
+  ['qzAddedMany', '../quiz.added.other'],
+  ['qzBack', '../quiz.backToClips'],
+  ['qzPrep1', '../quiz.prepLines.0'],
+  ['qzPrep2', '../quiz.prepLines.1'],
+  ['qzPrep3', '../quiz.prepLines.2'],
+  ['qzPrep4', '../quiz.prepLines.3'],
+  ['qzPrepTime', '../quiz.prepTime'],
+  ['qzPrepSlow', '../quiz.prepSlow'],
+  ['qzPrepComing', '../quiz.prepComing'],
+  ['qzOptRight', '../quiz.optRight'],
+  ['qzOptPick', '../quiz.optPick'],
+  ['qzNextQuestion', '../quiz.nextQuestion'],
   ['askEmpty', 'room.empty'],
   ['askPhShort', 'room.placeholder'],
   ['insightsHead', 'digest.overview'],
@@ -113,9 +173,11 @@ test('every pinned key exists in both of Heddy’s languages', () => {
 
 for (const [lang, locale] of LOCALES) {
   test(`the desk’s ${lang} words equal Classroom’s ${locale} catalog`, { skip }, () => {
-    const site = JSON.parse(readFileSync(file(locale), 'utf8')).classroom;
+    const all = JSON.parse(readFileSync(file(locale), 'utf8'));
+    const site = all.classroom;
     for (const [key, path, fix] of PINS) {
-      const theirs = at(site, path);
+      // '../quiz.title' is the catalog's root (the quiz's words live beside classroom.*).
+      const theirs = path.startsWith('../') ? at(all, path.slice(3)) : at(site, path);
       assert.equal(typeof theirs, 'string', `classroom.${path} is gone from ${locale}`);
       assert.equal(ours[lang][key].message, asChrome(fix ? fix(theirs) : theirs), `${key} ↔ classroom.${path} (${locale})`);
     }

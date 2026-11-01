@@ -32,6 +32,7 @@
   var C = root.HeddyConfig;
   var AV = root.HeddyAskView;
   var TR = root.HeddyDeskTray;
+  var QZ = root.HeddyDeskQuiz;
 
   var TICK_MS = 250;
   var SAY_MS = 3500;
@@ -273,15 +274,22 @@
 
     var widthNow = null; // the width the page's style says, while it is there
 
+    var dragging = false; // the edge is being dragged: no layout re-decision until the drop
+
     /** The child's width (or Classroom's 410 px), as much of it as fits. */
     function applyWidth(viewportW) {
-      var w = D.deskWidthFor(prefs.width, viewportW);
+      if (writeWidth(D.deskWidthFor(prefs.width, viewportW))) playerResized();
+    }
+
+    /** The desk and YouTube's column at `w`, nothing else (no layout
+     *  decision). Returns whether the page's style changed. */
+    function writeWidth(w) {
       host.style.setProperty('--heddy-w', w + 'px');
       if (ui && ui.rz) {
         ui.rz.hidden = false;
         ui.rz.setAttribute('aria-valuenow', String(w));
       }
-      if (widthNow === w && doc.getElementById(WIDTH_STYLE_ID)) return;
+      if (widthNow === w && doc.getElementById(WIDTH_STYLE_ID)) return false;
       var tag = doc.getElementById(WIDTH_STYLE_ID);
       if (!tag) {
         tag = doc.createElement('style');
@@ -290,7 +298,7 @@
       }
       tag.textContent = D.sidebarCss(w);
       widthNow = w;
-      playerResized();
+      return true;
     }
 
     /** YouTube's page as it was: the style goes, the player sizes again. */
@@ -324,27 +332,45 @@
       rz.setAttribute('aria-valuemin', String(D.DESK_W.min));
       rz.setAttribute('aria-valuemax', String(D.DESK_W.max));
       rz.tabIndex = 0;
+      // Round 13b: the latest pointer position wins (lib/desk-model.js
+      // createWidthDrag); each frame only writes the width (desk, YouTube's
+      // column, the pill) and tells the player once; the drop commits the
+      // pointer's own width and places the desk once.
       var drag = null;
-      var raf = 0;
+      function vw() { return doc.documentElement.clientWidth || root.innerWidth; }
       rz.addEventListener('pointerdown', function (e) {
         if (e.button !== 0) return;
         e.preventDefault();
         rz.setPointerCapture(e.pointerId);
-        drag = { x: e.clientX, w: host.getBoundingClientRect().width };
+        dragging = true;
         rz.setAttribute('data-drag', '');
+        drag = D.createWidthDrag({
+          startW: widthNow || host.getBoundingClientRect().width,
+          startX: e.clientX,
+          raf: function (fn) { root.requestAnimationFrame(fn); },
+          apply: function (w) {
+            prefs.width = w;
+            if (writeWidth(D.deskWidthFor(w, vw()))) playerResized();
+            if (ui) ui.geo = placeInd();
+          },
+          commit: function (w) {
+            prefs.width = w;
+            setLocal(PREF.width, w);
+          },
+        });
       });
       rz.addEventListener('pointermove', function (e) {
-        if (!drag) return;
-        // The edge is on the left: dragging left widens the desk.
-        var next = drag.w + (drag.x - e.clientX);
-        if (raf) return;
-        raf = root.requestAnimationFrame(function () { raf = 0; setWidth(next, false); });
+        if (drag) drag.move(e.clientX);
       });
-      function end() {
+      function end(e) {
         if (!drag) return;
+        var d = drag;
         drag = null;
+        d.end(e && e.type === 'pointerup' ? e.clientX : null);
+        dragging = false;
         rz.removeAttribute('data-drag');
-        setLocal(PREF.width, prefs.width);
+        place();
+        playerResized();
       }
       rz.addEventListener('pointerup', end);
       rz.addEventListener('pointercancel', end);
@@ -411,7 +437,7 @@
     function build() {
       host = doc.createElement('heddy-desk');
       shadow = host.attachShadow({ mode: 'closed' });
-      shadow.innerHTML = '<style>' + CSS + '\n' + AV.CSS + '\n' + TR.CSS + '</style>';
+      shadow.innerHTML = '<style>' + CSS + '\n' + AV.CSS + '\n' + TR.CSS + '\n' + QZ.CSS + '</style>';
       var cd = el('section', 'cd');
       cd.setAttribute('aria-label', 'Heddy');
 
@@ -471,9 +497,10 @@
       var tabs = el('div', 'tabs');
       tabs.setAttribute('role', 'tablist');
       var tabEls = {};
-      // No quiz on this video (8a: none yet), so no Quiz tab, as Classroom
-      // draws none (Round 12, owner): Jot · Digest · Insights and the crest.
-      [['jot', 'jot'], ['digest', 'digest'], ['insights', 'insights']].forEach(function (t) {
+      // The Quiz tab is drawn only when the site says this video, in the
+      // child's My Clips, has a quiz `ready` (Round 13, D104); otherwise there
+      // is no Quiz tab, as Classroom draws none (D98): Jot · Digest · Insights.
+      [['quiz', 'quiz'], ['jot', 'jot'], ['digest', 'digest'], ['insights', 'insights']].forEach(function (t) {
         var b = btn('tab', ic(t[1]));
         b.setAttribute('role', 'tab');
         b.appendChild(el('span'));
@@ -579,8 +606,13 @@
       // The row's boxes change without a tab change (a font arrives, the
       // column narrows): the pill is placed again, never animated.
       if (root.ResizeObserver) {
+        // Round 13b: each tab and the crest too: a tab's own box changes (the
+        // Jot count, EN | 中, the Quiz tab coming or going, a font) while the
+        // row's may not, and the pill must follow it.
         var ro = new root.ResizeObserver(function () { if (ui) ui.geo = placeInd(); });
         ro.observe(tabs);
+        Object.keys(tabEls).forEach(function (k) { ro.observe(tabEls[k]); });
+        ro.observe(crest);
       }
     }
 
@@ -643,14 +675,15 @@
       ui.close.setAttribute('aria-label', tr('deskClose'));
       ui.full.lastChild.textContent = tr('deskFull');
       ui.full.title = tr('deskFullTitle');
-      var names = { jot: 'deskTabJot', digest: 'deskTabDigest', insights: 'deskTabInsights' };
+      var names = { quiz: 'deskTabQuiz', jot: 'deskTabJot', digest: 'deskTabDigest', insights: 'deskTabInsights' };
+      ui.tabs.quiz.hidden = !tabLive('quiz');
       Object.keys(ui.tabs).forEach(function (k) {
         var b = ui.tabs[k];
         b.querySelector('span').textContent = tr(names[k]);
         b.setAttribute('aria-selected', String(st.tab === k));
         b.setAttribute('aria-disabled', String(!tabLive(k)));
         // A tab with nothing behind it says why, and is never selected (D77).
-        if (!tabLive(k)) b.title = tr('deskInsightsSoon');
+        if (!tabLive(k) && k === 'insights') b.title = tr('deskInsightsSoon');
         else b.removeAttribute('title');
       });
       ui.tabs.jot.querySelector('small').textContent = String(st.jots.length);
@@ -664,7 +697,9 @@
       var from = ui.shown;
       ui.shown = st.tab;
       if (from !== st.tab) moved(from);
-      else if (!ui.geo) ui.geo = placeInd();
+      // Every relabel can move the selected tab (the Jot count, EN | 中, the
+      // set of tabs shown): the pill is placed again, not animated.
+      else ui.geo = placeInd();
       ui.rz.setAttribute('aria-label', tr('deskWidthLabel'));
       ui.rz.title = tr('deskWidthTitle');
       ui.fname.textContent = isMentor() ? tr('deskFootMentor') : tr('deskFoot', profName());
@@ -680,7 +715,7 @@
     }
 
     function tabLive(k) {
-      if (k === 'quiz') return false; // 8b (D77)
+      if (k === 'quiz') return st.video.quiz === 'ready'; // D104
       if (k === 'insights') return st.insights.status !== 'unknown' && st.insights.status !== 'unavailable';
       return true;
     }
@@ -697,7 +732,7 @@
     /** The tabs the arrows walk, in the row's order: the ones that open, then
      *  the crest (the Ask tab, D80). */
     function shownTabs() {
-      return ['jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
+      return ['quiz', 'jot', 'digest', 'insights'].filter(tabLive).concat(['ask']);
     }
 
     /** ←/→ (Classroom's onKey): the next or previous shown tab, wrapping,
@@ -746,7 +781,10 @@
       ui.chip = null;
       ui.say = null;
       askView.detach();
+      quizView.detach();
+      ui.cd.removeAttribute('data-rest');
       if (st.tab === 'ask') return askView.draw(pn);
+      if (st.tab === 'quiz' && tabLive('quiz')) return quizView.draw(pn);
       if (st.tab === 'jot') return drawJot(pn);
       if (st.tab === 'digest') return drawDigest(pn);
       if (st.tab === 'insights' && tabLive('insights')) return drawInsights(pn);
@@ -1224,6 +1262,24 @@
         st.video.professor = { code: p.code, name: p.name, nameZh: p.name, sc: c.sc, scSoft: c.scSoft };
         label();
       },
+    });
+
+    // The Quiz tab (lib/desk-quiz.js): Classroom's quiz, inside the desk.
+    var quizView = QZ.create({
+      doc: doc,
+      tr: function () { return tr; },
+      name: profName,
+      subjectName: function () { var p = st && st.video.professor; return p && p.code ? tr('subj' + p.code) : ''; },
+      eyes: EYES,
+      send: function (body) {
+        if (!st) return Promise.resolve(null);
+        return deps.send(Object.assign({ type: 'heddy-desk:quiz', youtubeId: st.id }, body)).then(function (r) { return r || { ok: false, status: 0 }; });
+      },
+      seekPlay: function (t) { seekPlay(t); },
+      openSite: function (path) { openSite(path); },
+      signIn: function () { openSite('/auth/login?door=kid'); },
+      // Classroom's resting motion keys on the desk at rest on the Quiz tab.
+      onRest: function (atRest) { if (ui) ui.cd.toggleAttribute('data-rest', atRest); },
     });
 
     /** A page on aitutors.me in a new tab; the background checks the path. */
@@ -2270,6 +2326,7 @@
         if (st && st.id === id) return;
         if (st) api.close(true);
         st = fresh(id);
+        quizView.reset();
         if (!host) build();
         ui.shown = null; // a new video: the pill is placed, not slid
         ui.geo = null;
@@ -2293,7 +2350,7 @@
             st.video = { status: 'signedOut', professor: null, jotterHref: null };
             st.insights.status = 'unavailable';
           } else if (r && r.ok) {
-            st.video = { status: 'ok', professor: r.professor, jotterHref: r.jotterHref };
+            st.video = { status: 'ok', professor: r.professor, jotterHref: r.jotterHref, quiz: r.quiz };
             loadTranscript();
           } else {
             // 'forbidden': aitutors.me does not know this copy of Heddy (an
@@ -2404,7 +2461,8 @@
         wantZh();
       },
 
-      resize: function () { if (st) place(); },
+      // While the edge is dragged the desk is not placed again (the drop places it).
+      resize: function () { if (st && !dragging) place(); },
 
       /** D76: Heddy was reloaded under the page. */
       destroy: function () {

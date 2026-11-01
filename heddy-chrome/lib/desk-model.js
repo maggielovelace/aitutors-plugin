@@ -384,6 +384,44 @@
     return Math.max(DESK_W.min, Math.min(want, Math.floor(viewportW - PAGE_CHROME - PRIMARY_MIN)));
   }
 
+  /**
+   * A drag of the desk's edge (Round 13b): the LATEST pointer position wins.
+   * Each move records the width under the pointer and asks for one frame;
+   * the frame applies whatever is latest then (never a stale move), and the
+   * drop applies and commits the pointer's own width.
+   * o: { startW, startX, raf(fn), apply(w) each frame, commit(w) on drop }.
+   */
+  function createWidthDrag(o) {
+    var latest = null;
+    var pending = false;
+    var done = false;
+    function frame() {
+      pending = false;
+      if (!done && latest !== null) o.apply(latest);
+    }
+    return {
+      move: function (x) {
+        if (done || !num(x)) return;
+        // The edge is on the left: dragging left widens the desk.
+        latest = deskWidth(o.startW + (o.startX - x));
+        if (!pending) {
+          pending = true;
+          o.raf(frame);
+        }
+      },
+      /** The drop: `x` (pointerup's) is the last word; null keeps the last move. */
+      end: function (x) {
+        if (done) return null;
+        if (num(x)) latest = deskWidth(o.startW + (o.startX - x));
+        done = true;
+        var w = latest === null ? deskWidth(o.startW) : latest;
+        o.apply(w);
+        o.commit(w);
+        return w;
+      },
+    };
+  }
+
   /** The style Heddy puts in YouTube's page while the desk is open: the
    *  sidebar width YouTube reads, on the two-column watch page only (never
    *  theatre, fullscreen or the one-column layout). Removing it restores
@@ -460,6 +498,7 @@
     deskWidth: deskWidth,
     deskWidthFor: deskWidthFor,
     sidebarCss: sidebarCss,
+    createWidthDrag: createWidthDrag,
     MAX_CHAPTERS: MAX_CHAPTERS,
     secondsOf: secondsOf,
     chaptersOf: chaptersOf,
