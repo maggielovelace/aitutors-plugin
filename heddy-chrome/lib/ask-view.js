@@ -58,6 +58,11 @@
     '.talk .subj .chips{display:flex;flex-wrap:wrap;gap:6px}',
     '.talk .subj .chips button{height:28px;border-radius:999px;border:1px solid var(--line);background:var(--surface);padding:0 11px;font:700 12px ' + SANS + ';color:var(--ink-deep)}',
     '.talk .left{align-self:center;font:600 11px ' + MONO + ';color:var(--muted)}',
+    // Classroom's context chip (clip-room.css .cp-room__ctx).
+    '.talk .ctx{align-self:stretch;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:8px 10px;border-radius:10px;background:var(--sunk);font:500 12.5px/1.4 ' + SANS + ';color:var(--ink-soft);white-space:normal}',
+    '.talk .ctx b{font:600 11px ' + MONO + ';color:var(--sc);padding-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}',
+    '.talk .ctx q{quotes:"\\201C" "\\201D";overflow-wrap:anywhere;min-width:0}',
+    '.talk .ctx .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}',
     '.askb{margin-top:auto;margin-inline:-18px;padding:10px 18px 12px;border-top:1px solid var(--line);display:grid;gap:8px;flex:none;background:var(--surface)}',
     '.askb .chips{display:flex;gap:6px}',
     '.askb .chips button{height:28px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);padding:0 11px;display:flex;align-items:center;font:700 12px ' + SANS + ';color:var(--ink-soft)}',
@@ -186,6 +191,19 @@
       var talk = ui.talk;
       talk.textContent = '';
       var site = opts.site ? opts.site() : '';
+      // The picked words, always in sight (Round 13c: Ask from Heddy ▾ on a
+      // page showed nothing of them): Classroom's context chip.
+      var chip = A.contextChip(state, site);
+      if (chip) {
+        var cx = el(doc, 'div', 'ctx');
+        cx.title = chip.label;
+        cx.appendChild(el(doc, 'b', null, chip.label));
+        var qq = el(doc, 'q');
+        qq.appendChild(el(doc, 'span', 'sr', tr('askYouPicked') + ': '));
+        qq.appendChild(doc.createTextNode(chip.quote));
+        cx.appendChild(qq);
+        talk.appendChild(cx);
+      }
       state.items.forEach(function (it, i) {
         if (it.who === 'me') {
           var me = el(doc, 'div', 'me');

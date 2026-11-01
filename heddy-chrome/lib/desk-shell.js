@@ -289,8 +289,16 @@
     // desk's top, 5 s (200 ms in, 350 ms out), after every jot on any tab.
     '.cd{position:relative}',
     '.jt{position:absolute;z-index:6;left:10px;right:10px;top:56px;display:grid;gap:4px;padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 12px 30px rgb(0 33 71 / .12);font:500 13px/1.45 ' + SANS + ';color:var(--ink);text-align:left}',
-    '.jt[data-anim]{animation:hd-toast 5s ease both}',
-    '@keyframes hd-toast{0%{opacity:0;transform:translateY(-6px)}4%,93%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-4px)}}',
+    // D110: in over 200 ms (Classroom's drop of 6 px); it stays while held, so
+    // there is no timed fade inside the animation any more.
+    '.jt[data-anim]{animation:hd-toast-in .2s ease both}',
+    '@keyframes hd-toast-in{0%{opacity:0;transform:translateY(-6px)}100%{opacity:1;transform:none}}',
+    '.jt{padding-right:40px}',
+    // The ×: Classroom's close glyph in a 28 px hit area at the top right.
+    '.jt .jx{position:absolute;top:6px;right:6px;width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:var(--muted);cursor:pointer}',
+    '.jt .jx:hover{background:var(--sunk);color:var(--ink-deep)}',
+    '.jt .jx:focus-visible{outline:2px solid var(--sc);outline-offset:-2px}',
+    '.jt .jx .vi{width:14px;height:14px}',
     '@media (prefers-reduced-motion:reduce){.jt[data-anim]{animation:none}}',
     '.jt .hd2{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;min-width:0}',
     '.jt .ok,.jt .bad{display:inline-flex;align-items:center;gap:6px;font:700 12px ' + SANS + ';color:#1f6a40}',

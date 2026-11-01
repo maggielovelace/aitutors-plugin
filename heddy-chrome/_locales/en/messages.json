@@ -608,7 +608,6 @@
     "message": "I'm watching along. Ask me anything about this bit, or pick a line in the Digest and press Ask $NAME$.",
     "placeholders": { "name": { "content": "$1", "example": "Newton" } }
   },
-  "deskOpenInJotterTitle": { "message": "Opens your Jotter on aitutors.me in a new tab" },
   "deskWidthLabel": { "message": "Desk width" },
   "deskWidthTitle": { "message": "Drag to make the desk wider or narrower · double-click for the usual width" },
   "qzButton": {
@@ -759,5 +758,14 @@
   },
   "qzOptRight": { "message": "Right" },
   "qzOptPick": { "message": "Your pick" },
-  "qzNextQuestion": { "message": "Next question" }
+  "qzNextQuestion": { "message": "Next question" },
+  "deskTranscriptBusy": {
+    "message": "$NAME$ has read a lot of transcripts today. Try again later.",
+    "placeholders": { "name": { "content": "$1", "example": "Newton" } }
+  },
+  "askYouPicked": { "message": "You picked" },
+  "qzResultsMentor": {
+    "message": "You found $N$ of $TOTAL$. Before watching you said $GUESS$; now you've seen what the clip showed.",
+    "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" } }
+  }
 }

@@ -49,7 +49,8 @@
   var HEX = /^#[0-9a-f]{6}$/i;
   var SUBJECT = /^[A-Z]{3,5}$/;
   var JOTTER_HREF = /^\/study\/jotters\/v\/[A-Za-z0-9_-]{11}$/;
-  var STATUS = ['ok', 'none', 'locked', 'error'];
+  // 'busy' (Round 13c, D108): the site's daily caption ceiling refused the read.
+  var STATUS = ['ok', 'none', 'locked', 'error', 'busy'];
   var ZH_STATE = ['idle', 'ready', 'writing', 'failed', 'locked'];
   var KEYPOINT_STATUS = ['ok', 'writing', 'failed', 'locked', 'none'];
   var ERROR = { ok: false, error: 'network' };
@@ -163,7 +164,8 @@
         checkId: d.checkId,
         subjectCode: typeof d.subjectCode === 'string' && SUBJECT.test(d.subjectCode) ? d.subjectCode : null,
         subject: text(d.subject, 60),
-        tutor: { name: text(d.tutor && d.tutor.name, MAX_NAME) || null },
+        // r13c: tutor.id 'mentor' is a quiz on a video with no subject (no deck, no cards).
+        tutor: { id: text(d.tutor && d.tutor.id, 40) || null, name: text(d.tutor && d.tutor.name, MAX_NAME) || null },
         topic: { id: text(d.topic && d.topic.id, 80), name: text(d.topic && d.topic.name, 200) },
         range: { startSec: num(v.startSec) && v.startSec >= 0 ? v.startSec : 0, endSec: num(v.endSec) && v.endSec > 0 ? v.endSec : null },
         predict: predict,
@@ -299,6 +301,9 @@
           var act = message.action;
           if (QUIZ_ACTIONS.indexOf(act) < 0) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
           var qb = { action: act, youtubeId: id };
+          // r13c D109: the page's title names the subject of a video in no clip; sent on every action.
+          var qt = text(message.title, 300);
+          if (qt) qb.title = qt;
           if (act !== 'start') {
             if (typeof message.checkId !== 'string' || !UUID.test(message.checkId)) return Promise.resolve({ ok: false, status: 400, type: 'bad-request' });
             qb.checkId = message.checkId;

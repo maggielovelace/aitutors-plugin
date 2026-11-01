@@ -57,7 +57,8 @@
     if (st === 401) return 'signedOut';
     if (st === 403 && (type === 'locked' || type === 'no-subscription')) return 'locked';
     if (st === 403 && type === 'quota') return 'quota';
-    if (st === 404) return 'unavailable';
+    // r13c D109: 409 { type: 'none' } is "no quiz for this video" (404 before).
+    if (st === 404 || (st === 409 && type === 'none')) return 'unavailable';
     if (st === 429) return 'cap';
     if (st === 403) return 'noPlan';
     return 'failed';
@@ -399,13 +400,15 @@
       var answered = q.outcomes.filter(Boolean).length;
       var view;
       if (q.phase === 'loading') {
-        var lines = [tr('qzPrep1'), tr('qzPrep2'), tr('qzPrep3'), tr('qzPrep4')];
+        // Mentor's quiz makes no cards: its preparing lines leave the card out.
+        var noCards = !!(opts.isMentor && opts.isMentor());
+        var lines = noCards ? [tr('qzPrep1'), tr('qzPrep2'), tr('qzPrep3')] : [tr('qzPrep1'), tr('qzPrep2'), tr('qzPrep3'), tr('qzPrep4')];
         view = { kind: 'prep', text: tr('qzPrep', name()) };
         var prep = el('div', 'vq-prep');
         prep.setAttribute('role', 'status');
         prep.appendChild(el('p', 'vq-prep__line', q.elapsed >= PREP_SLOW_S ? tr('qzPrepSlow') : lines[Math.min(lines.length - 1, Math.floor(q.elapsed / PREP_SENTENCE_S))]));
         prep.appendChild(el('p', 'vq-fine', tr('qzPrepTime', String(q.elapsed))));
-        prep.appendChild(el('p', 'vq-fine', tr('qzPrepComing', String(total))));
+        if (!noCards) prep.appendChild(el('p', 'vq-fine', tr('qzPrepComing', String(total))));
         if (q.elapsed >= PREP_RETRY_S) {
           var rr = el('div', 'vq-row');
           rr.appendChild(button('vq-btn', tr('qzTryAgain'), start));
@@ -508,8 +511,11 @@
       } else {
         // Results (QuizResults).
         var res = q.result;
+        // Mentor's quiz (a video with no subject, owner 2026-11-01): no deck and no
+        // subject, so nothing about cards or a revision record (the site mints none).
+        var mentor = !!(set.tutor && set.tutor.id === 'mentor');
         var guessText = q.guessed && q.guess !== null && set.predict ? set.predict.options[q.guess] : tr('qzNoGuess');
-        view = { kind: 'results', text: tr(res.misses > 0 ? 'qzResults' : 'qzResultsAll', String(res.correct), String(total), guessText, name()) };
+        view = { kind: 'results', text: tr(mentor ? 'qzResultsMentor' : res.misses > 0 ? 'qzResults' : 'qzResultsAll', String(res.correct), String(total), guessText, name()) };
         var box = el('div', 'vq-results');
         var score = el('p', 'vq-score');
         score.appendChild(el('span', 'vq-score__n', res.correct + ' / ' + total));
@@ -533,9 +539,12 @@
         });
         box.appendChild(ul);
         if (res.correct === total) box.appendChild(el('p', 'vq-chip', tr('qzQuizzed')));
-        box.appendChild(el('p', 'vq-fine', '✓ ' + tr('qzRecorded', opts.subjectName() || set.subject || '')));
+        // "Added to your {subject} revision record.": a Mentor quiz (a video
+        // with no subject, owner 2026-11-01) has no subject to name, so no line.
+        var subj = opts.subjectName() || set.subject || '';
+        if (subj && !mentor) box.appendChild(el('p', 'vq-fine', '✓ ' + tr('qzRecorded', subj)));
         var rrow = el('div', 'vq-row');
-        if (res.misses > 0) {
+        if (res.misses > 0 && !mentor) {
           if (q.minted === null) {
             var add = button('vq-btn go', null, addCards);
             add.insertAdjacentHTML('beforeend', icon('add'));

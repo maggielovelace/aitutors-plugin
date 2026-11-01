@@ -182,6 +182,16 @@
     return { key: 'askAboutPage', args: [who] };
   }
 
+  /** Classroom's context chip at the top of the room (MiniRoomView
+   *  .cp-room__ctx; CaptureRoom names the page's host): for an Ask about
+   *  picked words, the words in quotes under a label: the second on a video,
+   *  the page's host on the web. Null when there are no picked words (the
+   *  crest's Ask about a video carries its line on the first bubble). */
+  function contextChip(state, site) {
+    if (!state || state.about !== 'words' || !state.attach || state.attach.kind !== 'text') return null;
+    return { label: state.atLabel || oneLine(site, 100) || '', quote: state.attach.quote };
+  }
+
   /** The words the child's bubble shows for a chip, as a message key. */
   function chipKey(intent, about) {
     if (intent === 'card') return 'askMakeCard';
@@ -349,6 +359,7 @@
     markKept: markKept,
     changeCard: changeCard,
     openAsk: openAsk,
+    contextChip: contextChip,
   };
   root.HeddyDeskAsk = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

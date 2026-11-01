@@ -91,7 +91,7 @@ test('Jot it: the chosen words as a line jot at the line’s start', () => {
 
 test('Explain, Make a card and Ask go to the desk’s Ask view, about the words, at the line’s start; Ask sends them as the first message', () => {
   const desk = read('content/desk.js');
-  assert.match(desk, /root\.HeddyDeskAsk\.openAsk\(\{ about: 'words', attach: attach, at: at \}, api, intent, intent === 'ask' \? sel\.words : undefined\);/);
+  assert.match(desk, /root\.HeddyDeskAsk\.openAsk\(\{ about: 'words', attach: attach, at: at, atLabel: P\.clockOf\(at\) \}, api, intent, intent === 'ask' \? sel\.words : undefined\);/);
   assert.match(desk, /extra: function \(\) \{ return \{ t: askAt !== null \? askAt : now\(\) \}; \}/);
   let got = null;
   A.openAsk({ about: 'words' }, { openAsk: (ctx, intent, text) => { got = { ctx, intent, text }; } }, 'ask', '  速度不变 ');
@@ -258,18 +258,12 @@ test('#4 a tab with nothing behind it is drawn disabled, says why, and never tak
   assert.match(desk, /if \(!tabLive\(k\) && k === 'insights'\) b\.title = tr\('deskInsightsSoon'\);/);
 });
 
-test('#5 the jot pop-up after every jot: “● Note saved · 0:31 — title”, the line, Undo · Save to My Jotters (then Open in Jotter ↗), 5 s, 56 px under the desk’s top', () => {
+test('#5 the jot pop-up after every jot: “● Note saved · 0:31 — title”, the line, Undo, 56 px under the desk’s top (Round 13c D110: ×, 3 s, Undo only)', () => {
   assert.match(SH.CSS, /\.jt\{position:absolute;z-index:6;left:10px;right:10px;top:56px;/);
-  assert.match(SH.CSS, /\.jt\[data-anim\]\{animation:hd-toast 5s ease both\}/);
-  assert.match(desk, /var TOAST_MS = 5000;/);
   assert.match(desk, /hd\.appendChild\(el\('span', 'ok', tr\('deskNoteSaved'\)\)\);/);
   assert.match(desk, /P\.clockOf\(j\.t\) \+ ' — ' \+ \(deps\.title\(\) \|\| ''\)/);
-  assert.match(desk, /var save = el\('button', 'jl', tr\('deskSaveJotters'\)\);/, 'owner: Save to My Jotters first, no tab');
-  assert.match(desk, /saveToJotters\(\)\.then\(function \(r\) \{/);
-  assert.match(desk, /open\.addEventListener\('click', function \(\) \{ hideToast\(\); openSite\(r\.href\); \}\);\n              save\.replaceWith\(open\);/, 'then Open in Jotter ↗, which leaves');
   for (const call of ['jotted(r.last.id, key);', 'jotted(id, false);']) assert.ok(desk.includes(call), call);
   assert.equal(I.t('en', 'deskNoteSaved'), 'Note saved');
-  assert.equal(I.t('zh_CN', 'deskOpenInJotter'), '在笔记本里打开');
 });
 
 test('#6–#8 every jot row is a button that plays from its time, with the play glyph on hover, the word Delete, and an H on a jot made with H', () => {

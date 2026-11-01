@@ -14,9 +14,9 @@ const A = load('./lib/desk-api.js');
 const desk = read('content/desk.js');
 const CHECK = '0f8fad5b-d9cb-469f-a165-70867728950e';
 
-test('the version is 0.8.0, with no new permission; the quiz script loads before the desk', () => {
+test('Round 13 asks for no new permission (the version: tests/round13c.test.mjs); the quiz script loads before the desk', () => {
   const m = manifest();
-  assert.equal(m.version, '0.8.0');
+  assert.notEqual(m.version, '0.7.1');
   assert.deepEqual(m.permissions, ['activeTab', 'scripting', 'contextMenus', 'commands', 'storage']);
   const js = m.content_scripts[0].js;
   assert.ok(js.indexOf('lib/desk-quiz.js') > js.indexOf('lib/desk-shell.js') && js.indexOf('lib/desk-quiz.js') < js.indexOf('content/desk.js'));
