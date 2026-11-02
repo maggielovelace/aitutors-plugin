@@ -19,6 +19,10 @@
 //   Saving: the cards dimmed, the spinner. Saved: the green card with Open my
 //   Jotter ↗ (the only tab, on tap) and Undo. A failure keeps the sources;
 //   signed out offers Sign in.
+//   Save into (site PRD-v0.122.0 R30, R14, App. A; lib/save-into.js): for a
+//   signed-in child, one "Into" line above the button opens the list of
+//   Jotters, and the button names where the save goes. Signed out, a
+//   grown-up, or the list unavailable: no line, and the save is as before.
 //
 // Ask (D84): lib/ask-view.js, opened by the crest or by Heddy ▾ on the
 // page (lib/web-routes.js leaves a pending ask for this tab and says so).
@@ -32,6 +36,7 @@
   var TT = root.HeddyTrayTools;
   var I = root.HeddyI18n;
   var CARDS = root.HeddyCards;
+  var SI = root.HeddySaveInto;
 
   var SANS = 'Manrope,Roboto,Arial,sans-serif';
   var SERIF = '"Source Serif 4",Georgia,"Times New Roman",serif';
@@ -144,6 +149,9 @@
       error: null, // { key, args, signIn }
       professor: null, // { code, name } once the Ask view's stream names one
       focus: null,
+      // Save into: shown only for a child (App. A 1). target: lib/save-into.js's.
+      // Save into (lib/save-into.js freshInto: mode, page hint, target…).
+      into: SI.freshInto(o.state && o.state.url),
     };
     var ui = {};
 
@@ -168,7 +176,7 @@
 
     function build() {
       var style = el('style');
-      style.textContent = DK.CSS + '\n' + AV.CSS + '\n' + CSS;
+      style.textContent = DK.CSS + '\n' + AV.CSS + '\n' + CSS + '\n' + SI.css(SANS, MONO);
       document.head.appendChild(style);
       document.body.classList.add('webdesk');
       if (o.host !== 'panel') document.body.classList.add('inpopup');
@@ -282,10 +290,14 @@
 
     function draw() {
       var pn = ui.pn;
+      if (ui.into) ui.into.cleanup();
+      ui.into = null;
       pn.textContent = '';
       askView.detach();
       if (st.tab === 'ask') return askView.draw(pn);
       drawSources(pn);
+      // The list stays open, with its key box focused, when the cards change under it.
+      if (st.into.open && ui.into && document.activeElement !== ui.into.box) ui.into.focusBox();
     }
 
     // ─── Sources ─────────────────────────────────────────────────────────
@@ -541,13 +553,22 @@
         chk.appendChild(words);
         svb.appendChild(chk);
       }
+      if (st.into.show) svb.appendChild(intoLine());
       var go = btn('sgo' + (st.saving ? ' busy' : ''), null, null);
-      if (st.saving) {
+      var waiting = SI.saveHeld(st.into);
+      if (waiting && !st.saving) {
+        // Keep saving is on: no save until the list says who is signed in.
+        go.disabled = true;
+        go.setAttribute('aria-disabled', 'true');
+        go.appendChild(el('span', null, SI.buttonLabel(tr, n, target())));
+      } else if (st.saving) {
         go.setAttribute('aria-busy', 'true');
         go.appendChild(el('span', 'spin'));
         go.appendChild(el('span', null, n ? tr('savingN', String(n)) : tr('savingPage')));
       } else {
-        go.appendChild(el('span', null, n ? (n === 1 ? tr('saveOne') : tr('saveN', String(n))) : tr('savePage')));
+        // The button names where the save goes (R30); a new Jotter keeps
+        // the existing words.
+        go.appendChild(el('span', null, SI.buttonLabel(tr, n, target())));
         go.addEventListener('click', save);
       }
       svb.appendChild(go);
@@ -557,25 +578,152 @@
       return svb;
     }
 
+    // ─── Save into (R30, R14, App. A) ────────────────────────────────────
+
+    /** Where this save goes: the choice only while the line is shown. */
+    function target() {
+      return SI.targetOf(st.into);
+    }
+
+    function intoLine() {
+      var into = st.into;
+      var v = SI.draw({
+        doc: document,
+        tr: tr,
+        lang: lang,
+        now: function () { return new Date(); },
+        target: into.target,
+        keep: into.keep,
+        jotters: into.jotters,
+        page: into.page,
+        open: into.open,
+        query: into.query,
+        busy: st.saving,
+        onPick: function (t) {
+          var r = SI.pick(t, into.keep);
+          into.target = r.target;
+          // R14: picking another option ends keep saving.
+          if (into.keep && !r.keep) setKeep(null);
+          into.picked = true;
+          into.open = false;
+          into.query = '';
+          draw();
+          if (ui.into) ui.into.focusLine();
+        },
+        onKeep: function (on) {
+          setKeep(on ? SI.keepFor(into.target, new Date()) : null);
+          draw();
+          if (ui.into) ui.into.focusKeep();
+        },
+        onOpen: function (open, back) {
+          into.open = open;
+          if (!open) into.query = '';
+          draw();
+          if (!ui.into) return;
+          if (open) ui.into.focusBox();
+          else if (back) ui.into.focusLine();
+        },
+        onQuery: function (q) { into.query = q; },
+      });
+      ui.into = v;
+      return v.el;
+    }
+
+    /** Keep saving: stored for every page until local midnight (R14), or cleared. */
+    function setKeep(k) {
+      st.into.keep = k;
+      Promise.resolve().then(function () {
+        if (!k) return chrome.storage.local.remove(SI.INTO_KEY);
+        var o = {};
+        o[SI.INTO_KEY] = k;
+        return chrome.storage.local.set(o);
+      }).catch(function () {});
+    }
+
+    /** Local midnight: keep saving ends. A target that came from it goes
+     *  back to the default. Returns true when the target changed. */
+    function expireKeep() {
+      var into = st.into;
+      if (!into.keep || SI.keepOf(into.keep, new Date())) return false;
+      var was = into.target;
+      setKeep(null);
+      if (into.picked) return false;
+      into.target = SI.defaultTarget(null, into.page);
+      return !SI.sameTarget(was, into.target) || was.id !== into.target.id;
+    }
+
+    var midnight = null;
+    function armMidnight() {
+      if (midnight !== null) clearTimeout(midnight);
+      midnight = setTimeout(function () {
+        midnight = null;
+        if (expireKeep() && st.tab === 'sources' && !st.saving) draw();
+        armMidnight();
+      }, SI.msToMidnight(new Date()));
+    }
+
+    var loadSeq = 0;
+
+    /** The child's Jotters (GET /api/learn/heddy/jotters, from the
+     *  background, for the tab's page now; SI.withList). An answer overtaken
+     *  by a later request (another page) is dropped. */
+    function loadJotters() {
+      var seq = ++loadSeq;
+      return call({ type: 'heddy-web:jotters' }).then(function (r) {
+        if (seq !== loadSeq) return;
+        SI.withList(st.into, r);
+        if (st.tab === 'sources' && !st.saving) draw();
+      });
+    }
+
+    /** The chosen Jotter has gone (App. A 6): nothing was saved. Keep saving
+     *  ends, the list is fetched again, "This page" is selected, and the
+     *  child is told. */
+    function jotterGone(gone) {
+      var g = SI.afterGone(st.into.page, gone);
+      setKeep(null);
+      st.into = Object.assign(st.into, { page: g.page, target: g.target, picked: g.picked, open: g.open, query: g.query, learned: !!g.page && st.into.learned });
+      if (st.into.mode === 'keep' || st.into.mode === 'wait') st.into.jotters = [];
+      st.error = { key: g.error.key, args: [g.error.name || tr('intoUntitled')] };
+      // The spinner goes now, not when the list answers.
+      draw();
+      return loadJotters();
+    }
+
     function fail(key, args) {
       st.error = { key: key, args: args || [] };
       if (st.tab === 'sources') draw();
     }
 
     function save() {
-      if (st.saving) return;
+      if (st.saving || SI.saveHeld(st.into)) return;
+      // R14: keep saving ends at local midnight even with the panel left
+      // open; if that moved the target, show it before anything is sent.
+      if (st.into.show && expireKeep()) { draw(); return; }
       var n = st.cards.length;
+      var into = target();
       st.saving = true;
       st.error = null;
+      st.into.open = false;
       draw();
-      call({ type: 'heddy-web:save', article: n ? st.article : true }).then(function (r) {
+      // jotterId only for a Jotter the child chose (App. A 2, 5).
+      call(Object.assign({ type: 'heddy-web:save', article: n ? st.article : true }, SI.bodyOf(into))).then(function (r) {
         st.saving = false;
         if (r.ok) {
           st.saved = { jotterTitle: r.jotterTitle, href: r.href, saveId: r.saveId, counts: r.counts || {}, dropped: r.dropped };
           st.article = false;
+          // Sent with no jotterId, the save went to this page's Jotter (R8):
+          // now it is known, "This page" names it.
+          if (into.kind !== 'jotter' && SI.isUuid(r.jotterId)) {
+            st.into.page = { id: r.jotterId, key: null, title: r.jotterTitle || '' };
+            st.into.learned = true;
+            if (!st.into.picked || st.into.target.kind !== 'jotter') st.into.target = SI.defaultTarget(st.into.keep, st.into.page);
+          }
+          if (st.into.show) loadJotters();
           // The background emptied the list; ask for it again to be sure.
           return call({ type: 'heddy-cards:get' }).then(function (g) { if (g.ok) setState(g, true); else draw(); });
         }
+        if (r.error === 'jotter_gone' && into.kind === 'jotter') return jotterGone(into);
         if (r.error === 'signed_out') st.error = { key: 'saveSignedOut', signIn: true };
         else if (r.error === 'forbidden') st.error = { key: 'deskForbidden', args: [chrome.runtime.id] };
         else if (r.error === 'too_big') st.error = { key: 'saveTooBig' };
@@ -641,6 +789,12 @@
 
     function setState(r, keepSaved) {
       if (!r || !Array.isArray(r.cards)) return;
+      if (typeof r.url === 'string' && r.url && r.url !== st.into.url) {
+        // A single-page site moved on without a reload (content/panel.js
+        // reloads the frame for that, but a save may come first).
+        if (st.into.url) { SI.withNavigation(st.into, r.url); loadJotters(); }
+        else st.into.url = r.url;
+      }
       st.cards = r.cards;
       st.counts = r.counts || CARDS.counts(r.cards);
       // A new card after a save: the Saved card has done its job.
@@ -718,6 +872,14 @@
       else if (m.type === 'heddy-web:ask') takePending();
     });
     chrome.storage.onChanged.addListener(function (changes, area) {
+      // Keep saving set or cleared in another tab's desk.
+      if (area === 'local' && changes[SI.INTO_KEY]) {
+        var into = st.into;
+        into.keep = SI.keepOf(changes[SI.INTO_KEY].newValue, new Date());
+        if (!into.picked) into.target = SI.defaultTarget(into.keep, into.page);
+        if (into.show && st.tab === 'sources' && !st.saving && !into.open) draw();
+        return;
+      }
       if (area !== 'sync' || !changes[I.STORAGE_KEY]) return;
       var next = changes[I.STORAGE_KEY].newValue === 'zh_CN' ? 'zh_CN' : 'en';
       if (next === lang) return;
@@ -727,6 +889,22 @@
       draw();
     });
     takePending();
+
+    // Save into: today's keep saving (an older one is cleared), then the list.
+    Promise.resolve()
+      .then(function () { return chrome.storage.local.get(SI.INTO_KEY); })
+      .catch(function () { return {}; })
+      .then(function (got) {
+        var raw = got && got[SI.INTO_KEY];
+        var keep = SI.keepOf(raw, new Date());
+        // A day that has passed is deleted now (R14: no use after midnight).
+        if (raw && !keep) setKeep(null);
+        // Today's keep saving shows at once; Save waits for the list.
+        SI.withKeep(st.into, keep);
+        if (keep && st.tab === 'sources' && !st.saving) draw();
+        armMidnight();
+        return loadJotters();
+      });
 
     return { setMode: setMode, refresh: refresh, openAsk: openAsk };
   }

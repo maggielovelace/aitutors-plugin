@@ -49,6 +49,7 @@
   var MAX_TITLE = 300;
   var KEY_PREFIX = 'heddyCards:';
   var CARD_ID = /^[a-z0-9-]{8,64}$/;
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   // ─── pure rules ────────────────────────────────────────────────────────────
 
@@ -235,6 +236,12 @@
     if (n.page) throw new Error('bad kind');
     if (n.text > MAX_TEXT || n.image > MAX_IMAGES) throw new Error('too many');
     var out = { url: url, title: T.cleanText(input.title, MAX_TITLE), items: items };
+    // Save into (site PRD-v0.122.0 App. A 5): a Jotter the child chose, by
+    // its UUID. Without one the site picks this page's Jotter (R8).
+    if (input.jotterId !== undefined && input.jotterId !== null) {
+      if (typeof input.jotterId !== 'string' || !UUID.test(input.jotterId)) throw new Error('bad jotter');
+      out.jotterId = input.jotterId;
+    }
     if (input.article) {
       var a = cleanItem({ kind: 'page', markdown: input.article.markdown, cut: input.article.cut });
       out.article = { markdown: a.markdown };
@@ -465,7 +472,7 @@
     /** Save n to my Jotters (D82): every card, and with `withArticle` (or
      *  with no card: "Save this page to my Jotters") the page's article.
      *  Resolves to the contract's answer, the href still relative. */
-    function saveWeb(tab, withArticle) {
+    function saveWeb(tab, withArticle, jotterId) {
       return current(tab).then(function (s) {
         var sent = s.cards.slice();
         var items = sent.map(itemOf);
@@ -482,7 +489,7 @@
         return article.then(function (a) {
           var body;
           try {
-            body = buildWebSave({ url: s.url || tab.url, title: T.cleanText(tab.title, MAX_TITLE) || s.title, items: items, article: a });
+            body = buildWebSave({ url: s.url || tab.url, title: T.cleanText(tab.title, MAX_TITLE) || s.title, items: items, article: a, jotterId: jotterId || null });
           } catch (e) {
             return { ok: false, error: e && e.message === 'empty' ? 'empty' : 'invalid' };
           }
@@ -496,7 +503,7 @@
               roomAgain(now);
               return store(tab.id, now).then(function () { return changed(tab.id, now); });
             }).then(function () {
-              return { ok: true, jotterTitle: r.jotterTitle, href: r.href, saveId: r.saveId, counts: r.counts, dropped: r.dropped || null };
+              return { ok: true, jotterId: r.jotterId, jotterTitle: r.jotterTitle, href: r.href, saveId: r.saveId, counts: r.counts, dropped: r.dropped || null };
             });
           });
         });

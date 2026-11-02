@@ -235,7 +235,7 @@ test('Save n to my Jotters (D82): one request from the background, every card in
   await s.ask({ type: 'heddy-cards:add-text' });
   await keepBox(s);
   const r = await s.cards.saveWeb(s.tab, false);
-  assert.deepEqual(r, { ok: true, jotterTitle: 'Sparx Science', href: '/study/jotters/j1', saveId: 's1', counts: { snippets: 1, pictures: 1, article: false }, dropped: null });
+  assert.deepEqual(r, { ok: true, jotterId: 'j1', jotterTitle: 'Sparx Science', href: '/study/jotters/j1', saveId: 's1', counts: { snippets: 1, pictures: 1, article: false }, dropped: null });
   const body = s.calls.saves[0];
   assert.equal(body.url, PAGE);
   assert.equal(body.title, 'Sparx Science – Home');

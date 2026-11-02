@@ -2,14 +2,15 @@
 
 **English** · [简体中文](README.zh-CN.md#隐私)
 
-This page describes version 0.8.1.
+This page describes version 0.9.0.
 
 **Reads a page only when you ask it to.** Heddy for Chrome holds no account,
 password, key or token, and keeps only a few preferences, and the desk's
 unsaved jots, on your device. Its requests go only to aitutors.me, with your
 aitutors.me sign-in: one to ask who is signed in, the desk's five on a YouTube
-video, and the saves, Undos, cards, jots, clips and Ask conversations that you
-start yourself (all listed under *Every request Heddy makes*, below). Heddy
+video, one for the list of your Jotters when the panel opens on a page, and
+the saves, Undos, cards, jots, clips and Ask conversations that you start
+yourself (all listed under *Every request Heddy makes*, below). Heddy
 opens no window or tab unless you tap a link that says it leaves.
 
 ## What Heddy reads
@@ -108,6 +109,21 @@ else. If the question fails, Heddy shows "Not signed in".
 *Open my Jotter ↗* opens a tab. Until you save, or use *Full desk*, your jots
 stay in Heddy's storage on this computer.
 
+**Where a save goes.** When Heddy's panel opens on a page, Heddy asks
+`GET /api/learn/heddy/jotters`, with the cookie and the page's address
+(without the part after `#`). The address is sent only so aitutors.me can
+say which of your Jotters a save of this page would go to; it is not kept.
+For a signed-in
+child, aitutors.me answers with up to 30 of their own Jotters, each one's id,
+key (like JOT-27), title and when it was last saved to, and which one is this
+page's Jotter, if there is one; for a grown-up, or
+when no one is signed in, it answers with nothing. Heddy shows the list under
+*Into*, above the Save button, and forgets it when the panel closes. While
+it waits for the answer, a *Keep saving into JOT-n today* you ticked is shown
+and Save waits too. If the question fails, the save goes to this page's
+Jotter, as before, unless you ticked *Keep saving* today: then it still goes
+to that Jotter, and aitutors.me checks it is yours.
+
 **Saving and asking.** Each of these is sent only when you tap the button
 that names it:
 
@@ -115,7 +131,8 @@ that names it:
   my Jotters*): the page's address and title, your snippets and pictures in
   your order, the words either side of each, and, if you ticked *Also keep the
   article's text* or picked nothing, the page's main text (headings and
-  paragraphs, without menus or ads, at most 200 KB);
+  paragraphs, without menus or ads, at most 200 KB), and, if you chose a
+  Jotter under *Into*, that Jotter's id;
 - `POST /api/learn/heddy/undo` — *Undo*: the id of the save, card, jot or clip;
 - `POST /api/learn/heddy/clip` — *Add to My Clips*: the video's id, title and
   the start and end you chose;
@@ -128,7 +145,7 @@ that names it:
   and *Keep as a jot*: the card or answer you chose to keep, with the page's
   address and title.
 
-These twelve are the only requests Heddy makes.
+These thirteen are the only requests Heddy makes.
 
 ## What Heddy stores on your device
 
@@ -142,9 +159,10 @@ These twelve are the only requests Heddy makes.
 | The developer switch (off unless you turned it on), for people building aitutors.me itself | `devOrigin` | `chrome.storage.local` |
 | The hand-over waiting for Full desk's aitutors.me tab: a random id, the video id and your jots. Forgotten once the tab takes it, or after 10 minutes | `heddyCids` | `chrome.storage.session`, cleared when Chrome closes |
 | The snippets and pictures you picked on a page (up to four pictures), and, after a save, the ones that save carried (for Undo). Gone when the tab goes to another page or closes | `heddyCards:` + the tab's number | `chrome.storage.session`, cleared when Chrome closes |
+| *Keep saving into JOT-n today*, only if you tick it: that Jotter's id, key and title, and today's date, so every page saves there today. Nothing else. No longer used after midnight (your computer's time), and deleted the next time Heddy's panel opens; deleted at once when you pick another Jotter, untick it, or that Jotter is no longer there | `heddySaveInto` | `chrome.storage.local` |
 
 Versions before 0.5 also kept `startChoice` (the popup's old start choice) in
-`chrome.storage.local`; 0.8.1 neither reads nor writes it.
+`chrome.storage.local`; 0.9.0 neither reads nor writes it.
 
 ## Permissions, and why
 

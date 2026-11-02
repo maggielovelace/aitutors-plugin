@@ -37,6 +37,17 @@ Heddy ▾*, offers *Ask Mentor about it/this* and *Make a card* in the desk.
 On pages Chrome keeps extensions out of (`chrome://` pages, the Web Store)
 the toolbar popup shows the panel.
 
+**Into** (signed in as a child): one line above the Save button,
+*INTO [JOT-27] Photosynthesis homework ▾*, says where the save goes, and the
+button names it ("Save 2 to JOT-27"). Tap it for a list over the cards: this
+page's Jotter (or *A new Jotter for this page*), your recent Jotters, a key
+box (*Type a key, e.g. JOT-31*) and *Keep saving into JOT-n today*, which
+holds until midnight or until you pick another. The list comes from
+`GET /api/learn/heddy/jotters` (with the page's address, only to name this
+page's Jotter); signed out or as a grown-up the line is not shown and saving
+is as before. If the list can't load, a *Keep saving* ticked today still
+applies; otherwise the line is not shown.
+
 Heddy keeps no account, key or token. Every save, Undo, card, jot, clip and
 question goes from Heddy's background to aitutors.me with the browser's own
 aitutors.me sign-in (`lib/heddy-api.js`, `lib/desk-api.js`), and the site keeps

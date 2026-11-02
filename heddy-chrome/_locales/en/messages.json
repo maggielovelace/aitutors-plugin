@@ -767,5 +767,49 @@
   "qzResultsMentor": {
     "message": "You found $N$ of $TOTAL$. Before watching you said $GUESS$; now you've seen what the clip showed.",
     "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" } }
+  },
+  "intoLabel": { "message": "Into" },
+  "intoLineLabel": {
+    "message": "Save into $NAME$. Change where this goes",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoListLabel": { "message": "Where to save" },
+  "intoNewChip": { "message": "New" },
+  "intoNewPage": { "message": "A new Jotter for this page" },
+  "intoUntitled": { "message": "Untitled Jotter" },
+  "intoThisPageJotter": { "message": "This page's Jotter" },
+  "intoThisPage": { "message": "This page" },
+  "intoRecent": { "message": "Recent" },
+  "intoKeyBox": { "message": "Type a key, e.g. JOT-31" },
+  "intoNoMatch": { "message": "No Jotter with that key" },
+  "intoKeep": {
+    "message": "Keep saving into $NAME$ today",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoToday": { "message": "today" },
+  "intoSaveOne": {
+    "message": "Save 1 to $NAME$",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoSaveN": {
+    "message": "Save $N$ to $NAME$",
+    "placeholders": { "n": { "content": "$1", "example": "3" }, "name": { "content": "$2", "example": "JOT-27" } }
+  },
+  "intoSavePage": {
+    "message": "Save this page to $NAME$",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoGone": {
+    "message": "$NAME$ isn't there any more, so nothing was saved. Pick another Jotter.",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoNow": { "message": "now" },
+  "intoMins": {
+    "message": "$N$ min",
+    "placeholders": { "n": { "content": "$1", "example": "10" } }
+  },
+  "intoHours": {
+    "message": "$N$ h",
+    "placeholders": { "n": { "content": "$1", "example": "10" } }
   }
 }

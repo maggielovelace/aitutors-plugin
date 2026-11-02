@@ -322,8 +322,8 @@ test('§ 4 ask: signed out is a line the view can draw; a stream with no done en
   assert.deepEqual(got3, [{ type: 'error', code: 'failed', message: '' }]);
 });
 
-test('the six paths, and nothing else, under /api/learn/heddy/', () => {
-  assert.deepEqual(H.PATHS, { save: '/api/learn/heddy/save', undo: '/api/learn/heddy/undo', clip: '/api/learn/heddy/clip', ask: '/api/learn/heddy/ask', card: '/api/learn/heddy/card', jot: '/api/learn/heddy/jot' });
+test('the six paths and Save into’s list (site PRD-v0.122.0 App. A), and nothing else, under /api/learn/heddy/', () => {
+  assert.deepEqual(H.PATHS, { save: '/api/learn/heddy/save', undo: '/api/learn/heddy/undo', clip: '/api/learn/heddy/clip', ask: '/api/learn/heddy/ask', card: '/api/learn/heddy/card', jot: '/api/learn/heddy/jot', jotters: '/api/learn/heddy/jotters' });
   const src = code('lib/heddy-api.js');
   assert.equal((src.match(/deps\.fetchImpl\(/g) || []).length, 1, 'the stream is the one fetch of its own; the rest go through desk-api’s call');
   assert.doesNotMatch(src, /chrome\.storage|localStorage|indexedDB/);
