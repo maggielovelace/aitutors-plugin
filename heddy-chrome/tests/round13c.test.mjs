@@ -11,10 +11,6 @@ const I = load('./lib/i18n.js');
 const SH = load('./lib/desk-shell.js');
 const desk = read('content/desk.js');
 
-test('the version is 0.8.1', () => {
-  assert.equal(manifest().version, '0.8.1');
-});
-
 test('D110: the pop-up has Classroom’s ×, at least 24 px to hit, labelled Close / 关闭', () => {
   assert.match(desk, /var x = btn\('jx', ic\('close'\)\);\n      x\.setAttribute\('aria-label', tr\('close'\)\);/);
   assert.match(desk, /x\.addEventListener\('click', hideToast\);/);

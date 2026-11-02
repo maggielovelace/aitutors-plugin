@@ -767,5 +767,49 @@
   "qzResultsMentor": {
     "message": "$TOTAL$ 题里你答对了 $N$ 题。看之前你猜的是「$GUESS$」，现在你已经看到短片怎么说了。",
     "placeholders": { "n": { "content": "$1" }, "total": { "content": "$2" }, "guess": { "content": "$3" } }
+  },
+  "intoLabel": { "message": "存到" },
+  "intoLineLabel": {
+    "message": "存到 $NAME$。点这里换一个地方",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoListLabel": { "message": "存到哪里" },
+  "intoNewChip": { "message": "新" },
+  "intoNewPage": { "message": "为这一页新建一个 Jotter" },
+  "intoUntitled": { "message": "未命名的 Jotter" },
+  "intoThisPageJotter": { "message": "这一页的 Jotter" },
+  "intoThisPage": { "message": "这一页" },
+  "intoRecent": { "message": "最近" },
+  "intoKeyBox": { "message": "输入编号，例如 JOT-31" },
+  "intoNoMatch": { "message": "没有这个编号的 Jotter" },
+  "intoKeep": {
+    "message": "今天一直存到 $NAME$",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoToday": { "message": "今天" },
+  "intoSaveOne": {
+    "message": "存 1 条到 $NAME$",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoSaveN": {
+    "message": "存 $N$ 条到 $NAME$",
+    "placeholders": { "n": { "content": "$1", "example": "3" }, "name": { "content": "$2", "example": "JOT-27" } }
+  },
+  "intoSavePage": {
+    "message": "把这一页存到 $NAME$",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoGone": {
+    "message": "$NAME$ 已经不在了，所以什么都没存。请另选一个 Jotter。",
+    "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
+  },
+  "intoNow": { "message": "刚刚" },
+  "intoMins": {
+    "message": "$N$ 分钟",
+    "placeholders": { "n": { "content": "$1", "example": "10" } }
+  },
+  "intoHours": {
+    "message": "$N$ 小时",
+    "placeholders": { "n": { "content": "$1", "example": "10" } }
   }
 }

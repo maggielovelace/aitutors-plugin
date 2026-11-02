@@ -1,7 +1,7 @@
 # Chrome Web Store — privacy practices answers
 
 The answers for the developer dashboard's **Privacy practices** tab, for
-version 0.8.1. They say the same as [PRIVACY.md](../PRIVACY.md); if one
+version 0.9.0. They say the same as [PRIVACY.md](../PRIVACY.md); if one
 changes, change both. `tests/store.test.mjs` checks that every permission in
 `manifest.json` has a justification here, and that every request path and
 every `chrome.storage` key in the shipped code is named here and in
@@ -60,7 +60,8 @@ analytics, no error reporting.
 | `POST /api/learn/heddy/desk/keypoints` | While the desk is open on a video with chapters, for the chapter the player is in (and when the student asks for notes on a later one) | The video's id and title, the language, and its chapters (each title and start time, read from the page) |
 | `POST /api/learn/heddy/desk/quiz` | The student starts the Quiz tab, answers a question, finishes, or taps Add cards | The video's id and title, the quiz's id, and for an answer the question's number and the option the student chose |
 | `POST /api/learn/heddy/desk/jots` | Save to My Jotters on the desk | The video's id, title, channel and length, and the jots (each one's time, whether it is a spoken line or the student's note, and its words) |
-| `POST /api/learn/heddy/save` | Save to my Jotters on a page (or Save this page to my Jotters) | The page's address and title, the snippets and pictures in the student's order with the words either side of each, and, if asked, the page's main text (at most 200 KB) |
+| `GET /api/learn/heddy/jotters` | Heddy's panel opens on a page (Save into) | The page's address (without the part after `#`), sent only so the site can name the Jotter a save of this page would go to. The answer (for a signed-in child, up to 30 of their Jotters, each id, key, title and last-saved time, and which one is this page's; nothing for a grown-up or when signed out) is shown under Into and never stored |
+| `POST /api/learn/heddy/save` | Save to my Jotters on a page (or Save this page to my Jotters) | The page's address and title, the snippets and pictures in the student's order with the words either side of each, if asked the page's main text (at most 200 KB), and, if the student chose a Jotter under Into, that Jotter's id |
 | `POST /api/learn/heddy/undo` | Undo | The id of the save, card, jot or clip |
 | `POST /api/learn/heddy/clip` | Add to My Clips | The video's id and title, and the start and end chosen |
 | `POST /api/learn/heddy/ask` | A question typed in Ask (on the desk or in the panel), Explain, or Make a card | The page's or video's address and title, the words or picture asked about, and the conversation so far; the professor's reply streams back and is not kept on the device |
@@ -83,11 +84,12 @@ analytics, no error reporting.
 | `devOrigin` | `chrome.storage.local` | The developer switch (off unless turned on) |
 | `heddyCids` | `chrome.storage.session` | Full desk's hand-over: a random id, the video id and the jots; forgotten once taken, or after 10 minutes |
 | `heddyCards:` + tab id | `chrome.storage.session` | That tab's picked snippets and pictures (up to four pictures) and, after a save, what it carried, for Undo; gone when the tab moves to another page or closes |
+| `heddySaveInto` | `chrome.storage.local` | Keep saving into JOT-n today, only if ticked: that Jotter's id, key and title, and the day; no longer used after local midnight, and deleted the next time Heddy's panel opens; deleted at once when another Jotter is picked, it is unticked, or that Jotter has gone |
 
 `chrome.storage.session` is cleared when Chrome closes. Nothing is stored
 anywhere else, and no cookie, history or account data is stored at all.
 (Versions before 0.5 also kept `startChoice`, the popup's old start
-choice; 0.8.1 neither reads nor writes it.)
+choice; 0.9.0 neither reads nor writes it.)
 
 ## Data usage
 

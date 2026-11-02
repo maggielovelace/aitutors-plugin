@@ -238,7 +238,7 @@
 
     // ─── messages ────────────────────────────────────────────────────────
 
-    var FROM_DESK = { 'heddy-web:save': 1, 'heddy-web:undo-save': 1, 'heddy-web:ask-pending': 1 };
+    var FROM_DESK = { 'heddy-web:save': 1, 'heddy-web:undo-save': 1, 'heddy-web:ask-pending': 1, 'heddy-web:jotters': 1 };
     var FROM_PAGE = { 'heddy-page:ask': 1, 'heddy-page:professor': 1, 'heddy-desk:full': 1 };
 
     /** chrome.runtime.onMessage. Resolves to the reply, or undefined for a
@@ -255,7 +255,10 @@
       return tabOf(message, sender).then(function (tab) {
         if (!tab || tab.id == null) return { ok: false };
         switch (type) {
-          case 'heddy-web:save': return deps.cards.saveWeb(tab, message.article === true);
+          // jotterId: Save into's choice; lib/cards.js sends it only as a UUID.
+          case 'heddy-web:save': return deps.cards.saveWeb(tab, message.article === true, typeof message.jotterId === 'string' ? message.jotterId : null);
+          // The tab's own address, never the message's: only to name this page's Jotter.
+          case 'heddy-web:jotters': return api.jotters ? api.jotters(T.cleanUrl(tab.url)) : { show: false, known: false, jotters: [] };
           case 'heddy-web:undo-save': return deps.cards.undoSave(tab, String(message.saveId || ''));
           case 'heddy-web:ask-pending': return { ok: true, pending: takePending(tab.id) };
           case 'heddy-web:card': return keepCard(tab, message);

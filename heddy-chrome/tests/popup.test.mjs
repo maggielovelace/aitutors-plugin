@@ -30,7 +30,9 @@ const en = JSON.parse(read('_locales/en/messages.json'));
 const zh = JSON.parse(read('_locales/zh_CN/messages.json'));
 
 test('one save (D82): "Save n to my Jotters", the article checkbox with its ⓘ, then Read it · Jot it · Get it; no Save and jot now', () => {
-  assert.match(desk, /n \? \(n === 1 \? tr\('saveOne'\) : tr\('saveN', String\(n\)\)\) : tr\('savePage'\)/);
+  // The words come from Save into's buttonLabel (lib/save-into.js): a new Jotter keeps exactly these.
+  assert.match(desk, /go\.appendChild\(el\('span', null, SI\.buttonLabel\(tr, n, target\(\)\)\)\);/);
+  assert.match(read('lib/save-into.js'), /n \? \(n === 1 \? tr\('saveOne'\) : tr\('saveN', String\(n\)\)\) : tr\('savePage'\)/);
   assert.match(desk, /\[\['read', 'stepRead'\], \['jot', 'stepJot'\], \['get', 'stepGet'\]\]/);
   assert.deepEqual(['saveN', 'saveArticle', 'saveArticleWhy', 'stepRead', 'stepJot', 'stepGet'].map((k) => en[k].message), [
     'Save $N$ to my Jotters', "Also keep the article's text", "The page's main text, without menus or ads. It goes on the Jotter's left page.", 'Read it', 'Jot it', 'Get it',
@@ -41,7 +43,7 @@ test('one save (D82): "Save n to my Jotters", the article checkbox with its ⓘ,
 
 test('nothing picked (D82): the empty box, the page card, "Save this page to my Jotters", and no checkbox; it saves the article', () => {
   assert.match(desk, /if \(n\) \{\s*var chk = el\('label', 'chk'/, 'the checkbox only with sources');
-  assert.match(desk, /call\(\{ type: 'heddy-web:save', article: n \? st\.article : true \}\)/);
+  assert.match(desk, /call\(Object\.assign\(\{ type: 'heddy-web:save', article: n \? st\.article : true \}, SI\.bodyOf\(into\)\)\)/);
   assert.equal(en.savePage.message, 'Save this page to my Jotters');
   assert.equal(en.webPageCardHead.message, 'Or keep the page');
 });

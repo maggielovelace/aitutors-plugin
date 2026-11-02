@@ -1984,6 +1984,118 @@
             "content": "$3"
           }
         }
+      },
+      "intoLabel": {
+        "message": "Into"
+      },
+      "intoLineLabel": {
+        "message": "Save into $NAME$. Change where this goes",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoListLabel": {
+        "message": "Where to save"
+      },
+      "intoNewChip": {
+        "message": "New"
+      },
+      "intoNewPage": {
+        "message": "A new Jotter for this page"
+      },
+      "intoUntitled": {
+        "message": "Untitled Jotter"
+      },
+      "intoThisPageJotter": {
+        "message": "This page's Jotter"
+      },
+      "intoThisPage": {
+        "message": "This page"
+      },
+      "intoRecent": {
+        "message": "Recent"
+      },
+      "intoKeyBox": {
+        "message": "Type a key, e.g. JOT-31"
+      },
+      "intoNoMatch": {
+        "message": "No Jotter with that key"
+      },
+      "intoKeep": {
+        "message": "Keep saving into $NAME$ today",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoToday": {
+        "message": "today"
+      },
+      "intoSaveOne": {
+        "message": "Save 1 to $NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoSaveN": {
+        "message": "Save $N$ to $NAME$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          },
+          "name": {
+            "content": "$2",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoSavePage": {
+        "message": "Save this page to $NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoGone": {
+        "message": "$NAME$ isn't there any more, so nothing was saved. Pick another Jotter.",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoNow": {
+        "message": "now"
+      },
+      "intoMins": {
+        "message": "$N$ min",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "10"
+          }
+        }
+      },
+      "intoHours": {
+        "message": "$N$ h",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "10"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -3967,6 +4079,118 @@
           },
           "guess": {
             "content": "$3"
+          }
+        }
+      },
+      "intoLabel": {
+        "message": "存到"
+      },
+      "intoLineLabel": {
+        "message": "存到 $NAME$。点这里换一个地方",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoListLabel": {
+        "message": "存到哪里"
+      },
+      "intoNewChip": {
+        "message": "新"
+      },
+      "intoNewPage": {
+        "message": "为这一页新建一个 Jotter"
+      },
+      "intoUntitled": {
+        "message": "未命名的 Jotter"
+      },
+      "intoThisPageJotter": {
+        "message": "这一页的 Jotter"
+      },
+      "intoThisPage": {
+        "message": "这一页"
+      },
+      "intoRecent": {
+        "message": "最近"
+      },
+      "intoKeyBox": {
+        "message": "输入编号，例如 JOT-31"
+      },
+      "intoNoMatch": {
+        "message": "没有这个编号的 Jotter"
+      },
+      "intoKeep": {
+        "message": "今天一直存到 $NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoToday": {
+        "message": "今天"
+      },
+      "intoSaveOne": {
+        "message": "存 1 条到 $NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoSaveN": {
+        "message": "存 $N$ 条到 $NAME$",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "3"
+          },
+          "name": {
+            "content": "$2",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoSavePage": {
+        "message": "把这一页存到 $NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoGone": {
+        "message": "$NAME$ 已经不在了，所以什么都没存。请另选一个 Jotter。",
+        "placeholders": {
+          "name": {
+            "content": "$1",
+            "example": "JOT-27"
+          }
+        }
+      },
+      "intoNow": {
+        "message": "刚刚"
+      },
+      "intoMins": {
+        "message": "$N$ 分钟",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "10"
+          }
+        }
+      },
+      "intoHours": {
+        "message": "$N$ 小时",
+        "placeholders": {
+          "n": {
+            "content": "$1",
+            "example": "10"
           }
         }
       }

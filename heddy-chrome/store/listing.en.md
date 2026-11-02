@@ -1,6 +1,6 @@
 # Chrome Web Store listing — English
 
-Built from PRD-v0.96.0 Appendix B, rewritten for what version 0.8.1 does.
+Built from PRD-v0.96.0 Appendix B, rewritten for what version 0.9.0 does.
 Paste each field as it stands. The summary must stay at 132 characters or
 fewer (`tests/store.test.mjs` checks it).
 
@@ -40,6 +40,7 @@ Tap Watch with Heddy and the desk opens beside the video, in English or Chinese 
 ON ANY PAGE
 • Sources: click Heddy's icon and its panel opens beside the page. Select words and each selection is added as a numbered card, or tap + Picture and draw a box (+ Text switches back to words). Drag the cards into your own order. Keep up to 10 snippets and up to four pictures from one page.
 • Save n to my Jotters puts them on the left page of that page's Jotter, in your order, ready to jot from. Save this page to my Jotters keeps the readable part of the page as a source.
+• Into: the line above Save says which Jotter the save goes to. Tap it to pick a recent Jotter, type a key such as JOT-31, or keep saving into one Jotter for the rest of the day.
 • Ask: the panel's Ask tab is a conversation with Mentor or the page's professor about your words or picture. Explain and Make a card are one tap away, and you choose whether to keep the card.
 • Right-click words and choose Save to Jotters, or right-click a picture and choose Add picture to Heddy.
 • Snap a picture: draw a box round a diagram, chart or photo, then + Picture to keep it, or Explain this picture, Make a card, Ask about it or Copy picture. Press Ctrl Shift K (twice for the whole screen).

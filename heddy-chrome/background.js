@@ -44,7 +44,7 @@ var routes = HeddyWebRoutes.createWebRoutes({
   chrome: chrome,
   api: heddyApi,
   cards: {
-    saveWeb: function (tab, article) { return cards.saveWeb(tab, article); },
+    saveWeb: function (tab, article, jotterId) { return cards.saveWeb(tab, article, jotterId); },
     undoSave: function (tab, saveId) { return cards.undoSave(tab, saveId); },
   },
   showPanel: panel.show,

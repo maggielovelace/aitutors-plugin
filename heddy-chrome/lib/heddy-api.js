@@ -1,5 +1,6 @@
 // lib/heddy-api.js — Round 9's six requests to aitutors.me, made by the
-// background (PRD-v0.96.0 § 1i, D78–D86; the Round 9 contract's §§ 1–6).
+// background (PRD-v0.96.0 § 1i, D78–D86; the Round 9 contract's §§ 1–6),
+// and "Save into"'s list of the child's Jotters (site PRD-v0.122.0 App. A).
 //
 // D78: no window or tab opens unless the child taps a link that says it
 // leaves. Every save, Undo, card, jot, clip and conversation goes from here
@@ -15,6 +16,8 @@
 //   POST /api/learn/heddy/ask    the desk's Ask view, NDJSON (§ 4)
 //   POST /api/learn/heddy/card   Keep card (§ 5)
 //   POST /api/learn/heddy/jot    Keep as a jot (§ 6)
+//   GET  /api/learn/heddy/jotters  the child's Jotters, for Save into (App. A 1);
+//        ?url= the tab's address, only so the site can name this page's Jotter
 //
 // Every answer is untrusted: each parser keeps only the fields the desk draws,
 // and anything else reads as an error. tests/no-network.test.mjs allows
@@ -24,7 +27,7 @@
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
 
   var BASE = '/api/learn/heddy/';
-  var PATHS = { save: BASE + 'save', undo: BASE + 'undo', clip: BASE + 'clip', ask: BASE + 'ask', card: BASE + 'card', jot: BASE + 'jot' };
+  var PATHS = { save: BASE + 'save', undo: BASE + 'undo', clip: BASE + 'clip', ask: BASE + 'ask', card: BASE + 'card', jot: BASE + 'jot', jotters: BASE + 'jotters' };
   // The site's routes run on Vercel, which refuses a body past 4.5 MB.
   var MAX_BODY = 4 * 1024 * 1024;
   // The conversation's stream is cut after this long without a byte.
@@ -33,7 +36,11 @@
   var JOTTER_PATH = /^\/study\/jotters\/[A-Za-z0-9_-]{1,80}(\/[A-Za-z0-9_-]{1,80})?$/;
   var CLIPS_PATH = /^\/study\/clips(\/[A-Za-z0-9_\-/]{0,200})?(\?[A-Za-z0-9_=&%-]{0,300})?$/;
   var DECK_PATH = /^\/study\/(jotters|cards)(\/[A-Za-z0-9_\-/]{0,200})?(\?[A-Za-z0-9_=&%-]{0,300})?$/;
-  var SAVE_ERRORS = ['signed_out', 'too_big', 'invalid', 'failed'];
+  // jotter_gone (App. A 6): the Jotter the child chose has gone; nothing saved.
+  var SAVE_ERRORS = ['signed_out', 'too_big', 'invalid', 'failed', 'jotter_gone'];
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var JOT_KEY = /^JOT-\d{1,9}$/;
+  var MAX_JOTTERS = 30;
   var CLIP_ERRORS = ['no_captions', 'cant_keep', 'signed_out', 'invalid', 'limit', 'failed'];
   var KEEP_ERRORS = ['signed_out', 'invalid', 'too_big', 'no_seat', 'cap', 'not_found'];
   var NOTICES = ['new_channel', 'off_map'];
@@ -88,6 +95,45 @@
       },
       dropped: ['not_study', 'too_long', 'failed', 'daily'].indexOf(d.dropped) >= 0 ? d.dropped : null,
     };
+  }
+
+  /** App. A 1: the child's Jotters for Save into, newest-saved first.
+   *  { show: true, jotters } only for a signed-in child; signed out, a
+   *  grown-up, a 503 or anything unreadable is { show: false }, and the desk
+   *  keeps its default (a failure never reads as "no Jotters").
+   *  `page` (owner, 2026-11-02): the Jotter a save of this page would go
+   *  to (R8); null, said by the site, for a new one; undefined (not known)
+   *  when a site does not send it yet, or sends something unreadable.
+   *  `known`: the site answered who is signed in (a child, a grown-up, no
+   *  one), as opposed to a failure, when the role is not known. */
+  function pageOf(p) {
+    if (p === null) return null;
+    if (!p || typeof p !== 'object' || typeof p.id !== 'string' || !UUID.test(p.id)) return undefined;
+    return { id: p.id, key: typeof p.key === 'string' && JOT_KEY.test(p.key) ? p.key : null, title: text(p.title, 120) };
+  }
+
+  function parseJotters(r) {
+    var d = r && r.data;
+    var failed = { show: false, known: false, jotters: [] };
+    if (!r || r.status !== 200 || !d || typeof d !== 'object') return failed;
+    if (d.signedIn !== true || d.role !== 'child') return d.signedIn === false || d.role === 'parent' ? { show: false, known: true, jotters: [] } : failed;
+    if (!Array.isArray(d.jotters)) return failed;
+    var seen = {};
+    var list = [];
+    d.jotters.forEach(function (j) {
+      if (list.length >= MAX_JOTTERS || !j || typeof j !== 'object') return;
+      if (typeof j.id !== 'string' || !UUID.test(j.id) || seen[j.id]) return;
+      seen[j.id] = true;
+      var at = typeof j.lastSavedAt === 'string' ? Date.parse(j.lastSavedAt) : NaN;
+      if (!isFinite(at)) at = typeof j.updatedAt === 'string' ? Date.parse(j.updatedAt) : NaN;
+      list.push({
+        id: j.id,
+        key: typeof j.key === 'string' && JOT_KEY.test(j.key) ? j.key : null,
+        title: text(j.title, 120),
+        at: isFinite(at) ? at : null,
+      });
+    });
+    return { show: true, known: true, jotters: list, page: pageOf(d.page) };
   }
 
   /** § 2: {ok}. */
@@ -269,6 +315,9 @@
       },
       card: function (body) { return post(PATHS.card, body, parseCard); },
       jot: function (body) { return post(PATHS.jot, body, parseJot); },
+      // url: the tab's address (lib/web-routes.js reads it from the tab), only
+      // to match this page's Jotter; without one the site names no page.
+      jotters: function (url) { return deps.call('GET', PATHS.jotters, url ? { url: url } : null).then(parseJotters); },
       ask: ask,
     };
   }
@@ -282,6 +331,7 @@
     parseClip: parseClip,
     parseCard: parseCard,
     parseJot: parseJot,
+    parseJotters: parseJotters,
     undoBody: undoBody,
     clipBody: clipBody,
     createHeddyApi: createHeddyApi,

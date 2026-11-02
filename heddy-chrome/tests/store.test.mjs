@@ -38,9 +38,9 @@ for (const { file, lead } of LISTINGS) {
   });
 }
 
-test('the English listing names every tool 0.8.1 ships, and the for-schools line', () => {
+test('the English listing names every tool 0.9.0 ships, and the for-schools line', () => {
   const d = between(read('store/listing.en.md'), 'description');
-  for (const s of ['Watch with Heddy', 'EN | 中', 'Jot', 'Digest', 'Insights', 'Quiz', 'Bilingual', 'line being spoken', 'Save to My Jotters', 'Full desk', 'Add to My Clips', 'Sources', '+ Text', '+ Picture', 'Save n to my Jotters', 'Save this page to my Jotters', 'Mentor', 'Save to Jotters', 'Add picture to Heddy', 'Explain', 'Make a card', 'Snap a picture', 'up to four pictures', 'Copy picture', 'Undo', 'Open in Jotter', 'only when you ask', 'no analytics', 'FOR SCHOOLS']) {
+  for (const s of ['Watch with Heddy', 'EN | 中', 'Jot', 'Digest', 'Insights', 'Quiz', 'Bilingual', 'line being spoken', 'Save to My Jotters', 'Full desk', 'Add to My Clips', 'Sources', '+ Text', '+ Picture', 'Save n to my Jotters', 'Save this page to my Jotters', 'Into', 'Mentor', 'Save to Jotters', 'Add picture to Heddy', 'Explain', 'Make a card', 'Snap a picture', 'up to four pictures', 'Copy picture', 'Undo', 'Open in Jotter', 'only when you ask', 'no analytics', 'FOR SCHOOLS']) {
     assert.ok(d.includes(s), `missing: ${s}`);
   }
   assert.doesNotMatch(d, /Jot it with Heddy|Jot this picture with Heddy/, 'Round 5: Heddy writes no jot from a page');
@@ -122,8 +122,8 @@ function requestPaths() {
 
 test('every request path the shipped code can make is named in privacy-answers.md and PRIVACY.md', () => {
   const paths = requestPaths();
-  // The scan is not vacuous: the twelve of 0.8.1 are all found.
-  assert.equal(paths.length, 12, paths.join(' '));
+  // The scan is not vacuous: the thirteen of 0.9.0 (0.8.1's twelve and Save into's list) are all found.
+  assert.equal(paths.length, 13, paths.join(' '));
   for (const p of ['/api/learn/heddy/me', '/api/learn/heddy/desk/quiz', '/api/learn/heddy/desk/keypoints', '/api/learn/heddy/ask']) assert.ok(paths.includes(p), p);
   for (const doc of PRIVACY_DOCS) {
     const src = read(doc);
