@@ -6,7 +6,7 @@ fewer (`tests/store.test.mjs` checks it).
 
 | Field | Value |
 |---|---|
-| Name | Heddy for Chrome |
+| Name | Heddy for Chrome: Clip to your Jotter, learn with your professors |
 | Category | Education |
 | Languages | English (en), Chinese (Simplified) (zh-CN) |
 | Price | Free |
@@ -17,7 +17,7 @@ fewer (`tests/store.test.mjs` checks it).
 ## Summary
 
 <!-- summary:start -->
-Works with aitutors.me. Study YouTube videos beside your professor, and keep words and pictures from any page in your Jotters.
+Works with aitutors.me. Clip words, pictures and video notes into your Jotter. Professors explain and hint, never give the answer.
 <!-- summary:end -->
 
 ## Description
@@ -25,42 +25,68 @@ Works with aitutors.me. Study YouTube videos beside your professor, and keep wor
 <!-- description:start -->
 Works with aitutors.me.
 
-Heddy sits beside what you are studying and takes what you find to your professors on aitutors.me, with where it came from. The professors help you work it out for yourself: they ask, hint and show a worked example of a similar problem, and leave your own answer to you.
+Most clippers stop at saving. Heddy keeps going.
+Heddy for Chrome sends what you find on the web and on YouTube straight into your Jotters on aitutors.me, where seven subject professors help you understand it: clip it, jot it, ask about it, practise it, and come back to it a few days later.
 
-ON A YOUTUBE VIDEO
-Tap Watch with Heddy and the desk opens beside the video, in English or Chinese (EN | 中).
-• Jot: press H to jot the line being spoken (twice quickly for the line before too), or type a note. Save to My Jotters puts the jots in the video's Jotter, by their times.
-• Digest: the transcript, following the player, in English, Bilingual or Chinese. Tap a time to play from there, or select words to jot them, explain them, make a card or ask about them.
-• Insights: your professor's short note on each chapter of the video, as you reach it.
-• Quiz: a short quiz on the video, with a hint on each question. Questions you miss can become flashcards.
-• Ask: talk to your professor about the video, a line or a moment.
-• Full desk opens the video in the Classroom on aitutors.me with your jots. 📌 opens the desk on every video.
-• Add to My Clips, from Heddy's toolbar icon, keeps a video or part of it for later.
-
-ON ANY PAGE
-• Sources: click Heddy's icon and its panel opens beside the page. Select words and each selection is added as a numbered card, or tap + Picture and draw a box (+ Text switches back to words). Drag the cards into your own order. Keep up to 10 snippets and up to four pictures from one page.
-• Save n to my Jotters puts them on the left page of that page's Jotter, in your order, ready to jot from. Save this page to my Jotters keeps the readable part of the page as a source.
-• Into: the line above Save says which Jotter the save goes to. Tap it to pick a recent Jotter, type a key such as JOT-31, or keep saving into one Jotter for the rest of the day.
-• Ask: the panel's Ask tab is a conversation with Mentor or the page's professor about your words or picture. Explain and Make a card are one tap away, and you choose whether to keep the card.
+━━━━━━━━━━━━━━
+1 · CLIP: keep it, with where it came from
+━━━━━━━━━━━━━━
+• Sources: click Heddy's icon and its panel opens beside the page. Select words and each selection becomes a numbered card, or tap + Picture and draw a box round a chart or photo (+ Text switches back to words). Keep up to 10 snippets and up to four pictures from one page, and drag them into your own order.
+• Save n to my Jotters puts them in your Jotter in that order, with the page's address. Each snippet shows the whole sentence it came from, so nothing is read out of context.
+• Save this page to my Jotters keeps the whole article, with its headings, lists and bold text intact.
+• Into: the line above Save says which Jotter the save goes to. Tap it to open a list you can search, or type a key such as JOT-31, or keep saving into one Jotter for the rest of the day.
+• After saving: Done to carry on, Open my Jotter ↗ to go straight there, or Undo this save.
 • Right-click words and choose Save to Jotters, or right-click a picture and choose Add picture to Heddy.
-• Snap a picture: draw a box round a diagram, chart or photo, then + Picture to keep it, or Explain this picture, Make a card, Ask about it or Copy picture. Press Ctrl Shift K (twice for the whole screen).
+• Snap a picture: press Ctrl Shift K and draw a box round any part of the screen (twice for the whole screen), then keep it, explain it, make a card, ask about it or Copy picture.
+• After a jot or a right-click save, a small note says what was kept, and Open in Jotter goes straight to it.
 
-AFTER YOU SAVE
-A small note says what was kept, and Open in Jotter goes straight to it. Changed your mind? Undo.
+━━━━━━━━━━━━━━
+2 · JOT: Watch with Heddy, in English or Chinese
+━━━━━━━━━━━━━━
+Tap Watch with Heddy on any YouTube video and the desk opens beside it.
+• Switch the desk between EN | 中.
+• Digest: the transcript in English, Bilingual or Chinese, following the player. Tap a time to play from there.
+• Jot: press H to jot the line being spoken, or type a note. Save to My Jotters puts the jots in the video's Jotter, by their times.
+• Full desk opens the video in the Classroom on aitutors.me with your jots.
+• Add to My Clips keeps a video, or part of it, for later.
 
+━━━━━━━━━━━━━━
+3 · ASK: seven professors beside you
+━━━━━━━━━━━━━━
+Mentor and seven subject professors: Pi (maths), Quill (English), Darwin (biology), Curie (chemistry), Newton (physics), Harari (history) and Mercator (geography).
+• Explain: select a line or a picture and your professor explains it.
+• Insights: your professor's short note on each chapter of a video, as you reach it.
+• Ask: talk to the page's professor about a line, a moment or a picture.
+The professors ask, hint and show a worked example of a similar problem. Your own answer stays yours to find.
+
+━━━━━━━━━━━━━━
+4 · PRACTISE: your Jotter asks the questions
+━━━━━━━━━━━━━━
+• Get it: three questions made from your own jots. Get one wrong and Heddy points you back to the jot to read again, never to the answer.
+• Teach it back: explain a topic in your own words and see what the professor heard.
+• Quiz: a short quiz on each video, with a hint on every question.
+• Make a card: turn a key point or a missed question into a flashcard in one tap.
+
+━━━━━━━━━━━━━━
+5 · REVISE: Watch-outs come back to you
+━━━━━━━━━━━━━━
+• Watch-outs: a common mistake kept with the right idea, back after 1, 3 and 7 days to check it has stuck.
+• Storyboard: link your jots into a mind map and see how a topic fits together.
+• One Jotter can hold web pages, videos and your own uploads, so everything on a topic is in one place.
+
+━━━━━━━━━━━━━━
 YOU ARE IN CHARGE
+━━━━━━━━━━━━━━
 • Heddy reads a page only when you ask: its icon, the desk, the right-click menu or your shortcut.
 • What you save is kept on aitutors.me, under your own account, and nowhere else.
 • Heddy holds no account, password, key or token. It sends nothing to anyone but aitutors.me, and has no analytics and no error reporting.
-• It keeps only a few settings on your device, such as your language and the desk's size, and the desk's jots until you save them.
+• It keeps only a few settings on your device, such as your language and the desk's size, the desk's jots until you save them, and today's chosen Jotter.
 • Some features depend on the subjects on your aitutors.me plan.
-
-English and 简体中文: choose in Heddy's options, or with the desk's EN | 中.
 
 FOR SCHOOLS
 Managed Chromebooks may block extensions. To allow Heddy, add its extension ID to the allow-list in the Google Admin console. Nothing on aitutors.me depends on Heddy: without it, children add videos from Quick add as before.
 
-You need an aitutors.me account, signed in as the child in the same Chrome.
+You need an aitutors.me account, signed in as the child in the same Chrome. Free.
 <!-- description:end -->
 
 ## Graphics
