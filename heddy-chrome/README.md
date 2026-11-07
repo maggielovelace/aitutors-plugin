@@ -39,14 +39,21 @@ the toolbar popup shows the panel.
 
 **Into** (signed in as a child): one line above the Save button,
 *INTO [JOT-27] Photosynthesis homework ▾*, says where the save goes, and the
-button names it ("Save 2 to JOT-27"). Tap it for a list over the cards: this
-page's Jotter (or *A new Jotter for this page*), your recent Jotters, a key
-box (*Type a key, e.g. JOT-31*) and *Keep saving into JOT-n today*, which
-holds until midnight or until you pick another. The list comes from
+button names it ("Save 2 to JOT-27"). Tap it for a sheet that slides up
+inside the panel: *Save into* with *Cancel*, a search box at the top
+(*Search, or type a key like JOT-31*; `/` jumps to it), this page's Jotter
+(or *A new Jotter for this page*), your recent Jotters (they scroll inside
+the sheet) and, at its foot, *Keep saving into JOT-n today*, which holds
+until midnight or until you pick another. Esc, *Cancel* or a tap above the
+sheet closes it. The list comes from
 `GET /api/learn/heddy/jotters` (with the page's address, only to name this
 page's Jotter); signed out or as a grown-up the line is not shown and saving
 is as before. If the list can't load, a *Keep saving* ticked today still
 applies; otherwise the line is not shown.
+
+**Saved**: the green card says where it went, with **Done** (close the card
+and carry on; the next save goes to the same Jotter) and **Open my Jotter ↗**,
+and *Undo this save* as a link under them.
 
 Heddy keeps no account, key or token. Every save, Undo, card, jot, clip and
 question goes from Heddy's background to aitutors.me with the browser's own

@@ -374,7 +374,8 @@
   },
   "savedNext": { "message": "随时到 aitutors.me 上读、记、弄懂它。" },
   "savedOpen": { "message": "打开我的 Jotter ↗" },
-  "savedUndo": { "message": "撤销" },
+  "savedUndo": { "message": "撤销这次保存" },
+  "savedDone": { "message": "完成" },
   "savedFine": { "message": "只有「打开」会离开这一页。" },
   "savedUndoFailed": { "message": "没能撤销这次保存，再试一次。" },
   "deskSavedTitle": { "message": "已存到你的 Jotter" },
@@ -780,8 +781,10 @@
   "intoThisPageJotter": { "message": "这一页的 Jotter" },
   "intoThisPage": { "message": "这一页" },
   "intoRecent": { "message": "最近" },
-  "intoKeyBox": { "message": "输入编号，例如 JOT-31" },
+  "intoKeyBox": { "message": "搜索，或输入编号，如 JOT-31" },
   "intoNoMatch": { "message": "没有这个编号的 Jotter" },
+  "intoSheetTitle": { "message": "保存到" },
+  "intoCancel": { "message": "取消" },
   "intoKeep": {
     "message": "今天一直存到 $NAME$",
     "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }
