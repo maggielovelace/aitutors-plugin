@@ -94,15 +94,14 @@ You need an aitutors.me account, signed in as the child in the same Chrome. Free
 | Asset | File |
 |---|---|
 | Store icon (128 × 128): the navy eyes crest at 96 px, 16 px transparent padding | `icons/store-128.png` |
-| Screenshot 1: the desk's Digest on a YouTube video | `store/screenshots/01-desk-digest.png` |
+| Screenshot 1: the desk's Digest on a YouTube video, Bilingual, with the professor's insights | `store/screenshots/01-desk-digest.png` |
 | Screenshot 2: the desk's Quiz, with a hint | `store/screenshots/02-desk-quiz.png` |
 | Screenshot 3: the desk's Jot tab | `store/screenshots/03-desk-jot.png` |
-| Screenshot 4: Sources on a web page | `store/screenshots/04-web-sources.png` |
-| Screenshot 5: Ask, with the page's professor | `store/screenshots/05-web-ask.png` |
+| Screenshot 4: clipping a web page into a Jotter (Sources) | `store/screenshots/04-web-sources.png` |
+| Screenshot 5: Ask, with the page's professor, who hints instead of answering | `store/screenshots/05-web-ask.png` |
 | Small promo tile (440 × 280) | `store/screenshots/promo-440x280.png` |
 
-The screenshots are English only, rendered from the real 0.8.1 UI on neutral
-stand-in pages (no real site, video or child). The same pictures can serve
-the zh-CN listing; the Web Store shows them for every language unless a
-language gets its own set. Re-render them with `store/render/render.mjs` (see
+These are the English set, rendered from the real 0.9.1 UI on neutral
+stand-in pages (no real site, video or child). The zh-CN listing has its own
+set in `store/screenshots/zh-CN/` (`HEDDY_LANG=zh_CN`); see listing.zh-CN.md. Re-render them with `store/render/render.mjs` (see
 its header).
