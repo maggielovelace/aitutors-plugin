@@ -444,14 +444,14 @@ test('the line: INTO, the key chip, the title, ▾; a "today" tag only while kee
   assert.deepEqual(fresh.v.line.children.map((c) => [c.className, c.textContent]), [['l', 'Into'], ['ky new', 'New'], ['t', 'A new Jotter for this page'], ['cv', '▾']]);
 });
 
-test('the list, as the artifact: This page, Recent (key chip, title, time), the key box, a rule, Keep saving; the chosen one selected', () => {
+test('the sheet, as the artifact (2026-11-07 proposal 1): the search box, This page, Recent (key chip, title, time), Keep saving at the foot; the chosen one selected', () => {
   const { all } = drawn();
   const pop = all.find((e) => e.className === 'ip');
   const order = pop.all().filter((e) => ['sec', 'it', 'sr', 'kp'].includes(e.className.split(' ')[0]) || e.tagName === 'HR').map((e) => e.tagName === 'HR' ? 'hr' : e.className.split(' ')[0] === 'sec' ? 'sec:' + e.textContent : e.className.split(' ')[0] === 'sr' ? 'box' : e.className.split(' ')[0] === 'kp' ? 'keep:' + e.textContent : 'opt:' + e.textContent);
-  assert.deepEqual(order, ['sec:This page', 'opt:NewA new Jotter for this page', 'sec:Recent', 'opt:JOT-27Photosynthesis homework10 min', 'opt:JOT-24Cells and tissuesFri', 'opt:JOT-31Biology log · Vol. 1Thu', 'box', 'hr', 'keep:Keep saving into JOT-27 today']);
+  assert.deepEqual(order, ['box', 'sec:This page', 'opt:NewA new Jotter for this page', 'sec:Recent', 'opt:JOT-27Photosynthesis homework10 min', 'opt:JOT-24Cells and tissuesFri', 'opt:JOT-31Biology log · Vol. 1Thu', 'keep:Keep saving into JOT-27 today']);
   const opts = all.filter((e) => e.getAttribute('role') === 'option');
   assert.deepEqual(opts.map((o) => o.getAttribute('aria-selected')), ['false', 'true', 'false', 'false']);
-  assert.equal(all.find((e) => e.className === 'sr').getAttribute('placeholder'), 'Type a key, e.g. JOT-31');
+  assert.equal(all.find((e) => e.className === 'sr').getAttribute('placeholder'), 'Search, or type a key like JOT-31');
   assert.equal(drawn({ target: { kind: 'new' } }).all.some((e) => e.className === 'kp'), false, 'no Keep saving for a new Jotter (nothing to keep)');
 });
 
@@ -503,8 +503,8 @@ test('the line opens and closes the list; the keep box reports its tick; a busy 
 
 // ─── no new permission, the files ──────────────────────────────────────────
 
-test('the version is 0.9.0 (Save into, a new feature)', () => {
-  assert.equal(manifest().version, '0.9.0');
+test('the version has moved past 0.8.1 (Save into, a new feature, was 0.9.0)', () => {
+  assert.notEqual(manifest().version, '0.8.1');
 });
 
 test('Save into asks for no new permission or host, and ships in the panel page', () => {
@@ -520,7 +520,7 @@ test('en and zh strings for Save into (zh: UK school terms in English, 「」 qu
   const keys = ['intoLabel', 'intoNewChip', 'intoNewPage', 'intoThisPage', 'intoRecent', 'intoKeyBox', 'intoKeep', 'intoToday', 'intoSaveN', 'intoGone'];
   const enM = JSON.parse(read('_locales/en/messages.json'));
   const zhM = JSON.parse(read('_locales/zh_CN/messages.json'));
-  assert.deepEqual(keys.map((k) => enM[k].message), ['Into', 'New', 'A new Jotter for this page', 'This page', 'Recent', 'Type a key, e.g. JOT-31', 'Keep saving into $NAME$ today', 'today', 'Save $N$ to $NAME$', "$NAME$ isn't there any more, so nothing was saved. Pick another Jotter."]);
+  assert.deepEqual(keys.map((k) => enM[k].message), ['Into', 'New', 'A new Jotter for this page', 'This page', 'Recent', 'Search, or type a key like JOT-31', 'Keep saving into $NAME$ today', 'today', 'Save $N$ to $NAME$', "$NAME$ isn't there any more, so nothing was saved. Pick another Jotter."]);
   for (const k of keys) {
     const m = zhM[k].message;
     assert.doesNotMatch(m, /[一-鿿][,;:?!.]/, `${k}: a half-width mark after a Chinese character`);

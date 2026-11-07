@@ -3,11 +3,17 @@
 // "A quiet Into line that opens a list" — the spec, matched literally).
 //
 // One line above the Save button: INTO [JOT-27] Photosynthesis homework ▾.
-// Tapping it opens a list over the cards: "This page" (this page's Jotter,
-// or "A new Jotter for this page"), "Recent" (the child's Jotters from
+// Tapping it opens a SHEET inside the panel (owner, 2026-11-07: artifact
+// DCJkfgXkimHuMSJHX9jesq, proposal 1 "Tidy up in place", which replaced the
+// 0.9.0 pop-up that grew past the panel and over the Save button): a scrim,
+// then, pinned to the panel's bottom, a grab handle, "Save into" and
+// Cancel, a search box ("Search, or type a key like JOT-31"; "/" goes to it)
+// that filters the list here, "This page" (this page's Jotter, or "A new
+// Jotter for this page"), "Recent" (the child's Jotters from
 // GET /api/learn/heddy/jotters, each a key chip, its title and a short
-// time), a key box that filters the list here, a rule, and "Keep saving into
-// JOT-n today". The button then names where the save goes.
+// time), scrolling inside the sheet, and "Keep saving into JOT-n today" at
+// its foot. Esc, Cancel and a tap on the scrim close it. The button then
+// names where the save goes.
 //
 // The default never changes for a child who never opens the list: "This
 // page" sends no jotterId and the site picks this page's Jotter (R8).
@@ -318,10 +324,26 @@
       '.cd .ito .ky{flex:none;font:600 11px ' + MONO + ';color:#23306b;background:#e8ebf7;border:1px solid #cfd6f1;border-radius:6px;padding:1px 6px}',
       '.cd .ito .ky.new{color:#8a5a00;background:#fff8e6;border-color:#f0d49a}',
       '.cd .ito .td{flex:none;font:600 10.5px ' + SANS + ';color:#23306b;background:#eef0f8;border-radius:999px;padding:1px 7px}',
-      // the list (.r8pop), over the cards
-      '.cd .ito .ip{position:absolute;text-align:left;left:0;right:0;bottom:calc(100% + 6px);z-index:4;background:#fff;border:1px solid #e0dacd;border-radius:11px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:6px;font:500 12.5px ' + SANS + ';color:#1f2433;display:flex;flex-direction:column;gap:2px;max-height:min(420px,calc(100vh - 220px));box-sizing:border-box}',
+      // The list is a SHEET inside the panel (owner, 2026-11-07, proposal 1 of
+      // artifact DCJkfgXkimHuMSJHX9jesq): the line is not positioned, so the
+      // scrim and the sheet hang from the tab panel (.pn, made the containing
+      // block here). The sheet is pinned to the panel's bottom with a fixed
+      // top inset, so it can never be taller than the panel, and its rows
+      // scroll inside it: nothing is drawn over the Save button or outside
+      // the panel (the 0.9.0 pop-up grew upwards past both).
+      '.cd.web .pn{position:relative}',
+      '.cd .ito{position:static}',
+      '.cd .ito .isc{position:absolute;inset:0;z-index:4;background:rgba(11,31,68,.28)}',
+      '.cd .ito .isc[hidden]{display:none}',
+      '.cd .ito .ip{position:absolute;left:0;right:0;bottom:0;top:min(96px,18%);z-index:5;text-align:left;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -10px 30px -12px rgba(11,31,68,.4);padding:8px 14px 0;font:500 12.5px ' + SANS + ';color:#1f2433;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;overflow:hidden}',
       '.cd .ito .ip[hidden]{display:none}',
-      '.cd .ito .lb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;align-items:stretch;gap:2px;overflow:auto;min-height:0}',
+      '.cd .ito .gb{width:36px;height:4px;border-radius:2px;background:#d3d7de;align-self:center;flex:none}',
+      '.cd .ito .shd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}',
+      '.cd .ito .shd b{font:800 14px ' + SANS + ';color:#0b1f44}',
+      '.cd .ito .shd button{font:600 12.5px ' + SANS + ';color:#6b7686;padding:4px 2px;cursor:pointer}',
+      '.cd .ito .shd button:focus-visible{outline:2px solid var(--sc);outline-offset:2px;border-radius:4px}',
+      '.cd .ito .lb{list-style:none;margin:0 -4px;padding:0 4px 4px;display:flex;flex-direction:column;align-items:stretch;gap:2px;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto;min-height:0}',
+      '.cd .ito .ift{flex:none;border-top:1px solid #ece7dc;margin:0 -14px;padding:8px 14px 11px;background:#fff}',
       '.cd .ito .sec{font:600 10px ' + MONO + ';color:#8a8f9c;text-transform:uppercase;letter-spacing:.05em;padding:6px 7px 2px}',
       '.cd .ito .it{display:flex;justify-content:flex-start;width:100%;box-sizing:border-box;align-items:center;gap:7px;padding:6px 7px;border-radius:7px;min-width:0;cursor:pointer}',
       '.cd .ito .it .t{font-weight:500;color:#1f2433}',
@@ -329,12 +351,12 @@
       '.cd .ito .it[aria-selected="true"]{background:#f4f5fc;box-shadow:inset 0 0 0 1px #c9cdf0}',
       '.cd .ito .it small{margin-left:auto;flex:none;color:#8a8f9c;font:500 10.5px ' + MONO + '}',
       '.cd .ito .none{padding:6px 7px;color:#8a8f9c;font-size:12px}',
-      '.cd .ito .sr{border:1px solid #d9d2c3;border-radius:7px;padding:5px 8px;font:500 11.5px ' + MONO + ';color:#1f2433;margin:2px 2px 4px;background:#fff;outline:0;min-width:0}',
-      '.cd .ito .sr::placeholder{color:#9aa0ad}',
-      '.cd .ito .sr:focus-visible{border-color:#4338ca}',
-      '.cd .ito hr{border:0;border-top:1px solid #ece7dc;margin:3px 2px;width:auto}',
-      '.cd .ito .kp{display:flex;gap:7px;align-items:center;font:500 12px ' + SANS + ';color:#4a5263;padding:4px 7px;cursor:pointer;position:relative}',
-      '.cd .ito .kp input{position:absolute;opacity:0;width:14px;height:14px;margin:0;left:7px}',
+      // the search box, at the top of the sheet
+      '.cd .ito .sr{flex:none;height:34px;border:1.5px solid #cfd6df;border-radius:10px;padding:0 10px;font:500 12.5px ' + SANS + ';color:#1f2433;background:#fff;outline:0;min-width:0;box-sizing:border-box}',
+      '.cd .ito .sr::placeholder{color:#8a8f9c}',
+      '.cd .ito .sr:focus{border-color:#0b1f44}',
+      '.cd .ito .kp{display:flex;gap:7px;align-items:center;font:600 12px ' + SANS + ';color:#1f2a3a;padding:2px 0;cursor:pointer;position:relative}',
+      '.cd .ito .kp input{position:absolute;opacity:0;width:14px;height:14px;margin:0;left:0}',
       '.cd .ito .kp i{width:14px;height:14px;border-radius:4px;border:1.5px solid #a7abb5;background:#fff;flex:none;box-sizing:border-box;display:grid;place-items:center;color:#fff;font:800 10px/1 ' + SANS + ';font-style:normal}',
       '.cd .ito .kp input:checked + i{background:#4338ca;border-color:#4338ca}',
       '.cd .ito .kp input:focus-visible + i{outline:2px solid #4338ca;outline-offset:2px}',
@@ -394,8 +416,21 @@
     line.setAttribute('aria-label', tr('intoLineLabel', name) + (today ? ' · ' + tr('intoToday') : ''));
     wrap.appendChild(line);
 
+    // The scrim over the panel, then the sheet: grab handle, "Save into" and
+    // Cancel, the search box, the rows (they scroll here), and Keep saving
+    // pinned at the foot.
+    var scrim = el('div', 'isc');
+    scrim.hidden = !o.open;
+    scrim.setAttribute('aria-hidden', 'true');
     var pop = el('div', 'ip');
     pop.hidden = !o.open;
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', tr('intoSheetTitle'));
+    var head = el('div', 'shd');
+    head.appendChild(el('b', null, tr('intoSheetTitle')));
+    var cancel = el('button', null, tr('intoCancel'));
+    cancel.type = 'button';
+    head.appendChild(cancel);
     var list = el('ul', 'lb');
     list.id = id + '-list';
     list.setAttribute('role', 'listbox');
@@ -501,13 +536,18 @@
       }
     });
 
-    pop.appendChild(list);
+    cancel.addEventListener('click', function () { o.onOpen(false, true); });
+    scrim.addEventListener('click', function () { o.onOpen(false, true); });
+
+    pop.appendChild(el('span', 'gb'));
+    pop.appendChild(head);
     pop.appendChild(box);
+    pop.appendChild(list);
     // "Keep saving into JOT-27 today": only for a Jotter with an id.
     var canKeep = !!keepFor(o.target, o.now());
     var cb = null;
     if (canKeep) {
-      pop.appendChild(el('hr'));
+      var ft = el('div', 'ift');
       var kp = el('label', 'kp');
       cb = el('input');
       cb.type = 'checkbox';
@@ -516,20 +556,32 @@
       kp.appendChild(cb);
       kp.appendChild(el('i', null, today ? '✓' : ''));
       kp.appendChild(el('span', null, tr('intoKeep', nameOf(o.target))));
-      pop.appendChild(kp);
+      ft.appendChild(kp);
+      pop.appendChild(ft);
     }
+    wrap.appendChild(scrim);
     wrap.appendChild(pop);
     fill();
 
-    // A tap outside closes it (the line toggles it itself).
+    // A tap outside the sheet closes it (the scrim says so itself; the line
+    // toggles it), and "/" goes to the search box while it is open.
     if (o.open) {
       var outside = function (e) {
         if (wrap.contains(e.target)) return;
         doc.removeEventListener('pointerdown', outside, true);
         o.onOpen(false, false);
       };
+      var slash = function (e) {
+        if (e.key !== '/' || e.isComposing || e.target === box) return;
+        e.preventDefault();
+        box.focus();
+      };
       setTimeout(function () { doc.addEventListener('pointerdown', outside, true); }, 0);
-      wrap.cleanup = function () { doc.removeEventListener('pointerdown', outside, true); };
+      doc.addEventListener('keydown', slash, true);
+      wrap.cleanup = function () {
+        doc.removeEventListener('pointerdown', outside, true);
+        doc.removeEventListener('keydown', slash, true);
+      };
     }
 
     return {

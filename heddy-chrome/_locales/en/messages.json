@@ -374,7 +374,8 @@
   },
   "savedNext": { "message": "Read it, jot it and get it on aitutors.me whenever you like." },
   "savedOpen": { "message": "Open my Jotter ↗" },
-  "savedUndo": { "message": "Undo" },
+  "savedUndo": { "message": "Undo this save" },
+  "savedDone": { "message": "Done" },
   "savedFine": { "message": "Open is the only thing that leaves this page." },
   "savedUndoFailed": { "message": "Couldn't undo that save. Try again." },
   "deskSavedTitle": { "message": "Saved to your Jotter" },
@@ -780,8 +781,10 @@
   "intoThisPageJotter": { "message": "This page's Jotter" },
   "intoThisPage": { "message": "This page" },
   "intoRecent": { "message": "Recent" },
-  "intoKeyBox": { "message": "Type a key, e.g. JOT-31" },
+  "intoKeyBox": { "message": "Search, or type a key like JOT-31" },
   "intoNoMatch": { "message": "No Jotter with that key" },
+  "intoSheetTitle": { "message": "Save into" },
+  "intoCancel": { "message": "Cancel" },
   "intoKeep": {
     "message": "Keep saving into $NAME$ today",
     "placeholders": { "name": { "content": "$1", "example": "JOT-27" } }

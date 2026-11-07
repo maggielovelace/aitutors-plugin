@@ -999,7 +999,10 @@
         "message": "Open my Jotter ↗"
       },
       "savedUndo": {
-        "message": "Undo"
+        "message": "Undo this save"
+      },
+      "savedDone": {
+        "message": "Done"
       },
       "savedFine": {
         "message": "Open is the only thing that leaves this page."
@@ -2019,10 +2022,16 @@
         "message": "Recent"
       },
       "intoKeyBox": {
-        "message": "Type a key, e.g. JOT-31"
+        "message": "Search, or type a key like JOT-31"
       },
       "intoNoMatch": {
         "message": "No Jotter with that key"
+      },
+      "intoSheetTitle": {
+        "message": "Save into"
+      },
+      "intoCancel": {
+        "message": "Cancel"
       },
       "intoKeep": {
         "message": "Keep saving into $NAME$ today",
@@ -3096,7 +3105,10 @@
         "message": "打开我的 Jotter ↗"
       },
       "savedUndo": {
-        "message": "撤销"
+        "message": "撤销这次保存"
+      },
+      "savedDone": {
+        "message": "完成"
       },
       "savedFine": {
         "message": "只有「打开」会离开这一页。"
@@ -4116,10 +4128,16 @@
         "message": "最近"
       },
       "intoKeyBox": {
-        "message": "输入编号，例如 JOT-31"
+        "message": "搜索，或输入编号，如 JOT-31"
       },
       "intoNoMatch": {
         "message": "没有这个编号的 Jotter"
+      },
+      "intoSheetTitle": {
+        "message": "保存到"
+      },
+      "intoCancel": {
+        "message": "取消"
       },
       "intoKeep": {
         "message": "今天一直存到 $NAME$",

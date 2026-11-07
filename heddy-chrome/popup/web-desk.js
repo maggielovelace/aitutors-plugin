@@ -16,13 +16,16 @@
 //   tap), "Save 3 to my Jotters", Read it · Jot it · Get it.
 //   Nothing picked: the empty box, + Text / + Picture, the page card, and
 //   "Save this page to my Jotters" (the article; no checkbox).
-//   Saving: the cards dimmed, the spinner. Saved: the green card with Open my
-//   Jotter ↗ (the only tab, on tap) and Undo. A failure keeps the sources;
-//   signed out offers Sign in.
+//   Saving: the cards dimmed, the spinner. Saved (owner, 2026-11-07,
+//   proposal 1): the green card with Done (closes the card; the Into choice
+//   stays) and Open my Jotter ↗ (the only tab, on tap), and "Undo this save"
+//   as a link under them. A failure keeps the sources; signed out offers
+//   Sign in.
 //   Save into (site PRD-v0.122.0 R30, R14, App. A; lib/save-into.js): for a
-//   signed-in child, one "Into" line above the button opens the list of
-//   Jotters, and the button names where the save goes. Signed out, a
-//   grown-up, or the list unavailable: no line, and the save is as before.
+//   signed-in child, one "Into" line above the button opens a sheet of
+//   Jotters inside the panel, and the button names where the save goes.
+//   Signed out, a grown-up, or the list unavailable: no line, and the save is
+//   as before.
 //
 // Ask (D84): lib/ask-view.js, opened by the crest or by Heddy ▾ on the
 // page (lib/web-routes.js leaves a pending ask for this tab and says so).
@@ -107,6 +110,10 @@
     '.cd .serr span{flex:1}',
     '.cd .serr button{font:700 12.5px ' + SANS + ';color:var(--ink-deep);text-decoration:underline;text-decoration-color:var(--sc);text-underline-offset:3px;white-space:nowrap}',
     '.cd .okc .orow button{cursor:pointer}',
+    // proposal 1 (2026-11-07): Undo is a quiet link under Done | Open
+    '.cd .okc .ul{justify-self:center;font:700 12.5px ' + SANS + ';color:var(--ink-deep);text-decoration:underline;text-decoration-color:var(--sc);text-underline-offset:3px;padding:4px 6px;cursor:pointer}',
+    '.cd .okc .ul[aria-busy="true"]{opacity:.6;cursor:progress}',
+    '.cd .okc .ul:focus-visible{outline:2px solid var(--sc);outline-offset:2px;border-radius:4px}',
   ].join('\n');
 
   function el(tag, cls, text) {
@@ -756,10 +763,24 @@
       c.appendChild(el('p', null, savedWhat(s.counts) + ' ' + tr('savedNext')));
       // The site kept the cards but not the article (contract Changes, site 9).
       if (s.dropped) c.appendChild(el('p', null, tr('savedNoArticle')));
+      // Done | Open my Jotter ↗, then "Undo this save" as a link (owner,
+      // 2026-11-07, proposal 1): Done is the way to finish and carry on, so it
+      // leads. It only closes this card; the Into choice and Keep saving stay,
+      // so the next wave goes to the same Jotter. Open is still the only
+      // thing that leaves the page (D78).
       var row = el('div', 'orow');
-      var open = btn('o', null, tr('savedOpen'));
+      var done = btn('o', null, tr('savedDone'));
+      done.addEventListener('click', function () {
+        st.saved = null;
+        st.error = null;
+        draw();
+        // The focus lands on + Text, the next thing to do.
+        var next = ui.pn.querySelector('.pr2 button');
+        if (next) next.focus();
+      });
+      var open = btn('n', null, tr('savedOpen'));
       open.addEventListener('click', function () { openSite(s.href); });
-      var undo = btn('n', null, tr('savedUndo'));
+      var undo = btn('ul', null, tr('savedUndo'));
       if (s.undoing) undo.setAttribute('aria-busy', 'true');
       undo.addEventListener('click', function () {
         if (s.undoing) return;
@@ -777,11 +798,11 @@
           draw();
         });
       });
+      row.appendChild(done);
       row.appendChild(open);
-      // Nothing new was saved (only an article already there): no Undo.
-      if (s.saveId) row.appendChild(undo);
       c.appendChild(row);
-      c.appendChild(el('span', 'ofine', tr('savedFine')));
+      // Nothing new was saved (only an article already there): no Undo.
+      if (s.saveId) c.appendChild(undo);
       return c;
     }
 
