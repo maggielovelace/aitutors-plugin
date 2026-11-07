@@ -85,5 +85,14 @@ Mentor 和七位学科教授（Pi 数学、Quill 英语、Darwin 生物、Curie 
 
 ## 图片
 
-截图和小宣传图见 [listing.en.md](listing.en.md#graphics)。截图目前只有英文版；
-不单独上传中文截图时，应用店会在中文页面上显示同一组截图。
+上传到「Localized screenshots」（Chinese (China) – zh-CN）。五张都是 1280 × 800、24 位 PNG（无透明通道），
+用 `HEDDY_LANG=zh_CN node store/render/render.mjs` 从扩展程序的真实界面渲染（见渲染脚本开头）。
+视频和网页用中性的英文示例页，书桌和面板是简体中文。小宣传图是全局素材，和英文版共用。
+
+| 素材 | 文件 |
+|---|---|
+| 截图 1：精读，双语文字稿，墨卡托的见解 | `store/screenshots/zh-CN/01-desk-digest.png` |
+| 截图 2：视频小测，带提示 | `store/screenshots/zh-CN/02-desk-quiz.png` |
+| 截图 3：随记 | `store/screenshots/zh-CN/03-desk-jot.png` |
+| 截图 4：网页剪藏（来源） | `store/screenshots/zh-CN/04-web-sources.png` |
+| 截图 5：问教授，教授只提问、给提示 | `store/screenshots/zh-CN/05-web-ask.png` |

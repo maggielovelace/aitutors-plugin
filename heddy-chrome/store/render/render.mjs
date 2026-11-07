@@ -10,6 +10,13 @@
 // network either.
 //
 //   PLAYWRIGHT=/path/to/playwright/index.mjs node store/render/render.mjs
+//   HEDDY_LANG=zh_CN PLAYWRIGHT=… node store/render/render.mjs   → store/screenshots/zh-CN/
+//
+// The zh_CN set is the listing's Localized screenshots for Chinese (China):
+// the same five shots with Heddy set to 简体中文 (the desk's Digest on 双语),
+// Chinese captions and a Chinese reply in Ask. The stand-in video and article
+// stay in English, as the pages a UK student reads are. No promo tile: that
+// is a global asset, shared by every language.
 //
 // Not shipped: scripts/shipped.mjs leaves store/ out of the store build.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
@@ -18,7 +25,13 @@ import { fileURLToPath } from 'node:url';
 import { PAGES } from './pages.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const OUT = join(ROOT, 'store', 'screenshots');
+const LANG = process.env.HEDDY_LANG === 'zh_CN' ? 'zh_CN' : 'en';
+const ZH_SET = LANG === 'zh_CN';
+const OUT = join(ROOT, 'store', 'screenshots', ...(ZH_SET ? ['zh-CN'] : []));
+const MSG = JSON.parse(readFileSync(join(ROOT, '_locales', LANG, 'messages.json'), 'utf8'));
+/** The desk's tab label in LANG, from its English name. */
+const TAB = { Digest: 'deskTabDigest', Quiz: 'deskTabQuiz', Jot: 'deskTabJot', Insights: 'deskTabInsights' };
+const tabLabel = (name) => (TAB[name] && MSG[TAB[name]] ? MSG[TAB[name]].message : name);
 const EXT = 'https://heddy.test/ext/';
 const { chromium } = await import(process.env.PLAYWRIGHT || 'playwright');
 const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
@@ -96,7 +109,7 @@ const QUIZ = {
 const JOTS = [
   { id: 'a1b2c3d4-0000-4000-8000-000000000001', t: 137, kind: 'line', by: 'key', text: 'One centimetre on the map stands for fifty thousand centimetres on the ground.' },
   { id: 'a1b2c3d4-0000-4000-8000-000000000002', t: 153, kind: 'line', by: 'key', text: 'So two centimetres on the map is one kilometre on the ground.' },
-  { id: 'a1b2c3d4-0000-4000-8000-000000000003', t: 158, kind: 'note', text: 'Strip of paper → line scale. Try the 6 cm question myself!' },
+  { id: 'a1b2c3d4-0000-4000-8000-000000000003', t: 158, kind: 'note', text: ZH_SET ? '纸条 → 线段比例尺，6 厘米那题自己先试！' : 'Strip of paper → line scale. Try the 6 cm question myself!' },
 ];
 
 /** Runs in the watch page before its scripts: the background's answers, and
@@ -151,7 +164,7 @@ function stubDesk(d) {
 const DESK = 'window.__roots.filter((x) => x[0] === "HEDDY-DESK").map((x) => x[1]).pop()';
 
 /** The stand-in watch page with the desk open on `tab`. */
-async function deskShot(browser, { tab, local, lang = 'en', act }) {
+async function deskShot(browser, { tab, local, lang = LANG, act }) {
   const context = await browser.newContext({ viewport: RVIEW, deviceScaleFactor: 1 });
   await offline(context);
   const page = await context.newPage();
@@ -165,7 +178,7 @@ async function deskShot(browser, { tab, local, lang = 'en', act }) {
   await page.evaluate(() => window.__roots.filter((x) => x[0] === 'HEDDY-ACTIONS').map((x) => x[1]).pop().querySelector('button').click());
   await page.waitForTimeout(900);
   if (tab) {
-    await page.evaluate(`[...(${DESK}).querySelectorAll('.tabs .tab')].find((t) => t.textContent.trim().startsWith(${JSON.stringify(tab)})).click()`);
+    await page.evaluate(`[...(${DESK}).querySelectorAll('.tabs .tab')].find((t) => t.textContent.trim().startsWith(${JSON.stringify(tabLabel(tab))})).click()`);
     await page.waitForTimeout(500);
   }
   if (act) await act(page);
@@ -190,7 +203,7 @@ function stubPanel(d) {
     runtime: {
       id: 'heddy',
       getURL: (p) => 'https://heddy.test/ext/' + p,
-      getManifest: () => ({ version: '0.8.1' }),
+      getManifest: () => ({ version: d.version }),
       sendMessage: async (m) => {
         if (m.type === 'heddy-cards:get') return { ok: true, url: d.url, cards: d.cards, counts: { text: d.cards.filter((c) => c.kind === 'text').length, picture: d.cards.filter((c) => c.kind === 'image').length } };
         if (m.type === 'heddy-page:professor') return { ok: true, code: 'GEOG', name: 'Mercator' };
@@ -214,8 +227,8 @@ function stubPanel(d) {
     },
     tabs: { get: async () => tab, query: async () => [tab], sendMessage: async () => {}, create: async () => {} },
     scripting: { executeScript: async () => [{ result: null }] },
-    storage: { local: area({ seenFirstRun: true }), sync: area({ lang: 'en' }), session: area({}), onChanged: { addListener() {} } },
-    i18n: { getUILanguage: () => 'en-GB' },
+    storage: { local: area({ seenFirstRun: true }), sync: area({ lang: d.lang }), session: area({}), onChanged: { addListener() {} } },
+    i18n: { getUILanguage: () => (d.lang === 'zh_CN' ? 'zh-CN' : 'en-GB') },
   };
 }
 
@@ -233,7 +246,7 @@ async function webShot(browser, { cards, ask, select }) {
   const panel = await context.newPage();
   await panel.setViewportSize({ width: DOCK, height: RVIEW.height });
   panel.on('pageerror', (e) => console.error('panel:', e.message));
-  await panel.addInitScript(stubPanel, { url: ARTICLE, cards, ask });
+  await panel.addInitScript(stubPanel, { url: ARTICLE, cards, ask, lang: LANG, version: MANIFEST.version });
   await panel.goto(EXT + 'popup/popup.html?tab=7&host=panel');
   await panel.waitForTimeout(900);
   if (ask && ask.question) {
@@ -334,6 +347,31 @@ async function compose(browser, name, html, size = { width: 1280, height: 800 })
 
 // ─── the shots ───────────────────────────────────────────────────────────────
 
+/** Each shot's caption bar, in the listing's language. */
+const CAPTIONS = ZH_SET ? {
+  digest: ['英文视频，中英双语看懂', '「和 Heddy 一起看」打开书桌：精读文字稿可选英文、双语或中文，教授为每一章写见解。'],
+  quiz: ['看完做个视频小测', '想要提示就点一下。答错的题可以做成闪卡。'],
+  jot: ['按 H 记下正在说的那一句', '随记先留在这台电脑上，点「存到我的 Jotters」就进批注本。'],
+  sources: ['任何网页，一键剪藏进批注本', '文字和图片各成一张带编号的剪藏卡片，按你排的顺序存进批注本。'],
+  ask: ['不懂就问教授', '教授只提问、给提示，让你自己想明白，不直接给答案。'],
+} : {
+  digest: ['Study a video beside it', 'Watch with Heddy opens the desk: Jot, Digest, Insights and Quiz, in English or 中文.'],
+  quiz: ['A quick quiz on the video', 'A hint when you want one. The questions you miss can become flashcards.'],
+  jot: ['Press H to jot the line being spoken', 'Your jots wait on this computer until you Save to My Jotters.'],
+  sources: ['Keep words and pictures from any page', 'Each one is a numbered source. Save them to your Jotters, in your order.'],
+  ask: ['Ask your professor about it', 'Questions and hints that help you work it out for yourself.'],
+};
+const cap = (k) => ({ title: CAPTIONS[k][0], line: CAPTIONS[k][1] });
+
+/** Ask's question and the professor's reply: a question back, not the answer. */
+const ASK = ZH_SET ? {
+  question: '为什么 2 厘米是一千米？',
+  reply: ['问得好。先从 1 开始想。', '在 1:50 000 的地图上，1 厘米代表地面上的 50 000 厘米。', '50 000 厘米是多少米？', '算出来以后，2 厘米又是多少？'],
+} : {
+  question: 'Why is 2 cm one kilometre?',
+  reply: ['Good question. Start with the 1. ', 'On a 1:50 000 map, 1 cm stands for 50 000 cm on the ground. ', 'How many metres is 50 000 cm? ', 'Once you have that, what would 2 cm be?'],
+};
+
 const desk = (s) => `(${DESK}).querySelectorAll(${JSON.stringify(s)})`;
 
 async function run() {
@@ -345,15 +383,13 @@ async function run() {
 
     // 1 · The desk's Digest, following the player, with the professor's insights note.
     await compose(browser, '01-desk-digest.png', frameHtml({
-      title: 'Study a video beside it',
-      line: 'Watch with Heddy opens the desk: Jot, Digest, Insights and Quiz, in English or 中文.',
-      address: yt, pageImg: b64(await deskShot(browser, { tab: 'Digest' })),
+      ...cap('digest'),
+      address: yt, pageImg: b64(await deskShot(browser, { tab: 'Digest', local: ZH_SET ? { digestView: 'bi' } : undefined })),
     }));
 
     // 2 · The Quiz: a question answered, with the hint used.
     await compose(browser, '02-desk-quiz.png', frameHtml({
-      title: 'A quick quiz on the video',
-      line: 'A hint when you want one. The questions you miss can become flashcards.',
+      ...cap('quiz'),
       address: yt,
       pageImg: b64(await deskShot(browser, {
         tab: 'Quiz',
@@ -372,8 +408,7 @@ async function run() {
 
     // 3 · Jot: H took two lines and a note was typed.
     await compose(browser, '03-desk-jot.png', frameHtml({
-      title: 'Press H to jot the line being spoken',
-      line: 'Your jots wait on this computer until you Save to My Jotters.',
+      ...cap('jot'),
       address: yt, pageImg: b64(await deskShot(browser, { tab: 'Jot', local: { ['deskJots:' + VIDEO_ID]: JOTS } })),
     }));
 
@@ -386,8 +421,7 @@ async function run() {
     ];
     const src = await webShot(browser, { cards, select: [['1', QUOTE_A], ['2', QUOTE_B]] });
     await compose(browser, '04-web-sources.png', frameHtml({
-      title: 'Keep words and pictures from any page',
-      line: 'Each one is a numbered source. Save them to your Jotters, in your order.',
+      ...cap('sources'),
       address: 'example.org/notes/reading-map-scales', pageImg: b64(src.left), panelImg: b64(src.right),
     }));
 
@@ -396,19 +430,18 @@ async function run() {
       cards,
       ask: {
         ctx: { about: 'words', n: 1, attach: { kind: 'text', quote: QUOTE_A, before: 'A map is much smaller than the land it shows.', after: 'So if two villages are 6 cm apart' } },
-        question: 'Why is 2 cm one kilometre?',
-        reply: ['Good question. Start with the 1. ', 'On a 1:50 000 map, 1 cm stands for 50 000 cm on the ground. ', 'How many metres is 50 000 cm? ', 'Once you have that, what would 2 cm be?'],
+        question: ASK.question,
+        reply: ASK.reply,
       },
       select: [['1', QUOTE_A], ['2', QUOTE_B]],
     });
     await compose(browser, '05-web-ask.png', frameHtml({
-      title: 'Ask your professor about it',
-      line: 'Questions and hints that help you work it out for yourself.',
+      ...cap('ask'),
       address: 'example.org/notes/reading-map-scales', pageImg: b64(ask.left), panelImg: b64(ask.right),
     }));
 
-    // The small promo tile.
-    await compose(browser, 'promo-440x280.png', `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${EXT}store/render/frame.css"></head>
+    // The small promo tile: a global asset, so the English set only.
+    if (!ZH_SET) await compose(browser, 'promo-440x280.png', `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${EXT}store/render/frame.css"></head>
 <body class="tilebody"><div class="tile"><span class="mk" id="mk"></span><h1></h1><p></p><span class="pill"></span></div>
 <script src="${EXT}lib/marks.js"></script><script>
   document.body.insertAdjacentHTML('afterbegin', HeddyMarks.sprite(['h-eyes']));
