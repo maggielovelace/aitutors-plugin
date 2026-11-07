@@ -1,6 +1,6 @@
 {
-  "extName": { "message": "Heddy for Chrome" },
-  "extDescription": { "message": "Keep what you find. Send a YouTube video to My Clips, or watch it with Heddy. Works with aitutors.me." },
+  "extName": { "message": "Heddy for Chrome: Clip to your Jotter, learn with your professors" },
+  "extDescription": { "message": "Works with aitutors.me. Clip words, pictures and video notes into your Jotter. Professors explain and hint, never give the answer." },
   "actionTitle": { "message": "Heddy" },
 
   "watchWithHeddy": { "message": "Watch with Heddy" },

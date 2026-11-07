@@ -3,10 +3,10 @@
   var MESSAGES = {
     "en": {
       "extName": {
-        "message": "Heddy for Chrome"
+        "message": "Heddy for Chrome: Clip to your Jotter, learn with your professors"
       },
       "extDescription": {
-        "message": "Keep what you find. Send a YouTube video to My Clips, or watch it with Heddy. Works with aitutors.me."
+        "message": "Works with aitutors.me. Clip words, pictures and video notes into your Jotter. Professors explain and hint, never give the answer."
       },
       "actionTitle": {
         "message": "Heddy"
@@ -2109,10 +2109,10 @@
     },
     "zh_CN": {
       "extName": {
-        "message": "Heddy for Chrome"
+        "message": "Heddy for Chrome：剪藏进批注本，教授陪你学懂"
       },
       "extDescription": {
-        "message": "收下你找到的东西。把 YouTube 视频放进「我的短片」，或和 Heddy 一起看。配合 aitutors.me 使用。"
+        "message": "配合 aitutors.me 使用。剪下的文字、图片和视频随记都进你的批注本：按你的批注出题、讲解、做闪卡，学科教授只给提示，从不直接给答案。"
       },
       "actionTitle": {
         "message": "Heddy"
