@@ -109,7 +109,7 @@ const QUIZ = {
 const JOTS = [
   { id: 'a1b2c3d4-0000-4000-8000-000000000001', t: 137, kind: 'line', by: 'key', text: 'One centimetre on the map stands for fifty thousand centimetres on the ground.' },
   { id: 'a1b2c3d4-0000-4000-8000-000000000002', t: 153, kind: 'line', by: 'key', text: 'So two centimetres on the map is one kilometre on the ground.' },
-  { id: 'a1b2c3d4-0000-4000-8000-000000000003', t: 158, kind: 'note', text: ZH_SET ? '纸条 → 线段比例尺，6 厘米那题自己先试！' : 'Strip of paper → line scale. Try the 6 cm question myself!' },
+  { id: 'a1b2c3d4-0000-4000-8000-000000000003', t: 158, kind: 'note', text: ZH_SET ? '纸条 → 线段比例尺，6 厘米那题自己先试！' : 'Strip of paper → line scale. Try 6 cm myself!' },
 ];
 
 /** Runs in the watch page before its scripts: the background's answers, and
@@ -355,11 +355,11 @@ const CAPTIONS = ZH_SET ? {
   sources: ['任何网页，一键剪藏进批注本', '文字和图片各成一张带编号的剪藏卡片，按你排的顺序存进批注本。'],
   ask: ['不懂就问教授', '教授只提问、给提示，让你自己想明白，不直接给答案。'],
 } : {
-  digest: ['Study a video beside it', 'Watch with Heddy opens the desk: Jot, Digest, Insights and Quiz, in English or 中文.'],
+  digest: ['English videos, bilingual when you need it', 'Watch with Heddy opens the desk: the transcript in English, Bilingual or 中文, and your professor’s note on each chapter.'],
   quiz: ['A quick quiz on the video', 'A hint when you want one. The questions you miss can become flashcards.'],
-  jot: ['Press H to jot the line being spoken', 'Your jots wait on this computer until you Save to My Jotters.'],
-  sources: ['Keep words and pictures from any page', 'Each one is a numbered source. Save them to your Jotters, in your order.'],
-  ask: ['Ask your professor about it', 'Questions and hints that help you work it out for yourself.'],
+  jot: ['Press H to jot the line being spoken', 'Your jots wait on this computer until Save to My Jotters puts them in your Jotter.'],
+  sources: ['Clip any page into your Jotter', 'Words and pictures each become a numbered clipping, saved to your Jotter in your order.'],
+  ask: ['Stuck? Ask your professor', 'Professors ask and hint so you work it out yourself. They never give the answer.'],
 };
 const cap = (k) => ({ title: CAPTIONS[k][0], line: CAPTIONS[k][1] });
 
@@ -384,7 +384,7 @@ async function run() {
     // 1 · The desk's Digest, following the player, with the professor's insights note.
     await compose(browser, '01-desk-digest.png', frameHtml({
       ...cap('digest'),
-      address: yt, pageImg: b64(await deskShot(browser, { tab: 'Digest', local: ZH_SET ? { digestView: 'bi' } : undefined })),
+      address: yt, pageImg: b64(await deskShot(browser, { tab: 'Digest', local: { digestView: 'bi' } })),
     }));
 
     // 2 · The Quiz: a question answered, with the hint used.
