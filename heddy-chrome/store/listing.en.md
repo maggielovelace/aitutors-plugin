@@ -53,7 +53,7 @@ Tap Watch with Heddy on any YouTube video and the desk opens beside it.
 ━━━━━━━━━━━━━━
 3 · ASK: seven professors beside you
 ━━━━━━━━━━━━━━
-Mentor and seven subject professors: Pi (maths), Quill (English), Darwin (biology), Curie (chemistry), Newton (physics), Harari (history) and Mercator (geography).
+Mentor and seven subject professors sit beside the page. Whatever subject you are studying, its own professor helps you think it through.
 • Explain: select a line or a picture and your professor explains it.
 • Insights: your professor's short note on each chapter of a video, as you reach it.
 • Ask: talk to the page's professor about a line, a moment or a picture.
