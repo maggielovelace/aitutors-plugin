@@ -134,7 +134,7 @@
       if (!message || typeof message !== 'object' || !sender || sender.id !== chrome.runtime.id) return undefined;
       // Heddy's own pages (the popup, now a frame in the page or a small
       // window) carry a sender.tab too; like content scripts' it is not theirs.
-      var own = /^chrome-extension:/.test(String(sender.url || ''));
+      var own = /^(?:chrome-extension|safari-web-extension):/.test(String(sender.url || ''));
       var tab = own ? null : sender.tab;
       switch (message.type) {
         case 'heddy-ui:snap': {
@@ -183,7 +183,7 @@
       return true;
     }
 
-    /** chrome.contextMenus.onClicked on an image: "Add picture to Heddy".
+    /** (chrome.contextMenus || chrome.menus).onClicked on an image: "Add picture to Heddy".
      *  The picture becomes the next card and box mode stays on beside the
      *  panel. A picture inside a frame starts box mode without a box: box
      *  mode runs in the top page only. */
@@ -197,9 +197,9 @@
     /** The context menu item (runtime.onInstalled). */
     function installMenu(title) {
       return Promise.resolve()
-        .then(function () { return chrome.contextMenus.remove(MENU_ID); })
+        .then(function () { return (chrome.contextMenus || chrome.menus).remove(MENU_ID); })
         .catch(function () {})
-        .then(function () { return chrome.contextMenus.create({ id: MENU_ID, title: title, contexts: ['image'] }); })
+        .then(function () { return (chrome.contextMenus || chrome.menus).create({ id: MENU_ID, title: title, contexts: ['image'] }); })
         .catch(function () {});
     }
 

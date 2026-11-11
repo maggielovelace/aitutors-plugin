@@ -9,7 +9,7 @@
   var SELECTORS = Object.freeze({
     // The row holding Like and Share. Watch with Heddy goes straight after it,
     // which puts it after Share and before YouTube's own Save / Download.
-    actionBar: 'ytd-watch-metadata #top-level-buttons-computed',
+    actionBar: 'ytd-watch-metadata #top-level-buttons-computed, ytm-slim-video-action-bar-renderer',
     // The main player's <video>: its time for the desk and the popup, a tap on
     // a time seeks it, and pause() when Full desk hands it to Classroom.
     video: '#movie_player video',
@@ -26,7 +26,7 @@
     // theater); YouTube's suggestions, folded away while the desk is open; and
     // the masthead the desk sticks under.
     secondaryColumn: 'ytd-watch-flexy #secondary-inner',
-    belowPlayer: 'ytd-watch-flexy #below',
+    belowPlayer: 'ytd-watch-flexy #below, ytm-watch #below-the-player',
     watchFlexy: 'ytd-watch-flexy',
     suggestions: 'ytd-watch-flexy #related',
     masthead: '#masthead-container',

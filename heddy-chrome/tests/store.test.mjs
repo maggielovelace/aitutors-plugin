@@ -131,11 +131,12 @@ test('every request path the shipped code can make is named in privacy-answers.m
   }
 });
 
-test('no /api/ path is written anywhere in shipped code except the three PATHS tables', () => {
+test('API paths are declared in the PATHS tables and the Safari relay allowlist', () => {
   const owners = new Set(['lib/who.js', 'lib/desk-api.js', 'lib/heddy-api.js']);
   for (const f of JS) {
     if (owners.has(f)) continue;
-    assert.doesNotMatch(code(f), /['"`]\/api\//, `${f} writes an /api/ path outside the PATHS tables`);
+    const src = f === 'content/safari-site.js' ? code(f).replace("const base = '/api/learn/heddy/';", '') : code(f);
+    assert.doesNotMatch(src, /['"`]\/api\//, `${f} writes an /api/ path outside the PATHS tables`);
   }
 });
 

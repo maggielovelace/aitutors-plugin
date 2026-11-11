@@ -18,7 +18,7 @@
   color-scheme: light;
 }
 html, body { margin: 0; background: var(--pb); }
-body { width: 360px; font: 500 14px/1.45 var(--sans); color: var(--pi); -webkit-font-smoothing: antialiased; }
+body { width: 360px; max-width: 100%; font: 500 14px/1.45 var(--sans); color: var(--pi); -webkit-font-smoothing: antialiased; }
 :lang(zh-CN) body, body:lang(zh-CN) { --sans: "Manrope", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif; }
 svg { display: block; flex: none; }
 button { font: inherit; }

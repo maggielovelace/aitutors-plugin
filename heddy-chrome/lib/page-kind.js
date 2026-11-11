@@ -45,7 +45,7 @@
     var u = parse(s);
     if (!u) return 'other';
     var p = u.protocol;
-    if (p === 'chrome-extension:') return ownId && u.hostname === ownId ? 'heddy' : 'chrome';
+    if (p === 'chrome-extension:' || p === 'safari-web-extension:') return ownId && u.hostname === ownId ? 'heddy' : 'chrome';
     if (p === 'chrome:' || p === 'chrome-untrusted:' || p === 'chrome-search:' || p === 'chrome-native:' || p === 'devtools:' || p === 'about:' || p === 'edge:') return 'chrome';
     if (p === 'file:') return 'file';
     if (p === 'http:' || p === 'https:') {
@@ -61,7 +61,7 @@
   function chipKey(url, kind) {
     var u = parse(url);
     if (kind === 'chrome' && u) {
-      if (u.protocol === 'chrome-extension:') return 'kindExtension';
+      if (u.protocol === 'chrome-extension:' || u.protocol === 'safari-web-extension:') return 'kindExtension';
       var page = u.protocol === 'chrome:' ? u.hostname : '';
       if (page === 'newtab' || page === 'new-tab-page' || u.protocol === 'chrome-search:') return 'kindNewTab';
       if (page === 'settings') return 'kindSettings';

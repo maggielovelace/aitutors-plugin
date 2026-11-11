@@ -11,7 +11,10 @@ aitutors.me sign-in: one to ask who is signed in, the desk's five on a YouTube
 video, one for the list of your Jotters when the panel opens on a page, and
 the saves, Undos, cards, jots, clips and Ask conversations that you start
 yourself (all listed under *Every request Heddy makes*, below). Heddy
-opens no window or tab unless you tap a link that says it leaves.
+opens tabs when you follow its links. Safari also uses an existing
+aitutors.me tab, or opens the welcome page in a background tab when one is
+needed, to use your first-party sign-in session. It sends the same Heddy
+requests listed below.
 
 ## What Heddy reads
 

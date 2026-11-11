@@ -37,7 +37,7 @@ function unzipTo(buf, dir) {
 const dir = mkdtempSync(join(tmpdir(), 'heddy-zip-'));
 unzipTo(readFileSync(file), dir);
 const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'heddy-profile-')), {
-  channel: 'chromium', headless: true,
+  channel: 'chromium', executablePath: process.env.BROWSER_EXECUTABLE, headless: true,
   args: [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`],
 });
 const problems = [];

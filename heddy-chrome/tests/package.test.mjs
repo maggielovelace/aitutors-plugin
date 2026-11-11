@@ -135,3 +135,20 @@ test('the store icon is the navy eyes crest at 96 px inside a transparent 16 px 
   assert.match(sh, /rsvg-convert -w 96 -h 96 --page-width 128 --page-height 128 --left 16 --top 16 src\/eyes-mark\.svg -o store-128\.png/);
   assert.ok(!existsSync(join(ROOT, 'icons/src/store-128.svg')), 'the gold-ring face is retired');
 });
+
+test('Edge and Safari packages use browser branding and target-specific manifest keys', () => {
+  const mobileWatch = 'https://m.youtube.com/watch*';
+  for (const [browser, label] of [['edge', 'Microsoft Edge'], ['safari', 'Safari']]) {
+    const archive = unzip(zip(entries({ browser })));
+    const config = JSON.parse(archive['manifest.json']);
+    assert.equal(config.minimum_chrome_version, undefined);
+    assert.deepEqual(config.externally_connectable.matches, ['https://aitutors.me/*']);
+    assert.equal(config.host_permissions.includes(mobileWatch), browser === 'safari');
+    assert.equal(config.content_scripts[0].matches.includes(mobileWatch), browser === 'safari');
+    for (const locale of ['en', 'zh_CN']) {
+      const name = JSON.parse(archive[`_locales/${locale}/messages.json`]).extName.message;
+      assert.ok(name.includes(label));
+      assert.ok(name.length <= 75);
+    }
+  }
+});
