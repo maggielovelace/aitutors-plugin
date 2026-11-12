@@ -16,3 +16,10 @@ trap 'rm -rf "$resources"' EXIT
 unzip -q "dist/heddy-safari-$version.zip" -d "$resources"
 xcrun safari-web-extension-packager "$resources" --project-location "$project_dir" \
   --app-name Heddy --bundle-identifier "$extension_id" --swift --copy-resources --no-open --no-prompt
+
+# The manifest needs Safari 17.4, which ships with iOS 17.4 and macOS 14.4.
+# Older systems would install the app but never load the extension.
+sed -i '' \
+  -e 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 17.4;/g' \
+  -e 's/MACOSX_DEPLOYMENT_TARGET = [0-9.]*;/MACOSX_DEPLOYMENT_TARGET = 14.4;/g' \
+  "$project_dir/Heddy/Heddy.xcodeproj/project.pbxproj"

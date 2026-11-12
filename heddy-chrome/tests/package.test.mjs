@@ -152,3 +152,11 @@ test('Edge and Safari packages use browser branding and target-specific manifest
     }
   }
 });
+
+test('the Safari app targets the systems that ship Safari 17.4', () => {
+  const script = readFileSync(join(ROOT, 'scripts/package-safari-app.sh'), 'utf8');
+  const m = JSON.parse(storeManifest(readFileSync(join(ROOT, 'manifest.json'), 'utf8'), { browser: 'safari' }));
+  assert.equal(m.browser_specific_settings.safari.strict_min_version, '17.4');
+  assert.match(script, /IPHONEOS_DEPLOYMENT_TARGET = 17\.4;/);
+  assert.match(script, /MACOSX_DEPLOYMENT_TARGET = 14\.4;/);
+});
