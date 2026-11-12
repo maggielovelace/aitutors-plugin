@@ -56,11 +56,13 @@
     '  border-radius: 12px; background: #fdfcf8; color-scheme: light; visibility: hidden;',
     '  box-shadow: 0 14px 36px rgba(0, 20, 50, .28), 0 0 0 1px rgba(0, 33, 71, .12); }',
     '.f.on { visibility: visible; }',
+    '.f { max-width: calc(100vw - 24px); }',
     // Docked: the card fills the column, inside its 12 px gutter (the desk
     // draws its own 1 px border and 16 px corners).
     '.f.dock { position: absolute; top: ' + INSET + 'px; right: ' + INSET + 'px; bottom: ' + INSET + 'px; width: ' + (DOCK - INSET) + 'px !important;',
     // A frame is a replaced element: top + bottom alone leave it 150 px tall.
     '  height: calc(100vh - ' + 2 * INSET + 'px) !important; max-height: none; border-radius: 16px; box-shadow: none; background: transparent; }',
+    '@media (max-width: 700px) and (pointer: coarse) { .f.dock { top: auto; width: calc(100vw - 24px) !important; height: min(70dvh, 560px) !important; } }',
   ].join('\n');
 
   function tell(message) {
@@ -94,7 +96,9 @@
     frame.classList.toggle('dock', on);
     if (on) {
       docked = { value: html.style.getPropertyValue('margin-right'), priority: html.style.getPropertyPriority('margin-right') };
-      html.style.setProperty('margin-right', DOCK + 'px', 'important');
+      var touch = root.matchMedia && root.matchMedia('(pointer: coarse)').matches;
+      var margin = touch ? 'clamp(0px, (100vw - 700px) * 410, ' + DOCK + 'px)' : DOCK + 'px';
+      html.style.setProperty('margin-right', margin, 'important');
       ['top: 0', 'right: 0', 'bottom: 0', 'height: 100vh', 'width: ' + DOCK + 'px'].forEach(function (d) {
         var kv = d.split(': ');
         host.style.setProperty(kv[0], kv[1], 'important');
@@ -217,7 +221,7 @@
     host = document.createElement('heddy-panel');
     host.setAttribute('style', [
       'all: initial', 'position: fixed', 'top: ' + INSET + 'px', 'right: ' + INSET + 'px', 'left: auto', 'bottom: auto',
-      'z-index: 2147483647', 'display: block', 'width: ' + WIDTH + 'px', 'margin: 0', 'padding: 0',
+      'z-index: 2147483647', 'display: block', 'width: ' + WIDTH + 'px', 'max-width: 100vw', 'margin: 0', 'padding: 0',
       'transform: none', 'filter: none', 'opacity: 1', 'pointer-events: auto',
     ].map(function (d) { return d + ' !important'; }).join('; '));
     var shadow = host.attachShadow({ mode: 'closed' });

@@ -72,7 +72,7 @@ const VIDEO = `<!doctype html><html><head><meta charset="utf-8"><title>Using sca
 </ytd-watch-flexy>
 </body></html>`;
 
-const ARTICLE = `<!doctype html><html><head><meta charset="utf-8"><title>Reading map scales</title><style>
+const ARTICLE = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reading map scales</title><style>
   body { margin: 0; background: #fff; color: #1f2933; font: 17px/1.65 Georgia, "Times New Roman", serif; }
   .site { height: 56px; display: flex; align-items: center; padding: 0 48px; border-bottom: 1px solid #e4e7eb; font: 700 16px Arial, sans-serif; color: #2f4858; }
   .site span { margin-left: auto; display: flex; gap: 22px; font-weight: 400; color: #616e7c; }
@@ -84,6 +84,8 @@ const ARTICLE = `<!doctype html><html><head><meta charset="utf-8"><title>Reading
   figure { margin: 70px 0 0; width: 330px; flex: none; }
   figure svg { display: block; width: 100%; height: auto; border-radius: 8px; }
   figcaption { margin-top: 8px; font: 13px/1.4 Arial, sans-serif; color: #616e7c; }
+  /* Phone and narrow iPad widths (render-mobile.mjs): one column. */
+  @media (max-width: 700px) { .site { padding: 0 18px; } .site span { display: none; } .wrap { display: block; padding: 18px; } article { width: auto; } figure { margin: 18px 0 0; width: auto; max-width: 420px; } h1 { font-size: 27px; } }
 </style></head><body>
 <div class="site">Sample Geography Notes<span><a>Maps</a><a>Rivers</a><a>Weather</a></span></div>
 <div class="wrap">

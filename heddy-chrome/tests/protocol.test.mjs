@@ -77,6 +77,7 @@ test('buildAdd refuses what the site would refuse, rather than send it', () => {
 test('the video id comes only from a YouTube watch page', () => {
   assert.equal(P.youtubeIdFromUrl('https://www.youtube.com/watch?v=Fq2aPn3x_-A'), 'Fq2aPn3x_-A');
   assert.equal(P.youtubeIdFromUrl('https://www.youtube.com/watch?v=Fq2aPn3x_-A&t=112s&list=x'), 'Fq2aPn3x_-A');
+  assert.equal(P.youtubeIdFromUrl('https://m.youtube.com/watch?v=Fq2aPn3x_-A'), 'Fq2aPn3x_-A');
   for (const url of [
     'https://www.youtube.com/shorts/Fq2aPn3x_-A',
     'https://www.youtube.com/embed/Fq2aPn3x_-A',
@@ -84,7 +85,6 @@ test('the video id comes only from a YouTube watch page', () => {
     'https://www.youtube.com/shorts/x?v=Fq2aPn3x_-A',
     'https://www.youtube.com/playlist?v=Fq2aPn3x_-A',
     'https://www.youtube.com/',
-    'https://m.youtube.com/watch?v=Fq2aPn3x_-A',
     'http://www.youtube.com/watch?v=Fq2aPn3x_-A',
     'https://www.youtube.com.evil.example/watch?v=Fq2aPn3x_-A',
     'https://www.youtube.com/watch?v=<script>',

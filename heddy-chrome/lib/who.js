@@ -71,6 +71,11 @@
     var timer = ctrl ? later(function () { ctrl.abort(); }, o.timeoutMs || TIMEOUT_MS) : null;
     return Promise.resolve()
       .then(function () {
+        if (root.chrome && chrome.runtime && chrome.runtime.getURL && chrome.runtime.getURL('/').startsWith('safari-web-extension:')) {
+          return chrome.runtime.sendMessage({ type: 'heddy-safari:me' }).then(function (answer) {
+            return { ok: !!answer, json: function () { return Promise.resolve(answer); } };
+          });
+        }
         return fetchImpl(origin + PATH, { method: 'GET', credentials: 'include', cache: 'no-store', redirect: 'error', headers: { Accept: 'application/json' }, signal: ctrl ? ctrl.signal : undefined });
       })
       .then(function (res) {

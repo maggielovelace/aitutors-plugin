@@ -47,7 +47,7 @@ test('D78: nothing Heddy ships calls windows.create, window.open, or chrome.wind
   }
 });
 
-test('D78: tabs.create only where a child taps a link that says it leaves (Full desk ↗, Open, Sign in, the popup’s tiles, settings) or on first install', () => {
+test('tabs.create only serves explicit navigation, the welcome page, or the Safari first-party API tab', () => {
   const KEPT = {
     // openTab (Full desk ↗'s /capture tab, D71) twice, heddy-ui:open (Open on a toast, Open my Jotter ↗, Sign in), installed (the welcome page).
     'lib/courier.js': 4,
@@ -57,6 +57,7 @@ test('D78: tabs.create only where a child taps a link that says it leaves (Full 
     'options/options.js': 1,
     // Full desk ↗: one tab straight to Classroom (owner, 2026-10-31; no /capture page).
     'lib/web-routes.js': 1,
+    'lib/safari-site.js': 1,
   };
   const seen = {};
   for (const f of shippedFiles().filter((x) => /\.js$/.test(x))) {
@@ -64,6 +65,7 @@ test('D78: tabs.create only where a child taps a link that says it leaves (Full 
     if (n) seen[f] = n;
   }
   assert.deepEqual(seen, KEPT);
+  assert.match(code('lib/safari-site.js'), /tabs\.create\(\{ url: origin \+ '\/heddy-chrome\/welcome', active: false \}\)/);
   const courier = code('lib/courier.js');
   assert.match(courier, /function openTab\(url, fromTabId\)/);
   assert.match(courier, /case 'heddy-ui:open':[^]*chrome\.tabs\.create\(\{ url: u\.href/);

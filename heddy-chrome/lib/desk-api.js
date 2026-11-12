@@ -284,7 +284,7 @@
     /** The desk's message, from the watch page of the video it names. */
     function internal(message, sender) {
       if (!message || typeof message !== 'object' || typeof message.type !== 'string' || message.type.indexOf('heddy-desk:') !== 0) return undefined;
-      if (!sender || sender.id !== chrome.runtime.id || !sender.tab || /^chrome-extension:/.test(String(sender.url || ''))) return Promise.resolve({ ok: false });
+      if (!sender || sender.id !== chrome.runtime.id || !sender.tab || /^(?:chrome-extension|safari-web-extension):/.test(String(sender.url || ''))) return Promise.resolve({ ok: false });
       var id = message.youtubeId;
       if (!P.isYoutubeId(id) || P.youtubeIdFromUrl(sender.url || sender.tab.url) !== id) return Promise.resolve({ ok: false });
       switch (message.type) {

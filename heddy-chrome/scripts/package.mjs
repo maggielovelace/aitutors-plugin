@@ -18,10 +18,25 @@ import { deflateRawSync, crc32 } from 'node:zlib';
 import { ROOT, shippedFiles } from './shipped.mjs';
 
 const DEV = process.argv.includes('--dev');
+const TARGET = process.argv.find((arg) => arg.startsWith('--browser='))?.slice(10) ?? 'chrome';
+const BROWSERS = ['chrome', 'edge', 'safari'];
 
 /** The manifest the store receives. */
-export function storeManifest(src, { dev = false } = {}) {
+export function storeManifest(src, { dev = false, browser = 'chrome' } = {}) {
+  if (!BROWSERS.includes(browser)) throw new Error('Unknown browser: ' + browser);
   const m = JSON.parse(src);
+  if (browser !== 'chrome') delete m.minimum_chrome_version;
+  if (browser === 'edge') delete m.update_url;
+  if (browser === 'safari') {
+    delete m.options_ui.open_in_tab;
+    const mobileWatch = 'https://m.youtube.com/watch*';
+    m.host_permissions.push(mobileWatch);
+    if (dev) m.host_permissions.push('http://localhost:3000/*');
+    m.content_scripts[0].matches.push(mobileWatch);
+    m.browser_specific_settings = { safari: { strict_min_version: '17.4' } };
+    // The panel uses the URL returned by Safari; this Chromium option is optional.
+    for (const resource of m.web_accessible_resources) delete resource.use_dynamic_url;
+  }
   if (!dev && m.externally_connectable && Array.isArray(m.externally_connectable.matches)) {
     m.externally_connectable.matches = m.externally_connectable.matches.filter((u) => !/^https?:\/\/localhost[:/]/.test(u));
   }
@@ -81,14 +96,26 @@ export function zip(entries) {
 }
 
 /** [name, bytes] for every shipped file, the store manifest in place of the repository's. */
-export function entries({ dev = false } = {}) {
-  return shippedFiles().map((f) => [f, f === 'manifest.json' ? Buffer.from(storeManifest(readFileSync(join(ROOT, f), 'utf8'), { dev })) : readFileSync(join(ROOT, f))]);
+export function entries({ dev = false, browser = 'chrome' } = {}) {
+  return shippedFiles().map((name) => {
+    const data = readFileSync(join(ROOT, name));
+    if (name === 'manifest.json') {
+      return [name, Buffer.from(storeManifest(data.toString('utf8'), { dev, browser }))];
+    }
+    if (browser !== 'chrome' && /^_locales\/[^/]+\/messages\.json$/.test(name)) {
+      const locale = JSON.parse(data.toString('utf8'));
+      const label = browser === 'edge' ? 'Microsoft Edge' : 'Safari';
+      locale.extName.message = locale.extName.message.replace('Chrome', label);
+      return [name, Buffer.from(JSON.stringify(locale, null, 2) + '\n')];
+    }
+    return [name, data];
+  });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const list = entries({ dev: DEV });
+  const list = entries({ dev: DEV, browser: TARGET });
   const version = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8')).version;
-  const out = join(ROOT, 'dist', `heddy-chrome-${version}${DEV ? '-dev' : ''}.zip`);
+  const out = join(ROOT, 'dist', `heddy-${TARGET}-${version}${DEV ? '-dev' : ''}.zip`);
   mkdirSync(join(ROOT, 'dist'), { recursive: true });
   const bytes = zip(list);
   writeFileSync(out, bytes);

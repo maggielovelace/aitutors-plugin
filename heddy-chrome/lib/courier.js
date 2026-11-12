@@ -50,7 +50,7 @@
    *  it has a sender.tab too, but like the old toolbar popup it names the tab
    *  it acts on, and its frame's URL is not that page's. */
   function contentTab(sender) {
-    return /^chrome-extension:/.test(String(sender.url || '')) ? null : sender.tab || null;
+    return /^(?:chrome-extension|safari-web-extension):/.test(String(sender.url || '')) ? null : sender.tab || null;
   }
 
   function createCourier(deps) {
@@ -297,9 +297,9 @@
     function installMenus(lang) {
       var title = I.t(lang, 'saveToJotters');
       return Promise.resolve()
-        .then(function () { return chrome.contextMenus.remove(MENU_ID); })
+        .then(function () { return (chrome.contextMenus || chrome.menus).remove(MENU_ID); })
         .catch(function () {})
-        .then(function () { return chrome.contextMenus.create({ id: MENU_ID, title: title, contexts: ['selection'] }); })
+        .then(function () { return (chrome.contextMenus || chrome.menus).create({ id: MENU_ID, title: title, contexts: ['selection'] }); })
         .catch(function () {});
     }
 

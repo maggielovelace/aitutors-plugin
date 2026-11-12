@@ -21,26 +21,26 @@
 // Not shipped: scripts/shipped.mjs leaves store/ out of the store build.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PAGES } from './pages.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const LANG = process.env.HEDDY_LANG === 'zh_CN' ? 'zh_CN' : 'en';
-const ZH_SET = LANG === 'zh_CN';
+export const LANG = process.env.HEDDY_LANG === 'zh_CN' ? 'zh_CN' : 'en';
+export const ZH_SET = LANG === 'zh_CN';
 const OUT = join(ROOT, 'store', 'screenshots', ...(ZH_SET ? ['zh-CN'] : []));
 const MSG = JSON.parse(readFileSync(join(ROOT, '_locales', LANG, 'messages.json'), 'utf8'));
 /** The desk's tab label in LANG, from its English name. */
 const TAB = { Digest: 'deskTabDigest', Quiz: 'deskTabQuiz', Jot: 'deskTabJot', Insights: 'deskTabInsights' };
 const tabLabel = (name) => (TAB[name] && MSG[TAB[name]] ? MSG[TAB[name]].message : name);
-const EXT = 'https://heddy.test/ext/';
+export const EXT = 'https://heddy.test/ext/';
 const { chromium } = await import(process.env.PLAYWRIGHT || 'playwright');
-const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
+export const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
 /** Answers heddy.test from the extension folder and the stand-in hosts from
  *  pages.mjs; refuses everything else. */
-async function offline(context) {
+export async function offline(context) {
   await context.route('**/*', (route) => {
     const url = new URL(route.request().url());
     if (url.origin + '/ext/' === EXT && url.pathname.startsWith('/ext/')) {
@@ -114,7 +114,7 @@ const JOTS = [
 
 /** Runs in the watch page before its scripts: the background's answers, and
  *  the desk's closed shadow roots kept so the renderer can press its buttons. */
-function stubDesk(d) {
+export function stubDesk(d) {
   const orig = Element.prototype.attachShadow;
   window.__roots = [];
   Element.prototype.attachShadow = function (o) { const r = orig.call(this, o); window.__roots.push([this.tagName, r]); return r; };
@@ -161,11 +161,11 @@ function stubDesk(d) {
   };
 }
 
-const DESK = 'window.__roots.filter((x) => x[0] === "HEDDY-DESK").map((x) => x[1]).pop()';
+export const DESK = 'window.__roots.filter((x) => x[0] === "HEDDY-DESK").map((x) => x[1]).pop()';
 
 /** The stand-in watch page with the desk open on `tab`. */
-async function deskShot(browser, { tab, local, lang = LANG, act }) {
-  const context = await browser.newContext({ viewport: RVIEW, deviceScaleFactor: 1 });
+export async function deskShot(browser, { tab, local, lang = LANG, act, viewport = RVIEW, scale = 1 }) {
+  const context = await browser.newContext({ viewport, deviceScaleFactor: scale, hasTouch: scale > 1 });
   await offline(context);
   const page = await context.newPage();
   await page.addInitScript(stubDesk, {
@@ -191,12 +191,12 @@ async function deskShot(browser, { tab, local, lang = LANG, act }) {
 
 // ─── the web desk (popup.html in panel mode) ─────────────────────────────────
 
-const ARTICLE = 'https://www.example.org/notes/reading-map-scales';
-const QUOTE_A = 'On a 1:50 000 map, 2 cm represents 1 km on the ground.';
-const QUOTE_B = 'The line scale is the easiest to use: lay a strip of paper along the route, mark the ends, then hold it against the line.';
+export const ARTICLE = 'https://www.example.org/notes/reading-map-scales';
+export const QUOTE_A = 'On a 1:50 000 map, 2 cm represents 1 km on the ground.';
+export const QUOTE_B = 'The line scale is the easiest to use: lay a strip of paper along the route, mark the ends, then hold it against the line.';
 
 /** Runs in popup.html?host=panel: the background's answers for one tab. */
-function stubPanel(d) {
+export function stubPanel(d) {
   const tab = { id: 7, windowId: 1, url: d.url, title: 'Reading map scales' };
   const area = (o) => ({ get: async () => o, set: async () => {}, remove: async () => {} });
   window.chrome = {
@@ -262,7 +262,7 @@ async function webShot(browser, { cards, ask, select }) {
 }
 
 /** Marks the picked words on the article the way the page layer numbers them. */
-function highlight(marks) {
+export function highlight(marks) {
   for (const [n, q] of marks) {
     const p = [...document.querySelectorAll('p')].find((x) => x.textContent.includes(q));
     const node = p.firstChild;
@@ -287,7 +287,7 @@ function highlight(marks) {
 }
 
 /** The article's map, as the picture card Snap a picture would keep. */
-async function mapPicture(browser) {
+export async function mapPicture(browser) {
   const context = await browser.newContext({ viewport: { width: 1000, height: 700 }, deviceScaleFactor: 1 });
   await offline(context);
   const page = await context.newPage();
@@ -306,7 +306,7 @@ const VIEW = { width: 1224, height: 576 };
 const SCALE = 1.2;
 const RVIEW = { width: Math.round(VIEW.width * SCALE), height: Math.round(VIEW.height * SCALE) };
 
-const b64 = (buf) => 'data:image/png;base64,' + Buffer.from(buf).toString('base64');
+export const b64 = (buf) => 'data:image/png;base64,' + Buffer.from(buf).toString('base64');
 
 function frameHtml({ title, line, address, pageImg, panelImg }) {
   const page = panelImg
@@ -348,7 +348,7 @@ async function compose(browser, name, html, size = { width: 1280, height: 800 })
 // ─── the shots ───────────────────────────────────────────────────────────────
 
 /** Each shot's caption bar, in the listing's language. */
-const CAPTIONS = ZH_SET ? {
+export const CAPTIONS = ZH_SET ? {
   digest: ['英文视频，中英双语看懂', '「和 Heddy 一起看」打开书桌：精读文字稿可选英文、双语或中文，教授为每一章写见解。'],
   quiz: ['看完做个视频小测', '想要提示就点一下。答错的题可以做成闪卡。'],
   jot: ['按 H 记下正在说的那一句', '随记先留在这台电脑上，点「存到我的 Jotters」就进批注本。'],
@@ -361,10 +361,10 @@ const CAPTIONS = ZH_SET ? {
   sources: ['Clip any page into your Jotter', 'Words and pictures each become a numbered clipping, saved to your Jotter in your order.'],
   ask: ['Stuck? Ask your professor', 'Professors ask and hint so you work it out yourself. They never give the answer.'],
 };
-const cap = (k) => ({ title: CAPTIONS[k][0], line: CAPTIONS[k][1] });
+export const cap = (k) => ({ title: CAPTIONS[k][0], line: CAPTIONS[k][1] });
 
 /** Ask's question and the professor's reply: a question back, not the answer. */
-const ASK = ZH_SET ? {
+export const ASK = ZH_SET ? {
   question: '为什么 2 厘米是一千米？',
   reply: ['问得好。先从 1 开始想。', '在 1:50 000 的地图上，1 厘米代表地面上的 50 000 厘米。', '50 000 厘米是多少米？', '算出来以后，2 厘米又是多少？'],
 } : {
@@ -441,12 +441,14 @@ async function run() {
     }));
 
     // The small promo tile: a global asset, so the English set only.
-    if (!ZH_SET) await compose(browser, 'promo-440x280.png', `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${EXT}store/render/frame.css"></head>
+    // Edge gets its own tile: the same design, its own name.
+    if (!ZH_SET) for (const [file, name, size] of [['promo-440x280.png', 'Heddy for Chrome', 34], ['promo-edge-440x280.png', 'Heddy for Microsoft Edge', 28]]) await compose(browser, file, `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${EXT}store/render/frame.css"></head>
 <body class="tilebody"><div class="tile"><span class="mk" id="mk"></span><h1></h1><p></p><span class="pill"></span></div>
 <script src="${EXT}lib/marks.js"></script><script>
   document.body.insertAdjacentHTML('afterbegin', HeddyMarks.sprite(['h-eyes']));
   document.getElementById('mk').insertAdjacentHTML('beforeend', HeddyMarks.use('h-eyes', 64));
-  document.querySelector('h1').textContent = 'Heddy for Chrome';
+  document.querySelector('h1').textContent = ${JSON.stringify(name)};
+  document.querySelector('h1').style.fontSize = '${size}px';
   document.querySelector('p').textContent = 'Study videos and pages beside your professor.';
   document.querySelector('.pill').textContent = 'Works with aitutors.me';
 </script></body></html>`, { width: 440, height: 280 });
@@ -455,4 +457,5 @@ async function run() {
   }
 }
 
-await run();
+// Run when called directly; render-mobile.mjs imports the pieces above.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await run();

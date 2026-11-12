@@ -25,7 +25,7 @@ var snap = HeddySnap.createSnap({
   chrome: chrome,
   crop: HeddyCrop,
   tools: HeddyTools,
-  makers: { createImageBitmap: createImageBitmap.bind(self), OffscreenCanvas: OffscreenCanvas, Blob: Blob },
+  makers: { createImageBitmap: function (blob) { return self.createImageBitmap(blob); }, OffscreenCanvas: self.OffscreenCanvas, Blob: Blob },
   // A picture added from the page's own menu or the whole-tab press lands
   // as a card, so the panel opens beside box mode to show it.
   showPanel: panel.show,
@@ -34,12 +34,15 @@ var snap = HeddySnap.createSnap({
 // The desk on a YouTube watch page (Round 8, D69–D72): its four requests to
 // aitutors.me go from here, with the browser's own aitutors.me cookie, as
 // lib/who.js's /me does (lib/desk-api.js).
-var desk = HeddyDeskApi.createDeskApi({ chrome: chrome, fetchImpl: fetch.bind(self) });
+var safari = chrome.runtime.getURL('/').startsWith('safari-web-extension:');
+if (safari) importScripts('lib/safari-site.js', 'lib/who.js');
+var requestSite = safari ? HeddySafariFetch.createSafariFetch(chrome) : fetch.bind(self);
+var desk = HeddyDeskApi.createDeskApi({ chrome: chrome, fetchImpl: requestSite });
 
 // Round 9 (D78–D86): every save, Undo, card, jot, clip and the Ask view's
 // conversation, as requests from here on the same cookie (lib/heddy-api.js,
 // lib/web-routes.js). Nothing opens a window.
-var heddyApi = HeddyApi.createHeddyApi({ call: desk.call, origin: desk.origin, fetchImpl: fetch.bind(self), extensionId: chrome.runtime.id });
+var heddyApi = HeddyApi.createHeddyApi({ call: desk.call, origin: desk.origin, fetchImpl: requestSite, extensionId: chrome.runtime.id });
 var routes = HeddyWebRoutes.createWebRoutes({
   chrome: chrome,
   api: heddyApi,
@@ -86,6 +89,11 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 // Heddy's own popup, the YouTube content script and the page tray.
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+  if (safari && message && message.type === 'heddy-safari:me' &&
+      sender && sender.id === chrome.runtime.id && String(sender.url || '').startsWith(chrome.runtime.getURL('/'))) {
+    desk.call('GET', HeddyWho.PATH).then(function (reply) { sendResponse(reply.data); });
+    return true;
+  }
   var mine = routes.internal(message, sender) || desk.internal(message, sender) || snap.internal(message, sender) || cards.internal(message, sender);
   if (mine) {
     mine.then(function (reply) { sendResponse(reply); }, function () { sendResponse(null); });
@@ -117,42 +125,32 @@ chrome.tabs.onRemoved.addListener(function (tabId) {
   panel.tabGone(tabId);
 });
 
-// Right-click an image → "Add picture to Heddy" (D30, D55). The menu's
-// title follows Heddy's language when it is installed or the language changes.
-function installPictureMenu() {
-  HeddyI18n.currentLang(chrome).then(function (lang) {
-    snap.installMenu(HeddyI18n.t(lang, 'menuAddPicture'));
+// Safari on iPhone and iPad exposes these actions in Heddy's panel.
+var menus = chrome.contextMenus || chrome.menus;
+if (menus && menus.onClicked) {
+  function installMenus() {
+    HeddyI18n.currentLang(chrome).then(function (lang) {
+      snap.installMenu(HeddyI18n.t(lang, 'menuAddPicture'));
+      courier.installMenus(lang);
+    });
+  }
+
+  chrome.runtime.onInstalled.addListener(installMenus);
+  chrome.storage.onChanged.addListener(function (changes, area) {
+    if (area === 'sync' && changes[HeddyI18n.STORAGE_KEY]) installMenus();
+  });
+  menus.onClicked.addListener(function (info, tab) {
+    snap.menuClicked(info, tab);
+    courier.menuClicked(info, tab);
   });
 }
-chrome.runtime.onInstalled.addListener(installPictureMenu);
-chrome.storage.onChanged.addListener(function (changes, area) {
-  if (area === 'sync' && changes[HeddyI18n.STORAGE_KEY]) installPictureMenu();
-});
-chrome.contextMenus.onClicked.addListener(function (info, tab) {
-  snap.menuClicked(info, tab);
-});
 
-// Ctrl Shift K (⌘ Shift K on a Mac): box mode; twice within 0.4 s, the whole tab.
-chrome.commands.onCommand.addListener(function (command, tab) {
-  snap.command(command, tab);
-});
-
-// "Save to Jotters" on a selection (the words become a card, D55), and the
-// jot-selection command (the tray): both are gestures, so activeTab lets
-// Heddy into that tab (D3, D7).
-chrome.contextMenus.onClicked.addListener(function (info, tab) {
-  courier.menuClicked(info, tab);
-});
-
-chrome.commands.onCommand.addListener(function (name, tab) {
-  courier.command(name, tab);
-});
-
-// The menu item speaks Heddy's language (the options page's switch, D36).
-function menusInLang() {
-  HeddyI18n.currentLang().then(function (lang) { courier.installMenus(lang); });
+if (chrome.commands && chrome.commands.onCommand) {
+  chrome.commands.onCommand.addListener(function (name, tab) {
+    var active = tab ? Promise.resolve(tab) : chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) { return tabs[0]; });
+    active.then(function (current) {
+      snap.command(name, current);
+      courier.command(name, current);
+    }).catch(function () {});
+  });
 }
-chrome.runtime.onInstalled.addListener(menusInLang);
-chrome.storage.onChanged.addListener(function (changes, area) {
-  if (area === 'sync' && changes[HeddyI18n.STORAGE_KEY]) menusInLang();
-});

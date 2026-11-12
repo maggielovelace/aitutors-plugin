@@ -26,10 +26,8 @@ const ALLOWED_FETCH = {
   'lib/who.js': [/fetchImpl\(origin \+ PATH, \{ method: 'GET', credentials: 'include'/],
   'popup/popup.js': [/HeddyWho\.loadMe\(window\.fetch\.bind\(window\), ORIGIN\)/],
   'options/options.js': [/W\.loadMe\(window\.fetch\.bind\(window\), origin\)/],
-  'background.js': [
-    /HeddyDeskApi\.createDeskApi\(\{ chrome: chrome, fetchImpl: fetch\.bind\(self\) \}\)/,
-    /HeddyApi\.createHeddyApi\(\{ call: desk\.call, origin: desk\.origin, fetchImpl: fetch\.bind\(self\), extensionId: chrome\.runtime\.id \}\)/,
-  ],
+  'background.js': [/var requestSite = safari \? HeddySafariFetch\.createSafariFetch\(chrome\) : fetch\.bind\(self\);/],
+  'content/safari-site.js': [/await fetch\(url\.pathname \+ url\.search, \{/],
 };
 
 /** Source with the allowed uses taken out, so nothing else may mention fetch. */

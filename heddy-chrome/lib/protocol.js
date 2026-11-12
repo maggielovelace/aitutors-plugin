@@ -79,7 +79,7 @@
   function youtubeIdFromUrl(href) {
     var u;
     try { u = new URL(href); } catch (e) { return null; }
-    if (u.protocol !== 'https:' || u.hostname !== 'www.youtube.com' || u.pathname !== '/watch') return null;
+    if (u.protocol !== 'https:' || !/^(www|m)\.youtube\.com$/.test(u.hostname) || u.pathname !== '/watch') return null;
     var v = u.searchParams.get('v');
     return isYoutubeId(v) ? v : null;
   }
