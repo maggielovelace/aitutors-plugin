@@ -34,3 +34,7 @@ for size in 16 32 128 256 512; do
   double=$((size * 2))
   sips -z "$double" "$double" store/icons/mac-icon-1024.png --out "$icons/mac-icon-$size@2x.png" >/dev/null
 done
+
+# Manual App Store signing for Release, and the two Info.plist keys App Store
+# Connect checks at upload. See scripts/safari-signing.mjs.
+node scripts/safari-signing.mjs "$project_dir/Heddy/Heddy.xcodeproj/project.pbxproj"

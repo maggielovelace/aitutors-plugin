@@ -75,6 +75,10 @@
           }
         }
       },
+      "extDescriptionSafari": {
+        "message": "Works with aitutors.me. Clip words, pictures and video notes into your Jotter. Professors hint, never answer.",
+        "description": "Safari only: Apple caps the extension description at 112 characters."
+      },
       "toastNoteSavedAt": {
         "message": "Note saved · $TIME$",
         "placeholders": {
@@ -2180,6 +2184,10 @@
             "example": "Map scales"
           }
         }
+      },
+      "extDescriptionSafari": {
+        "message": "配合 aitutors.me 使用。剪下的文字、图片和视频随记都进你的批注本：按你的批注出题、讲解、做闪卡，学科教授只给提示，从不直接给答案。",
+        "description": "Safari only: Apple caps the extension description at 112 characters."
       },
       "toastNoteSavedAt": {
         "message": "已记下 · $TIME$",
