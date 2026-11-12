@@ -29,6 +29,10 @@
     "message": "Note saved · $TIME$ — $TITLE$",
     "placeholders": { "time": { "content": "$1", "example": "2:48" }, "title": { "content": "$2", "example": "Map scales" } }
   },
+  "extDescriptionSafari": {
+    "message": "Works with aitutors.me. Clip words, pictures and video notes into your Jotter. Professors hint, never answer.",
+    "description": "Safari only: Apple caps the extension description at 112 characters."
+  },
   "toastNoteSavedAt": {
     "message": "Note saved · $TIME$",
     "placeholders": { "time": { "content": "$1", "example": "2:48" } }

@@ -6,7 +6,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { inflateRawSync, inflateSync } from 'node:zlib';
 import { join } from 'node:path';
 import { ROOT, read, manifest, shippedFiles } from './helpers.mjs';
-import { zip, entries, storeManifest } from '../scripts/package.mjs';
+import { zip, entries, storeManifest, SAFARI_NAME_MAX, SAFARI_DESCRIPTION_MAX } from '../scripts/package.mjs';
 
 /** The zip's entries, read back from its central directory: { name: bytes }. */
 function unzip(buf) {
@@ -169,4 +169,35 @@ test('the Safari app gets sharp icons, and the iOS one has no transparency', () 
   assert.equal(png.readUInt32BE(16), 1024);
   assert.equal(png.readUInt32BE(20), 1024);
   assert.equal(png[25], 2, 'colour type 2 is RGB without alpha');
+});
+
+test('safari locales fit Apple\'s name and description limits; chrome text is untouched', () => {
+  const locales = (browser) => Object.fromEntries(entries({ browser })
+    .filter(([n]) => /^_locales\/[^/]+\/messages\.json$/.test(n))
+    .map(([n, b]) => [n.split('/')[1], JSON.parse(b.toString('utf8'))]));
+  const safari = locales('safari');
+  assert.ok(Object.keys(safari).length >= 2);
+  for (const [loc, m] of Object.entries(safari)) {
+    assert.ok(m.extName.message.length <= SAFARI_NAME_MAX, `${loc} name ${m.extName.message.length}`);
+    assert.ok(m.extName.message.includes('Safari'), `${loc} name names Safari`);
+    assert.ok(m.extDescription.message.length <= SAFARI_DESCRIPTION_MAX, `${loc} description ${m.extDescription.message.length}`);
+  }
+  for (const [loc, m] of Object.entries(locales('chrome'))) {
+    assert.deepEqual(m, JSON.parse(read(`_locales/${loc}/messages.json`)), `${loc} chrome copy unchanged`);
+  }
+});
+
+test('safari signing: each Release target gets its App Store profile; Debug is left alone', async () => {
+  const { signProject, PROFILES } = await import('../scripts/safari-signing.mjs');
+  const block = (cfg, id, sdk) => `\t\tX /* ${cfg} configuration for PBXNativeTarget "T" */ = {\n\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = {\n\t\t\t\tCODE_SIGN_STYLE = Automatic;\n\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = ${id};\n\t\t\t\tSDKROOT = ${sdk};\n\t\t\t};\n\t\t\tname = ${cfg};\n\t\t};\n`;
+  const pairs = Object.keys(PROFILES).map((k) => k.split('|'));
+  const text = pairs.map(([id, sdk]) => block('Debug', id, sdk) + block('Release', id, sdk)).join('');
+  const out = signProject(text);
+  assert.equal(out.match(/CODE_SIGN_STYLE = Manual;/g).length, 4);
+  assert.equal(out.match(/CODE_SIGN_STYLE = Automatic;/g).length, 4, 'Debug stays Automatic');
+  for (const name of Object.values(PROFILES)) assert.ok(out.includes(`PROVISIONING_PROFILE_SPECIFIER = "${name}";`), name);
+  assert.equal(out.match(/LSApplicationCategoryType/g).length, 1, 'Mac app only');
+  assert.equal(out.match(/ITSAppUsesNonExemptEncryption = NO/g).length, 2, 'both apps, no extensions');
+  assert.throws(() => signProject(block('Release', 'me.example.other', 'iphoneos')), /no App Store profile/);
+  assert.match(read('scripts/package-safari-app.sh'), /node scripts\/safari-signing\.mjs/);
 });

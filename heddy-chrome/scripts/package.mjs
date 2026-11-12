@@ -95,6 +95,10 @@ export function zip(entries) {
   return Buffer.concat([...local, cenBuf, end]);
 }
 
+/** Apple's limits for a Safari web extension's resolved name and description. */
+export const SAFARI_NAME_MAX = 40;
+export const SAFARI_DESCRIPTION_MAX = 112;
+
 /** [name, bytes] for every shipped file, the store manifest in place of the repository's. */
 export function entries({ dev = false, browser = 'chrome' } = {}) {
   return shippedFiles().map((name) => {
@@ -106,6 +110,15 @@ export function entries({ dev = false, browser = 'chrome' } = {}) {
       const locale = JSON.parse(data.toString('utf8'));
       const label = browser === 'edge' ? 'Microsoft Edge' : 'Safari';
       locale.extName.message = locale.extName.message.replace('Chrome', label);
+      if (browser === 'safari') {
+        // Apple rejects the upload unless the resolved name is <= 40 characters
+        // and the description <= 112 (App Store Connect messages.json check).
+        locale.extName.message = locale.extName.message.split(/[:：]/)[0].trim();
+        if (locale.extDescriptionSafari) locale.extDescription.message = locale.extDescriptionSafari.message;
+        const where = name.split('/')[1];
+        if (locale.extName.message.length > SAFARI_NAME_MAX) throw new Error(`${where}: Safari extName over ${SAFARI_NAME_MAX} characters`);
+        if (locale.extDescription.message.length > SAFARI_DESCRIPTION_MAX) throw new Error(`${where}: Safari extDescription over ${SAFARI_DESCRIPTION_MAX} characters`);
+      }
       return [name, Buffer.from(JSON.stringify(locale, null, 2) + '\n')];
     }
     return [name, data];
