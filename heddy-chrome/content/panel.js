@@ -62,7 +62,7 @@
     '.f.dock { position: absolute; top: ' + INSET + 'px; right: ' + INSET + 'px; bottom: ' + INSET + 'px; width: ' + (DOCK - INSET) + 'px !important;',
     // A frame is a replaced element: top + bottom alone leave it 150 px tall.
     '  height: calc(100vh - ' + 2 * INSET + 'px) !important; max-height: none; border-radius: 16px; box-shadow: none; background: transparent; }',
-    '@media (max-width: 700px) and (pointer: coarse) { .f.dock { top: auto; width: calc(100vw - 24px) !important; height: min(42dvh, 360px) !important; } }',
+    '@media (max-width: 700px) and (pointer: coarse) { .f.dock { top: auto; width: calc(100vw - 24px) !important; height: min(70dvh, 560px) !important; } }',
   ].join('\n');
 
   function tell(message) {

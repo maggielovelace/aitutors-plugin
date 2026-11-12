@@ -160,3 +160,13 @@ test('the Safari app targets the systems that ship Safari 17.4', () => {
   assert.match(script, /IPHONEOS_DEPLOYMENT_TARGET = 17\.4;/);
   assert.match(script, /MACOSX_DEPLOYMENT_TARGET = 14\.4;/);
 });
+
+test('the Safari app gets sharp icons, and the iOS one has no transparency', () => {
+  const script = readFileSync(join(ROOT, 'scripts/package-safari-app.sh'), 'utf8');
+  assert.match(script, /store\/icons\/appstore-icon-1024\.png/);
+  assert.match(script, /store\/icons\/mac-icon-1024\.png/);
+  const png = readFileSync(join(ROOT, 'store/icons/appstore-icon-1024.png'));
+  assert.equal(png.readUInt32BE(16), 1024);
+  assert.equal(png.readUInt32BE(20), 1024);
+  assert.equal(png[25], 2, 'colour type 2 is RGB without alpha');
+});

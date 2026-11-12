@@ -23,3 +23,14 @@ sed -i '' \
   -e 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 17.4;/g' \
   -e 's/MACOSX_DEPLOYMENT_TARGET = [0-9.]*;/MACOSX_DEPLOYMENT_TARGET = 14.4;/g' \
   "$project_dir/Heddy/Heddy.xcodeproj/project.pbxproj"
+
+# Sharp app icons, rendered from icons/src/eyes-mark.svg by store/render/icons.mjs.
+# The converter scales the 128 px store icon up, and its iOS icon keeps
+# transparency, which App Store Connect rejects.
+icons="$project_dir/Heddy/Shared (App)/Assets.xcassets/AppIcon.appiconset"
+cp store/icons/appstore-icon-1024.png "$icons/universal-icon-1024@1x.png"
+for size in 16 32 128 256 512; do
+  sips -z "$size" "$size" store/icons/mac-icon-1024.png --out "$icons/mac-icon-$size@1x.png" >/dev/null
+  double=$((size * 2))
+  sips -z "$double" "$double" store/icons/mac-icon-1024.png --out "$icons/mac-icon-$size@2x.png" >/dev/null
+done
