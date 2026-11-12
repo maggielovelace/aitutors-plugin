@@ -50,6 +50,19 @@ Celebrations reuse the **ready** ^^ eyes plus one small, countable extra. No con
 
 Celebration sparkles are the same 8-point star as the belly badge, small and few. If a celebration render would read as fanfare, quieten it.
 
+### Reflection moods — lids (owner ruling 2026-11-12, aitutors.me PRD-v0.140.0 "Tonight's line")
+
+A child picks how Heddy feels for her daily reflection. These four are drawn as **eyes only** (no body), and the mood is carried by the **lids**: a lid is a paper-coloured (`#F8F3EB`) cap over the top of the iris with a thin ink (`#00173B`) edge, **clipped inside the iris circle** — it never extends past the iris, and it is not a brow. Anchors 5–7 stand unchanged: asymmetric amber irises (left r13.5 at (46,57), right r11 at (74,57)), ink pupils half the iris, ONE white highlight each, and still **no brows, no blush, no mouth**.
+
+| Reflection mood | Eyes | Render check |
+|---|---|---|
+| **Sleepy** (困了) | Open irises, pupils dropped slightly (+3 / +2.5 down); lids cover the top **62%** of each iris, level | Heavy, level lids; one small italic serif "z" upper-right (the only reflection mood with a z — the rest mood's sign, used once here, deliberately) |
+| **Wobbly** (有点乱) | Open irises, pupils glancing down-left (−1.5,+2 / −1.2,+1.6); lids cover the top **32%**, the edge sloping **down at the OUTER corner** (7 / 6 units) | Worry shown by the lid's slope alone — never a brow, never a mouth |
+| **Calm** (平静) | Open irises, pupils centred; lids cover the top **22%**, level | Barely lowered, relaxed |
+| **Bright** (开心) | The **ready** ^^ arcs (as above), no iris visible | Identical to ready |
+
+The source of these values is the aitutors.me component `components/calendar/TonightsLine.tsx` (`HeddyEyes`). If a drawing and that file disagree, this table is the authority and the code is what moves.
+
 ## Palette
 
 Use EXACTLY these values; no colour outside this table appears anywhere in a Heddy asset.
