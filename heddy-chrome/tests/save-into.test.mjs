@@ -237,6 +237,19 @@ test('when the list answers: a child gets the list (keep still the target); sign
   assert.deepEqual(SI.bodyOf(SI.targetOf(noKeep)), {}, 'a failure with no keep saving: the default, as before');
 });
 
+test('a later fetch that fails keeps the list the line already had; a known signed-out or grown-up answer still turns it off', () => {
+  for (const r of [{ show: false, known: false, jotters: [] }, { ok: false }, null]) {
+    const into = SI.withList(SI.freshInto('u'), { show: true, known: true, jotters: LIST, page: null });
+    SI.withList(into, r);
+    assert.equal(into.mode, 'list', JSON.stringify(r));
+    assert.equal(into.show, true);
+    assert.equal(into.jotters.length, LIST.length);
+  }
+  const into = SI.withList(SI.freshInto('u'), { show: true, known: true, jotters: LIST, page: null });
+  SI.withList(into, { show: false, known: true, jotters: [] });
+  assert.equal(into.mode, 'off');
+});
+
 // ─── a single-page site moves on (review 2) ────────────────────────────────
 
 test('another page: the old page’s Jotter is forgotten, an unpicked target is "This page" again, a picked Jotter stays; the desk asks again and drops late answers', () => {

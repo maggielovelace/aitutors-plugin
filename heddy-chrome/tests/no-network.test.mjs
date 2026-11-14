@@ -27,7 +27,7 @@ const ALLOWED_FETCH = {
   'popup/popup.js': [/HeddyWho\.loadMe\(window\.fetch\.bind\(window\), ORIGIN\)/],
   'options/options.js': [/W\.loadMe\(window\.fetch\.bind\(window\), origin\)/],
   'background.js': [/var requestSite = safari \? HeddySafariFetch\.createSafariFetch\(chrome\) : fetch\.bind\(self\);/],
-  'content/safari-site.js': [/await fetch\(url\.pathname \+ url\.search, \{/],
+  'content/safari-site.js': [/await fetch\(url\.pathname \+ url\.search, \{/g],
 };
 
 /** Source with the allowed uses taken out, so nothing else may mention fetch. */

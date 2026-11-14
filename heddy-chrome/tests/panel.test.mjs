@@ -149,7 +149,7 @@ test('the panel’s frame names its tab like the old popup: Full desk from it is
 // ─── content/panel.js, in the page ──────────────────────────────────────────
 
 /** Just enough DOM for content/panel.js, in a context of its own. */
-function page() {
+function page(opts = {}) {
   const listeners = { win: {}, doc: {} };
   const timers = [];
   const posted = [];
@@ -166,6 +166,8 @@ function page() {
       remove() { const i = appended.indexOf(this); if (i >= 0) appended.splice(i, 1); },
     };
     if (tag === 'iframe') e.contentWindow = frameWindow;
+    // Safari: a page reads an extension frame's address back masked.
+    if (tag === 'iframe' && opts.masked) Object.defineProperty(e, 'src', { get() { return this._src ? 'webkit-masked-url://hidden/' : ''; }, set(v) { this._src = v; } });
     return e;
   }
   const on = (where) => (type, fn) => { (listeners[where][type] ||= []).push(fn); };
@@ -207,6 +209,8 @@ function page() {
     },
   };
   ctx.globalThis = ctx;
+  if (opts.version) ctx.chrome.runtime.getManifest = () => ({ version: opts.version });
+  if (opts.stale) ctx.__heddyPanel = opts.stale;
   vm.createContext(ctx);
   vm.runInContext(read('content/panel.js'), ctx);
   const fire = (where, type, ev) => (listeners[where][type] || []).slice().forEach((fn) => fn(ev));
@@ -282,6 +286,27 @@ test('the web desk docks on the right, full height, and narrows the page by its 
   assert.match(css, /\.f\.dock \{ position: absolute; top: 12px; right: 12px; bottom: 12px; width: 398px !important;/, 'the artifact’s 12 px gutter');
   p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'close' } });
   assert.deepEqual(html.props['margin-right'], { v: '20px', prio: '' }, 'the page’s own margin, back');
+});
+
+test('Safari masks the frame’s address in the page: messages still go to the real extension origin', async () => {
+  const p = page({ masked: true });
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  assert.equal(p.frame()._src, `${EXT}/popup/popup.html?tab=9&host=panel`);
+  p.fire('doc', 'selectionchange', {});
+  p.timers.forEach((t) => t.fn());
+  const sel = JSON.parse(JSON.stringify(p.posted)).filter((x) => x.m.heddyPanel === 'selection');
+  assert.deepEqual(sel, [{ m: { heddyPanel: 'selection' }, origin: EXT }]);
+});
+
+test('a panel left in the tab by another build is closed and replaced, so the click still answers; the same build is not injected twice', async () => {
+  let closed = 0;
+  const p = page({ version: '0.10.3', stale: { close: () => { closed++; }, open() {}, isOpen: () => false } });
+  assert.equal(closed, 1, 'the old build’s panel is closed');
+  assert.equal(p.ctx.__heddyPanel.v, '0.10.3');
+  assert.deepEqual(await p.send({ type: 'heddy-panel:toggle', tabId: 9 }), { open: true }, 'the new build answers the click');
+  const same = p.ctx.__heddyPanel;
+  vm.runInContext(read('content/panel.js'), p.ctx);
+  assert.equal(p.ctx.__heddyPanel, same, 'a second injection of the same build changes nothing');
 });
 
 test('a new selection in the page is a hint to the frame (no data), sent to the frame’s own origin', async () => {
@@ -375,4 +400,30 @@ test('the panel is put on <html>, last, so box mode can sit just under it; away(
   p.ctx.__heddyPanel.away(false);
   assert.equal(p.host().style.opacity, '1 !important');
   assert.match(read('content/panel.js'), /document\.documentElement\.appendChild\(host\);/);
+});
+
+// 2026-11-14: inPage false was Safari's stopgap (the toolbar popup, nothing in the page) before the cause of the
+// crash was found (lib/frame-api.js, tests/frame-api.test.mjs). The switch stays; nothing passes it.
+test('inPage false: a click or a show never injects into the page; the toolbar popup opens instead', async () => {
+  const f = fakeChrome();
+  const panel = createPanel({ chrome: f.chrome, inPage: false });
+  assert.deepEqual(await panel.clicked(ARTICLE), { ok: true, where: 'popup', open: true });
+  assert.deepEqual(await panel.show(ARTICLE), { ok: true });
+  assert.equal(f.calls.injected.length, 0, 'no frame is ever drawn in a Safari page');
+  assert.equal(f.calls.sent.length, 0);
+  assert.equal(f.calls.opened.length, 2);
+});
+
+test('inPage false, where the popup cannot be opened for us: nothing is injected and nothing throws', async () => {
+  const f = fakeChrome();
+  delete f.chrome.action.openPopup;
+  const panel = createPanel({ chrome: f.chrome, inPage: false });
+  assert.deepEqual(await panel.clicked(ARTICLE), { ok: true, where: 'popup', open: false });
+  assert.deepEqual(await panel.show(ARTICLE), { ok: false });
+  assert.equal(f.calls.injected.length, 0);
+});
+
+test('Safari draws the panel in the page like Chrome: background.js passes no inPage, and no build gives the button a popup', () => {
+  assert.match(read('background.js'), /createPanel\(\{ chrome: chrome \}\)/);
+  assert.doesNotMatch(read('scripts/package.mjs'), /default_popup\s*=/);
 });

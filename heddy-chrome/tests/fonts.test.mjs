@@ -152,3 +152,23 @@ test('a face that fails to build leaves the others and the fallback stack', () =
   assert.equal(added.length, 1);
   assert.match(F.SANS, /^"Heddy Manrope",Manrope,Roboto,Arial,sans-serif$/);
 });
+
+// 2026-11-14: Heddy's variable faces registered from bytes crashed Safari's page process (YouTube, at load, iPhone
+// and Mac). On Safari nothing is registered and the stacks fall back to the system fonts; Chrome and Edge unchanged.
+test('on Safari load and add register nothing; on Chrome they still do', () => {
+  globalThis.HeddyFontData = load('./lib/font-data.js');
+  const F = load('./lib/fonts.js');
+  const had = globalThis.chrome;
+  try {
+    globalThis.chrome = { runtime: { getURL: (p) => 'safari-web-extension://heddy/' + p } };
+    const s = fakes();
+    assert.equal(F.load(s.doc, s.FakeFontFace), 0);
+    assert.equal(F.add(s.doc, [{ file: 'fonts/safari-only.woff2', family: 'Heddy Mono', weight: '400', base64: 'AAAA' }], s.FakeFontFace), 0);
+    assert.equal(s.added.length, 0, 'no face reaches a Safari page');
+    globalThis.chrome = { runtime: { getURL: (p) => 'chrome-extension://heddy/' + p } };
+    const c = fakes();
+    assert.equal(F.load(c.doc, c.FakeFontFace), 2, 'Chrome keeps its bundled faces');
+  } finally {
+    globalThis.chrome = had;
+  }
+});

@@ -351,6 +351,8 @@
         .then(function () { return chrome.scripting.executeScript({ target: { tabId: tabId }, func: syncInPage, args: [list] }); })
         .catch(function () {})
         .then(function () { return Promise.resolve(chrome.runtime.sendMessage(told)).catch(function () {}); })
+        // Safari only (background.js): the same news by way of the page, for the panel's frame.
+        .then(function () { return deps.relay ? Promise.resolve(deps.relay(tabId, told)).catch(function () {}) : undefined; })
         .catch(function () {});
     }
 

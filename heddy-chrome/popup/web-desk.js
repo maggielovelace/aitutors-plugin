@@ -33,6 +33,9 @@
 // The list lives in Heddy's background (lib/cards.js); every page string (a
 // card's quote, the page's title) is set as text.
 (function (root) {
+  // In a frame on Safari, tabs.* and scripting.* go by the background (lib/frame-api.js); elsewhere this is chrome.
+  var FA = root.HeddyFrameApi;
+  var chrome = FA ? FA.wrap(root.chrome || root.browser, root) : root.chrome;
   var A = root.HeddyDeskAsk;
   var AV = root.HeddyAskView;
   var DK = root.HeddyDeskShell;
@@ -55,6 +58,11 @@
     'html,body{height:100%}',
     'body.webdesk{width:auto;height:100vh;margin:0;background:transparent;overflow:hidden}',
     'body.webdesk.inpopup{width:410px;height:600px;background:#fdfcf8}',
+    // A toolbar popup sizes its window FROM the page, so html{height:100%} there is circular: Safari resolved it to
+    // zero and drew an empty desk (2026-11-14). In a popup the page is as tall as the desk. On a touch screen
+    // (Safari on iPhone and iPad: a sheet) the desk takes the sheet's width; 410px is wider than a phone.
+    'html:has(> body.inpopup){height:auto}',
+    '@media (pointer:coarse){body.webdesk.inpopup{width:auto;height:600px}}',
     'body.webdesk > .pop{display:none}',
     '.cd.web{height:100%;--sc:#0d7565;--sc-soft:#dcf1ec}',
     'body.inpopup .cd.web{border:0;border-radius:0}',
@@ -390,7 +398,7 @@
       setMode('text');
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: function () { var b = globalThis.__heddyBoxMode; if (b && b.stop) b.stop(); return true; },
+        func: FA.FUNCS.stopBox,
       }).catch(function () {});
     }
 

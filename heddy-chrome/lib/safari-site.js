@@ -51,6 +51,23 @@
       }
     }
 
+    // One request, answered whole by content/safari-site.js's __heddySiteRequest (the page's own first-party
+    // fetch) as the script's result, so nothing has to stay listening in the tab. Safari dropped that file's
+    // onConnect listener in a background tab while still accepting the injection ("Invalid call to
+    // tabs.connect(). No runtime.onConnect listeners found", 2026-11-14): every /me and Jotters list failed,
+    // so Heddy said "Sign in" and showed no Into line. A Response the callers read as they read fetch's.
+    async function oneShot(tabId, href, init) {
+      const headers = init.headers instanceof Headers ? [...init.headers] : init.headers;
+      const ran = await chrome.scripting.executeScript({
+        target: { tabId }, func: (req) => globalThis.__heddySiteRequest(req),
+        args: [{ href, method: init.method || 'GET', headers: headers || {}, body: init.body == null ? undefined : init.body }],
+      });
+      const r = ran && ran[0] && ran[0].result;
+      if (!r || r.error || typeof r.status !== 'number') throw new Error('Heddy site request failed');
+      const empty = r.status === 204 || r.status === 205 || r.status === 304;
+      return new Response(empty ? null : r.text, { status: r.status, headers: r.headers });
+    }
+
     return async function safariFetch(href, init) {
       const url = new URL(href);
       if (!['https://aitutors.me', 'http://localhost:3000'].includes(url.origin)) {
@@ -58,6 +75,10 @@
       }
       const tabId = await siteTab(url.origin);
       await chrome.scripting.executeScript({ target: { tabId }, files: ['content/safari-site.js'] });
+      init = init || {};
+      if (init.signal && init.signal.aborted) throw new Error('Heddy request cancelled');
+      // Everything but the Ask view's stream goes in one piece (a string body or none is all Heddy sends).
+      if (!/\/ask$/.test(url.pathname) && (init.body == null || typeof init.body === 'string')) return oneShot(tabId, href, init);
       const signal = init.signal;
       if (signal && signal.aborted) throw new Error('Heddy request cancelled');
       const port = chrome.tabs.connect(tabId, { name: 'heddy-safari-request', frameId: 0 });
@@ -77,8 +98,20 @@
         }
         function abort() { close(new Error('Heddy request cancelled')); }
 
-        port.onDisconnect.addListener(() => close(new Error('Heddy site tab disconnected')));
+        // Refused before the tab said anything (Safari: "No runtime.onConnect listeners found"): the tab never
+        // had the request, so it goes once by the one-piece script instead, never twice.
+        let heard = false;
+        port.onDisconnect.addListener(() => {
+          if (!heard && !closed && typeof init.body === 'string') {
+            closed = true;
+            if (signal) signal.removeEventListener('abort', abort);
+            oneShot(tabId, href, init).then(resolve, reject);
+            return;
+          }
+          close(new Error('Heddy site tab disconnected'));
+        });
         port.onMessage.addListener((message) => {
+          heard = true;
           try {
             if (message.type === 'response') {
               const body = message.hasBody ? new ReadableStream({

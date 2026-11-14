@@ -421,7 +421,9 @@ test('the desk’s + Text / + Picture is the switch: the mode that is on is pres
   assert.match(src, /t\.setAttribute\('aria-pressed', String\(st\.mode === 'text'\)\);/);
   assert.match(src, /p\.setAttribute\('aria-pressed', String\(st\.mode === 'picture'\)\);/);
   assert.match(src, /if \(st\.mode === 'picture'\) return toText\(\);/, '+ Text in Picture mode switches back');
-  assert.match(src, /if \(b && b\.stop\) b\.stop\(\);/);
+  // The function itself is in lib/frame-api.js, so the background can run it for the panel's frame on Safari.
+  assert.match(src, /func: FA\.FUNCS\.stopBox,/);
+  assert.match(read('lib/frame-api.js'), /if \(b && b\.stop\) b\.stop\(\);/);
   assert.match(read('popup/popup.js'), /if \(e\.data\.heddyPanel === 'mode' && desk\) desk\.setMode\(/);
   assert.match(src, /\.cd \.pr2 button\[aria-pressed="true"\]/);
 });

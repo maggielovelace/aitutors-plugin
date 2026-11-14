@@ -172,9 +172,49 @@ test('an install from before 0.10 (seenFirstRun: true) never sees the intro and 
 test('the popup draws the state lib/popup-state.js chooses, and the intro’s end is stored by name', () => {
   const pop = read('popup/popup.js');
   assert.match(pop, /return begin\(HeddyPopupState\.choose\(input\)\);/);
-  assert.match(pop, /if \(state === 'wait'\) \{\s*return loadWho\(\)/);
+  assert.match(pop, /if \(state === 'wait'\) \{[^}]*showHk\('wait'\);\s*return HeddyPopupState\.answerWithin\(loadWho\(\), HeddyPopupState\.WAIT_MS\)/);
   assert.match(pop, /var done = HeddyPopupState\.remember\(HeddyPopupState\.INTRO_DONE\);/);
   assert.match(read('popup/popup.html'), /<script src="\.\.\/lib\/page-kind\.js"><\/script>\s*<script src="\.\.\/lib\/popup-state\.js"><\/script>/);
+});
+
+// 2026-11-14, Safari on the owner's Mac: "I clicked Heddy, no response". An unsigned build's storage is emptied
+// at every launch, so every open was the first; 0.10.0 drew nothing on the first open until /me answered, and on
+// Safari /me goes by a tab of aitutors.me (lib/safari-site.js) and may take seconds, or never answer.
+test('the first open never waits on /me to draw: the frame at once, WAIT_MS at most, then the page’s own screen', async () => {
+  // No answer in time: the page's own screen, and nothing is remembered, so the first time is asked again.
+  for (const [url, own] of [[PAGES.readable, 'page'], [PAGES.youtube, 'youtube']]) {
+    assert.equal(S.choose(input(url, { local: {}, me: null, asked: true })), own);
+    assert.equal(S.choose(input(url, { local: { seenFirstRun: 'out' }, me: null, asked: true })), own);
+  }
+  assert.equal(S.remember('page'), null);
+  assert.equal(S.remember('youtube'), null);
+  // An answer in time still chooses the first time.
+  assert.equal(S.choose(input(PAGES.readable, { local: {}, me: CHILD, asked: true })), 'intro');
+  assert.equal(S.choose(input(PAGES.readable, { local: {}, me: OUT, asked: true })), 'first-out');
+
+  assert.ok(S.WAIT_MS > 0 && S.WAIT_MS <= 2000, 'a wait a child would not read as a dead button');
+  // answerWithin: a question never answered settles when the timer fires, with null.
+  const timers = [];
+  const later = (fn, ms) => { timers.push({ fn, ms }); };
+  let settled = 'pending';
+  const never = S.answerWithin(new Promise(() => {}), S.WAIT_MS, later).then((v) => { settled = v; });
+  await Promise.resolve();
+  assert.equal(settled, 'pending');
+  assert.equal(timers[0].ms, S.WAIT_MS);
+  timers[0].fn();
+  await never;
+  assert.equal(settled, null);
+  // Answered in time: the answer. A failure, or no answer at all: null. A late answer changes nothing.
+  assert.deepEqual(await S.answerWithin(Promise.resolve(CHILD), 50, later), CHILD);
+  assert.equal(await S.answerWithin(Promise.reject(new Error('x')), 50, later), null);
+  assert.equal(await S.answerWithin(Promise.resolve(undefined), 50, later), null);
+
+  const pop = read('popup/popup.js');
+  // The wait's frame is the hk card with nothing in its panel yet, drawn before /me is asked for.
+  assert.match(pop, /if \(s === 'wait'\) return undefined;\s*if \(s === 'intro'\) return paintIntro\(pn\);/);
+  assert.match(pop, /input\.asked = true;/);
+  // The page's own screen takes the popup back from that frame.
+  assert.match(pop, /if \(hk\.state === 'wait'\) \{ hk\.state = null; leaveHk\(\); \}\s*return ownScreen\(\);/);
 });
 
 test('no dead ends: Can’t read, aitutors.me and the first time each have one primary action and the three doors', () => {

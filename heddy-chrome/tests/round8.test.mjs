@@ -326,7 +326,7 @@ test('D75: the popup on a video is Add to My Clips with the faint eyes, the real
   assert.match(popup, /img\.addEventListener\('error', function \(\) \{ img\.remove\(\); th\.classList\.add\('none'\); \}\);/, 'the placeholder stays on error');
   assert.match(popup, /\[\['whole', 'chipWhole'\], \['last30', 'chipLast30'\], \['fromNow', 'chipFromNow'\]\]/);
   assert.match(popup, /Object\.assign\(m, F\.captureFields\(range, duration\)\)/);
-  assert.match(popup, /world: 'MAIN', func: readStoryboard/);
+  assert.match(popup, /world: 'MAIN', func: PF\.readStoryboard/);
   assert.doesNotMatch(popup, /wholeVideo|fromTime|keyRow/);
   assert.match(read('popup/popup.css'), /body\.yt \{ width: 400px; \}/);
   assert.match(read('popup/popup.css'), /\.yt \.ph \.watchlite svg \{ opacity: \.38;/);

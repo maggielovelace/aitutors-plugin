@@ -383,3 +383,22 @@ test('no path a child can tap builds heddy:jot or heddy:box any more (the site k
   }
   assert.doesNotMatch(r('lib/tools.js'), /function createSender/, 'no window sender at all (D78)');
 });
+
+// 2026-11-14: Safari's own pages are safari-web-extension://. A Chrome-only test refused Safari's toolbar popup its
+// cards, so every site showed "Heddy can't read this page". The popup has no tab of its own: it names the tab.
+test('Safari: the toolbar popup (safari-web-extension://, no tab of its own) gets the cards and can add one', async () => {
+  const s = setup({ selection: SEL('Maps are models.') });
+  const popup = { id: 'heddy', url: 'safari-web-extension://heddy/popup/popup.html' };
+  const got = await s.ask({ type: 'heddy-cards:get' }, popup);
+  assert.equal(got.ok, true);
+  const added = await s.ask({ type: 'heddy-cards:add-text' }, popup);
+  assert.equal(added.ok, true);
+  assert.equal(added.n, 1);
+});
+
+test('a web page still cannot ask for the panel’s cards, on any browser', async () => {
+  const s = setup();
+  for (const url of ['https://evil.example/', 'moz-extension://other/x.html']) {
+    assert.equal((await s.ask({ type: 'heddy-cards:get' }, { id: 'heddy', url, tab: s.tab, frameId: 0 })).ok, false, url);
+  }
+});

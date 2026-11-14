@@ -18,7 +18,10 @@
 // either side) and sends it only to Heddy's background. Everything from the
 // page is read as text and only ever set as textContent.
 (function () {
-  if (globalThis.__heddyPage) return;
+  // Stamped with the build: a copy left in the tab by another build (an update with the tab open) is replaced,
+  // never obeyed — Safari keeps the old marker while its listeners are dead (2026-11-14).
+  var BUILD = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : '');
+  if (globalThis.__heddyPage && globalThis.__heddyPage.v === BUILD) return;
 
   var I = globalThis.HeddyI18n;
   var M = globalThis.HeddyMarks;
@@ -334,7 +337,7 @@
   });
 
   // For the popup, which runs these in the tab through chrome.scripting.
-  globalThis.__heddyPage = {
+  globalThis.__heddyPage = { v: BUILD,
     selection: function () {
       var s = readSelection();
       return s ? payloadOf(s) : null;
