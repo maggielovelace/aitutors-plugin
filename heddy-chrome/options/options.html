@@ -7,45 +7,12 @@
 <link rel="stylesheet" href="options.css">
 </head>
 <body>
-<main class="wrap">
-  <header class="hd"><span id="mark"></span><h1 id="title"></h1></header>
-
-  <!-- D60: the study pass. Filled from /api/learn/heddy/me (lib/who.js); signed out until it answers. -->
-  <section class="pass blank" id="pass" aria-labelledby="passName">
-    <div class="pl">
-      <span class="eb" id="passEyebrow"></span>
-      <b id="passName"></b>
-      <small id="passLine"></small>
-      <div class="two" id="passActions"></div>
-    </div>
-    <div class="pr"><span id="passFace"></span><code id="passId"></code></div>
-  </section>
-
-  <section class="card">
-    <h2 id="langLabel"></h2>
-    <div class="choices" role="radiogroup" aria-labelledby="langLabel">
-      <!-- Each language is named in itself, so neither catalog carries the other's script. -->
-      <label class="choice"><input type="radio" name="lang" value="en"> <span lang="en">English</span></label>
-      <label class="choice"><input type="radio" name="lang" value="zh_CN"> <span lang="zh-CN">简体中文</span></label>
-    </div>
-    <p class="hint" id="langHint"></p>
-  </section>
-
-  <section class="card">
-    <h2 id="aboutHeading"></h2>
-    <div class="kv"><span id="aboutVersion"></span><b id="version"></b></div>
-    <div class="kv"><span id="aboutId"></span><code id="extId"></code><button type="button" class="lk" id="copyId"></button></div>
-    <div class="kv"><span id="aboutPrivacy"></span><button type="button" class="lk" id="privacy"></button></div>
-  </section>
-
-  <details class="dev">
-    <summary id="devHeading"></summary>
-    <label class="toggle"><input type="checkbox" id="dev"> <span id="devToggle"></span></label>
-    <p class="hint" id="devHint"></p>
-  </details>
-
-  <p class="saved" id="saved" role="status" aria-live="polite"></p>
-</main>
+<!-- PRD-v0.146.0 B10: one column in the desk's look. options.js draws it all
+     from Heddy's catalog: the header, the status chips, Account, Heddy in
+     {browser}, Shortcuts, Language, What Heddy can do, About Heddy, For
+     school IT (folded), For developers (folded). -->
+<main class="set" id="app"></main>
+<p class="saved" id="saved" role="status" aria-live="polite"></p>
 <script src="../lib/messages.js"></script>
 <script src="../lib/i18n.js"></script>
 <script src="../lib/config.js"></script>

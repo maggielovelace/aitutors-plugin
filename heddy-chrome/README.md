@@ -115,20 +115,33 @@ in, the aitutors.me tab or window asks you to first and then carries on.
 
 ## Settings
 
-Right-click Heddy's icon → **Options**, or the cog in Heddy's panel:
+Right-click Heddy's icon → **Options**, or the cog in Heddy's panel. One
+column (PRD-v0.146.0 B10), with status chips at the top (signed in, pinned,
+version):
 
-- **Language** — English or 简体中文. It starts as Chrome's language. The
+- **Account** — who Heddy saves for, from aitutors.me's `/me`; Sign in, I'm
+  new, I'm a parent when signed out.
+- **Heddy in {browser}** — pinned to the toolbar or not (Chrome and Edge say
+  so; Safari can't), with the steps for this browser.
+- **Shortcuts** — H on YouTube, Snap a picture and Open Heddy as the browser
+  has them bound; *Change* gives this browser's steps (Safari can't change them).
+- **Language** — English or 简体中文. It starts as the browser's language. The
   windows on aitutors.me follow the language chosen on the site.
-- **For developers** — send captures to `http://localhost:3000` instead of
-  aitutors.me. Leave it off.
+- **What Heddy can do**, **About Heddy** (version, privacy, the help guide).
+- **For school IT** (folded) — the three store ids, each with Copy.
+- **For developers** (folded) — send captures to `http://localhost:3000`
+  instead of aitutors.me. Leave it off.
 
 ## For schools
 
 Managed Chromebooks may block extensions. To allow Heddy, add its id to your
-allow-list in the Google Admin console:
+allow-list (Google Admin console, or Edge's management policies). Settings ›
+For school IT shows the same list:
 
 ```
-Extension id: (filled in when the Web Store listing is published)
+Chrome Web Store  cldkeocpehghpebfjdckhpdglbmjmocc
+Edge Add-ons      hfgjgfghbdnbmgdbecjddmniaafmjpkl
+Safari            me.aitutors.heddy.safari.Extension
 ```
 
 Nothing on aitutors.me depends on Heddy: without it, children add videos from

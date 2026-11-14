@@ -303,6 +303,22 @@
         .catch(function () {});
     }
 
+    /** The browser, for the welcome page's ?b= (PRD-v0.146.0 P2). */
+    function browser() {
+      return deps.browser || C.detectBrowser();
+    }
+
+    /** Is Heddy pinned to the toolbar? true or false where the browser says
+     *  (chrome.action.getUserSettings, Chrome and Edge); null where it cannot
+     *  tell (Safari, an older browser). Never rejects. */
+    function pinned() {
+      var a = chrome.action;
+      if (/^safari/.test(browser()) || !a || typeof a.getUserSettings !== 'function') return Promise.resolve(null);
+      return Promise.resolve()
+        .then(function () { return a.getUserSettings(); })
+        .then(function (s) { return s && typeof s.isOnToolbar === 'boolean' ? s.isOnToolbar : null; }, function () { return null; });
+    }
+
     function isPing(message) {
       return !!message && typeof message === 'object' && !Array.isArray(message) && message.type === 'heddy:ping' && message.v === P.PROTOCOL_VERSION;
     }
@@ -313,7 +329,7 @@
     function installed(details) {
       if (!details || details.reason !== 'install') return Promise.resolve(null);
       return Promise.all([devMode(), I.currentLang(chrome)])
-        .then(function (got) { return chrome.tabs.create({ url: C.welcomeUrl(C.captureOrigin(got[0]), got[1]) }); })
+        .then(function (got) { return chrome.tabs.create({ url: C.welcomeUrl(C.captureOrigin(got[0]), got[1], browser()) }); })
         .catch(function () { return null; });
     }
 
@@ -325,9 +341,15 @@
         if (!origin || C.allowedOrigins(dev).indexOf(origin) < 0) return null;
         if (sender.url && C.originOf(sender.url) !== origin) return null;
         // heddy:ping (D8): aitutors.me asks whether Heddy is installed, to hide
-        // its "Clip the web with Heddy" links. The answer is the version and
-        // nothing else; nothing is held or changed.
-        if (isPing(message)) return { type: 'heddy:pong', v: P.PROTOCOL_VERSION, version: chrome.runtime.getManifest().version };
+        // its "Clip the web with Heddy" links. The answer is the version and,
+        // since PRD-v0.146.0 P2, whether Heddy is pinned (true / false / null
+        // where the browser cannot tell), for the welcome page's tick. Nothing
+        // is held or changed; the site's reader ignores what it does not know.
+        if (isPing(message)) {
+          return pinned().then(function (p) {
+            return { type: 'heddy:pong', v: P.PROTOCOL_VERSION, version: chrome.runtime.getManifest().version, pinned: p };
+          });
+        }
         var m = P.parseExternal(message);
         if (!m) return null;
         var who = { origin: origin, windowId: sender.tab ? sender.tab.windowId : null, tabId: sender.tab ? sender.tab.id : null };

@@ -159,6 +159,7 @@ These thirteen are the only requests Heddy makes.
 | The desk's 📌, whether it is taller, and the width you dragged it to | `deskPin`, `deskTall`, `deskWidth` | `chrome.storage.local` |
 | The Digest's view (English, Bilingual or Chinese), whether its Insights note is open, and whether you closed its line about channels' own captions | `digestView`, `digestNoteOpen`, `digestFineHidden` | `chrome.storage.local` |
 | Whether you have seen the first-time popup, so it shows once | `seenFirstRun` | `chrome.storage.local` |
+| Whether you have seen (or skipped) the three-card intro, so it shows once | `seenIntro` | `chrome.storage.local` |
 | The developer switch (off unless you turned it on), for people building aitutors.me itself | `devOrigin` | `chrome.storage.local` |
 | The hand-over waiting for Full desk's aitutors.me tab: a random id, the video id and your jots. Forgotten once the tab takes it, or after 10 minutes | `heddyCids` | `chrome.storage.session`, cleared when Chrome closes |
 | The snippets and pictures you picked on a page (up to four pictures), and, after a save, the ones that save carried (for Undo). Gone when the tab goes to another page or closes | `heddyCards:` + the tab's number | `chrome.storage.session`, cleared when Chrome closes |

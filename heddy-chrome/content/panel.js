@@ -78,8 +78,9 @@
     } else if (m.heddyPanel === 'size' && typeof m.h === 'number' && isFinite(m.h) && m.h > 0) {
       dock(false);
       frame.style.height = Math.ceil(Math.min(m.h, 2000)) + 'px';
-      // 400 on a YouTube video (Add to My Clips, artifact P2), else 360.
-      var w = (m.w === 400 ? 400 : WIDTH) + 'px';
+      // 400 on a YouTube video (Add to My Clips, artifact P2), 380 for the
+      // Can't read / aitutors.me / first-time screens (PRD-v0.146.0 B8), else 360.
+      var w = (m.w === 400 || m.w === 380 ? m.w : WIDTH) + 'px';
       frame.style.width = w;
       host.style.setProperty('width', w, 'important');
       frame.classList.add('on');

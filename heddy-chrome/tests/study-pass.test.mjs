@@ -41,7 +41,7 @@ for (const [url, kind, chip] of KINDS) {
     assert.equal(K.kindOf(url, OWN), kind);
     const d = K.describe(url, OWN);
     assert.equal(d.kind, kind);
-    assert.equal(en(d.chip), chip);
+    assert.equal(en(d.chip, 'Chrome'), chip, 'kindChrome and kindSettings take the browser');
     assert.notEqual(zh(d.chip), d.chip, 'a Chinese chip');
     for (const key of [d.line, d.sub]) {
       assert.notEqual(en(key), key, `${key} in English`);
@@ -73,14 +73,13 @@ test('without its own id, Heddy’s pages read as another extension’s, never a
 
 const popup = read('popup/popup.js');
 
-test('the panel’s header shows a site’s name only for a web page; on any other page the kind’s chip, never the extension id', () => {
+test('the panel’s header shows a site’s name only for a web page; the Can’t read row names the kind, never an extension id', () => {
   assert.match(popup, /\$\('ctx'\)\.textContent = url && \/\^https\?:\/\.test\(url\) \? hostLabel\(url\) : '';/);
-  assert.match(popup, /ctx\.textContent = tr\(d\.chip\);/);
-  assert.doesNotMatch(popup, /chrome\.runtime\.id\)?\s*;?\s*\$\('ctx'\)|ctx'\)\.textContent = [^;]*runtime\.id/);
-  // every chip is words, never an id-shaped string
+  assert.match(popup, /title = tr\(d\.chip, BROWSER_NAME\);/);
+  assert.match(popup, /if \(u\.protocol === 'chrome-extension:' \|\| u\.protocol === 'safari-web-extension:' \|\| u\.protocol === 'moz-extension:'\) return '';/, 'an extension page prints no address');
   for (const [url] of KINDS) {
     const d = K.describe(url, OWN);
-    for (const t of [en(d.chip), zh(d.chip)]) {
+    for (const t of [en(d.chip, 'Chrome'), zh(d.chip, 'Chrome')]) {
       assert.doesNotMatch(t, /[a-p]{32}/, t);
       assert.ok(!t.includes(OWN));
     }
@@ -93,12 +92,14 @@ test('the fallback window is told the kind, for a page whose address Chrome hide
   assert.match(popup, /var cant = url \? HeddyPageKind\.describe\(url, chrome\.runtime\.id\) : HINT_KIND;/);
 });
 
-test('the D61 body: face and why, the account row, then My Jotters · My Clips · My Study; Snap a picture only where box mode can run', () => {
-  assert.match(popup, /M\.use\('h-face', 60\)/);
-  assert.match(popup, /tile\('h-pen', tr\('tileJotters'\), L\.jotters\)[^]*tile\('h-film', tr\('tileClips'\), L\.clips\)[^]*tile\('h-school', tr\('tileStudy'\), L\.study\)/);
-  assert.match(popup, /if \(url && !cant && \/\^https\?:\/\.test\(url\)/);
-  assert.match(popup, /if \(cant\) return renderCantSave\(body, cant\);/);
-  assert.doesNotMatch(popup, /renderCantRead/);
+test('Can’t read (PRD-v0.146.0 B9): why, which pages, three ways to try, one primary, My Jotters · My Clips · My Study', () => {
+  assert.match(popup, /hello\(tr\('hkCantHead'\), whyLine\(d\), true\)/);
+  assert.match(popup, /\['hkWhy1', 'hkWhy2', 'hkWhy3', 'hkWhy4'\]/);
+  assert.match(popup, /hkButton\('save', 'jot', tr\('hkOpenJotters'\)/);
+  assert.match(popup, /pn\.appendChild\(signBlock\(tr\('hkSignLine'\)\)\);/);
+  assert.match(popup, /tr\('tileJotters'\)[^]*tr\('tileClips'\)[^]*tr\('tileStudy'\)/);
+  assert.match(popup, /if \(url && !cant && \/\^https\?:\/\.test\(url\) && !isSite\(url, dev\)\) HeddySnap\.mountButton/);
+  assert.match(read('lib/popup-state.js'), /if \(o\.cant\) return 'cant';/);
 });
 
 // ─── D60: /me ───────────────────────────────────────────────────────────────
@@ -185,38 +186,41 @@ test('the doors: Sign in is the kid door, I’m new adds new=1, I’m a parent t
   });
 });
 
-// ─── D60: the settings page ─────────────────────────────────────────────────
+// ─── PRD-v0.146.0 B10: the settings page ───────────────────────────────────
 
 const opts = read('options/options.js');
-const html = read('options/options.html');
 
-test('settings, in order: the study pass, Language, About Heddy, For developers folded', () => {
-  const order = ['id="pass"', 'id="langLabel"', 'id="aboutHeading"', '<details class="dev">'].map((s) => html.indexOf(s));
+test('settings, in order: chips, Account, Heddy in {browser}, Shortcuts, Language, What Heddy can do, About, For school IT, For developers', () => {
+  const order = ["chips = el('div', 'chips')", "tr('setAccount')", "tr('setInBrowser', BROWSER_NAME)", "tr('setShortcuts')", "section(tr('optionsLanguage')", "tr('setCanDo')", "tr('aboutHeading')", "tr('setSchoolIT')", "tr('optionsDevHeading')"].map((x) => opts.indexOf(x));
   assert.ok(order.every((i) => i > 0), JSON.stringify(order));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
-  assert.match(html, /<details class="dev">\s*<summary id="devHeading"><\/summary>/, 'folded');
 });
 
-test('signed out is the drawing until /me answers: grey, Not signed in, Sign in, I’m new: make my account, I’m a parent', () => {
-  assert.match(html, /<section class="pass blank" id="pass"/);
+test('signed out is the drawing until /me answers: Not signed in, Sign in, I’m new: make my account, I’m a parent', () => {
   assert.match(opts, /var me = W\.SIGNED_OUT;/);
-  assert.match(opts, /\$\('passName'\)\.textContent = tr\('passNotSignedIn'\);[^]*action\('btn gold', tr\('whoSignIn'\), L\.signIn\)[^]*action\('btn ghost', tr\('passMakeAccount'\), L\.signUp\)[^]*action\('lk lt', tr\('passParent'\), L\.parent\)/);
+  assert.match(opts, /row\(tr\('passNotSignedIn'\), tr\('setAcctOut'\)\)[^]*tr\('whoSignIn'\), function \(\) \{ open\(L\.signIn\)[^]*tr\('passMakeAccount'\), function \(\) \{ open\(L\.signUp\)[^]*tr\('passParent'\), function \(\) \{ open\(L\.parent\)/);
   assert.deepEqual(['passNotSignedIn', 'passMakeAccount', 'passParent'].map((k) => en(k)), ['Not signed in', "I'm new: make my account", "I'm a parent"]);
 });
 
-test('signed in: name, year and subjects, Heddy’s face, Open my Study, Not you? Switch; a grown-up gets Open my dashboard', () => {
-  assert.match(opts, /\$\('passName'\)\.textContent = me\.firstName;\s*\$\('passLine'\)\.textContent = W\.passLine\(me, tr\);\s*acts\.appendChild\(action\('btn gold', tr\('whoOpenStudy'\), L\.study\)\);\s*acts\.appendChild\(action\('lk lt', tr\('passSwitch'\), L\.signIn\)\);/);
-  assert.match(opts, /\$\('passName'\)\.textContent = tr\('whoGrownUp'\);[^]*action\('btn gold', tr\('whoOpenDashboard'\), L\.dashboard\)/);
+test('signed in: name and year, Open my Study, Not you? Switch; a grown-up gets Open my dashboard', () => {
+  assert.match(opts, /tr\('whoOpenStudy'\), function \(\) \{ open\(L\.study\); \}\)\);\s*acct\.v\.appendChild\(btn\('lnk', null, tr\('passSwitch'\)/);
+  assert.match(opts, /tr\('whoOpenDashboard'\), function \(\) \{ open\(L\.dashboard\)/);
   assert.equal(en('whoGrownUp'), 'Signed in as a grown-up');
-  assert.match(opts, /\$\('passFace'\)\.innerHTML = M\.use\('h-face', 110\);/);
 });
 
-test('About Heddy: the version, the full extension id with Copy, the privacy link', () => {
-  assert.match(opts, /var id = chrome\.runtime\.id;\s*\$\('extId'\)\.textContent = id;/);
-  assert.match(opts, /navigator\.clipboard\.writeText\(id\)/);
-  assert.match(opts, /\$\('version'\)\.textContent = chrome\.runtime\.getManifest\(\)\.version;/);
+test('no extension id outside For school IT: the three store ids live only there, each with Copy; the old pass label is gone', () => {
+  assert.doesNotMatch(opts, /runtime\.id|shortId|passId|extId/);
+  assert.match(opts, /if \(ui\.it\) \{[^]*C\.STORE_IDS\[s\[0\]\][^]*copy\(s\[0\], id, code\)/);
+  assert.deepEqual(load('./lib/config.js').STORE_IDS, { chrome: 'cldkeocpehghpebfjdckhpdglbmjmocc', edge: 'hfgjgfghbdnbmgdbecjddmniaafmjpkl', safari: 'me.aitutors.heddy.safari.Extension' });
+  assert.match(opts, /var ui = \{[^;]*it: false/, 'folded by default');
+});
+
+test('About Heddy: the version, the privacy link, the help guide', () => {
+  assert.match(opts, /var VERSION = chrome\.runtime\.getManifest\(\)\.version;/);
   assert.match(opts, /open\(C\.PRIVACY_URL\)/);
+  assert.match(opts, /open\(C\.helpUrl\(origin, lang\)\)/);
   assert.equal(load('./lib/config.js').PRIVACY_URL, 'https://github.com/maggielovelace/aitutors-plugin/blob/main/heddy-chrome/PRIVACY.md');
+  assert.equal(load('./lib/config.js').helpUrl('https://aitutors.me', 'en'), 'https://aitutors.me/docs/heddy-for-chrome');
 });
 
 test('the dev switch asks the site captures go to; /me’s answer is never stored', () => {

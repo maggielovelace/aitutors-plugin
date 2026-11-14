@@ -51,8 +51,8 @@ test('tabs.create only serves explicit navigation, the welcome page, or the Safa
   const KEPT = {
     // openTab (Full desk ↗'s /capture tab, D71) twice, heddy-ui:open (Open on a toast, Open my Jotter ↗, Sign in), installed (the welcome page).
     'lib/courier.js': 4,
-    // openSite (first time's Open aitutors.me) and openAndClose (My Jotters · My Clips · My Study, Sign in).
-    'popup/popup.js': 2,
+    // openAndClose: every link the Can't read, aitutors.me and first-time screens offer (PRD-v0.146.0).
+    'popup/popup.js': 1,
     // the options page's links.
     'options/options.js': 1,
     // Full desk ↗: one tab straight to Classroom (owner, 2026-10-31; no /capture page).
