@@ -21,6 +21,17 @@
   var SERIF = '"Heddy Serif","Source Serif 4",Georgia,"Times New Roman",serif';
   var DESCRIPTORS = { weight: '500 800', style: 'normal', display: 'swap' };
 
+  /** Safari (safari-web-extension://): register nothing. A page with Heddy's variable woff2 faces registered from
+   *  bytes (new FontFace(ArrayBuffer)) crashed Safari's page process on YouTube at load, iPhone and Mac
+   *  (2026-11-14; no crash with registration off). The stacks above fall back to the system fonts, as on any
+   *  failure. Chrome and Edge are unchanged. */
+  function safari() {
+    try {
+      var rt = root.chrome && root.chrome.runtime;
+      return !!(rt && typeof rt.getURL === 'function' && String(rt.getURL('')).indexOf('safari-web-extension:') === 0);
+    } catch (e) { return false; }
+  }
+
   function bytes(base64) {
     var bin = root.atob(base64);
     var out = new Uint8Array(bin.length);
@@ -35,6 +46,7 @@
   /** Registers each face in doc.fonts; a second call for the same document
    *  does nothing. Returns how many faces it added. */
   function load(doc, FontFaceCtor) {
+    if (safari()) return 0;
     var FF = FontFaceCtor || root.FontFace;
     var data = root.HeddyFontData;
     if (!doc || !doc.fonts || typeof FF !== 'function' || !Array.isArray(data)) return 0;
@@ -56,6 +68,7 @@
 
   /** More faces, each registered once per page (a reinjection adds none). */
   function add(doc, faces, FontFaceCtor) {
+    if (safari()) return 0;
     var FF = FontFaceCtor || root.FontFace;
     if (!doc || !doc.fonts || typeof FF !== 'function' || !Array.isArray(faces)) return 0;
     var n = 0;

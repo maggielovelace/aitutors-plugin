@@ -199,6 +199,9 @@
     } else if (r && r.known === true) {
       setMode(into, 'off');
       into.jotters = [];
+    } else if (into.mode === 'list' && into.jotters.length) {
+      // A later fetch failed (the panel asks again when the page's cards change, 2026-11-14 Safari):
+      // the list it already had still stands, rather than the line vanishing.
     } else if (into.keep) {
       setMode(into, 'keep');
       into.jotters = [keepRow(into.keep)];

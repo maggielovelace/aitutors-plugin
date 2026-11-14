@@ -34,6 +34,8 @@ export function storeManifest(src, { dev = false, browser = 'chrome' } = {}) {
     if (dev) m.host_permissions.push('http://localhost:3000/*');
     m.content_scripts[0].matches.push(mobileWatch);
     m.browser_specific_settings = { safari: { strict_min_version: '17.4' } };
+    // No default_popup on Safari either: the button opens the panel in the page, as on Chrome. What ended the page
+    // there (2026-11-14) was the frame calling tabs.* itself; it asks the background now (lib/frame-api.js).
     // The panel uses the URL returned by Safari; this Chromium option is optional.
     for (const resource of m.web_accessible_resources) delete resource.use_dynamic_url;
   }

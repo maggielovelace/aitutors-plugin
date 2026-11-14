@@ -11,7 +11,13 @@
 //   intro       the first time, a child signed in: three cards, Skip, then
 //               the page's own screen; shown once
 //   wait        the first time is not over and who is signed in is not known
-//               yet: ask /me (lib/who.js), then choose again
+//               yet: ask /me (lib/who.js), then choose again. The popup draws
+//               its frame at once and waits WAIT_MS at most (answerWithin):
+//               with no answer by then (`asked`), the page's own screen, and
+//               nothing is remembered, so the first time is asked again on
+//               the next open. On Safari /me goes by a tab of aitutors.me and
+//               can take seconds or never answer; a panel that drew nothing
+//               until it did read as a dead button (2026-11-14).
 //
 // The first time only ever comes on a page Heddy can work on (page, youtube):
 // on aitutors.me and on a page it can't read, those screens already lead with
@@ -38,16 +44,29 @@
   }
 
   /** The screen. `o`: pageState's, plus `local` (chrome.storage.local's
-   *  FIRST_RUN_KEY and INTRO_KEY) and `me` (lib/who.js parseMe's answer, or
-   *  null while it is not known). */
+   *  FIRST_RUN_KEY and INTRO_KEY), `me` (lib/who.js parseMe's answer, or
+   *  null while it is not known) and `asked` (true once /me was asked and
+   *  the wait is over, answered or not). */
   function choose(o) {
     var base = pageState(o);
     if ((base !== 'page' && base !== 'youtube') || !firstTimeOpen(o.local)) return base;
     var me = o.me;
-    if (!me) return 'wait';
+    if (!me) return o.asked === true ? base : 'wait';
     if (me.signedIn && me.role === 'child') return 'intro';
     // Signed out, or a grown-up: the signed-out first time, once.
     return (o.local || {})[C.FIRST_RUN_KEY] === 'out' ? base : 'first-out';
+  }
+
+  // How long the first open waits for /me before it draws the page's own screen.
+  var WAIT_MS = 1000;
+
+  /** `promise`'s answer, or null if it has not come within `ms` (or it
+   *  failed). Never rejects, and always settles. */
+  function answerWithin(promise, ms, later) {
+    return new Promise(function (resolve) {
+      (later || setTimeout)(function () { resolve(null); }, ms);
+      Promise.resolve(promise).then(function (v) { resolve(v == null ? null : v); }, function () { resolve(null); });
+    });
   }
 
   // The intro's end (Skip, or its last card), for remember().
@@ -61,7 +80,7 @@
     return null;
   }
 
-  var api = { INTRO_DONE: INTRO_DONE, pageState: pageState, firstTimeOpen: firstTimeOpen, choose: choose, remember: remember };
+  var api = { INTRO_DONE: INTRO_DONE, WAIT_MS: WAIT_MS, answerWithin: answerWithin, pageState: pageState, firstTimeOpen: firstTimeOpen, choose: choose, remember: remember };
   root.HeddyPopupState = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

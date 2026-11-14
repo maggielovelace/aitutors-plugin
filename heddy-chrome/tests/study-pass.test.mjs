@@ -165,6 +165,32 @@ test('loadMe: a network error, a 401 or 500, bad JSON, a redirect or a timeout a
   assert.ok(aborted);
 });
 
+// On Safari /me is a message to the background, which asks a tab of aitutors.me (lib/safari-site.js). No
+// AbortController reaches that, so a message never answered left loadMe pending for good (2026-11-14).
+test('loadMe on Safari: a message the background never answers still reads as signed out when the timer fires', async () => {
+  const before = globalThis.chrome;
+  const sent = [];
+  globalThis.chrome = { runtime: { getURL: () => 'safari-web-extension://8E2B4A0C/', sendMessage: (m) => { sent.push(m); return new Promise(() => {}); } } };
+  try {
+    const timers = [];
+    let got = 'pending';
+    const p = W.loadMe(async () => { throw new Error('Safari does not fetch from the page'); }, 'https://aitutors.me', { setTimeout: (fn, ms) => { timers.push({ fn, ms }); return 1; }, clearTimeout: () => {} })
+      .then((me) => { got = me; });
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(sent, [{ type: 'heddy-safari:me' }]);
+    assert.equal(got, 'pending');
+    assert.equal(timers[0].ms, 5000);
+    timers[0].fn();
+    await p;
+    assert.deepEqual(got, { signedIn: false });
+    // An answer in time is still read.
+    globalThis.chrome.runtime.sendMessage = async () => ({ signedIn: true, role: 'parent' });
+    assert.deepEqual(await W.loadMe(async () => null, 'https://aitutors.me'), { signedIn: true, role: 'parent' });
+  } finally {
+    globalThis.chrome = before;
+  }
+});
+
 test('the pass line, the avatar initial and the short id', () => {
   assert.equal(W.passLine({ yearGroup: 8, subjects: ['Science', 'Maths', 'English'] }, en), 'Year 8 · Science, Maths, English');
   assert.equal(W.passLine({ yearGroup: null, subjects: ['Maths'] }, en), 'Maths');

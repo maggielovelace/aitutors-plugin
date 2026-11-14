@@ -201,9 +201,12 @@
   // ─── in the page ───────────────────────────────────────────────────────────
 
   // Injected again on every gesture: one listener, and a restart.
-  if (root.__heddyBoxMode) return;
+  // Stamped with the build: a copy left in the tab by another build (an update with the tab open) is replaced,
+  // never obeyed — Safari keeps the old marker while its listeners are dead (2026-11-14).
+  var BUILD = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : '');
+  if (root.__heddyBoxMode && root.__heddyBoxMode.v === BUILD) return;
   // What the panel's page script and the panel's frame ask of box mode.
-  root.__heddyBoxMode = Object.assign({}, pure, { mode: currentMode, stop: toText, start: toPicture, panelClosed: panelClosed });
+  root.__heddyBoxMode = Object.assign({}, pure, { v: BUILD, mode: currentMode, stop: toText, start: toPicture, panelClosed: panelClosed });
 
   var I = root.HeddyI18n;
   var M = root.HeddyMarks;

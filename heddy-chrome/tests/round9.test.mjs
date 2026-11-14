@@ -58,6 +58,8 @@ test('tabs.create only serves explicit navigation, the welcome page, or the Safa
     // Full desk ↗: one tab straight to Classroom (owner, 2026-10-31; no /capture page).
     'lib/web-routes.js': 1,
     'lib/safari-site.js': 1,
+    // the same two taps in popup.js, made by the background for the panel's frame on Safari (http(s) only).
+    'lib/frame-api.js': 1,
   };
   const seen = {};
   for (const f of shippedFiles().filter((x) => /\.js$/.test(x))) {

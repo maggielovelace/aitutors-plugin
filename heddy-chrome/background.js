@@ -1,6 +1,9 @@
 // background.js — Heddy's service worker. The logic is lib/courier.js; this
 // file only loads the bundled scripts and connects Chrome's events to it.
-importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js', 'lib/desk-api.js', 'lib/desk-ask.js', 'lib/heddy-api.js', 'lib/web-routes.js');
+// Safari names the extension API `browser`; `chrome` is only its alias, and a worker started
+// without the alias (seen 2026-11-14 on Mac, after re-enabling) would stop at the first line.
+if (typeof chrome === 'undefined' && typeof browser !== 'undefined') self.chrome = browser;
+importScripts('lib/messages.js', 'lib/i18n.js', 'lib/protocol.js', 'lib/config.js', 'lib/cid-store.js', 'lib/courier.js', 'lib/crop.js', 'lib/tools.js', 'lib/snap.js', 'lib/page-kind.js', 'lib/panel.js', 'lib/pos.js', 'lib/cards.js', 'lib/desk-api.js', 'lib/desk-ask.js', 'lib/heddy-api.js', 'lib/web-routes.js', 'lib/frame-api.js');
 
 var cards = null;
 var courier = HeddyCourier.createCourier({
@@ -13,8 +16,15 @@ var courier = HeddyCourier.createCourier({
 
 // The toolbar icon opens Heddy's panel in the page (lib/panel.js): the desk,
 // docked on the right. Where Chrome keeps extensions out, the toolbar popup
-// shows it instead (D79); no window opens (D78).
+// shows it instead (D79); no window opens (D78). Safari draws it in the page
+// too: what ended the page there (2026-11-14) was the frame calling tabs.*
+// itself, and the frame now asks this worker instead (lib/frame-api.js).
+var safari = chrome.runtime.getURL('/').startsWith('safari-web-extension:');
 var panel = HeddyPanel.createPanel({ chrome: chrome });
+
+// The panel's frame on Safari may not call tabs.* or scripting.* (Safari ends
+// the page that does): it asks here, for its own tab only (lib/frame-api.js).
+var frameBridge = HeddyFrameApi.createBridge({ chrome: chrome, files: HeddyCourier.PAGE_FILES });
 
 chrome.action.onClicked.addListener(function (tab) {
   panel.clicked(tab);
@@ -34,7 +44,6 @@ var snap = HeddySnap.createSnap({
 // The desk on a YouTube watch page (Round 8, D69–D72): its four requests to
 // aitutors.me go from here, with the browser's own aitutors.me cookie, as
 // lib/who.js's /me does (lib/desk-api.js).
-var safari = chrome.runtime.getURL('/').startsWith('safari-web-extension:');
 if (safari) importScripts('lib/safari-site.js', 'lib/who.js');
 var requestSite = safari ? HeddySafariFetch.createSafariFetch(chrome) : fetch.bind(self);
 var desk = HeddyDeskApi.createDeskApi({ chrome: chrome, fetchImpl: requestSite });
@@ -65,6 +74,11 @@ cards = HeddyCards.createCards({
   capture: snap.cropOne,
   showLine: snap.showLine,
   showPanel: panel.show,
+  // Safari: "the cards changed" also goes by the page to the panel's frame
+  // (content/panel.js), in case the broadcast does not reach a frame there.
+  relay: safari ? function (tabId, told) {
+    return Promise.resolve(chrome.tabs.sendMessage(tabId, { type: 'heddy-panel:cards', note: told.note || null })).catch(function () {});
+  } : null,
   droppedText: function () {
     return HeddyI18n.currentLang(chrome).then(function (lang) { return HeddyI18n.t(lang, 'boxDropped'); });
   },
@@ -94,7 +108,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     desk.call('GET', HeddyWho.PATH).then(function (reply) { sendResponse(reply.data); });
     return true;
   }
-  var mine = routes.internal(message, sender) || desk.internal(message, sender) || snap.internal(message, sender) || cards.internal(message, sender);
+  var mine = frameBridge.internal(message, sender) || routes.internal(message, sender) || desk.internal(message, sender) || snap.internal(message, sender) || cards.internal(message, sender);
   if (mine) {
     mine.then(function (reply) { sendResponse(reply); }, function () { sendResponse(null); });
     return true;

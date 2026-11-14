@@ -18,7 +18,11 @@
 // A different address (not a #fragment) clears it all: the background clears
 // the list too (D55, "going to another page clears the list").
 (function (root) {
-  if (root.__heddyCards) return;
+  // Stamped with the build: a copy left in the tab by another build (an update with the tab open) is replaced,
+  // never obeyed — Safari keeps the old marker while its listeners are dead (2026-11-14).
+  var BUILD = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : '');
+  if (root.__heddyCards && root.__heddyCards.v === BUILD) return;
+  if (root.__heddyCards && typeof root.__heddyCards.clear === 'function') { try { root.__heddyCards.clear(); } catch (e) { /* gone */ } }
 
   var I = root.HeddyI18n;
   var POS = root.HeddyPos;
@@ -228,5 +232,5 @@
     }
   }
 
-  root.__heddyCards = { take: take, sync: sync, overlaps: overlaps, away: away, boxMode: boxMode, clear: clear, onSync: onSync, count: function () { return list.length; } };
+  root.__heddyCards = { v: BUILD, take: take, sync: sync, overlaps: overlaps, away: away, boxMode: boxMode, clear: clear, onSync: onSync, count: function () { return list.length; } };
 })(globalThis);

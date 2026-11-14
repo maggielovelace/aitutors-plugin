@@ -29,7 +29,12 @@
 // selection changed" (the frame reads it again itself), "the page moved on"
 // and which mode is on. A message is taken only from the frame's own window.
 (function (root) {
-  if (root.__heddyPanel) return;
+  // Stamped with the build: a copy left in the tab by another build (an update with the tab open) is replaced,
+  // never obeyed — Safari keeps the old marker while its listeners are dead (2026-11-14).
+  var BUILD = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().version : '');
+  var prev = root.__heddyPanel;
+  if (prev && prev.v === BUILD) return;
+  if (prev && typeof prev.close === 'function') { try { prev.close(); } catch (e) { /* its page is ours no longer */ } }
 
   var A = root.HeddyAutoAdd;
 
@@ -233,8 +238,12 @@
     frame.title = 'Heddy';
     // Copy on the YouTube state copies the video's link (D76).
     frame.allow = 'clipboard-write';
-    frame.src = chrome.runtime.getURL('popup/popup.html') + '?tab=' + encodeURIComponent(String(tabId)) + '&host=panel';
-    var o = /^[a-z-]+:\/\/[^/]+/.exec(frame.src);
+    // The address is kept, never read back from frame.src: Safari masks an extension page's address in the
+    // page (webkit-masked-url://hidden/), so an origin taken from frame.src sent every message to nowhere
+    // and the panel never started (2026-11-14, Mac).
+    var src = chrome.runtime.getURL('popup/popup.html') + '?tab=' + encodeURIComponent(String(tabId)) + '&host=panel';
+    frame.src = src;
+    var o = /^[a-z-]+:\/\/[^/]+/.exec(src);
     frameOrigin = o ? o[0] : '*';
     shadow.appendChild(style);
     shadow.appendChild(frame);
@@ -293,6 +302,11 @@
       reply({ open: !!host });
       return undefined;
     }
+    // Safari: the cards changed (lib/cards.js relay). A hint for the frame, which reads the list itself.
+    if (message.type === 'heddy-panel:cards') {
+      tell({ heddyPanel: 'cards', note: message.note === 'full_text' ? 'full_text' : null });
+      return undefined;
+    }
     if (message.type === 'heddy-panel:close') {
       var was = !!host;
       close();
@@ -309,5 +323,5 @@
     if (host) host.style.setProperty('opacity', on ? '0' : '1', 'important');
   }
 
-  root.__heddyPanel = { open: open, close: close, away: away, modeChanged: modeChanged, host: function () { return host; }, isOpen: function () { return !!host; } };
+  root.__heddyPanel = { v: BUILD, open: open, close: close, away: away, modeChanged: modeChanged, host: function () { return host; }, isOpen: function () { return !!host; } };
 })(globalThis);

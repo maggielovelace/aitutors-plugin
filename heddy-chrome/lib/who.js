@@ -63,13 +63,21 @@
   }
 
   /** Ask /me. `fetchImpl` is the page's fetch; resolves to a parsed answer,
-   *  never rejects. The browser sends its own aitutors.me cookie. */
+   *  never rejects. The browser sends its own aitutors.me cookie.
+   *
+   *  Whatever carries the question, the answer comes within TIMEOUT_MS. On
+   *  Safari the question goes by the background and a tab of aitutors.me
+   *  (lib/safari-site.js), which no AbortController reaches: a message that is
+   *  never answered left the popup waiting for good (2026-11-14). So the
+   *  timer answers "signed out" itself, as well as stopping the fetch. */
   function loadMe(fetchImpl, origin, opts) {
     var o = opts || {};
     var later = o.setTimeout || setTimeout;
     var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
-    var timer = ctrl ? later(function () { ctrl.abort(); }, o.timeoutMs || TIMEOUT_MS) : null;
-    return Promise.resolve()
+    var giveUp;
+    var gaveUp = new Promise(function (resolve) { giveUp = resolve; });
+    var timer = later(function () { if (ctrl) ctrl.abort(); giveUp(SIGNED_OUT); }, o.timeoutMs || TIMEOUT_MS);
+    var asked = Promise.resolve()
       .then(function () {
         if (root.chrome && chrome.runtime && chrome.runtime.getURL && chrome.runtime.getURL('/').startsWith('safari-web-extension:')) {
           return chrome.runtime.sendMessage({ type: 'heddy-safari:me' }).then(function (answer) {
@@ -82,12 +90,12 @@
         if (!res || !res.ok) return SIGNED_OUT;
         return res.json().then(parseMe, function () { return SIGNED_OUT; });
       })
-      .catch(function () { return SIGNED_OUT; })
-      .then(function (me) {
-        if (timer !== null && o.clearTimeout) o.clearTimeout(timer);
-        else if (timer !== null) clearTimeout(timer);
-        return me;
-      });
+      .catch(function () { return SIGNED_OUT; });
+    return Promise.race([asked, gaveUp]).then(function (me) {
+      if (o.clearTimeout) o.clearTimeout(timer);
+      else clearTimeout(timer);
+      return me;
+    });
   }
 
   /** "Year 8 · Science, Maths, English", leaving out what is not known. */

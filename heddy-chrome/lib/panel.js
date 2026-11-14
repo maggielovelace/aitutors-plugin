@@ -34,10 +34,24 @@
     return pageUrl(function (p) { return p; }, tabId, 'popup', kind);
   }
 
+  /** deps: { chrome, inPage? } — inPage false never draws the panel inside a page: the toolbar popup instead.
+   *  Nothing passes it now. It was Safari's stopgap on 2026-11-14, before the cause was found (the frame calling
+   *  tabs.* from the page's process; lib/frame-api.js), and stays as the switch to fall back on: with it, the
+   *  manifest must also give the button a default_popup (scripts/package.mjs). */
   function createPanel(deps) {
     var chrome = deps.chrome;
+    var inPage = deps.inPage !== false;
     // Tabs whose popup Heddy set, until they go to another page.
     var popups = {};
+
+    /** Safari: the toolbar popup, never a frame in the page. Where the browser will not open it for us, the
+     *  child's next tap on the icon shows it. */
+    function popupOnly() {
+      if (!chrome.action || typeof chrome.action.openPopup !== 'function') return Promise.resolve({ ok: true, where: 'popup', open: false });
+      return Promise.resolve()
+        .then(function () { return chrome.action.openPopup(); })
+        .then(function () { return { ok: true, where: 'popup', open: true }; }, function () { return { ok: true, where: 'popup', open: false }; });
+    }
 
     /** The page is closed to Heddy: the toolbar popup shows the panel there
      *  (D79), never a window. */
@@ -61,6 +75,7 @@
      *  allowed. */
     function clicked(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
+      if (!inPage) return popupOnly();
       return Promise.resolve()
         .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: PANEL_FILES }); })
         .then(function () { return chrome.tabs.sendMessage(tab.id, { type: 'heddy-panel:toggle', tabId: tab.id }); })
@@ -79,6 +94,7 @@
      *  keeps from extensions has nothing to add. */
     function show(tab) {
       if (!tab || tab.id == null) return Promise.resolve({ ok: false });
+      if (!inPage) return popupOnly().then(function (r) { return { ok: r.open }; });
       return Promise.resolve()
         .then(function () { return chrome.scripting.executeScript({ target: { tabId: tab.id }, files: PANEL_FILES }); })
         .then(function () { return chrome.tabs.sendMessage(tab.id, { type: 'heddy-panel:open', tabId: tab.id }); })

@@ -21,6 +21,11 @@
 // toolbar icon again), and ?tab= names the tab the popup acts on. Where the
 // toolbar popup closed itself after an action, closeUi() closes either.
 (function () {
+  // In a frame on Safari the page's process may not call tabs.* or scripting.*: Safari ends the page that does
+  // (lib/frame-api.js). There `chrome` is that file's object, which asks the background; elsewhere it is chrome.
+  var chrome = HeddyFrameApi.wrap(globalThis.chrome || globalThis.browser, window);
+  // What the popup runs in the page, by name, so the background can run it for a frame on Safari.
+  var PF = HeddyFrameApi.FUNCS;
   var P = HeddyProtocol, C = HeddyConfig, I = HeddyI18n, M = HeddyMarks, SEL = HeddyYouTube.SELECTORS;
   var tr = I.translator('en');
 
@@ -315,6 +320,8 @@
     card.appendChild(ft);
     body.appendChild(card);
 
+    // Waiting for /me on the first open: the frame alone, so the click is answered at once.
+    if (s === 'wait') return undefined;
     if (s === 'intro') return paintIntro(pn);
     if (s === 'first-out') return paintFirstOut(pn);
     // Can't read and aitutors.me follow who is signed in: drawn when /me answers.
@@ -666,7 +673,7 @@
 
   /** The page's selection, read in the tab (content/page-tray.js), or null. */
   function readSelection(tab) {
-    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function () { return globalThis.__heddyPage.selection(); } })
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: PF.selection })
       .then(function (res) {
         var sel = res && res[0] && res[0].result;
         return sel && sel.quote && sel.quote.trim() ? sel : null;
@@ -691,7 +698,7 @@
   function readMode(tab) {
     return chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: function () { var b = globalThis.__heddyBoxMode; return b && b.mode ? b.mode() : 'text'; },
+      func: PF.mode,
     }).then(function (res) { return res && res[0] && res[0].result === 'picture' ? 'picture' : 'text'; }, function () { return 'text'; });
   }
 
@@ -718,35 +725,11 @@
       }, function () { return showHk('cant', null); });
   }
 
-  /** Runs in the YouTube tab (activeTab, granted by opening this popup). */
-  function readVideo(sel) {
-    var v = document.querySelector(sel.video);
-    var title = document.querySelector(sel.title);
-    var channel = document.querySelector(sel.channel);
-    return {
-      t: v ? v.currentTime : null,
-      duration: v && isFinite(v.duration) ? v.duration : null,
-      title: title ? title.textContent.trim().slice(0, 200) : null,
-      channel: channel ? channel.textContent.trim().slice(0, 100) : null,
-    };
-  }
-
-  /** Runs in the page's own world: YouTube's storyboard spec for the film
-   *  strip (D75), from the player. Text only; lib/film-strip.js checks it. */
-  function readStoryboard() {
-    try {
-      var p = document.getElementById('movie_player');
-      var r = p && typeof p.getPlayerResponse === 'function' ? p.getPlayerResponse() : null;
-      var s = r && r.storyboards && r.storyboards.playerStoryboardSpecRenderer;
-      return s && typeof s.spec === 'string' ? s.spec.slice(0, 4000) : null;
-    } catch (e) {
-      return null;
-    }
-  }
+  // readVideo and readStoryboard run in the YouTube tab; they live in lib/frame-api.js (FUNCS).
 
   function videoInfo(tab) {
     var fallback = { t: null, duration: null, title: (tab.title || '').replace(/\s*-\s*YouTube\s*$/, '').slice(0, 200) || null, channel: null };
-    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readVideo, args: [SEL] }).then(
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, func: PF.readVideo, args: [SEL] }).then(
       function (res) {
         var got = res && res[0] && res[0].result;
         if (!got) return fallback;
@@ -757,7 +740,7 @@
   }
 
   function storyboard(tab) {
-    return chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: readStoryboard }).then(
+    return chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: PF.readStoryboard }).then(
       function (res) { return HeddyFilmStrip.parseStoryboard(res && res[0] && res[0].result); },
       function () { return null; }
     );
@@ -767,7 +750,7 @@
   function seekTab(tab, t) {
     chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: function (sel, s) { var v = document.querySelector(sel); if (v && isFinite(s)) v.currentTime = s; return true; },
+      func: PF.seek,
       args: [SEL.video, t],
     }).catch(function () {});
   }
@@ -1036,7 +1019,7 @@
 
     // The playhead and the chips follow the player while the popup is open.
     setInterval(function () {
-      chrome.scripting.executeScript({ target: { tabId: tab.id }, func: function (sel) { var v = document.querySelector(sel); return v ? v.currentTime : null; }, args: [SEL.video] })
+      chrome.scripting.executeScript({ target: { tabId: tab.id }, func: PF.currentTime, args: [SEL.video] })
         .then(function (res) {
           var t = res && res[0] && res[0].result;
           if (typeof t === 'number' && isFinite(t) && !dragging) { nowT = t; paint(); }
@@ -1138,6 +1121,9 @@
     if (e.data.heddyPanel === 'moved') location.reload();
     // Box mode started or ended in the page (D64): + Text / + Picture follow.
     if (e.data.heddyPanel === 'mode' && desk) desk.setMode(e.data.mode === 'picture' ? 'picture' : 'text');
+    // Safari: the background's "the cards changed" comes by way of the page (content/panel.js), in case its
+    // broadcast does not reach a frame there. Drawing the list twice is drawing it once.
+    if (e.data.heddyPanel === 'cards' && desk) desk.refresh(e.data.note === 'full_text' ? 'full_text' : undefined);
   });
 
   function theTab() {
@@ -1155,7 +1141,7 @@
   }
 
   Promise.all([
-    I.currentLang(),
+    I.currentLang(chrome),
     theTab(),
     chrome.storage.local.get([C.DEV_KEY, C.FIRST_RUN_KEY, C.INTRO_KEY]).catch(function () { return {}; }),
   ]).then(function (got) {
@@ -1192,8 +1178,12 @@
 
     function begin(state) {
       if (state === 'wait') {
-        return loadWho().then(function (me) {
+        // Drawn before the answer, and never held up by it (lib/popup-state.js): on Safari /me goes by a tab
+        // of aitutors.me, and a panel with nothing in it until then read as a dead button (2026-11-14).
+        showHk('wait');
+        return HeddyPopupState.answerWithin(loadWho(), HeddyPopupState.WAIT_MS).then(function (me) {
           input.me = me;
+          input.asked = true;
           hk.me = me;
           begin(HeddyPopupState.choose(input));
         });
@@ -1203,6 +1193,8 @@
         if (keep) chrome.storage.local.set(keep).catch(function () {});
         return showHk(state);
       }
+      // After the wait's frame, the page's own screen takes the whole popup back.
+      if (hk.state === 'wait') { hk.state = null; leaveHk(); }
       return ownScreen();
     }
     return begin(HeddyPopupState.choose(input));

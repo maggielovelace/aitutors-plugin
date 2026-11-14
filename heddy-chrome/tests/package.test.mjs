@@ -145,6 +145,8 @@ test('Edge and Safari packages use browser branding and target-specific manifest
     assert.deepEqual(config.externally_connectable.matches, ['https://aitutors.me/*']);
     assert.equal(config.host_permissions.includes(mobileWatch), browser === 'safari');
     assert.equal(config.content_scripts[0].matches.includes(mobileWatch), browser === 'safari');
+    // The button opens the panel in the page on every browser (Safari too: lib/frame-api.js).
+    assert.equal(config.action.default_popup, undefined);
     for (const locale of ['en', 'zh_CN']) {
       const name = JSON.parse(archive[`_locales/${locale}/messages.json`]).extName.message;
       assert.ok(name.includes(label));
