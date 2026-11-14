@@ -27,7 +27,7 @@
   var P = root.HeddyProtocol || (typeof require === 'function' && require('./protocol.js'));
 
   var BASE = '/api/learn/heddy/';
-  var PATHS = { save: BASE + 'save', undo: BASE + 'undo', clip: BASE + 'clip', ask: BASE + 'ask', card: BASE + 'card', jot: BASE + 'jot', jotters: BASE + 'jotters' };
+  var PATHS = { save: BASE + 'save', undo: BASE + 'undo', clip: BASE + 'clip', ask: BASE + 'ask', card: BASE + 'card', jot: BASE + 'jot', jotters: BASE + 'jotters', recentJots: BASE + 'recent-jots', cardsDue: BASE + 'cards-due' };
   // The site's routes run on Vercel, which refuses a body past 4.5 MB.
   var MAX_BODY = 4 * 1024 * 1024;
   // The conversation's stream is cut after this long without a byte.
@@ -134,6 +134,41 @@
       });
     });
     return { show: true, known: true, jotters: list, page: pageOf(d.page) };
+  }
+
+  // PRD-v0.146.0 B9: the popup's two reads. A jot's deep link is its Jotter
+  // open on it; "Review N cards" goes to the review room, exactly.
+  var JOT_LINK = /^\/study\/jotters\/[A-Za-z0-9_-]{1,80}\?jot=[A-Za-z0-9_-]{1,80}$/;
+  var REVIEW_PATH = '/study/cards/review';
+  var MAX_RECENT = 2;
+
+  /** "Your latest jots" (GET recent-jots): { ok, signedIn, jots }. A failed
+   *  read is { ok: false }, never an empty list (the site answers 503). */
+  function parseRecentJots(r) {
+    var d = r && r.data;
+    if (!r || r.status !== 200 || !d || typeof d !== 'object') return { ok: false };
+    if (d.signedIn === false) return { ok: true, signedIn: false, jots: [] };
+    if (d.signedIn !== true || !Array.isArray(d.jots)) return { ok: false };
+    var jots = [];
+    d.jots.forEach(function (j) {
+      if (jots.length >= MAX_RECENT || !j || typeof j !== 'object') return;
+      if (typeof j.href !== 'string' || !JOT_LINK.test(j.href)) return;
+      var t = text(j.text, 140);
+      if (!t) return;
+      var at = typeof j.createdAt === 'string' ? Date.parse(j.createdAt) : NaN;
+      jots.push({ text: t, jotter: text(j.jotter, 120), host: text(j.host, 80) || null, at: isFinite(at) ? at : null, href: j.href });
+    });
+    return { ok: true, signedIn: true, jots: jots };
+  }
+
+  /** "Review N cards" (GET cards-due): { ok, signedIn, due, href }. A count
+   *  that could not be read is { ok: false }, never 0. */
+  function parseCardsDue(r) {
+    var d = r && r.data;
+    if (!r || r.status !== 200 || !d || typeof d !== 'object') return { ok: false };
+    if (d.signedIn === false) return { ok: true, signedIn: false };
+    if (d.signedIn !== true || typeof d.due !== 'number' || !isFinite(d.due) || d.due < 0 || d.due !== Math.floor(d.due) || d.href !== REVIEW_PATH) return { ok: false };
+    return { ok: true, signedIn: true, due: d.due, href: d.href };
   }
 
   /** § 2: {ok}. */
@@ -318,6 +353,8 @@
       // url: the tab's address (lib/web-routes.js reads it from the tab), only
       // to match this page's Jotter; without one the site names no page.
       jotters: function (url) { return deps.call('GET', PATHS.jotters, url ? { url: url } : null).then(parseJotters); },
+      recentJots: function () { return deps.call('GET', PATHS.recentJots).then(parseRecentJots); },
+      cardsDue: function () { return deps.call('GET', PATHS.cardsDue).then(parseCardsDue); },
       ask: ask,
     };
   }
@@ -332,6 +369,8 @@
     parseCard: parseCard,
     parseJot: parseJot,
     parseJotters: parseJotters,
+    parseRecentJots: parseRecentJots,
+    parseCardsDue: parseCardsDue,
     undoBody: undoBody,
     clipBody: clipBody,
     createHeddyApi: createHeddyApi,

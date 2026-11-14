@@ -35,23 +35,23 @@ const site = (origin = PROD) => ({ origin, url: `${origin}/study/clips`, tab: { 
 test('install opens exactly one tab: the first-run page in Heddy’s language', async () => {
   const en = setup();
   await en.courier.installed({ reason: 'install' });
-  assert.deepEqual(en.tabsCreated, [{ url: `${PROD}/heddy-chrome/welcome` }]);
+  assert.deepEqual(en.tabsCreated, [{ url: `${PROD}/heddy-chrome/welcome?b=chrome` }]);
 
   const zh = setup({ lang: 'zh_CN' });
   await zh.courier.installed({ reason: 'install' });
-  assert.deepEqual(zh.tabsCreated, [{ url: `${PROD}/zh/heddy-chrome/welcome` }]);
+  assert.deepEqual(zh.tabsCreated, [{ url: `${PROD}/zh/heddy-chrome/welcome?b=chrome` }]);
 });
 
 test('with no choice stored, a Chinese Chrome gets the /zh page', async () => {
   const s = setup({ ui: 'zh-CN' });
   await s.courier.installed({ reason: 'install' });
-  assert.deepEqual(s.tabsCreated, [{ url: `${PROD}/zh/heddy-chrome/welcome` }]);
+  assert.deepEqual(s.tabsCreated, [{ url: `${PROD}/zh/heddy-chrome/welcome?b=chrome` }]);
 });
 
 test('the developer switch sends the first-run page to localhost:3000', async () => {
   const s = setup({ dev: true });
   await s.courier.installed({ reason: 'install' });
-  assert.deepEqual(s.tabsCreated, [{ url: `${DEV}/heddy-chrome/welcome` }]);
+  assert.deepEqual(s.tabsCreated, [{ url: `${DEV}/heddy-chrome/welcome?b=chrome` }]);
 });
 
 test('an update of Heddy, of Chrome or of a shared module opens nothing', async () => {
@@ -65,7 +65,7 @@ test('heddy:ping from aitutors.me gets the version, and changes nothing', async 
   const s = setup();
   const before = JSON.stringify(s.session);
   const reply = await s.courier.external({ type: 'heddy:ping', v: 1 }, site());
-  assert.deepEqual(reply, { type: 'heddy:pong', v: 1, version: '0.2.0' });
+  assert.deepEqual(reply, { type: 'heddy:pong', v: 1, version: '0.2.0', pinned: null }, 'no chrome.action: the browser cannot say');
   assert.equal(JSON.stringify(s.session), before);
   assert.deepEqual(s.tabsCreated, []);
 });
@@ -87,11 +87,8 @@ test('only that shape is a ping', async () => {
   }
 });
 
-test('background wires onInstalled to the courier; the popup’s first-time link is the same page', () => {
+test('background wires onInstalled to the courier', () => {
   assert.match(read('background.js'), /chrome\.runtime\.onInstalled\.addListener\(function \(details\) \{\s*courier\.installed\(details\);/);
-  const popup = read('popup/popup.js');
-  assert.match(popup, /openSite\(C\.welcomeUrl\(origin, lang\)\)/);
-  assert.match(popup, /return renderFirstTime\(body, origin, lang\);/);
 });
 
 test('opening a tab needs no tabs permission (D3 unchanged)', () => {

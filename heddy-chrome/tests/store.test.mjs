@@ -122,8 +122,8 @@ function requestPaths() {
 
 test('every request path the shipped code can make is named in privacy-answers.md and PRIVACY.md', () => {
   const paths = requestPaths();
-  // The scan is not vacuous: the thirteen of 0.9.0 (0.8.1's twelve and Save into's list) are all found.
-  assert.equal(paths.length, 13, paths.join(' '));
+  // The scan is not vacuous: the thirteen of 0.9.0 (0.8.1's twelve and Save into's list) and 0.10.0's two popup reads.
+  assert.equal(paths.length, 15, paths.join(' '));
   for (const p of ['/api/learn/heddy/me', '/api/learn/heddy/desk/quiz', '/api/learn/heddy/desk/keypoints', '/api/learn/heddy/ask']) assert.ok(paths.includes(p), p);
   for (const doc of PRIVACY_DOCS) {
     const src = read(doc);

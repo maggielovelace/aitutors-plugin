@@ -112,6 +112,14 @@ else. If the question fails, Heddy shows "Not signed in".
 *Open my Jotter ↗* opens a tab. Until you save, or use *Full desk*, your jots
 stay in Heddy's storage on this computer.
 
+**The popup's two reads.** On a page Heddy can't read, Heddy asks
+`GET /api/learn/heddy/recent-jots` for your two newest jots (a short excerpt,
+the Jotter's title, the site it came from, when, and a link), to show under
+*Your latest jots*. On aitutors.me it asks `GET /api/learn/heddy/cards-due`
+for how many cards are due, for *Review N cards*. Both send only the
+browser's aitutors.me cookie, answer nothing to a grown-up or when no one is
+signed in, and are shown and forgotten, never stored.
+
 **Where a save goes.** When Heddy's panel opens on a page, Heddy asks
 `GET /api/learn/heddy/jotters`, with the cookie and the page's address
 (without the part after `#`). The address is sent only so aitutors.me can
@@ -159,6 +167,7 @@ These thirteen are the only requests Heddy makes.
 | The desk's 📌, whether it is taller, and the width you dragged it to | `deskPin`, `deskTall`, `deskWidth` | `chrome.storage.local` |
 | The Digest's view (English, Bilingual or Chinese), whether its Insights note is open, and whether you closed its line about channels' own captions | `digestView`, `digestNoteOpen`, `digestFineHidden` | `chrome.storage.local` |
 | Whether you have seen the first-time popup, so it shows once | `seenFirstRun` | `chrome.storage.local` |
+| Whether you have seen (or skipped) the three-card intro, so it shows once | `seenIntro` | `chrome.storage.local` |
 | The developer switch (off unless you turned it on), for people building aitutors.me itself | `devOrigin` | `chrome.storage.local` |
 | The hand-over waiting for Full desk's aitutors.me tab: a random id, the video id and your jots. Forgotten once the tab takes it, or after 10 minutes | `heddyCids` | `chrome.storage.session`, cleared when Chrome closes |
 | The snippets and pictures you picked on a page (up to four pictures), and, after a save, the ones that save carried (for Undo). Gone when the tab goes to another page or closes | `heddyCards:` + the tab's number | `chrome.storage.session`, cleared when Chrome closes |

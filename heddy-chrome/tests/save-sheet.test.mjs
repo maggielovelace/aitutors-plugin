@@ -64,8 +64,8 @@ function drawn(over = {}) {
 
 const cls = (e) => e.className.split(' ')[0];
 
-test('the version is 0.9.1', () => {
-  assert.equal(manifest().version, '0.9.1');
+test('the version is 0.10.0 (PRD-v0.146.0: popup states and settings)', () => {
+  assert.equal(manifest().version, '0.10.0');
 });
 
 test('the sheet is pinned INSIDE the tab panel: the line is not positioned, the panel is, and the sheet sits on its bottom edge', () => {

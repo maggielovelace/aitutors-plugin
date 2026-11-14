@@ -31,8 +31,11 @@
   var MAX_JOT = 20000;
   var TOKEN = /^[A-Za-z0-9._~+/=:-]{1,2000}$/;
 
+  /** Heddy's own page (the panel, the popup): its own extension scheme, in
+   *  Chrome and Edge or in Safari (lib/courier.js contentTab's rule). The
+   *  sender's id is checked first; a web page can never have this scheme. */
   function own(sender) {
-    return /^chrome-extension:/.test(String(sender && sender.url || ''));
+    return /^(?:chrome|safari-web)-extension:/.test(String(sender && sender.url || ''));
   }
 
   /** The video's address at the player's second (YouTube's crest). */
@@ -238,7 +241,7 @@
 
     // ─── messages ────────────────────────────────────────────────────────
 
-    var FROM_DESK = { 'heddy-web:save': 1, 'heddy-web:undo-save': 1, 'heddy-web:ask-pending': 1, 'heddy-web:jotters': 1 };
+    var FROM_DESK = { 'heddy-web:save': 1, 'heddy-web:undo-save': 1, 'heddy-web:ask-pending': 1, 'heddy-web:jotters': 1, 'heddy-web:recent-jots': 1, 'heddy-web:cards-due': 1 };
     var FROM_PAGE = { 'heddy-page:ask': 1, 'heddy-page:professor': 1, 'heddy-desk:full': 1 };
 
     /** chrome.runtime.onMessage. Resolves to the reply, or undefined for a
@@ -259,6 +262,9 @@
           case 'heddy-web:save': return deps.cards.saveWeb(tab, message.article === true, typeof message.jotterId === 'string' ? message.jotterId : null);
           // The tab's own address, never the message's: only to name this page's Jotter.
           case 'heddy-web:jotters': return api.jotters ? api.jotters(T.cleanUrl(tab.url)) : { show: false, known: false, jotters: [] };
+          // PRD-v0.146.0 B9: the popup's latest jots (Can't read) and cards due (aitutors.me). Read only.
+          case 'heddy-web:recent-jots': return api.recentJots ? api.recentJots() : { ok: false };
+          case 'heddy-web:cards-due': return api.cardsDue ? api.cardsDue() : { ok: false };
           case 'heddy-web:undo-save': return deps.cards.undoSave(tab, String(message.saveId || ''));
           case 'heddy-web:ask-pending': return { ok: true, pending: takePending(tab.id) };
           case 'heddy-web:card': return keepCard(tab, message);

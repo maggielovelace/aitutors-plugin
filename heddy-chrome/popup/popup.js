@@ -47,7 +47,9 @@
     if (!h) return;
     if (HOST === 'panel') {
       // The YouTube state is the artifact's 400 px popup (P2); the rest are 360.
-      window.parent.postMessage({ heddyPanel: 'size', h: h, w: document.body.classList.contains('yt') ? 400 : 360 }, '*');
+      // The hk screens are the design's 380 (PRD-v0.146.0 B8).
+      var b = document.body.classList;
+      window.parent.postMessage({ heddyPanel: 'size', h: h, w: b.contains('yt') ? 400 : b.contains('hk') ? 380 : 360 }, '*');
     }
   }
 
@@ -91,10 +93,6 @@
     return dev && u.origin === C.DEV_ORIGIN;
   }
 
-  function openSite(url) {
-    chrome.tabs.create({ url: url }).then(closeUi, function () {});
-  }
-
   function drawChrome() {
     $('mark').innerHTML = M.sprite(['h-eyes', 'h-film', 'h-clock', 'h-lock', 'h-open', 'h-cog', 'h-quill', 'h-page', 'h-explain', 'h-cardt', 'h-face', 'h-pen', 'h-school']) + M.use('h-eyes', 22);
     $('lock').innerHTML = M.use('h-lock', 14);
@@ -111,105 +109,546 @@
     x.addEventListener('click', closeUi);
   }
 
-  // ─── states ────────────────────────────────────────────────────────────────
-
-  function renderFirstTime(body, origin, lang) {
-    $('ctx').textContent = tr('ctxFirstTime');
-    body.appendChild(el('p', 'lead big', tr('firstTimeLead')));
-    var three = el('div', 'three');
-    var line = el('span');
-    line.insertAdjacentHTML('beforeend', M.use('h-film', 16));
-    line.appendChild(document.createTextNode(tr('firstTimeYouTube')));
-    three.appendChild(line);
-    var line2 = el('span');
-    line2.insertAdjacentHTML('beforeend', M.use('h-quill', 16));
-    line2.appendChild(document.createTextNode(tr('firstTimePage')));
-    three.appendChild(line2);
-    body.appendChild(three);
-    var open = button('btn wide', 'h-open', 16, tr('openSite'));
-    // The same first-run page a fresh install opens (PRD D8).
-    open.addEventListener('click', function () { openSite(C.welcomeUrl(origin, lang)); });
-    body.appendChild(open);
-    $('foot').hidden = false;
-  }
-
-  // ─── a page Heddy can't add to Jotters (D61; R6 · owner's pick) ──────────
+  // ─── Can't read, On aitutors.me, First time (PRD-v0.146.0 B8, B9) ─────────
   //
-  // Heddy's face and a line saying why; the account row from /me (lib/who.js);
-  // My Jotters · My Clips · My Study. The header's chip names the kind of
-  // page (lib/page-kind.js) and never prints the raw extension id. The same
-  // body shows in the toolbar popup on such a page (D79; no window, D78).
+  // Design 1, "Tools first", in the desk's own look: the header (the eyes,
+  // Heddy, "aitutors for KS3 & GCSE", EN | 中, ✕), the page row, the cream
+  // panel with one primary action, and the "Mentor's desk" footer with the
+  // cog. Every word is Heddy's catalog or set as text; the only HTML is the
+  // constant icons below. The web page and YouTube screens are untouched (B7).
 
   var ORIGIN = C.PROD_ORIGIN;
+  var BROWSER = C.detectBrowser();
+  var BROWSER_NAME = { chrome: 'Chrome', edge: 'Edge', 'safari-mac': 'Safari', 'safari-ios': 'Safari' }[BROWSER];
+  var YOUTUBE_HOME = 'https://www.youtube.com/';
+  var MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+
+  // The design's icons (Classroom's ClipIcons and the artifact's IC).
+  var IC = {
+    jot: '<path class="f" d="M19.5 4.5c-6 .5-10.5 4-12.5 10l-1.5 5 5-1.5c6-2 9-7 9-13.5z"/><path d="M19.5 4.5c-6 .5-10.5 4-12.5 10l-1.5 5 5-1.5c6-2 9-7 9-13.5z"/><path d="M5.5 19.5 14 11"/><circle class="d" cx="15.4" cy="9.2" r="1.1"/>',
+    desk: '<path d="M3.5 15h17M6.5 15v5M17.5 15v5"/><path class="f" d="M9.5 11.5h7l-1.6-4.5h-3.8z"/><path d="M9.5 11.5h7l-1.6-4.5h-3.8z"/><path d="M13 11.5V15"/><circle class="d" cx="13" cy="13.3" r="1.1"/>',
+    play: '<path class="f" d="M7 4.8c0-1.2 1.3-1.9 2.3-1.3l10 6.2c1 .6 1 2 0 2.6l-10 6.2c-1 .6-2.3-.1-2.3-1.3z"/><path d="M7 4.8c0-1.2 1.3-1.9 2.3-1.3l10 6.2c1 .6 1 2 0 2.6l-10 6.2c-1 .6-2.3-.1-2.3-1.3z"/>',
+    out: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
+    arrow: '<path d="M5 12h13M13 6.5 18.5 12 13 17.5"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    chev: '<path d="M9 6l6 6-6 6"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+    cap: '<path d="M2 9.5l10-5 10 5-10 5z"/><path d="M6 11.5v4.5c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+    layers: '<path class="f" d="M12 3l9 5-9 5-9-5z"/><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+    page: '<path d="M6 3.5h8l4 4V20a.5.5 0 01-.5.5h-11.5A.5.5 0 015.5 20V4a.5.5 0 01.5-.5z"/><path d="M14 3.5V8h4M8.5 12h7M8.5 15.5h7"/>',
+  };
+  function ic(name, cls) {
+    return '<svg class="hi' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + IC[name] + '</svg>';
+  }
+  var EYES = '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">' + M.SYMBOLS['h-eyes'].body + '</svg>';
+  // The settings tile behind a browser page, as the design draws it.
+  var GEAR_TILE = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect width="16" height="16" rx="4" fill="#5f6368"/><circle cx="8" cy="8" r="2.4" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M8 2.8v1.6M8 11.6v1.6M2.8 8h1.6M11.6 8h1.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  var SITE_TILE = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect width="16" height="16" rx="4" fill="#002147"/><text x="7.6" y="11.6" text-anchor="middle" font-family="Manrope,sans-serif" font-weight="700" font-size="10" fill="#f2ead8">a</text><path d="M12 3.2l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" fill="#2f8a57"/></svg>';
+
+  /** Heddy's owl (the design's), puzzled on a page it can't read. */
+  function owl(size, puzzled) {
+    var dx = puzzled ? 1.8 : 0, dy = puzzled ? -1.6 : 0;
+    return '<svg class="owl" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="30" fill="#fff" stroke="#e2ddd1" stroke-width="2"/><circle cx="22.5" cy="29" r="9.5" fill="#d3a84c"/><circle cx="41.5" cy="29" r="9.5" fill="#d3a84c"/><circle cx="' + (22.5 + dx) + '" cy="' + (29 + dy) + '" r="5" fill="#002147"/><circle cx="' + (41.5 + dx) + '" cy="' + (29 + dy) + '" r="5" fill="#002147"/><circle cx="' + (21 + dx) + '" cy="' + (27.3 + dy) + '" r="1.6" fill="#fff"/><circle cx="' + (40 + dx) + '" cy="' + (27.3 + dy) + '" r="1.6" fill="#fff"/><path d="M32 37.5l-4 4.3 4 4.3 4-4.3z" fill="#d3a84c"/>' + (puzzled ? '<path d="M34.5 15.5l12-2.6" stroke="#14253f" stroke-width="2.4" stroke-linecap="round"/>' : '') + '</svg>';
+  }
 
   function openAndClose(url) {
     chrome.tabs.create({ url: url }).then(closeUi, function () {});
   }
 
-  function linkButton(cls, label, url) {
-    var b = el('button', cls, label);
+  function hkButton(cls, icon, label, onClick) {
+    var b = el('button', cls);
     b.type = 'button';
-    b.addEventListener('click', function () { openAndClose(url); });
-    return b;
-  }
-
-  /** The account row: "S  Shan · Year 8 · Open my Study", "Signed in as a
-   *  grown-up · Open my dashboard", or "Sign in to save with Heddy · Sign in
-   *  · I'm new". Signed out until /me says otherwise; no error is shown. */
-  function accountRow(row, me) {
-    var L = HeddyWho.links(ORIGIN);
-    row.textContent = '';
-    row.className = 'acc';
-    if (me.signedIn && me.role === 'child') {
-      row.appendChild(el('span', 'av', HeddyWho.initial(me.firstName)));
-      row.appendChild(el('span', 'who', [me.firstName, me.yearGroup ? tr('whoYear', String(me.yearGroup)) : null].filter(Boolean).join(' · ')));
-      row.appendChild(linkButton('ln1', tr('whoOpenStudy'), L.study));
-    } else if (me.signedIn && me.role === 'parent') {
-      row.appendChild(el('span', 'who', tr('whoGrownUp')));
-      row.appendChild(linkButton('ln1', tr('whoOpenDashboard'), L.dashboard));
-    } else {
-      row.classList.add('out');
-      row.appendChild(el('span', 'who', tr('whoSignInToSave')));
-      row.appendChild(linkButton('ln1', tr('whoSignIn'), L.signIn));
-      row.appendChild(linkButton('ln1', tr('whoImNew'), L.signUp));
-    }
-    row.hidden = false;
-  }
-
-  function tile(mark, label, url) {
-    var b = el('button', 'tile');
-    b.type = 'button';
-    b.insertAdjacentHTML('beforeend', M.use(mark, 18));
+    if (icon) b.insertAdjacentHTML('beforeend', ic(icon));
     b.appendChild(el('span', null, label));
-    b.addEventListener('click', function () { openAndClose(url); });
+    if (onClick) b.addEventListener('click', onClick);
     return b;
   }
 
-  /** desc: lib/page-kind.js describe(), or the 'other' kind. */
-  function renderCantSave(body, desc) {
-    var d = desc || { kind: 'other', chip: 'kindOther', line: 'kindOtherLine', sub: 'kindOtherSub' };
-    var ctx = $('ctx');
-    ctx.textContent = tr(d.chip);
-    ctx.classList.add('chip');
-    $('pop').classList.add('cs');
-    var why = el('div', 'why');
-    why.insertAdjacentHTML('beforeend', M.use('h-face', 60));
+  /** A sentence with key caps where its $KEY$ goes. */
+  function withKeys(parent, key, keys) {
+    var parts = tr(key, '\u0000').split('\u0000');
+    parent.appendChild(document.createTextNode(parts[0]));
+    if (parts.length > 1) {
+      keys.forEach(function (k) { parent.appendChild(el('span', 'kbd', k)); });
+      parent.appendChild(document.createTextNode(parts.slice(1).join('')));
+    }
+    return parent;
+  }
+
+  /** The snap shortcut as the browser has it bound (chrome.commands), in key
+   *  caps: "⇧⌘K" → ⇧ ⌘ K, "Ctrl+Shift+K" → Ctrl Shift K. */
+  function keyCaps(shortcut) {
+    var s = String(shortcut || '');
+    if (!s) return [];
+    return s.indexOf('+') >= 0 ? s.split('+') : Array.from(s);
+  }
+  function snapKeys() {
+    var fallback = MAC ? ['⌘', '⇧', 'K'] : ['Ctrl', 'Shift', 'K'];
+    if (!chrome.commands || typeof chrome.commands.getAll !== 'function') return Promise.resolve(fallback);
+    return Promise.resolve().then(function () { return chrome.commands.getAll(); }).then(function (all) {
+      var c = (all || []).filter(function (x) { return x && x.name === 'snap-picture'; })[0];
+      return c && c.shortcut ? keyCaps(c.shortcut) : c ? [] : fallback;
+    }, function () { return fallback; });
+  }
+
+  // Who is signed in: /me (lib/who.js), asked once per open.
+  var whoAsked = null;
+  function loadWho() {
+    if (!whoAsked) whoAsked = HeddyWho.loadMe(window.fetch.bind(window), ORIGIN);
+    return whoAsked;
+  }
+
+  /** The address as the page row prints it; never another extension's id. */
+  function rowAddress(url, desc) {
+    var u;
+    try { u = new URL(url); } catch (e) { return ''; }
+    if (u.protocol === 'chrome-extension:' || u.protocol === 'safari-web-extension:' || u.protocol === 'moz-extension:') return '';
+    if (u.protocol === 'file:') return decodeURIComponent(u.pathname.split('/').pop() || '');
+    if (/^https?:$/.test(u.protocol)) return u.hostname.replace(/^www\./, '') + (u.pathname === '/' ? '' : u.pathname);
+    if (/^view-source:/.test(url)) return url.slice(0, 80);
+    // The browser's own pages by their address; any other scheme (Safari's
+    // favorites://, for one) means nothing to a learner.
+    if (!/^(chrome|edge|about|chrome-search|devtools):$/.test(u.protocol)) return '';
+    return (u.protocol + '//' + u.hostname + u.pathname).replace(/\/$/, '');
+  }
+
+  /** "My Study · aitutors.me" → "My Study". */
+  function siteTitle(title) {
+    return String(title || '').replace(/\s*[·|—–-]\s*aitutors\.me.*$/i, '').trim() || 'aitutors.me';
+  }
+
+  var hk = { state: null, tab: null, url: '', cant: null, me: null, step: 0, why: false, jotters: null, next: null };
+
+  /** Draw (or redraw, after EN | 中) the screen in hk.state. */
+  function paintHk() {
+    var body = $('body');
+    $('pop').classList.add('hk');
+    document.body.classList.add('hk');
+    body.textContent = '';
+    var lang = document.documentElement.lang === 'zh-CN' ? 'zh_CN' : 'en';
+    var card = el('div', 'hkc');
+    card.setAttribute('lang', lang === 'zh_CN' ? 'zh-Hans' : 'en-GB');
+
+    // The header.
+    var hd = el('div', 'hd');
+    var eyes = el('span', 'eyes');
+    eyes.innerHTML = EYES;
+    hd.appendChild(eyes);
+    hd.appendChild(el('b', null, 'Heddy'));
+    hd.appendChild(el('small', null, tr('deskSub')));
+    var pill = el('div', 'lg2');
+    pill.setAttribute('role', 'group');
+    pill.setAttribute('aria-label', tr('hkLangLabel'));
+    [['en', 'EN'], ['zh_CN', '中']].forEach(function (l) {
+      var b = el('button', null, l[1]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(lang === l[0]));
+      if (l[0] === 'zh_CN') b.setAttribute('lang', 'zh-CN');
+      b.addEventListener('click', function () {
+        if (lang === l[0]) return;
+        var o = {};
+        o[I.STORAGE_KEY] = l[0];
+        Promise.resolve().then(function () { return chrome.storage.sync.set(o); }).catch(function () {});
+        tr = I.translator(l[0]);
+        document.documentElement.lang = l[0] === 'zh_CN' ? 'zh-CN' : 'en';
+        paintHk();
+      });
+      pill.appendChild(b);
+    });
+    hd.appendChild(pill);
+    var hx = el('div', 'hx');
+    var x = el('button');
+    x.type = 'button';
+    x.innerHTML = ic('close');
+    x.title = tr('close');
+    x.setAttribute('aria-label', tr('close'));
+    x.addEventListener('click', closeUi);
+    hx.appendChild(x);
+    hd.appendChild(hx);
+    card.appendChild(hd);
+
+    // The page row.
+    var s = hk.state;
+    var prw = el('div', 'prw');
+    var th = el('span', 'th');
+    var title, tag = null, ok = false;
+    if (s === 'cant') {
+      var d = hk.cant;
+      th.innerHTML = d.kind === 'heddy' ? EYES : d.kind === 'chrome' ? GEAR_TILE : ic('page');
+      title = tr(d.chip, BROWSER_NAME);
+      tag = tr('hkCantTag');
+    } else if (s === 'site') {
+      th.innerHTML = SITE_TILE;
+      title = siteTitle(hk.tab && hk.tab.title);
+      tag = tr('hkHomeTag');
+      ok = true;
+    } else {
+      th.innerHTML = ic('page');
+      title = (hk.tab && hk.tab.title) || hostLabel(hk.url);
+      if (s === 'intro') { tag = tr('hkNewTag'); ok = true; }
+    }
+    prw.appendChild(th);
     var words = el('div');
-    words.appendChild(el('p', null, tr(d.line)));
-    words.appendChild(el('small', null, tr(d.sub)));
-    why.appendChild(words);
-    body.appendChild(why);
-    var row = el('div', 'acc');
-    row.hidden = true;
-    body.appendChild(row);
+    words.appendChild(el('b', null, title));
+    var addr = rowAddress(hk.url, hk.cant);
+    if (addr) words.appendChild(el('small', null, addr));
+    prw.appendChild(words);
+    if (tag) prw.appendChild(el('span', 'tag' + (ok ? ' ok' : ''), tag));
+    card.appendChild(prw);
+
+    var pn = el('div', 'pn');
+    card.appendChild(pn);
+
+    // The footer: Mentor's desk, and the cog.
+    var ft = el('div', 'ft');
+    ft.insertAdjacentHTML('beforeend', ic('desk'));
+    ft.appendChild(el('span', null, tr('hkDesk')));
+    var gr = el('button', 'gr');
+    gr.type = 'button';
+    gr.innerHTML = ic('gear');
+    gr.title = tr('settings');
+    gr.setAttribute('aria-label', tr('settings'));
+    gr.addEventListener('click', function () { chrome.runtime.openOptionsPage(); closeUi(); });
+    ft.appendChild(gr);
+    card.appendChild(ft);
+    body.appendChild(card);
+
+    if (s === 'intro') return paintIntro(pn);
+    if (s === 'first-out') return paintFirstOut(pn);
+    // Can't read and aitutors.me follow who is signed in: drawn when /me answers.
+    loadWho().then(function (me) {
+      hk.me = me;
+      if (!pn.isConnected) return;
+      if (s === 'cant') paintCant(pn, me);
+      else paintSite(pn, me);
+    });
+  }
+
+  function eyebrow(text, link) {
+    var lb = el('div', 'lb');
+    lb.appendChild(el('p', null, text));
+    if (link) lb.appendChild(link);
+    return lb;
+  }
+
+  function hello(head, line, puzzled) {
+    var h = el('div', 'hello');
+    h.insertAdjacentHTML('beforeend', owl(46, puzzled));
+    var note = el('div', 'note');
+    note.appendChild(el('b', null, head));
+    if (line) note.appendChild(el('p', null, line));
+    h.appendChild(note);
+    return h;
+  }
+
+  /** My Jotters · My Clips · My Study, the quiet row. */
+  function doors() {
     var L = HeddyWho.links(ORIGIN);
-    var tiles = el('div', 'tiles');
-    tiles.appendChild(tile('h-pen', tr('tileJotters'), L.jotters));
-    tiles.appendChild(tile('h-film', tr('tileClips'), L.clips));
-    tiles.appendChild(tile('h-school', tr('tileStudy'), L.study));
-    body.appendChild(tiles);
-    $('foot').hidden = false;
-    HeddyWho.loadMe(window.fetch.bind(window), ORIGIN).then(function (me) { accountRow(row, me); });
+    var row = el('div', 'doors');
+    row.appendChild(hkButton(null, 'jot', tr('tileJotters'), function () { openAndClose(L.jotters); }));
+    row.appendChild(hkButton(null, 'play', tr('tileClips'), function () { openAndClose(L.clips); }));
+    row.appendChild(hkButton(null, 'cap', tr('tileStudy'), function () { openAndClose(L.study); }));
+    return row;
+  }
+
+  /** Signed out: the line, Sign in (the primary), I'm new · I'm a parent. */
+  function signBlock(line) {
+    var L = HeddyWho.links(ORIGIN);
+    var si = el('div', 'si');
+    si.appendChild(el('p', null, line));
+    si.appendChild(hkButton('save', 'user', tr('whoSignIn'), function () { openAndClose(L.signIn); }));
+    var row = el('div', 'acts');
+    row.appendChild(hkButton('ghost', null, tr('passMakeAccount'), function () { openAndClose(L.signUp); }));
+    row.appendChild(hkButton('lnk', null, tr('passParent'), function () { openAndClose(L.parent); }));
+    si.appendChild(row);
+    return si;
+  }
+
+  /** A grown-up is signed in: Heddy saves for a child, so their dashboard. */
+  function grownUpBlock() {
+    var L = HeddyWho.links(ORIGIN);
+    var si = el('div', 'si');
+    si.appendChild(el('p', null, tr('whoGrownUp') + '. ' + tr('passGrownUpLine')));
+    si.appendChild(hkButton('save', 'user', tr('whoOpenDashboard'), function () { openAndClose(L.dashboard); }));
+    var row = el('div', 'acts');
+    row.appendChild(hkButton('lnk', null, tr('passSwitch'), function () { openAndClose(L.signIn); }));
+    si.appendChild(row);
+    return si;
+  }
+
+  function fine(icon, text) {
+    var p = el('p', 'fine');
+    p.insertAdjacentHTML('beforeend', ic(icon));
+    p.appendChild(el('span', null, text));
+    return p;
+  }
+
+  function steps(items) {
+    var ol = el('ol', 'steps');
+    items.forEach(function (fill, i) {
+      var li = el('li');
+      li.appendChild(el('span', 'n', String(i + 1)));
+      var t = el('span');
+      fill(t);
+      li.appendChild(t);
+      ol.appendChild(li);
+    });
+    return ol;
+  }
+
+  /** Why Heddy can't read this page, for this browser and kind of page. */
+  function whyLine(d) {
+    var safari = /^safari/.test(BROWSER);
+    if (d.kind === 'chrome') return safari ? tr('hkWhySafari') : tr('hkWhyBrowser', BROWSER_NAME);
+    if (d.kind === 'store') return tr('hkWhyStore', BROWSER_NAME);
+    if (d.kind === 'other') return safari ? tr('hkWhySafari') : tr('hkWhyOther');
+    return tr(d.line) + ' ' + tr(d.sub);
+  }
+
+  // ─── 3 · Can't read ───────────────────────────────────────────────────────
+
+  function paintCant(pn, me) {
+    pn.textContent = '';
+    var d = hk.cant;
+    var h = hello(tr('hkCantHead'), whyLine(d), true);
+    var tg = hkButton('tg', 'chev', hk.why ? tr('hkHideList') : tr('hkWhichPages'), function () { hk.why = !hk.why; paintCant(pn, me); });
+    tg.setAttribute('aria-expanded', String(hk.why));
+    h.querySelector('.note').appendChild(tg);
+    pn.appendChild(h);
+    if (hk.why) {
+      var whyb = el('div', 'whyb');
+      whyb.appendChild(el('b', null, tr('hkWhyHead')));
+      var ul = el('ul');
+      ['hkWhy1', 'hkWhy2', 'hkWhy3', 'hkWhy4'].forEach(function (k) { ul.appendChild(el('li', null, tr(k))); });
+      whyb.appendChild(ul);
+      pn.appendChild(whyb);
+    }
+    pn.appendChild(eyebrow(tr('hkTryThis')));
+    var tries = [
+      function (t) { t.textContent = tr('hkTry1'); },
+      function (t) { t.textContent = tr('hkTry2'); },
+    ];
+    // A phone has no keys to press.
+    if (BROWSER !== 'safari-ios') tries.push(function (t) { snapKeys().then(function (k) { if (k.length) withKeys(t, 'hkTry3', k); else t.closest('li').remove(); }); });
+    pn.appendChild(steps(tries));
+    var L = HeddyWho.links(ORIGIN);
+    if (me.signedIn && me.role === 'child') {
+      // Your latest jots (GET /api/learn/heddy/recent-jots, from the
+      // background): drawn only when the read worked and found some. A failed
+      // read says nothing, never "no jots".
+      var latest = el('div', 'carry');
+      pn.appendChild(latest);
+      bgRead('heddy-web:recent-jots').then(function (r) {
+        if (!r || !r.ok || !r.signedIn || !r.jots || !r.jots.length || !latest.isConnected) return;
+        var all = hkButton(null, 'arrow', tr('hkAll'), function () { openAndClose(L.jotters); });
+        all.insertBefore(all.lastChild, all.firstChild);
+        latest.appendChild(eyebrow(tr('hkLatest', String(r.jots.length)), all));
+        var ul = el('ul', 'ls');
+        r.jots.forEach(function (j) {
+          var li = el('li');
+          var it = el('button', 'it');
+          it.type = 'button';
+          it.appendChild(el('q', null, j.text));
+          it.insertAdjacentHTML('beforeend', ic('out'));
+          it.appendChild(el('span', 'src q', [j.host, j.jotter, ago(j.at)].filter(Boolean).join(' · ')));
+          it.addEventListener('click', function () { openAndClose(ORIGIN + j.href); });
+          li.appendChild(it);
+          ul.appendChild(li);
+        });
+        latest.appendChild(ul);
+      });
+      pn.appendChild(hkButton('save', 'jot', tr('hkOpenJotters'), function () { openAndClose(L.jotters); }));
+    } else if (me.signedIn && me.role === 'parent') {
+      pn.appendChild(grownUpBlock());
+    } else {
+      pn.appendChild(signBlock(tr('hkSignLine')));
+    }
+    pn.appendChild(doors());
+    pn.appendChild(fine('lock', tr('footerLock')));
+  }
+
+  // ─── 4 · On aitutors.me ───────────────────────────────────────────────────
+
+  /** "saved today", "saved yesterday", "saved 3 November". */
+  function whenSaved(at) {
+    if (typeof at !== 'number' || !isFinite(at)) return '';
+    var day = function (t) { var x = new Date(t); x.setHours(0, 0, 0, 0); return x.getTime(); };
+    var days = Math.round((day(Date.now()) - day(at)) / 86400000);
+    if (days <= 0) return tr('hkWhenToday');
+    if (days === 1) return tr('hkWhenYesterday');
+    var lang = document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en-GB';
+    return tr('hkWhenOn', new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long' }).format(new Date(at)));
+  }
+
+  function paintSite(pn, me) {
+    pn.textContent = '';
+    var L = HeddyWho.links(ORIGIN);
+    if (!(me.signedIn && me.role === 'child')) {
+      pn.appendChild(hello(tr('hkYouHere'), tr('hkHomeOut'), false));
+      pn.appendChild(me.signedIn ? grownUpBlock() : signBlock(tr('hkHomeOutLine')));
+      pn.appendChild(doors());
+      pn.appendChild(fine('lock', tr('footerLock')));
+      return;
+    }
+    var lang = document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en-GB';
+    var today = new Intl.DateTimeFormat(lang, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+    pn.appendChild(eyebrow(tr('hkToday', today)));
+    // The primary: "Review N cards" when the count was read and is above
+    // zero (GET /api/learn/heddy/cards-due); else, or when it could not be
+    // read, Open my Study. A failed count is never drawn as "0 due".
+    var primary = el('div', 'carry');
+    pn.appendChild(primary);
+    bgRead('heddy-web:cards-due').then(function (r) {
+      if (!primary.isConnected) return;
+      if (r && r.ok && r.signedIn && r.due > 0) {
+        var due = el('div', 'due');
+        var stack = el('span', 'stack');
+        stack.appendChild(el('i'));
+        stack.appendChild(el('i'));
+        stack.appendChild(el('i', null, r.due > 99 ? '99+' : String(r.due)));
+        due.appendChild(stack);
+        var dw = el('div');
+        dw.appendChild(el('b', null, r.due === 1 ? tr('hkCardsDueOne') : tr('hkCardsDue', String(r.due))));
+        due.appendChild(dw);
+        primary.appendChild(due);
+        primary.appendChild(hkButton('save', 'layers', r.due === 1 ? tr('hkReviewOne') : tr('hkReview', String(r.due)), function () { openAndClose(ORIGIN + r.href); }));
+        return;
+      }
+      primary.appendChild(hkButton('save', 'cap', tr('whoOpenStudy'), function () { openAndClose(L.study); }));
+    });
+    // Carry on: the Jotter saved into last (GET /api/learn/heddy/jotters,
+    // newest-saved first, from the background). Nothing if it can't say.
+    var carry = el('div', 'carry');
+    pn.appendChild(carry);
+    jottersOnce().then(function (r) {
+      var j = r && r.show && r.jotters && r.jotters[0];
+      if (!j || !carry.isConnected) return;
+      carry.appendChild(eyebrow(tr('hkCarryOn')));
+      var ul = el('ul', 'ls');
+      var li = el('li');
+      var it = el('button', 'it');
+      it.type = 'button';
+      it.appendChild(el('span', 'tx', j.title || tr('intoUntitled')));
+      it.insertAdjacentHTML('beforeend', ic('out'));
+      it.appendChild(el('span', 'src', tr('hkJotterSub', [j.key, whenSaved(j.at)].filter(Boolean).join(' · '))));
+      it.addEventListener('click', function () { openAndClose(C.jotterById(ORIGIN, j.id)); });
+      li.appendChild(it);
+      ul.appendChild(li);
+      carry.appendChild(ul);
+    });
+    pn.appendChild(eyebrow(tr('hkElsewhere')));
+    var jk = el('div', 'jk');
+    jk.insertAdjacentHTML('beforeend', ic('play'));
+    var jw = el('div', 'jkw');
+    jw.appendChild(el('span', null, tr('hkWatchWith')));
+    jw.appendChild(el('small', null, tr('hkWatchWithSub')));
+    var row = el('div', 'acts');
+    row.appendChild(hkButton('go', 'play', tr('hkTryYouTube'), function () { openAndClose(YOUTUBE_HOME); }));
+    jw.appendChild(row);
+    jk.appendChild(jw);
+    pn.appendChild(jk);
+    pn.appendChild(fine('jot', tr('hkSelectJot')));
+  }
+
+  /** One of the background's popup reads (lib/web-routes.js), or null. */
+  function bgRead(type) {
+    return Promise.resolve()
+      .then(function () { return chrome.runtime.sendMessage({ type: type, tabId: hk.tab && hk.tab.id }); })
+      .catch(function () { return null; });
+  }
+
+  /** "12 min ago", "today", "yesterday", "3 November". */
+  function ago(at) {
+    if (typeof at !== 'number' || !isFinite(at)) return '';
+    var mins = Math.floor((Date.now() - at) / 60000);
+    if (mins < 1) return tr('hkAgoJust');
+    if (mins < 60) return tr('hkAgoMins', String(mins));
+    var day = function (t) { var x = new Date(t); x.setHours(0, 0, 0, 0); return x.getTime(); };
+    var days = Math.round((day(Date.now()) - day(at)) / 86400000);
+    if (days <= 0) return tr('hkAgoToday');
+    if (days === 1) return tr('hkAgoYesterday');
+    var lang = document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en-GB';
+    return new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long' }).format(new Date(at));
+  }
+
+  var jottersAsked = null;
+  function jottersOnce() {
+    if (!jottersAsked) {
+      jottersAsked = Promise.resolve()
+        .then(function () { return chrome.runtime.sendMessage({ type: 'heddy-web:jotters', tabId: hk.tab && hk.tab.id }); })
+        .catch(function () { return null; });
+    }
+    return jottersAsked;
+  }
+
+  // ─── 5 · First time ───────────────────────────────────────────────────────
+
+  function paintFirstOut(pn) {
+    pn.appendChild(hello(tr('hkHello'), tr('firstTimeLead'), false));
+    pn.appendChild(signBlock(tr('hkSignFirst')));
+    pn.appendChild(eyebrow(tr('hkWhatDo')));
+    var gap = document.documentElement.lang === 'zh-CN' ? '' : ' ';
+    pn.appendChild(steps([
+      function (t) { t.appendChild(el('b', null, tr('hkDo1h'))); t.appendChild(document.createTextNode(gap + tr('hkDo1'))); },
+      function (t) { withKeys(t.appendChild(el('b')), 'hkDo2h', ['H']); t.appendChild(document.createTextNode(gap + tr('hkDo2'))); },
+      function (t) { t.appendChild(el('b', null, tr('hkDo3h'))); t.appendChild(document.createTextNode(gap + tr('hkDo3'))); },
+    ]));
+    pn.appendChild(fine('lock', tr('footerLock')));
+  }
+
+  // The three cards: the real desk (Sources, Jot, Ask), cropped as the design shows them.
+  var INTRO = [['s1', 'hkI1h', 'hkI1'], ['s2', 'hkI2h', 'hkI2'], ['s3', 'hkI3h', 'hkI3']];
+
+  function paintIntro(pn) {
+    pn.textContent = '';
+    var c = INTRO[hk.step];
+    var last = hk.step === INTRO.length - 1;
+    var box = el('div', 'intro');
+    var skip = el('button', null, tr('hkSkip'));
+    skip.type = 'button';
+    skip.addEventListener('click', introDone);
+    box.appendChild(eyebrow(tr('hkWelcome', hk.me.firstName, String(hk.step + 1)), skip));
+    var shot = el('div', 'shot ' + c[0]);
+    shot.setAttribute('role', 'img');
+    shot.setAttribute('aria-label', tr(c[1]));
+    box.appendChild(shot);
+    box.appendChild(el('h3', null, tr(c[1])));
+    box.appendChild(el('p', null, tr(c[2])));
+    var f = el('div', 'introf');
+    var dots = el('div', 'dots');
+    INTRO.forEach(function (_, i) { dots.appendChild(el('i', i === hk.step ? 'on' : null)); });
+    f.appendChild(dots);
+    f.appendChild(el('span', 'sp'));
+    if (hk.step > 0) f.appendChild(hkButton('ghost', null, tr('hkBack'), function () { hk.step--; paintIntro(pn); }));
+    var go = el('button', 'go');
+    go.type = 'button';
+    go.appendChild(el('span', null, last ? tr('hkStart') : tr('hkNext')));
+    go.insertAdjacentHTML('beforeend', ic('arrow'));
+    go.addEventListener('click', function () {
+      if (last) return introDone();
+      hk.step++;
+      paintIntro(pn);
+    });
+    f.appendChild(go);
+    box.appendChild(f);
+    pn.appendChild(box);
+  }
+
+  /** Skip, or the last card: never again (chrome.storage.local), then the
+   *  page's own screen. */
+  function introDone() {
+    var done = HeddyPopupState.remember(HeddyPopupState.INTRO_DONE);
+    Promise.resolve().then(function () { return chrome.storage.local.set(done); }).catch(function () {});
+    if (hk.next) hk.next();
+  }
+
+  /** Leave the hk look, for the page's own screen after the intro. */
+  function leaveHk() {
+    $('pop').classList.remove('hk');
+    document.body.classList.remove('hk');
+    $('body').textContent = '';
   }
 
   /** host/…/last-segment, as the artifact prints a page's address. */
@@ -276,11 +715,7 @@
           // Docked on the right, full height, the page narrowed (D79).
           if (HOST === 'panel') window.parent.postMessage({ heddyPanel: 'size', dock: true }, '*');
         });
-      }, function () { return renderCantSave(body, null); });
-  }
-
-  function renderSite(body) {
-    body.appendChild(el('p', 'here', tr('sitePageLine')));
+      }, function () { return showHk('cant', null); });
   }
 
   /** Runs in the YouTube tab (activeTab, granted by opening this popup). */
@@ -712,10 +1147,17 @@
 
   watchSize();
 
+  /** One of the hk screens (cant, site, first-out, intro). */
+  function showHk(state, cant) {
+    hk.state = state;
+    if (state === 'cant') hk.cant = cant || { kind: 'other', chip: 'kindOther', line: 'kindOtherLine', sub: 'kindOtherSub' };
+    paintHk();
+  }
+
   Promise.all([
     I.currentLang(),
     theTab(),
-    chrome.storage.local.get([C.DEV_KEY, C.FIRST_RUN_KEY]).catch(function () { return {}; }),
+    chrome.storage.local.get([C.DEV_KEY, C.FIRST_RUN_KEY, C.INTRO_KEY]).catch(function () { return {}; }),
   ]).then(function (got) {
     var lang = got[0], tab = got[1], local = got[2] || {};
     tr = I.translator(lang);
@@ -731,23 +1173,38 @@
     var cant = url ? HeddyPageKind.describe(url, chrome.runtime.id) : HINT_KIND;
     // The site's name for a web page; never an extension's id.
     $('ctx').textContent = url && /^https?:/.test(url) ? hostLabel(url) : '';
-
-    if (!local[C.FIRST_RUN_KEY]) {
-      var o = {};
-      o[C.FIRST_RUN_KEY] = true;
-      chrome.storage.local.set(o).catch(function () {});
-      return renderFirstTime(body, origin, lang);
-    }
-    // Snap a picture (R3b · 05): every popup but the first-time one and
-    // aitutors.me's, and only on a web page Heddy can draw box mode on.
-    if (url && !cant && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab, close: closeUi });
     var youtubeId = url ? P.youtubeIdFromUrl(url) : null;
-    if (youtubeId) {
-      return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info); });
+    hk.tab = tab;
+    hk.url = url || '';
+    // The screen (lib/popup-state.js): the first time, then the page's own.
+    var input = { url: url, cant: cant, site: !!url && isSite(url, dev), youtube: !!youtubeId, local: local, me: null };
+
+    /** The page's own screen. */
+    function ownScreen() {
+      var state = HeddyPopupState.pageState(input);
+      // Snap a picture (R3b · 05): only on a web page Heddy can draw box mode on.
+      if (url && !cant && /^https?:/.test(url) && !isSite(url, dev)) HeddySnap.mountButton($('snap'), { chrome: chrome, tr: tr, tab: tab, close: closeUi });
+      if (state === 'youtube') return videoInfo(tab).then(function (info) { renderYouTube(body, tab, youtubeId, info); });
+      if (state === 'page') return renderPage(body, tab, lang, origin);
+      return showHk(state, cant);
     }
-    if (cant) return renderCantSave(body, cant);
-    if (url && isSite(url, dev)) return renderSite(body);
-    if (tab && /^https?:/.test(url || '')) return renderPage(body, tab, lang, origin);
-    return renderCantSave(body, null);
+    hk.next = function () { leaveHk(); ownScreen(); };
+
+    function begin(state) {
+      if (state === 'wait') {
+        return loadWho().then(function (me) {
+          input.me = me;
+          hk.me = me;
+          begin(HeddyPopupState.choose(input));
+        });
+      }
+      if (state === 'first-out' || state === 'intro') {
+        var keep = HeddyPopupState.remember(state);
+        if (keep) chrome.storage.local.set(keep).catch(function () {});
+        return showHk(state);
+      }
+      return ownScreen();
+    }
+    return begin(HeddyPopupState.choose(input));
   });
 })();

@@ -10,11 +10,7 @@
   "footerLock": { "message": "只有你让它读，它才会读页面。" },
   "settings": { "message": "设置" },
   "close": { "message": "关闭" },
-  "ctxFirstTime": { "message": "第一次" },
   "firstTimeLead": { "message": "Heddy 把你找到的东西带给 aitutors.me 上的教授们。" },
-  "firstTimeYouTube": { "message": "放进一个 YouTube 视频，或和 Heddy 一起看" },
-  "openSite": { "message": "打开 aitutors.me" },
-  "sitePageLine": { "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。" },
 
   "commandJot": { "message": "为选中的文字显示 Heddy 的按钮" },
   "trayLabel": { "message": "Heddy：怎么处理这段文字" },
@@ -22,7 +18,6 @@
   "imageLabel": { "message": "图片" },
 
 
-  "firstTimePage": { "message": "把文字、图片或整页存到 Jotters" },
   "pageEmpty": { "message": "这一页没有可以保存的文字。" },
 
   "toastNoteSaved": {
@@ -132,9 +127,15 @@
   "boxEscDone": { "message": "· 按 Esc 退出" },
   "toastNoCaptions": { "message": "Heddy 需要字幕才能帮你看这个视频，可这个视频没有字幕。" },
 
-  "kindChrome": { "message": "Chrome 页面" },
+  "kindChrome": {
+    "message": "$BROWSER$ 页面",
+    "placeholders": { "browser": { "content": "$1" } }
+  },
   "kindNewTab": { "message": "新标签页" },
-  "kindSettings": { "message": "Chrome 设置" },
+  "kindSettings": {
+    "message": "$BROWSER$ 设置",
+    "placeholders": { "browser": { "content": "$1" } }
+  },
   "kindExtensions": { "message": "扩展程序" },
   "kindExtension": { "message": "其他扩展程序" },
   "kindChromeLine": { "message": "这里没有可以读的内容。" },
@@ -163,24 +164,19 @@
     "placeholders": { "n": { "content": "$1", "example": "8" } }
   },
   "whoOpenStudy": { "message": "打开我的学习" },
-  "whoSignInToSave": { "message": "登录后才能用 Heddy 保存" },
   "whoSignIn": { "message": "登录" },
-  "whoImNew": { "message": "我是新用户" },
   "whoGrownUp": { "message": "已用家长账号登录" },
   "whoOpenDashboard": { "message": "打开家长中心" },
   "tileJotters": { "message": "我的 Jotters" },
   "tileClips": { "message": "我的短片" },
   "tileStudy": { "message": "我的学习" },
-  "passEyebrow": { "message": "aitutors.me · 学习通行证" },
   "passNotSignedIn": { "message": "未登录" },
-  "passSavesTo": { "message": "Heddy 会把内容存进你在 aitutors.me 上的 Jotters 和「我的短片」。" },
   "passGrownUpLine": { "message": "Heddy 为孩子的账号保存内容。请在孩子的电脑上用孩子的账号登录。" },
   "passSwitch": { "message": "不是你？切换" },
   "passMakeAccount": { "message": "我是新用户：创建账号" },
   "passParent": { "message": "我是家长" },
   "aboutHeading": { "message": "关于 Heddy" },
   "aboutVersion": { "message": "版本" },
-  "aboutId": { "message": "扩展程序 ID" },
   "aboutCopy": { "message": "复制" },
   "aboutCopied": { "message": "已复制" },
   "aboutPrivacy": { "message": "隐私" },
@@ -818,5 +814,185 @@
   "intoHours": {
     "message": "$N$ 小时",
     "placeholders": { "n": { "content": "$1", "example": "10" } }
+  },
+
+  "hkDesk": { "message": "Mentor 的书桌" },
+  "hkLangLabel": { "message": "Heddy 的语言" },
+  "hkCantTag": { "message": "读不了" },
+  "hkCantHead": { "message": "Heddy 读不了这个页面" },
+  "hkWhyBrowser": {
+    "message": "这是 $BROWSER$ 自己的页面。$BROWSER$ 不让任何扩展读取它自己的页面，Heddy 也一样。",
+    "placeholders": { "browser": { "content": "$1" } }
+  },
+  "hkWhySafari": { "message": "这是 Safari 自己的页面，比如起始页。Safari 不让任何扩展读取它们，Heddy 也一样。" },
+  "hkWhyStore": {
+    "message": "$BROWSER$ 不让任何扩展进入它自己的商店，Heddy 也一样。",
+    "placeholders": { "browser": { "content": "$1" } }
+  },
+  "hkWhyOther": { "message": "这个页面不让扩展读取。少数网站会屏蔽扩展，比如网上银行。" },
+  "hkWhichPages": { "message": "哪些页面会这样？" },
+  "hkHideList": { "message": "收起" },
+  "hkWhyHead": { "message": "Heddy 读不了：" },
+  "hkWhy1": { "message": "浏览器自己的页面，比如设置、历史记录和新标签页" },
+  "hkWhy2": { "message": "在浏览器自带查看器里打开的 PDF" },
+  "hkWhy3": { "message": "扩展程序和应用商店的页面" },
+  "hkWhy4": { "message": "少数屏蔽扩展的网站，比如网上银行" },
+  "hkTryThis": { "message": "可以试试" },
+  "hkTry1": { "message": "打开一个网页或 YouTube 视频，再点 Heddy。" },
+  "hkTry2": { "message": "是 PDF？可以改为上传到 Jotters：我的 Jotters › 添加 PDF。" },
+  "hkTry3": {
+    "message": "在其他页面，按 $KEY$ 截一张图。",
+    "placeholders": { "key": { "content": "$1" } }
+  },
+  "hkOpenJotters": { "message": "打开我的 Jotters" },
+  "hkSignLine": { "message": "登录后才能用 Heddy 保存。你的 Jotters、短片和卡片都在 aitutors.me 上。" },
+  "hkHomeTag": { "message": "主页" },
+  "hkToday": {
+    "message": "今天 · $DATE$",
+    "placeholders": { "date": { "content": "$1" } }
+  },
+  "hkCarryOn": { "message": "接着做" },
+  "hkJotterSub": {
+    "message": "Jotter · $WHEN$",
+    "placeholders": { "when": { "content": "$1" } }
+  },
+  "hkWhenToday": { "message": "今天存过" },
+  "hkWhenYesterday": { "message": "昨天存过" },
+  "hkWhenOn": {
+    "message": "$DATE$ 存过",
+    "placeholders": { "date": { "content": "$1" } }
+  },
+  "hkElsewhere": { "message": "在别处用 Heddy" },
+  "hkWatchWith": { "message": "在 YouTube 上点「和 Heddy 一起看」" },
+  "hkWatchWithSub": { "message": "书桌会在视频旁打开。按 H，记下正在说的这句。" },
+  "hkTryYouTube": { "message": "去 YouTube 试试" },
+  "hkSelectJot": { "message": "在任何网页上选中文字，就会加到「来源」里。" },
+  "hkYouHere": { "message": "你在 aitutors.me 上" },
+  "hkHomeOut": { "message": "在这个页面登录，Heddy 会跟着一起登录。" },
+  "hkHomeOutLine": { "message": "你的 Jotters、短片和卡片都在这个网站上。在这里登录，Heddy 也就登录了。" },
+  "hkHello": { "message": "你好，我是 Heddy。" },
+  "hkSignFirst": { "message": "请先登录，Heddy 才知道要存进谁的 Jotter。登录在 aitutors.me 上完成。" },
+  "hkWhatDo": { "message": "Heddy 能做什么" },
+  "hkDo1h": { "message": "把任何页面剪进 Jotter。" },
+  "hkDo1": { "message": "文字和图片都会变成带编号的剪辑。" },
+  "hkDo2h": {
+    "message": "在 YouTube 上按 $KEY$",
+    "placeholders": { "key": { "content": "$1" } }
+  },
+  "hkDo2": { "message": "，记下正在说的这句。" },
+  "hkDo3h": { "message": "问你的教授。" },
+  "hkDo3": { "message": "教授只给提示，从不直接给答案。" },
+  "hkNewTag": { "message": "新" },
+  "hkWelcome": {
+    "message": "欢迎，$NAME$ · 第 $N$ 张，共 3 张",
+    "placeholders": { "name": { "content": "$1" }, "n": { "content": "$2" } }
+  },
+  "hkSkip": { "message": "跳过" },
+  "hkNext": { "message": "下一张" },
+  "hkBack": { "message": "上一张" },
+  "hkStart": { "message": "在这一页试试" },
+  "hkI1h": { "message": "把任何页面剪进 Jotter" },
+  "hkI1": { "message": "选中文字，或把图片框出来。每一段都会变成带编号的剪辑，按你排的顺序存进 Jotter。" },
+  "hkI2h": { "message": "按 H，记下正在说的这句" },
+  "hkI2": { "message": "在 YouTube 上，「和 Heddy 一起看」会在视频旁打开书桌。每条随记都带着时间。" },
+  "hkI3h": { "message": "卡住了？问你的教授" },
+  "hkI3": { "message": "教授会提问、给提示，让你自己想明白。他们从不直接给答案。" },
+  "kindEdgeStore": { "message": "Edge 加载项" },
+  "setAccount": { "message": "账号" },
+  "setInBrowser": {
+    "message": "$BROWSER$ 里的 Heddy",
+    "placeholders": { "browser": { "content": "$1" } }
+  },
+  "setShortcuts": { "message": "快捷键" },
+  "setCanDo": { "message": "Heddy 能做什么" },
+  "setSchoolIT": { "message": "学校 IT 专用" },
+  "setSignedAs": {
+    "message": "已登录：$NAME$",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "setAcctLine": {
+    "message": "内容会存进 $NAME$ 的 Jotters、「我的短片」和卡片。",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "setAcctOut": { "message": "登录前什么都不会保存。登录在 aitutors.me 上完成，Heddy 会跟着登录。" },
+  "setPinned": { "message": "已固定到工具栏" },
+  "setNotPinned": { "message": "还没固定" },
+  "setShowHow": { "message": "告诉我怎么做" },
+  "setDone": { "message": "我弄好了" },
+  "setToolbar": { "message": "工具栏" },
+  "setToolbarSub": { "message": "固定后，Heddy 的眼睛总在一步之内。" },
+  "setSiteAccess": { "message": "网站权限" },
+  "setSiteAccessSub": { "message": "不管这里怎么选，只有你点 Heddy，它才会读页面。" },
+  "setPinChrome1": { "message": "点地址栏右边的拼图图标。" },
+  "setPinChrome2": { "message": "找到 Heddy，点它旁边的图钉。" },
+  "setPinEdge1": { "message": "点地址栏旁边的「扩展」（拼图图标）。" },
+  "setPinEdge2": { "message": "找到 Heddy，点眼睛图标：在工具栏中显示。" },
+  "setPinSafari1": { "message": "打开 Safari，再打开「设置」，然后点「扩展」。" },
+  "setPinSafari2": { "message": "选中 Heddy，把网站权限设为「允许」。" },
+  "setPinIos1": { "message": "打开「设置」，再点「App」、Safari，然后点「扩展」。" },
+  "setPinIos2": { "message": "选中 Heddy，打开「允许扩展」，并允许它在所有网站上使用。" },
+  "setInstalled": { "message": "已安装并打开" },
+  "setInstalledSub": {
+    "message": "Heddy $VERSION$（$BROWSER$）。会自动更新。",
+    "placeholders": { "version": { "content": "$1" }, "browser": { "content": "$2" } }
+  },
+  "setOn": { "message": "已打开" },
+  "setKJot": { "message": "记下正在说的这句" },
+  "setKJotSub": { "message": "在 YouTube 上、书桌打开时使用。再按一次连上前一句。" },
+  "setKSnap": { "message": "截一张图" },
+  "setKSnapSub": { "message": "在页面上框出一块。按两下截整个屏幕。" },
+  "setKOpen": { "message": "打开 Heddy" },
+  "setKOpenSub": { "message": "不用鼠标也能打开 Heddy 的面板。" },
+  "setNotSet": { "message": "未设置" },
+  "setChange": { "message": "修改" },
+  "setScSafari": { "message": "Safari 不能修改扩展的快捷键，所以这些快捷键保持不变。" },
+  "setScHow": {
+    "message": "所有扩展的快捷键都在 $BROWSER$ 的同一个页面里：",
+    "placeholders": { "browser": { "content": "$1" } }
+  },
+  "setScStep1": {
+    "message": "打开 $URL$",
+    "placeholders": { "url": { "content": "$1" } }
+  },
+  "setScStep2": { "message": "找到 Heddy，点快捷键旁边的铅笔。" },
+  "setScStep3": { "message": "按下你要的按键。" },
+  "setOpenSc": { "message": "打开快捷键页面" },
+  "setCd1h": { "message": "把任何页面剪进 Jotter" },
+  "setCd1": { "message": "文字和图片都会变成带编号的剪辑，并记下出处。" },
+  "setCd2h": { "message": "在 YouTube 上和 Heddy 一起看" },
+  "setCd2": { "message": "按 H 记随记；文字稿可以看英文、双语或中文；每一章都有教授的见解。" },
+  "setCd3h": { "message": "问你的教授" },
+  "setCd3": { "message": "教授会提问、给提示，让你自己想明白。" },
+  "setCd4h": { "message": "默认保护隐私" },
+  "setHelp": { "message": "帮助" },
+  "setHelpSub": { "message": "带图的简短指南，给学生和家长。" },
+  "setGuide": { "message": "帮助指南" },
+  "setItLine": { "message": "如果学校屏蔽了扩展，IT 管理员可以用下面的 ID 放行 Heddy。当前浏览器已标出。" },
+  "setThisBrowser": { "message": "当前浏览器" },
+  "setIdChrome": { "message": "Chrome 网上应用店" },
+  "setIdEdge": { "message": "Edge 加载项" },
+  "setIdSafari": { "message": "Safari（Mac 和 iPhone）" },
+
+  "hkLatest": {
+    "message": "最近的随记 · $N$",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkAll": { "message": "全部" },
+  "hkAgoJust": { "message": "刚刚" },
+  "hkAgoMins": {
+    "message": "$N$ 分钟前",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkAgoToday": { "message": "今天" },
+  "hkAgoYesterday": { "message": "昨天" },
+  "hkCardsDueOne": { "message": "1 张卡片待复习" },
+  "hkCardsDue": {
+    "message": "$N$ 张卡片待复习",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkReviewOne": { "message": "复习 1 张卡片" },
+  "hkReview": {
+    "message": "复习 $N$ 张卡片",
+    "placeholders": { "n": { "content": "$1" } }
   }
 }

@@ -81,9 +81,16 @@ aitutors.me 的登录：问现在是谁登录（设置页的学习通行证和�
 
 右键点 Heddy 图标 → **选项**，或点 Heddy 面板里的齿轮：
 
-- **语言**：English 或 简体中文。默认跟随 Chrome 的语言。aitutors.me 上的
+单栏（PRD-v0.146.0 B10），顶部是状态标签（是否登录、是否固定、版本）：
+
+- **账号**：Heddy 存给谁（来自 aitutors.me 的 `/me`）；未登录时有登录、我是新用户、我是家长。
+- **{浏览器} 里的 Heddy**：是否固定到工具栏（Chrome 和 Edge 能告诉 Heddy，Safari 不能），以及这个浏览器的步骤。
+- **快捷键**：YouTube 上的 H、截一张图、打开 Heddy；「修改」给出这个浏览器的步骤（Safari 不能修改）。
+- **语言**：English 或 简体中文。默认跟随浏览器的语言。aitutors.me 上的
   窗口跟随你在网站上选的语言。
-- **开发者选项**：把内容发到 `http://localhost:3000`，而不是 aitutors.me。
+- **Heddy 能做什么**、**关于 Heddy**（版本、隐私、帮助指南）。
+- **学校 IT 专用**（默认收起）：三个商店的 ID，都可以复制。
+- **开发者选项**（默认收起）：把内容发到 `http://localhost:3000`，而不是 aitutors.me。
   请保持关闭。
 
 ## 给学校
@@ -92,7 +99,9 @@ aitutors.me 的登录：问现在是谁登录（设置页的学习通行证和�
 管理控制台的允许列表里加入它的 ID：
 
 ```
-扩展程序 ID：（上架 Chrome 网上应用店后填写）
+Chrome 网上应用店  cldkeocpehghpebfjdckhpdglbmjmocc
+Edge 加载项        hfgjgfghbdnbmgdbecjddmniaafmjpkl
+Safari            me.aitutors.heddy.safari.Extension
 ```
 
 aitutors.me 上没有任何功能依赖 Heddy：没有它，孩子照样可以在「快速添加」

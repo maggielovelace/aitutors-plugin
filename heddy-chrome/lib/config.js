@@ -10,6 +10,20 @@
   var DEV_ORIGIN = 'http://localhost:3000';
   var DEV_KEY = 'devOrigin';
   var FIRST_RUN_KEY = 'seenFirstRun';
+  // PRD-v0.146.0 B9: the signed-in three-card intro, shown once. FIRST_RUN_KEY
+  // is `true` once the first time is over (every install before 0.10 wrote
+  // true, so they never see the intro), or 'out' after the signed-out first
+  // time was shown, when the intro still waits for the first signed-in open.
+  var INTRO_KEY = 'seenIntro';
+  // The store ids (PRD-v0.146.0 § 6), shown only in Settings' For school IT.
+  var STORE_IDS = {
+    chrome: 'cldkeocpehghpebfjdckhpdglbmjmocc',
+    edge: 'hfgjgfghbdnbmgdbecjddmniaafmjpkl',
+    safari: 'me.aitutors.heddy.safari.Extension',
+  };
+  var BROWSERS = ['chrome', 'edge', 'safari-mac', 'safari-ios'];
+  // Each browser's own page for extension shortcuts; Safari has none.
+  var SHORTCUTS_URL = { chrome: 'chrome://extensions/shortcuts', edge: 'edge://extensions/shortcuts' };
   // About Heddy's privacy link (D60): PRIVACY.md in this public repository,
   // the same page the Web Store listing names.
   var PRIVACY_URL = 'https://github.com/maggielovelace/aitutors-plugin/blob/main/heddy-chrome/PRIVACY.md';
@@ -59,10 +73,45 @@
     return jotterId ? origin + '/study/jotters/' + encodeURIComponent(jotterId) : origin + '/study/jotters';
   }
 
+  /** The browser Heddy runs in (PRD-v0.146.0 § 4): 'chrome', 'edge',
+   *  'safari-mac' or 'safari-ios'. `env`: { baseUrl, brands, userAgent,
+   *  maxTouchPoints }. Safari is told by its own extension scheme (the flag
+   *  background.js already uses); iPhone and iPad by the user agent, an iPad
+   *  that asks for desktop sites by its touch points; Edge by its brand, or
+   *  "Edg/" in the user agent. Anything else is Chrome. Pure. */
+  function browserOf(env) {
+    var e = env || {};
+    var ua = String(e.userAgent || '');
+    if (/^safari-web-extension:/.test(String(e.baseUrl || ''))) {
+      if (/\b(iPhone|iPad|iPod)\b/.test(ua) || (/\bMacintosh\b/.test(ua) && Number(e.maxTouchPoints) > 1)) return 'safari-ios';
+      return 'safari-mac';
+    }
+    var brands = Array.isArray(e.brands) ? e.brands : [];
+    if (brands.some(function (b) { return b && /^Microsoft Edge$/.test(String(b.brand)); }) || /\bEdg\//.test(ua)) return 'edge';
+    return 'chrome';
+  }
+
+  /** browserOf() for this page or worker. */
+  function detectBrowser(g) {
+    var r = g || root;
+    var nav = r.navigator || {};
+    var base = '';
+    try { base = r.chrome && r.chrome.runtime && r.chrome.runtime.getURL ? r.chrome.runtime.getURL('/') : ''; } catch (e) { base = ''; }
+    return browserOf({ baseUrl: base, brands: nav.userAgentData && nav.userAgentData.brands, userAgent: nav.userAgent, maxTouchPoints: nav.maxTouchPoints });
+  }
+
   /** The first-run page (PRD D8): opened once, when Heddy is installed, and
-   *  from the popup's first-time state. In Heddy's language: /zh for zh_CN. */
-  function welcomeUrl(origin, lang) {
-    return origin + (lang === 'zh_CN' ? '/zh' : '') + '/heddy-chrome/welcome';
+   *  from the popup's first-time state. In Heddy's language: /zh for zh_CN.
+   *  PRD-v0.146.0 P2: ?b= names the browser so the page opens on its tab
+   *  (the site trusts it only for that, and falls back to the user agent). */
+  function welcomeUrl(origin, lang, browser) {
+    var b = BROWSERS.indexOf(browser) >= 0 ? '?b=' + browser : '';
+    return origin + (lang === 'zh_CN' ? '/zh' : '') + '/heddy-chrome/welcome' + b;
+  }
+
+  /** The help guide (Settings › About), in Heddy's language. */
+  function helpUrl(origin, lang) {
+    return origin + (lang === 'zh_CN' ? '/zh' : '') + '/docs/heddy-for-chrome';
   }
 
   /** Where the capture window opens, from the browser window it came from. */
@@ -80,6 +129,13 @@
     DEV_ORIGIN: DEV_ORIGIN,
     DEV_KEY: DEV_KEY,
     FIRST_RUN_KEY: FIRST_RUN_KEY,
+    INTRO_KEY: INTRO_KEY,
+    STORE_IDS: STORE_IDS,
+    BROWSERS: BROWSERS,
+    SHORTCUTS_URL: SHORTCUTS_URL,
+    browserOf: browserOf,
+    detectBrowser: detectBrowser,
+    helpUrl: helpUrl,
     PRIVACY_URL: PRIVACY_URL,
     WINDOW: WINDOW,
     captureOrigin: captureOrigin,

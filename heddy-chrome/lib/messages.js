@@ -29,20 +29,8 @@
       "close": {
         "message": "Close"
       },
-      "ctxFirstTime": {
-        "message": "first time"
-      },
       "firstTimeLead": {
         "message": "Heddy brings what you find to your professors on aitutors.me."
-      },
-      "firstTimeYouTube": {
-        "message": "Add a YouTube video, or watch it with Heddy"
-      },
-      "openSite": {
-        "message": "Open aitutors.me"
-      },
-      "sitePageLine": {
-        "message": "You're on aitutors.me, where everything Heddy keeps is waiting. Heddy's buttons are on YouTube videos and on other web pages."
       },
       "commandJot": {
         "message": "Show Heddy's buttons for the words you selected"
@@ -55,9 +43,6 @@
       },
       "imageLabel": {
         "message": "Image"
-      },
-      "firstTimePage": {
-        "message": "Save words, pictures or a whole page to Jotters"
       },
       "pageEmpty": {
         "message": "This page has no text to save."
@@ -329,13 +314,23 @@
         "message": "Heddy needs captions to help with this video, and this one has none."
       },
       "kindChrome": {
-        "message": "Chrome page"
+        "message": "$BROWSER$ page",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
       },
       "kindNewTab": {
         "message": "New tab"
       },
       "kindSettings": {
-        "message": "Chrome settings"
+        "message": "$BROWSER$ settings",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
       },
       "kindExtensions": {
         "message": "Extensions"
@@ -418,14 +413,8 @@
       "whoOpenStudy": {
         "message": "Open my Study"
       },
-      "whoSignInToSave": {
-        "message": "Sign in to save with Heddy"
-      },
       "whoSignIn": {
         "message": "Sign in"
-      },
-      "whoImNew": {
-        "message": "I'm new"
       },
       "whoGrownUp": {
         "message": "Signed in as a grown-up"
@@ -442,14 +431,8 @@
       "tileStudy": {
         "message": "My Study"
       },
-      "passEyebrow": {
-        "message": "aitutors.me · Study pass"
-      },
       "passNotSignedIn": {
         "message": "Not signed in"
-      },
-      "passSavesTo": {
-        "message": "Heddy saves to your Jotters and My Clips on aitutors.me."
       },
       "passGrownUpLine": {
         "message": "Heddy saves for a child's account. On your child's computer, sign them in to use it."
@@ -468,9 +451,6 @@
       },
       "aboutVersion": {
         "message": "Version"
-      },
-      "aboutId": {
-        "message": "Extension ID"
       },
       "aboutCopy": {
         "message": "Copy"
@@ -2109,6 +2089,474 @@
             "example": "10"
           }
         }
+      },
+      "hkDesk": {
+        "message": "Mentor's desk"
+      },
+      "hkLangLabel": {
+        "message": "Heddy's language"
+      },
+      "hkCantTag": {
+        "message": "Can't read"
+      },
+      "hkCantHead": {
+        "message": "Heddy can't read this page"
+      },
+      "hkWhyBrowser": {
+        "message": "It's one of $BROWSER$'s own pages. $BROWSER$ keeps its own pages private from every extension, Heddy included.",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkWhySafari": {
+        "message": "It's one of Safari's own pages, like the Start Page. Safari keeps them private from every extension, Heddy included."
+      },
+      "hkWhyStore": {
+        "message": "$BROWSER$ keeps every extension out of its own store, Heddy included.",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkWhyOther": {
+        "message": "This page doesn't let extensions read it. A few sites block them, such as online banking."
+      },
+      "hkWhichPages": {
+        "message": "Which pages are like this?"
+      },
+      "hkHideList": {
+        "message": "Hide the list"
+      },
+      "hkWhyHead": {
+        "message": "Heddy can't read"
+      },
+      "hkWhy1": {
+        "message": "Browser pages, like settings, history and new tabs"
+      },
+      "hkWhy2": {
+        "message": "PDFs open in the browser's own viewer"
+      },
+      "hkWhy3": {
+        "message": "Extension and app store pages"
+      },
+      "hkWhy4": {
+        "message": "A few sites that block add-ons, such as online banking"
+      },
+      "hkTryThis": {
+        "message": "Try this"
+      },
+      "hkTry1": {
+        "message": "Open a web page or a YouTube video, then click Heddy again."
+      },
+      "hkTry2": {
+        "message": "A PDF? Upload it to Jotters instead: My Jotters › Add a PDF."
+      },
+      "hkTry3": {
+        "message": "On other pages, $KEY$ snaps a picture.",
+        "placeholders": {
+          "key": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkOpenJotters": {
+        "message": "Open my Jotters"
+      },
+      "hkSignLine": {
+        "message": "Sign in to save with Heddy. Your Jotters, clips and cards live on aitutors.me."
+      },
+      "hkHomeTag": {
+        "message": "Home"
+      },
+      "hkToday": {
+        "message": "Today · $DATE$",
+        "placeholders": {
+          "date": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkCarryOn": {
+        "message": "Carry on"
+      },
+      "hkJotterSub": {
+        "message": "Jotter · $WHEN$",
+        "placeholders": {
+          "when": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkWhenToday": {
+        "message": "saved today"
+      },
+      "hkWhenYesterday": {
+        "message": "saved yesterday"
+      },
+      "hkWhenOn": {
+        "message": "saved $DATE$",
+        "placeholders": {
+          "date": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkElsewhere": {
+        "message": "Heddy elsewhere"
+      },
+      "hkWatchWith": {
+        "message": "On YouTube, press Watch with Heddy"
+      },
+      "hkWatchWithSub": {
+        "message": "The desk opens beside the video. Press H to jot the line being spoken."
+      },
+      "hkTryYouTube": {
+        "message": "Try it on YouTube"
+      },
+      "hkSelectJot": {
+        "message": "On any web page, select words to add them to Sources."
+      },
+      "hkYouHere": {
+        "message": "You're on aitutors.me"
+      },
+      "hkHomeOut": {
+        "message": "Sign in on this page and Heddy signs in with you."
+      },
+      "hkHomeOutLine": {
+        "message": "Your Jotters, clips and cards are on this site. Signing in here signs Heddy in too."
+      },
+      "hkHello": {
+        "message": "Hi, I'm Heddy."
+      },
+      "hkSignFirst": {
+        "message": "Sign in first, so Heddy knows whose Jotter to save into. It happens on aitutors.me."
+      },
+      "hkWhatDo": {
+        "message": "What Heddy does"
+      },
+      "hkDo1h": {
+        "message": "Clip any page into your Jotter."
+      },
+      "hkDo1": {
+        "message": "Words and pictures become numbered clippings."
+      },
+      "hkDo2h": {
+        "message": "Press $KEY$ on YouTube",
+        "placeholders": {
+          "key": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkDo2": {
+        "message": "to jot the line being spoken."
+      },
+      "hkDo3h": {
+        "message": "Ask your professor."
+      },
+      "hkDo3": {
+        "message": "They hint, and never give the answer."
+      },
+      "hkNewTag": {
+        "message": "New"
+      },
+      "hkWelcome": {
+        "message": "Welcome, $NAME$ · $N$ of 3",
+        "placeholders": {
+          "name": {
+            "content": "$1"
+          },
+          "n": {
+            "content": "$2"
+          }
+        }
+      },
+      "hkSkip": {
+        "message": "Skip"
+      },
+      "hkNext": {
+        "message": "Next"
+      },
+      "hkBack": {
+        "message": "Back"
+      },
+      "hkStart": {
+        "message": "Try it on this page"
+      },
+      "hkI1h": {
+        "message": "Clip any page into your Jotter"
+      },
+      "hkI1": {
+        "message": "Select words, or draw round a picture. Each becomes a numbered clipping, saved to your Jotter in your order."
+      },
+      "hkI2h": {
+        "message": "Press H to jot the line being spoken"
+      },
+      "hkI2": {
+        "message": "On YouTube, Watch with Heddy opens the desk beside the video. Your jots keep their time."
+      },
+      "hkI3h": {
+        "message": "Stuck? Ask your professor"
+      },
+      "hkI3": {
+        "message": "Professors ask and hint so you work it out yourself. They never give the answer."
+      },
+      "kindEdgeStore": {
+        "message": "Edge Add-ons"
+      },
+      "setAccount": {
+        "message": "Account"
+      },
+      "setInBrowser": {
+        "message": "Heddy in $BROWSER$",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "setShortcuts": {
+        "message": "Shortcuts"
+      },
+      "setCanDo": {
+        "message": "What Heddy can do"
+      },
+      "setSchoolIT": {
+        "message": "For school IT"
+      },
+      "setSignedAs": {
+        "message": "Signed in as $NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1"
+          }
+        }
+      },
+      "setAcctLine": {
+        "message": "Saving to $NAME$'s Jotters, My Clips and cards.",
+        "placeholders": {
+          "name": {
+            "content": "$1"
+          }
+        }
+      },
+      "setAcctOut": {
+        "message": "Nothing saves until you sign in. Signing in happens on aitutors.me, and Heddy follows."
+      },
+      "setPinned": {
+        "message": "Pinned to the toolbar"
+      },
+      "setNotPinned": {
+        "message": "Not pinned yet"
+      },
+      "setShowHow": {
+        "message": "Show me how"
+      },
+      "setDone": {
+        "message": "I've done it"
+      },
+      "setToolbar": {
+        "message": "Toolbar"
+      },
+      "setToolbarSub": {
+        "message": "Pinned means Heddy's eyes are always one click away."
+      },
+      "setSiteAccess": {
+        "message": "Website access"
+      },
+      "setSiteAccessSub": {
+        "message": "Heddy only reads a page when you click it, whatever you choose here."
+      },
+      "setPinChrome1": {
+        "message": "Click the puzzle piece to the right of the address bar."
+      },
+      "setPinChrome2": {
+        "message": "Find Heddy and click the pin beside it."
+      },
+      "setPinEdge1": {
+        "message": "Click Extensions (the puzzle piece) beside the address bar."
+      },
+      "setPinEdge2": {
+        "message": "Find Heddy and click the eye: Show in toolbar."
+      },
+      "setPinSafari1": {
+        "message": "Open Safari, then Settings, then Extensions."
+      },
+      "setPinSafari2": {
+        "message": "Choose Heddy and set website access to Allow."
+      },
+      "setPinIos1": {
+        "message": "Open Settings, then Apps, then Safari, then Extensions."
+      },
+      "setPinIos2": {
+        "message": "Choose Heddy, turn on Allow Extension, and allow it on every website."
+      },
+      "setInstalled": {
+        "message": "Installed and turned on"
+      },
+      "setInstalledSub": {
+        "message": "Heddy $VERSION$ for $BROWSER$. Updates arrive by themselves.",
+        "placeholders": {
+          "version": {
+            "content": "$1"
+          },
+          "browser": {
+            "content": "$2"
+          }
+        }
+      },
+      "setOn": {
+        "message": "On"
+      },
+      "setKJot": {
+        "message": "Jot the line being spoken"
+      },
+      "setKJotSub": {
+        "message": "On YouTube, with the desk open. Press again for the line before."
+      },
+      "setKSnap": {
+        "message": "Snap a picture"
+      },
+      "setKSnapSub": {
+        "message": "Draw a box over part of a page. Press twice for the whole screen."
+      },
+      "setKOpen": {
+        "message": "Open Heddy"
+      },
+      "setKOpenSub": {
+        "message": "Opens Heddy's panel without the mouse."
+      },
+      "setNotSet": {
+        "message": "Not set"
+      },
+      "setChange": {
+        "message": "Change"
+      },
+      "setScSafari": {
+        "message": "Safari doesn't let you change an extension's shortcuts, so these stay as they are."
+      },
+      "setScHow": {
+        "message": "Shortcuts for every extension live on one $BROWSER$ page:",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "setScStep1": {
+        "message": "Open $URL$",
+        "placeholders": {
+          "url": {
+            "content": "$1"
+          }
+        }
+      },
+      "setScStep2": {
+        "message": "Find Heddy and click the pencil beside the shortcut."
+      },
+      "setScStep3": {
+        "message": "Press the keys you want."
+      },
+      "setOpenSc": {
+        "message": "Open the shortcuts page"
+      },
+      "setCd1h": {
+        "message": "Clip any page into your Jotter"
+      },
+      "setCd1": {
+        "message": "Words and pictures become numbered clippings, with where they came from."
+      },
+      "setCd2h": {
+        "message": "Watch with Heddy on YouTube"
+      },
+      "setCd2": {
+        "message": "Jot with H, read the transcript in English, Bilingual or Chinese, and get your professor's note on each chapter."
+      },
+      "setCd3h": {
+        "message": "Ask your professor"
+      },
+      "setCd3": {
+        "message": "They ask and hint so you work it out yourself."
+      },
+      "setCd4h": {
+        "message": "Private by default"
+      },
+      "setHelp": {
+        "message": "Help"
+      },
+      "setHelpSub": {
+        "message": "Short guides with pictures, for learners and parents."
+      },
+      "setGuide": {
+        "message": "Help guide"
+      },
+      "setItLine": {
+        "message": "If your school blocks extensions, an IT admin can allow Heddy with these IDs. This browser is marked."
+      },
+      "setThisBrowser": {
+        "message": "This browser"
+      },
+      "setIdChrome": {
+        "message": "Chrome Web Store"
+      },
+      "setIdEdge": {
+        "message": "Edge Add-ons"
+      },
+      "setIdSafari": {
+        "message": "Safari (Mac and iPhone)"
+      },
+      "hkLatest": {
+        "message": "Your latest jots · $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAll": {
+        "message": "All"
+      },
+      "hkAgoJust": {
+        "message": "just now"
+      },
+      "hkAgoMins": {
+        "message": "$N$ min ago",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAgoToday": {
+        "message": "today"
+      },
+      "hkAgoYesterday": {
+        "message": "yesterday"
+      },
+      "hkCardsDueOne": {
+        "message": "1 card due"
+      },
+      "hkCardsDue": {
+        "message": "$N$ cards due",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkReviewOne": {
+        "message": "Review 1 card"
+      },
+      "hkReview": {
+        "message": "Review $N$ cards",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -2139,20 +2587,8 @@
       "close": {
         "message": "关闭"
       },
-      "ctxFirstTime": {
-        "message": "第一次"
-      },
       "firstTimeLead": {
         "message": "Heddy 把你找到的东西带给 aitutors.me 上的教授们。"
-      },
-      "firstTimeYouTube": {
-        "message": "放进一个 YouTube 视频，或和 Heddy 一起看"
-      },
-      "openSite": {
-        "message": "打开 aitutors.me"
-      },
-      "sitePageLine": {
-        "message": "你在 aitutors.me 上，Heddy 收下的东西都在这里。Heddy 的按钮在 YouTube 视频和其他网页上。"
       },
       "commandJot": {
         "message": "为选中的文字显示 Heddy 的按钮"
@@ -2165,9 +2601,6 @@
       },
       "imageLabel": {
         "message": "图片"
-      },
-      "firstTimePage": {
-        "message": "把文字、图片或整页存到 Jotters"
       },
       "pageEmpty": {
         "message": "这一页没有可以保存的文字。"
@@ -2439,13 +2872,23 @@
         "message": "Heddy 需要字幕才能帮你看这个视频，可这个视频没有字幕。"
       },
       "kindChrome": {
-        "message": "Chrome 页面"
+        "message": "$BROWSER$ 页面",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
       },
       "kindNewTab": {
         "message": "新标签页"
       },
       "kindSettings": {
-        "message": "Chrome 设置"
+        "message": "$BROWSER$ 设置",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
       },
       "kindExtensions": {
         "message": "扩展程序"
@@ -2528,14 +2971,8 @@
       "whoOpenStudy": {
         "message": "打开我的学习"
       },
-      "whoSignInToSave": {
-        "message": "登录后才能用 Heddy 保存"
-      },
       "whoSignIn": {
         "message": "登录"
-      },
-      "whoImNew": {
-        "message": "我是新用户"
       },
       "whoGrownUp": {
         "message": "已用家长账号登录"
@@ -2552,14 +2989,8 @@
       "tileStudy": {
         "message": "我的学习"
       },
-      "passEyebrow": {
-        "message": "aitutors.me · 学习通行证"
-      },
       "passNotSignedIn": {
         "message": "未登录"
-      },
-      "passSavesTo": {
-        "message": "Heddy 会把内容存进你在 aitutors.me 上的 Jotters 和「我的短片」。"
       },
       "passGrownUpLine": {
         "message": "Heddy 为孩子的账号保存内容。请在孩子的电脑上用孩子的账号登录。"
@@ -2578,9 +3009,6 @@
       },
       "aboutVersion": {
         "message": "版本"
-      },
-      "aboutId": {
-        "message": "扩展程序 ID"
       },
       "aboutCopy": {
         "message": "复制"
@@ -4217,6 +4645,474 @@
           "n": {
             "content": "$1",
             "example": "10"
+          }
+        }
+      },
+      "hkDesk": {
+        "message": "Mentor 的书桌"
+      },
+      "hkLangLabel": {
+        "message": "Heddy 的语言"
+      },
+      "hkCantTag": {
+        "message": "读不了"
+      },
+      "hkCantHead": {
+        "message": "Heddy 读不了这个页面"
+      },
+      "hkWhyBrowser": {
+        "message": "这是 $BROWSER$ 自己的页面。$BROWSER$ 不让任何扩展读取它自己的页面，Heddy 也一样。",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkWhySafari": {
+        "message": "这是 Safari 自己的页面，比如起始页。Safari 不让任何扩展读取它们，Heddy 也一样。"
+      },
+      "hkWhyStore": {
+        "message": "$BROWSER$ 不让任何扩展进入它自己的商店，Heddy 也一样。",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkWhyOther": {
+        "message": "这个页面不让扩展读取。少数网站会屏蔽扩展，比如网上银行。"
+      },
+      "hkWhichPages": {
+        "message": "哪些页面会这样？"
+      },
+      "hkHideList": {
+        "message": "收起"
+      },
+      "hkWhyHead": {
+        "message": "Heddy 读不了："
+      },
+      "hkWhy1": {
+        "message": "浏览器自己的页面，比如设置、历史记录和新标签页"
+      },
+      "hkWhy2": {
+        "message": "在浏览器自带查看器里打开的 PDF"
+      },
+      "hkWhy3": {
+        "message": "扩展程序和应用商店的页面"
+      },
+      "hkWhy4": {
+        "message": "少数屏蔽扩展的网站，比如网上银行"
+      },
+      "hkTryThis": {
+        "message": "可以试试"
+      },
+      "hkTry1": {
+        "message": "打开一个网页或 YouTube 视频，再点 Heddy。"
+      },
+      "hkTry2": {
+        "message": "是 PDF？可以改为上传到 Jotters：我的 Jotters › 添加 PDF。"
+      },
+      "hkTry3": {
+        "message": "在其他页面，按 $KEY$ 截一张图。",
+        "placeholders": {
+          "key": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkOpenJotters": {
+        "message": "打开我的 Jotters"
+      },
+      "hkSignLine": {
+        "message": "登录后才能用 Heddy 保存。你的 Jotters、短片和卡片都在 aitutors.me 上。"
+      },
+      "hkHomeTag": {
+        "message": "主页"
+      },
+      "hkToday": {
+        "message": "今天 · $DATE$",
+        "placeholders": {
+          "date": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkCarryOn": {
+        "message": "接着做"
+      },
+      "hkJotterSub": {
+        "message": "Jotter · $WHEN$",
+        "placeholders": {
+          "when": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkWhenToday": {
+        "message": "今天存过"
+      },
+      "hkWhenYesterday": {
+        "message": "昨天存过"
+      },
+      "hkWhenOn": {
+        "message": "$DATE$ 存过",
+        "placeholders": {
+          "date": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkElsewhere": {
+        "message": "在别处用 Heddy"
+      },
+      "hkWatchWith": {
+        "message": "在 YouTube 上点「和 Heddy 一起看」"
+      },
+      "hkWatchWithSub": {
+        "message": "书桌会在视频旁打开。按 H，记下正在说的这句。"
+      },
+      "hkTryYouTube": {
+        "message": "去 YouTube 试试"
+      },
+      "hkSelectJot": {
+        "message": "在任何网页上选中文字，就会加到「来源」里。"
+      },
+      "hkYouHere": {
+        "message": "你在 aitutors.me 上"
+      },
+      "hkHomeOut": {
+        "message": "在这个页面登录，Heddy 会跟着一起登录。"
+      },
+      "hkHomeOutLine": {
+        "message": "你的 Jotters、短片和卡片都在这个网站上。在这里登录，Heddy 也就登录了。"
+      },
+      "hkHello": {
+        "message": "你好，我是 Heddy。"
+      },
+      "hkSignFirst": {
+        "message": "请先登录，Heddy 才知道要存进谁的 Jotter。登录在 aitutors.me 上完成。"
+      },
+      "hkWhatDo": {
+        "message": "Heddy 能做什么"
+      },
+      "hkDo1h": {
+        "message": "把任何页面剪进 Jotter。"
+      },
+      "hkDo1": {
+        "message": "文字和图片都会变成带编号的剪辑。"
+      },
+      "hkDo2h": {
+        "message": "在 YouTube 上按 $KEY$",
+        "placeholders": {
+          "key": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkDo2": {
+        "message": "，记下正在说的这句。"
+      },
+      "hkDo3h": {
+        "message": "问你的教授。"
+      },
+      "hkDo3": {
+        "message": "教授只给提示，从不直接给答案。"
+      },
+      "hkNewTag": {
+        "message": "新"
+      },
+      "hkWelcome": {
+        "message": "欢迎，$NAME$ · 第 $N$ 张，共 3 张",
+        "placeholders": {
+          "name": {
+            "content": "$1"
+          },
+          "n": {
+            "content": "$2"
+          }
+        }
+      },
+      "hkSkip": {
+        "message": "跳过"
+      },
+      "hkNext": {
+        "message": "下一张"
+      },
+      "hkBack": {
+        "message": "上一张"
+      },
+      "hkStart": {
+        "message": "在这一页试试"
+      },
+      "hkI1h": {
+        "message": "把任何页面剪进 Jotter"
+      },
+      "hkI1": {
+        "message": "选中文字，或把图片框出来。每一段都会变成带编号的剪辑，按你排的顺序存进 Jotter。"
+      },
+      "hkI2h": {
+        "message": "按 H，记下正在说的这句"
+      },
+      "hkI2": {
+        "message": "在 YouTube 上，「和 Heddy 一起看」会在视频旁打开书桌。每条随记都带着时间。"
+      },
+      "hkI3h": {
+        "message": "卡住了？问你的教授"
+      },
+      "hkI3": {
+        "message": "教授会提问、给提示，让你自己想明白。他们从不直接给答案。"
+      },
+      "kindEdgeStore": {
+        "message": "Edge 加载项"
+      },
+      "setAccount": {
+        "message": "账号"
+      },
+      "setInBrowser": {
+        "message": "$BROWSER$ 里的 Heddy",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "setShortcuts": {
+        "message": "快捷键"
+      },
+      "setCanDo": {
+        "message": "Heddy 能做什么"
+      },
+      "setSchoolIT": {
+        "message": "学校 IT 专用"
+      },
+      "setSignedAs": {
+        "message": "已登录：$NAME$",
+        "placeholders": {
+          "name": {
+            "content": "$1"
+          }
+        }
+      },
+      "setAcctLine": {
+        "message": "内容会存进 $NAME$ 的 Jotters、「我的短片」和卡片。",
+        "placeholders": {
+          "name": {
+            "content": "$1"
+          }
+        }
+      },
+      "setAcctOut": {
+        "message": "登录前什么都不会保存。登录在 aitutors.me 上完成，Heddy 会跟着登录。"
+      },
+      "setPinned": {
+        "message": "已固定到工具栏"
+      },
+      "setNotPinned": {
+        "message": "还没固定"
+      },
+      "setShowHow": {
+        "message": "告诉我怎么做"
+      },
+      "setDone": {
+        "message": "我弄好了"
+      },
+      "setToolbar": {
+        "message": "工具栏"
+      },
+      "setToolbarSub": {
+        "message": "固定后，Heddy 的眼睛总在一步之内。"
+      },
+      "setSiteAccess": {
+        "message": "网站权限"
+      },
+      "setSiteAccessSub": {
+        "message": "不管这里怎么选，只有你点 Heddy，它才会读页面。"
+      },
+      "setPinChrome1": {
+        "message": "点地址栏右边的拼图图标。"
+      },
+      "setPinChrome2": {
+        "message": "找到 Heddy，点它旁边的图钉。"
+      },
+      "setPinEdge1": {
+        "message": "点地址栏旁边的「扩展」（拼图图标）。"
+      },
+      "setPinEdge2": {
+        "message": "找到 Heddy，点眼睛图标：在工具栏中显示。"
+      },
+      "setPinSafari1": {
+        "message": "打开 Safari，再打开「设置」，然后点「扩展」。"
+      },
+      "setPinSafari2": {
+        "message": "选中 Heddy，把网站权限设为「允许」。"
+      },
+      "setPinIos1": {
+        "message": "打开「设置」，再点「App」、Safari，然后点「扩展」。"
+      },
+      "setPinIos2": {
+        "message": "选中 Heddy，打开「允许扩展」，并允许它在所有网站上使用。"
+      },
+      "setInstalled": {
+        "message": "已安装并打开"
+      },
+      "setInstalledSub": {
+        "message": "Heddy $VERSION$（$BROWSER$）。会自动更新。",
+        "placeholders": {
+          "version": {
+            "content": "$1"
+          },
+          "browser": {
+            "content": "$2"
+          }
+        }
+      },
+      "setOn": {
+        "message": "已打开"
+      },
+      "setKJot": {
+        "message": "记下正在说的这句"
+      },
+      "setKJotSub": {
+        "message": "在 YouTube 上、书桌打开时使用。再按一次连上前一句。"
+      },
+      "setKSnap": {
+        "message": "截一张图"
+      },
+      "setKSnapSub": {
+        "message": "在页面上框出一块。按两下截整个屏幕。"
+      },
+      "setKOpen": {
+        "message": "打开 Heddy"
+      },
+      "setKOpenSub": {
+        "message": "不用鼠标也能打开 Heddy 的面板。"
+      },
+      "setNotSet": {
+        "message": "未设置"
+      },
+      "setChange": {
+        "message": "修改"
+      },
+      "setScSafari": {
+        "message": "Safari 不能修改扩展的快捷键，所以这些快捷键保持不变。"
+      },
+      "setScHow": {
+        "message": "所有扩展的快捷键都在 $BROWSER$ 的同一个页面里：",
+        "placeholders": {
+          "browser": {
+            "content": "$1"
+          }
+        }
+      },
+      "setScStep1": {
+        "message": "打开 $URL$",
+        "placeholders": {
+          "url": {
+            "content": "$1"
+          }
+        }
+      },
+      "setScStep2": {
+        "message": "找到 Heddy，点快捷键旁边的铅笔。"
+      },
+      "setScStep3": {
+        "message": "按下你要的按键。"
+      },
+      "setOpenSc": {
+        "message": "打开快捷键页面"
+      },
+      "setCd1h": {
+        "message": "把任何页面剪进 Jotter"
+      },
+      "setCd1": {
+        "message": "文字和图片都会变成带编号的剪辑，并记下出处。"
+      },
+      "setCd2h": {
+        "message": "在 YouTube 上和 Heddy 一起看"
+      },
+      "setCd2": {
+        "message": "按 H 记随记；文字稿可以看英文、双语或中文；每一章都有教授的见解。"
+      },
+      "setCd3h": {
+        "message": "问你的教授"
+      },
+      "setCd3": {
+        "message": "教授会提问、给提示，让你自己想明白。"
+      },
+      "setCd4h": {
+        "message": "默认保护隐私"
+      },
+      "setHelp": {
+        "message": "帮助"
+      },
+      "setHelpSub": {
+        "message": "带图的简短指南，给学生和家长。"
+      },
+      "setGuide": {
+        "message": "帮助指南"
+      },
+      "setItLine": {
+        "message": "如果学校屏蔽了扩展，IT 管理员可以用下面的 ID 放行 Heddy。当前浏览器已标出。"
+      },
+      "setThisBrowser": {
+        "message": "当前浏览器"
+      },
+      "setIdChrome": {
+        "message": "Chrome 网上应用店"
+      },
+      "setIdEdge": {
+        "message": "Edge 加载项"
+      },
+      "setIdSafari": {
+        "message": "Safari（Mac 和 iPhone）"
+      },
+      "hkLatest": {
+        "message": "最近的随记 · $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAll": {
+        "message": "全部"
+      },
+      "hkAgoJust": {
+        "message": "刚刚"
+      },
+      "hkAgoMins": {
+        "message": "$N$ 分钟前",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAgoToday": {
+        "message": "今天"
+      },
+      "hkAgoYesterday": {
+        "message": "昨天"
+      },
+      "hkCardsDueOne": {
+        "message": "1 张卡片待复习"
+      },
+      "hkCardsDue": {
+        "message": "$N$ 张卡片待复习",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkReviewOne": {
+        "message": "复习 1 张卡片"
+      },
+      "hkReview": {
+        "message": "复习 $N$ 张卡片",
+        "placeholders": {
+          "n": {
+            "content": "$1"
           }
         }
       }

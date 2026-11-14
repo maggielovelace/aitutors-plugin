@@ -51,8 +51,8 @@ test('tabs.create only serves explicit navigation, the welcome page, or the Safa
   const KEPT = {
     // openTab (Full desk ↗'s /capture tab, D71) twice, heddy-ui:open (Open on a toast, Open my Jotter ↗, Sign in), installed (the welcome page).
     'lib/courier.js': 4,
-    // openSite (first time's Open aitutors.me) and openAndClose (My Jotters · My Clips · My Study, Sign in).
-    'popup/popup.js': 2,
+    // openAndClose: every link the Can't read, aitutors.me and first-time screens offer (PRD-v0.146.0).
+    'popup/popup.js': 1,
     // the options page's links.
     'options/options.js': 1,
     // Full desk ↗: one tab straight to Classroom (owner, 2026-10-31; no /capture page).
@@ -325,7 +325,7 @@ test('§ 4 ask: signed out is a line the view can draw; a stream with no done en
 });
 
 test('the six paths and Save into’s list (site PRD-v0.122.0 App. A), and nothing else, under /api/learn/heddy/', () => {
-  assert.deepEqual(H.PATHS, { save: '/api/learn/heddy/save', undo: '/api/learn/heddy/undo', clip: '/api/learn/heddy/clip', ask: '/api/learn/heddy/ask', card: '/api/learn/heddy/card', jot: '/api/learn/heddy/jot', jotters: '/api/learn/heddy/jotters' });
+  assert.deepEqual(H.PATHS, { save: '/api/learn/heddy/save', undo: '/api/learn/heddy/undo', clip: '/api/learn/heddy/clip', ask: '/api/learn/heddy/ask', card: '/api/learn/heddy/card', jot: '/api/learn/heddy/jot', jotters: '/api/learn/heddy/jotters', recentJots: '/api/learn/heddy/recent-jots', cardsDue: '/api/learn/heddy/cards-due' });
   const src = code('lib/heddy-api.js');
   assert.equal((src.match(/deps\.fetchImpl\(/g) || []).length, 1, 'the stream is the one fetch of its own; the rest go through desk-api’s call');
   assert.doesNotMatch(src, /chrome\.storage|localStorage|indexedDB/);

@@ -7,7 +7,8 @@
 //
 //   chrome   Chrome's own pages: chrome://, the new tab, settings, another
 //            extension's pages, about:, devtools
-//   store    the Chrome Web Store, which Chrome keeps every extension out of
+//   store    the Chrome Web Store or Edge Add-ons, which the browser keeps
+//            every extension out of
 //   heddy    Heddy's own pages (its settings, the panel's page)
 //   source   view-source:
 //   file     a PDF (on the web or on this computer) or another local file
@@ -15,7 +16,8 @@
 //
 // kindOf(url, ownId) answers null for a page Heddy can work on. Pure.
 (function (root) {
-  var STORE_HOSTS = { 'chromewebstore.google.com': 1 };
+  // The stores that keep every extension out: Chrome's and Edge's.
+  var STORE_HOSTS = { 'chromewebstore.google.com': 1, 'microsoftedge.microsoft.com': 1 };
 
   /** { kind, chip, line, sub }: the message keys for the header chip and
    *  the two lines under Heddy's face. */
@@ -57,16 +59,18 @@
   }
 
   /** The chip's own words for Chrome's pages and files, more exact than the
-   *  kind: "New tab", "Chrome settings", "Another extension", "PDF file". */
+   *  kind: "New tab", "Chrome settings", "Another extension", "PDF file".
+   *  kindChrome and kindSettings take the browser's name ($BROWSER$). */
   function chipKey(url, kind) {
     var u = parse(url);
     if (kind === 'chrome' && u) {
       if (u.protocol === 'chrome-extension:' || u.protocol === 'safari-web-extension:') return 'kindExtension';
-      var page = u.protocol === 'chrome:' ? u.hostname : '';
+      var page = u.protocol === 'chrome:' || u.protocol === 'edge:' ? u.hostname : '';
       if (page === 'newtab' || page === 'new-tab-page' || u.protocol === 'chrome-search:') return 'kindNewTab';
       if (page === 'settings') return 'kindSettings';
       if (page === 'extensions') return 'kindExtensions';
     }
+    if (kind === 'store' && u && u.hostname === 'microsoftedge.microsoft.com') return 'kindEdgeStore';
     if (kind === 'file' && u && !isPdfPath(u)) return 'kindLocalFile';
     if (kind === 'heddy' && u && /\/options\//.test(u.pathname)) return 'kindHeddySettings';
     return KINDS[kind] ? KINDS[kind].chip : KINDS.other.chip;
