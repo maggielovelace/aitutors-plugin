@@ -136,6 +136,7 @@
     cap: '<path d="M2 9.5l10-5 10 5-10 5z"/><path d="M6 11.5v4.5c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+    layers: '<path class="f" d="M12 3l9 5-9 5-9-5z"/><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
     page: '<path d="M6 3.5h8l4 4V20a.5.5 0 01-.5.5h-11.5A.5.5 0 015.5 20V4a.5.5 0 01.5-.5z"/><path d="M14 3.5V8h4M8.5 12h7M8.5 15.5h7"/>',
   };
   function ic(name, cls) {
@@ -434,8 +435,30 @@
     pn.appendChild(steps(tries));
     var L = HeddyWho.links(ORIGIN);
     if (me.signedIn && me.role === 'child') {
-      // (The design's "Your latest jots" needs a list of jots no aitutors.me
-      // route gives Heddy yet: left out until one does.)
+      // Your latest jots (GET /api/learn/heddy/recent-jots, from the
+      // background): drawn only when the read worked and found some. A failed
+      // read says nothing, never "no jots".
+      var latest = el('div', 'carry');
+      pn.appendChild(latest);
+      bgRead('heddy-web:recent-jots').then(function (r) {
+        if (!r || !r.ok || !r.signedIn || !r.jots || !r.jots.length || !latest.isConnected) return;
+        var all = hkButton(null, 'arrow', tr('hkAll'), function () { openAndClose(L.jotters); });
+        all.insertBefore(all.lastChild, all.firstChild);
+        latest.appendChild(eyebrow(tr('hkLatest', String(r.jots.length)), all));
+        var ul = el('ul', 'ls');
+        r.jots.forEach(function (j) {
+          var li = el('li');
+          var it = el('button', 'it');
+          it.type = 'button';
+          it.appendChild(el('q', null, j.text));
+          it.insertAdjacentHTML('beforeend', ic('out'));
+          it.appendChild(el('span', 'src q', [j.host, j.jotter, ago(j.at)].filter(Boolean).join(' · ')));
+          it.addEventListener('click', function () { openAndClose(ORIGIN + j.href); });
+          li.appendChild(it);
+          ul.appendChild(li);
+        });
+        latest.appendChild(ul);
+      });
       pn.appendChild(hkButton('save', 'jot', tr('hkOpenJotters'), function () { openAndClose(L.jotters); }));
     } else if (me.signedIn && me.role === 'parent') {
       pn.appendChild(grownUpBlock());
@@ -472,9 +495,29 @@
     var lang = document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en-GB';
     var today = new Intl.DateTimeFormat(lang, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
     pn.appendChild(eyebrow(tr('hkToday', today)));
-    // (The design's "Review N cards" needs a due count no aitutors.me route
-    // gives Heddy yet, so the primary is My Study, where the cards are.)
-    pn.appendChild(hkButton('save', 'cap', tr('whoOpenStudy'), function () { openAndClose(L.study); }));
+    // The primary: "Review N cards" when the count was read and is above
+    // zero (GET /api/learn/heddy/cards-due); else, or when it could not be
+    // read, Open my Study. A failed count is never drawn as "0 due".
+    var primary = el('div', 'carry');
+    pn.appendChild(primary);
+    bgRead('heddy-web:cards-due').then(function (r) {
+      if (!primary.isConnected) return;
+      if (r && r.ok && r.signedIn && r.due > 0) {
+        var due = el('div', 'due');
+        var stack = el('span', 'stack');
+        stack.appendChild(el('i'));
+        stack.appendChild(el('i'));
+        stack.appendChild(el('i', null, r.due > 99 ? '99+' : String(r.due)));
+        due.appendChild(stack);
+        var dw = el('div');
+        dw.appendChild(el('b', null, r.due === 1 ? tr('hkCardsDueOne') : tr('hkCardsDue', String(r.due))));
+        due.appendChild(dw);
+        primary.appendChild(due);
+        primary.appendChild(hkButton('save', 'layers', r.due === 1 ? tr('hkReviewOne') : tr('hkReview', String(r.due)), function () { openAndClose(ORIGIN + r.href); }));
+        return;
+      }
+      primary.appendChild(hkButton('save', 'cap', tr('whoOpenStudy'), function () { openAndClose(L.study); }));
+    });
     // Carry on: the Jotter saved into last (GET /api/learn/heddy/jotters,
     // newest-saved first, from the background). Nothing if it can't say.
     var carry = el('div', 'carry');
@@ -507,6 +550,27 @@
     jk.appendChild(jw);
     pn.appendChild(jk);
     pn.appendChild(fine('jot', tr('hkSelectJot')));
+  }
+
+  /** One of the background's popup reads (lib/web-routes.js), or null. */
+  function bgRead(type) {
+    return Promise.resolve()
+      .then(function () { return chrome.runtime.sendMessage({ type: type, tabId: hk.tab && hk.tab.id }); })
+      .catch(function () { return null; });
+  }
+
+  /** "12 min ago", "today", "yesterday", "3 November". */
+  function ago(at) {
+    if (typeof at !== 'number' || !isFinite(at)) return '';
+    var mins = Math.floor((Date.now() - at) / 60000);
+    if (mins < 1) return tr('hkAgoJust');
+    if (mins < 60) return tr('hkAgoMins', String(mins));
+    var day = function (t) { var x = new Date(t); x.setHours(0, 0, 0, 0); return x.getTime(); };
+    var days = Math.round((day(Date.now()) - day(at)) / 86400000);
+    if (days <= 0) return tr('hkAgoToday');
+    if (days === 1) return tr('hkAgoYesterday');
+    var lang = document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en-GB';
+    return new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long' }).format(new Date(at));
   }
 
   var jottersAsked = null;

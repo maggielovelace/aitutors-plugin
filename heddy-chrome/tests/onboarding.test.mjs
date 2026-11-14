@@ -214,3 +214,52 @@ test('Safari’s shortcuts are said to be unchangeable, Chrome’s and Edge’s 
   globalThis.HeddyMessages = load('./lib/messages.js');
   assert.match(load('./lib/i18n.js').t('en', 'setScSafari'), /^Safari doesn't let you change/);
 });
+
+// ─── B9 data: latest jots (Can't read) and cards due (aitutors.me) ─────────
+
+const H = load('./lib/heddy-api.js');
+const J1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+test('recent-jots: two at most, each a checked deep link; signed out is no jots; a failure is never an empty list', () => {
+  const ok = H.parseRecentJots({ status: 200, data: { signedIn: true, jots: [
+    { id: 'j1', text: 'On a 1:50 000 map, 2 cm represents 1 km.', jotter: 'Geography · Maps', host: 'example.org', createdAt: '2026-11-14T10:00:00.000Z', href: `/study/jotters/${J1}?jot=j1` },
+    { id: 'j2', text: 'evil', jotter: 'x', host: null, createdAt: 'x', href: 'https://evil.example/' },
+    { id: 'j3', text: '', jotter: 'x', href: `/study/jotters/${J1}?jot=j3` },
+    { id: 'j4', text: 'Second', jotter: 'Maps', host: 'youtube.com', createdAt: '2026-11-13T10:00:00.000Z', href: `/study/jotters/${J1}?jot=j4` },
+    { id: 'j5', text: 'Third', jotter: 'Maps', href: `/study/jotters/${J1}?jot=j5` },
+  ] } });
+  assert.equal(ok.ok, true);
+  assert.deepEqual(ok.jots.map((j) => j.text), ['On a 1:50 000 map, 2 cm represents 1 km.', 'Second']);
+  assert.equal(ok.jots[0].at, Date.parse('2026-11-14T10:00:00.000Z'));
+  assert.deepEqual(H.parseRecentJots({ status: 200, data: { signedIn: false } }), { ok: true, signedIn: false, jots: [] });
+  for (const r of [{ status: 503, data: { signedIn: true, error: 'failed' } }, { status: 200, data: { signedIn: true } }, { status: 0, data: null }, null]) {
+    assert.equal(H.parseRecentJots(r).ok, false, JSON.stringify(r));
+  }
+});
+
+test('cards-due: an exact count and the review room; a failed or odd count is not ok, never 0', () => {
+  assert.deepEqual(H.parseCardsDue({ status: 200, data: { signedIn: true, due: 7, href: '/study/cards/review' } }), { ok: true, signedIn: true, due: 7, href: '/study/cards/review' });
+  assert.deepEqual(H.parseCardsDue({ status: 200, data: { signedIn: true, due: 0, href: '/study/cards/review' } }).due, 0);
+  assert.deepEqual(H.parseCardsDue({ status: 200, data: { signedIn: false } }), { ok: true, signedIn: false });
+  for (const d of [{ signedIn: true, error: 'failed' }, { signedIn: true, due: -1, href: '/study/cards/review' }, { signedIn: true, due: 2.5, href: '/study/cards/review' }, { signedIn: true, due: 3, href: 'https://evil.example/' }, { signedIn: true, due: '3', href: '/study/cards/review' }]) {
+    assert.equal(H.parseCardsDue({ status: 200, data: d }).ok, false, JSON.stringify(d));
+  }
+  assert.equal(H.parseCardsDue({ status: 503, data: { signedIn: true, error: 'failed' } }).ok, false);
+});
+
+test('both are GETs through the desk’s call (the existing cookie and X-Heddy-Id), and only from Heddy’s own page', async () => {
+  const calls = [];
+  const api = H.createHeddyApi({ call: async (m, p) => { calls.push([m, p]); return { status: 200, data: { signedIn: true, due: 2, href: '/study/cards/review', jots: [] } }; }, origin: async () => 'https://aitutors.me', fetchImpl: () => { throw new Error('no'); } });
+  await api.recentJots();
+  await api.cardsDue();
+  assert.deepEqual(calls, [['GET', '/api/learn/heddy/recent-jots'], ['GET', '/api/learn/heddy/cards-due']]);
+  const routes = read('lib/web-routes.js');
+  assert.match(routes, /'heddy-web:recent-jots': 1, 'heddy-web:cards-due': 1 \};/, 'FROM_DESK: Heddy’s own page only');
+  assert.match(read('content/safari-site.js'), /'recent-jots', 'cards-due'\]\)/, 'Safari’s relay lets the two GETs through');
+});
+
+test('the popup shows latest jots only when the read worked, and Review N cards only for N > 0; else Open my Study', () => {
+  const pop = read('popup/popup.js');
+  assert.match(pop, /bgRead\('heddy-web:recent-jots'\)\.then\(function \(r\) \{\s*if \(!r \|\| !r\.ok \|\| !r\.signedIn \|\| !r\.jots \|\| !r\.jots\.length/);
+  assert.match(pop, /if \(r && r\.ok && r\.signedIn && r\.due > 0\) \{[^]*tr\('hkReview', String\(r\.due\)\)[^]*return;\s*\}\s*primary\.appendChild\(hkButton\('save', 'cap', tr\('whoOpenStudy'\)/);
+});

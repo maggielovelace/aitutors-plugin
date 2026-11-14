@@ -971,5 +971,28 @@
   "setThisBrowser": { "message": "This browser" },
   "setIdChrome": { "message": "Chrome Web Store" },
   "setIdEdge": { "message": "Edge Add-ons" },
-  "setIdSafari": { "message": "Safari (Mac and iPhone)" }
+  "setIdSafari": { "message": "Safari (Mac and iPhone)" },
+
+  "hkLatest": {
+    "message": "Your latest jots · $N$",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkAll": { "message": "All" },
+  "hkAgoJust": { "message": "just now" },
+  "hkAgoMins": {
+    "message": "$N$ min ago",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkAgoToday": { "message": "today" },
+  "hkAgoYesterday": { "message": "yesterday" },
+  "hkCardsDueOne": { "message": "1 card due" },
+  "hkCardsDue": {
+    "message": "$N$ cards due",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkReviewOne": { "message": "Review 1 card" },
+  "hkReview": {
+    "message": "Review $N$ cards",
+    "placeholders": { "n": { "content": "$1" } }
+  }
 }

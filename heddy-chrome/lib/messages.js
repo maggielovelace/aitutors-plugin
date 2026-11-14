@@ -2507,6 +2507,56 @@
       },
       "setIdSafari": {
         "message": "Safari (Mac and iPhone)"
+      },
+      "hkLatest": {
+        "message": "Your latest jots · $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAll": {
+        "message": "All"
+      },
+      "hkAgoJust": {
+        "message": "just now"
+      },
+      "hkAgoMins": {
+        "message": "$N$ min ago",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAgoToday": {
+        "message": "today"
+      },
+      "hkAgoYesterday": {
+        "message": "yesterday"
+      },
+      "hkCardsDueOne": {
+        "message": "1 card due"
+      },
+      "hkCardsDue": {
+        "message": "$N$ cards due",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkReviewOne": {
+        "message": "Review 1 card"
+      },
+      "hkReview": {
+        "message": "Review $N$ cards",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
       }
     },
     "zh_CN": {
@@ -5015,6 +5065,56 @@
       },
       "setIdSafari": {
         "message": "Safari（Mac 和 iPhone）"
+      },
+      "hkLatest": {
+        "message": "最近的随记 · $N$",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAll": {
+        "message": "全部"
+      },
+      "hkAgoJust": {
+        "message": "刚刚"
+      },
+      "hkAgoMins": {
+        "message": "$N$ 分钟前",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkAgoToday": {
+        "message": "今天"
+      },
+      "hkAgoYesterday": {
+        "message": "昨天"
+      },
+      "hkCardsDueOne": {
+        "message": "1 张卡片待复习"
+      },
+      "hkCardsDue": {
+        "message": "$N$ 张卡片待复习",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
+      },
+      "hkReviewOne": {
+        "message": "复习 1 张卡片"
+      },
+      "hkReview": {
+        "message": "复习 $N$ 张卡片",
+        "placeholders": {
+          "n": {
+            "content": "$1"
+          }
+        }
       }
     }
   };

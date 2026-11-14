@@ -112,6 +112,14 @@ else. If the question fails, Heddy shows "Not signed in".
 *Open my Jotter ↗* opens a tab. Until you save, or use *Full desk*, your jots
 stay in Heddy's storage on this computer.
 
+**The popup's two reads.** On a page Heddy can't read, Heddy asks
+`GET /api/learn/heddy/recent-jots` for your two newest jots (a short excerpt,
+the Jotter's title, the site it came from, when, and a link), to show under
+*Your latest jots*. On aitutors.me it asks `GET /api/learn/heddy/cards-due`
+for how many cards are due, for *Review N cards*. Both send only the
+browser's aitutors.me cookie, answer nothing to a grown-up or when no one is
+signed in, and are shown and forgotten, never stored.
+
 **Where a save goes.** When Heddy's panel opens on a page, Heddy asks
 `GET /api/learn/heddy/jotters`, with the cookie and the page's address
 (without the part after `#`). The address is sent only so aitutors.me can

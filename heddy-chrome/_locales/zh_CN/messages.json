@@ -971,5 +971,28 @@
   "setThisBrowser": { "message": "当前浏览器" },
   "setIdChrome": { "message": "Chrome 网上应用店" },
   "setIdEdge": { "message": "Edge 加载项" },
-  "setIdSafari": { "message": "Safari（Mac 和 iPhone）" }
+  "setIdSafari": { "message": "Safari（Mac 和 iPhone）" },
+
+  "hkLatest": {
+    "message": "最近的随记 · $N$",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkAll": { "message": "全部" },
+  "hkAgoJust": { "message": "刚刚" },
+  "hkAgoMins": {
+    "message": "$N$ 分钟前",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkAgoToday": { "message": "今天" },
+  "hkAgoYesterday": { "message": "昨天" },
+  "hkCardsDueOne": { "message": "1 张卡片待复习" },
+  "hkCardsDue": {
+    "message": "$N$ 张卡片待复习",
+    "placeholders": { "n": { "content": "$1" } }
+  },
+  "hkReviewOne": { "message": "复习 1 张卡片" },
+  "hkReview": {
+    "message": "复习 $N$ 张卡片",
+    "placeholders": { "n": { "content": "$1" } }
+  }
 }

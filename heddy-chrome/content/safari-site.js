@@ -5,7 +5,7 @@
 
   const sites = new Set(['https://aitutors.me', 'http://localhost:3000']);
   const routes = {
-    GET: new Set(['me', 'jotters', 'desk/video', 'desk/transcript']),
+    GET: new Set(['me', 'jotters', 'desk/video', 'desk/transcript', 'recent-jots', 'cards-due']),
     POST: new Set(['save', 'undo', 'clip', 'ask', 'card', 'jot', 'desk/jots', 'desk/keypoints', 'desk/quiz']),
   };
   const base = '/api/learn/heddy/';
