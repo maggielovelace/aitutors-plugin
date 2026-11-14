@@ -31,8 +31,11 @@
   var MAX_JOT = 20000;
   var TOKEN = /^[A-Za-z0-9._~+/=:-]{1,2000}$/;
 
+  /** Heddy's own page (the panel, the popup): its own extension scheme, in
+   *  Chrome and Edge or in Safari (lib/courier.js contentTab's rule). The
+   *  sender's id is checked first; a web page can never have this scheme. */
   function own(sender) {
-    return /^chrome-extension:/.test(String(sender && sender.url || ''));
+    return /^(?:chrome|safari-web)-extension:/.test(String(sender && sender.url || ''));
   }
 
   /** The video's address at the player's second (YouTube's crest). */

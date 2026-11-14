@@ -263,3 +263,25 @@ test('the popup shows latest jots only when the read worked, and Review N cards 
   assert.match(pop, /bgRead\('heddy-web:recent-jots'\)\.then\(function \(r\) \{\s*if \(!r \|\| !r\.ok \|\| !r\.signedIn \|\| !r\.jots \|\| !r\.jots\.length/);
   assert.match(pop, /if \(r && r\.ok && r\.signedIn && r\.due > 0\) \{[^]*tr\('hkReview', String\(r\.due\)\)[^]*return;\s*\}\s*primary\.appendChild\(hkButton\('save', 'cap', tr\('whoOpenStudy'\)/);
 });
+
+// ─── Safari: the popup's reads come from Heddy's own safari-web-extension page ──
+
+test('Heddy’s own page in Safari may ask the desk’s reads, as in Chrome; a web page, another id, or no url may not', async () => {
+  const R = load('./lib/web-routes.js');
+  const asked = [];
+  const tab = { id: 7, windowId: 1, url: 'https://aitutors.me/study', title: 'My Study' };
+  const chrome = { runtime: { id: 'heddy', sendMessage: async () => {} }, tabs: { get: async () => tab, sendMessage: async () => {} }, scripting: { executeScript: async () => [] } };
+  const api = { recentJots: async () => (asked.push('jots'), { ok: true, signedIn: true, jots: [] }), cardsDue: async () => (asked.push('due'), { ok: true, signedIn: true, due: 3, href: '/study/cards/review' }), jotters: async () => (asked.push('list'), { show: true, known: true, jotters: [] }) };
+  const routes = R.createWebRoutes({ chrome, api, cards: {}, showPanel: () => {}, saveJots: async () => ({}) });
+  const page = (url, id = 'heddy') => ({ id, url });
+  for (const url of ['chrome-extension://heddy/popup/popup.html?tab=7', 'safari-web-extension://8E2B4A0C-1111-2222-3333-444455556666/popup/popup.html?tab=7']) {
+    assert.equal((await routes.internal({ type: 'heddy-web:cards-due', tabId: 7 }, page(url))).due, 3, url);
+    assert.equal((await routes.internal({ type: 'heddy-web:recent-jots', tabId: 7 }, page(url))).ok, true, url);
+    assert.equal((await routes.internal({ type: 'heddy-web:jotters', tabId: 7 }, page(url))).show, true, url);
+  }
+  const before = asked.length;
+  for (const s of [page('https://evil.example/x'), page('safari-web-extension://X/popup/popup.html', 'other'), page(''), { id: 'heddy' }]) {
+    assert.deepEqual(await routes.internal({ type: 'heddy-web:cards-due', tabId: 7 }, s), { ok: false }, JSON.stringify(s));
+  }
+  assert.equal(asked.length, before, 'nothing was asked for a refused sender');
+});

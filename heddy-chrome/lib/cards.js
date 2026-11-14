@@ -571,8 +571,9 @@
       });
     }
 
+    // Heddy's own page, in Chrome and Edge or in Safari (lib/web-routes.js own).
     function own(sender) {
-      return /^chrome-extension:/.test(String(sender.url || ''));
+      return /^(?:chrome|safari-web)-extension:/.test(String(sender.url || ''));
     }
 
     function tabFor(message, sender) {
