@@ -35,6 +35,21 @@ for size in 16 32 128 256 512; do
   sips -z "$double" "$double" store/icons/mac-icon-1024.png --out "$icons/mac-icon-$size@2x.png" >/dev/null
 done
 
+# Heddy in the Mac menu bar (aitutors.me PRD-v0.145.0): the Mac app's own
+# behaviour is ONE checked-in file, copied over the converter's AppDelegate.
+# Fail loudly if the converter's template no longer has that file.
+mac_delegate="$project_dir/Heddy/macOS (App)/AppDelegate.swift"
+if [ ! -f "$mac_delegate" ]; then
+  printf 'The converter made no %s: the menu bar overlay has nowhere to go\n' "$mac_delegate" >&2
+  exit 1
+fi
+cp safari-mac/AppDelegate.swift "$mac_delegate"
+cmp -s safari-mac/AppDelegate.swift "$mac_delegate"
+
+# The macOS targets at 1.1, and the Mac app allowed to reach aitutors.me
+# (com.apple.security.network.client). See scripts/safari-mac-app.mjs.
+node scripts/safari-mac-app.mjs "$project_dir/Heddy/Heddy.xcodeproj/project.pbxproj"
+
 # Manual App Store signing for Release, and the two Info.plist keys App Store
 # Connect checks at upload. See scripts/safari-signing.mjs.
 node scripts/safari-signing.mjs "$project_dir/Heddy/Heddy.xcodeproj/project.pbxproj"
