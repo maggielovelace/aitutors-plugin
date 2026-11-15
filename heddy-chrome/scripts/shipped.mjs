@@ -9,9 +9,10 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Folders: tests, these scripts, the store listing and its renders, the icons'
-// SVG sources (the PNGs are rendered from them), the built zip (dist/),
-// dependencies and git.
-const SKIP_DIRS = new Set(['tests', 'scripts', 'store', 'icons/src', 'dist', 'node_modules', '.git']);
+// SVG sources (the PNGs are rendered from them), the built zip (dist/), the
+// Safari Mac app's own Swift (safari-mac/: package-safari-app.sh copies it into
+// the Xcode project; the extension never ships it), dependencies and git.
+const SKIP_DIRS = new Set(['tests', 'scripts', 'store', 'icons/src', 'dist', 'safari-mac', 'node_modules', '.git']);
 // Files: the READMEs and package.json are the repository's, not Chrome's.
 // PRIVACY.md and LICENSE ship; the fonts' OFL texts ship with the fonts.
 const SKIP_FILES = new Set(['README.md', 'README.zh-CN.md', 'package.json', 'package-lock.json']);
