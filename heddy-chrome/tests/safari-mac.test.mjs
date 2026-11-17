@@ -115,17 +115,18 @@ test('the panel speaks the S1 contract: bearer GET panel every 5 minutes, to-do 
   assert.match(s, /"Bearer \\\(token\)", forHTTPHeaderField: "Authorization"/);
   assert.match(s, /url\("\/api\/heddy\/mac\/panel", q\)/);
   assert.match(s, /\["op": "status", "id": todo\.id, "status": status\]/);
-  assert.match(s, /let status = p\.todos\[i\]\.done \? "done" : "todo"/, 'the route takes done | todo');
+  assert.match(s, /func toggle\(_ todo: MacPanel\.Todo\) -> Task<Void, Never>\? \{ setStatus\(todo, todo\.state == "done" \? "todo" : "done"\) \}/, 'the box: done | todo');
+  assert.match(s, /func cycle\(_ todo: MacPanel\.Todo\) -> Task<Void, Never>\? \{ setStatus\(todo, TodoList\.next\(todo\.state\)\) \}/, 'the pill: todo | doing | done (M15)');
   assert.match(s, /\["op": "add", "title": title\]/);
   assert.match(s, /api\.write\("\/api\/heddy\/mac\/line"/);
   assert.doesNotMatch(s, /"lens"/, 'M9: no lens in the menu bar');
   assert.match(s, /let order = \["calm", "bright", "sleepy", "wobbly"\]/, 'the four moods the server accepts');
-  assert.match(s, /case "safeguarding": return \.safeguarding/, 'a tripped line shows the Childline message');
+  assert.match(s, /case "safeguarding" where ok2xx: return \.safeguarding/, 'a tripped line shows the Childline message');
 });
 
 test('shortcuts in the ruled order, each to its aitutors.me page (M10)', () => {
   const s = swift();
-  const bar = s.slice(s.indexOf('private var shortcuts: some View'), s.indexOf('// MARK: - The welcome sheet'));
+  const bar = s.slice(s.indexOf('var shortcuts: some View'), s.indexOf('// MARK: - The welcome sheet'));
   const order = bar.split('Shortcut(title: ').slice(1).map((chunk) => `${chunk.match(/^w\.(\w+)/)[1]} ${chunk.match(/store\.link\("([^"]+)"\)/)[1]}`);
   assert.deepEqual(order, ['home /study', 'jotters /study/jotters', 'cards /study/cards', 'clips /study/clips', 'exams /study/exam', 'tutors /study/tutor']);
   assert.ok(bar.indexOf('Shortcut(title: w.tutors') < bar.indexOf('actions.gear'), 'the gear is last, on the right');
@@ -144,6 +145,254 @@ test('"Check in today · +5 pts": derived from today\'s stamp (S1 sends no such 
   assert.match(s, /static let checkInPoints = 5/, 'lib/calendar/points.ts DAILY_CHECK_IN_POINTS');
   assert.match(s, /Button\(action: \{ if !done \{ lineFocused = true \} \}\)/);
   assert.match(s, /focus: \$lineFocused/);
-  const box = s.slice(s.indexOf('BoxHeading(text: w.todoBox)'));
-  assert.ok(box.indexOf('store.checkInRow') < box.indexOf('ForEach(p.todos)'), 'first row of the to-do box');
+  assert.match(s, /return Array\(\(doing \+ \(checkIn == false \? \[\.checkIn\(done: false\)\] : \[\]\) \+ todo\)\.prefix\(rows\)\)/, 'heads the To do rows while unticked, leaves once checked in (M15)');
+  assert.match(s, /var todoRows: \[TodoRow\] \{ TodoList\.rows\(checkIn: checkInRow, todos: panel\?\.todos \?\? \[\]\) \}/);
+});
+
+// Owner 2026-11-15: "when the pointer hovers on it, please give reactions — currently looks like freezing."
+const panelSource = () => {
+  const s = swift();
+  return s.slice(s.indexOf('struct RoundButton'), s.indexOf('// MARK: - The welcome sheet'));
+};
+
+test('hover: one style lifts on hover, darkens on press, eases in 120 ms, shows the pointing hand, and stays still when disabled', () => {
+  const s = swift();
+  assert.match(s, /static let hover = 0\.09/);
+  assert.match(s, /static let press = 0\.14/);
+  assert.match(s, /static let ease = Animation\.easeOut\(duration: 0\.12\)/);
+  assert.equal(s.split('private var lit: Bool { enabled && (hovering || (hoverID != nil && preview == hoverID)) }').length - 1, 2, 'buttons AND text boxes stay still when disabled');
+  assert.match(s, /\.overlay\(shape\.fill\(Color\.white\.opacity\(lit && !pressed \? amount : 0\)\)/);
+  assert.match(s, /\.overlay\(shape\.fill\(Color\.black\.opacity\(enabled && pressed \? Lift\.press : 0\)\)/);
+  assert.match(s, /\.onHover \{ hovering = \$0 \}\s*\.hoverCursor\(\.pointingHand, when: enabled\)/);
+  assert.match(s, /NSCursor\.pop\(\)/, 'every pushed cursor is popped');
+  assert.match(s, /\.onDisappear \{\s*if pushed \{ NSCursor\.pop\(\); pushed = false \}/);
+  assert.doesNotMatch(s, /focusEffectDisabled/, 'keyboard focus rings still work');
+});
+
+test('hover: every control in the panel uses it (no plain buttons left)', () => {
+  const p = panelSource();
+  assert.doesNotMatch(p, /\.buttonStyle\(\.plain\)/);
+  const ids = {
+    'round buttons ‹ › ⤢': /\.buttonStyle\(NightButton\(shape: Circle\(\), edge: Night\.gold, hoverID: label\)\)/,
+    'Today pill': /hoverID: "pill"/,
+    'day stamps': /hoverID: "stamp:\\\(d\.day\)"/,
+    'to-do rows': /hoverID: "todo:\\\(t\.id\)"/,
+    'check-in row': /hoverID: "checkin"/,
+    '+ Add a to-do': /textButton\(w\.addTodo, id: "add"\)/,
+    'All N in My calendar': /id: "all", colour: Night\.gold\)/,
+    'status pill': /hoverID: "pill:\\\(t\.id\)"/,
+    'cancel ✕': /hoverID: "cancel-add"/,
+    'Heddy\'s eyes': /hoverID: "eyes"/,
+    'shortcuts incl. Cards badge': /hoverID: "shortcut:\\\(title\)"/,
+    'gear': /hoverID: "gear"/,
+    'Connect': /hoverID: "connect"/,
+    'Tonight\'s line field': /\.modifier\(FieldHover\(enabled: forToday, focused: lineFocused, hoverID: "line"\)\)/,
+  };
+  for (const [name, re] of Object.entries(ids)) assert.match(p, re, name);
+  assert.match(swift(), /struct FieldHover: ViewModifier \{[^]*?\.hoverCursor\(\.iBeam, when: enabled\)/, 'I-beam over the line, none when disabled');
+  assert.match(p, /\.hoverCursor\(\.iBeam\)/, 'I-beam over the new to-do box');
+  assert.match(p, /\.strokeBorder\(on \? Color\.accentColor : hover \? Night\.gold : Night\.faint/, 'the tick box answers its row');
+  assert.match(p, /Button\(action: \{ store\.show\(d\.day\) \}\) \{ DayStamp\(day: d\) \}/, 'a stamp is a real control');
+});
+
+test('the day pill never says the weekday twice: "Tue · 17 Nov", "Today · Sat 14"', () => {
+  const s = swift();
+  assert.match(s, /if day == today \{ return \(w\.today, short\(day, w\.lang\)\) \}/);
+  assert.match(s, /if day == add\(today, -1\) \{ return \(w\.yesterday, short\(day, w\.lang\)\) \}/);
+  assert.match(s, /if day == add\(today, 1\) \{ return \(w\.tomorrow, short\(day, w\.lang\)\) \}/);
+  assert.match(s, /return \(weekdayName\(day, w\.lang\), dayMonth\(day, w\.lang\)\)/);
+  assert.match(s, /formatter\("M月d日", \.zh\)\.string\(from: d\) : formatter\("d MMM"\)\.string\(from: d\)/);
+  assert.match(s, /Text\(pill\.word\)[^]*?Text\("· " \+ pill\.rest\)/);
+  assert.doesNotMatch(s, /pillWord/);
+});
+
+test('ring: both lines inside the inner circle at any count, the artifact\'s sizes as the most (owner: "7/5" overflowed)', () => {
+  const s = swift();
+  assert.match(s, /static let textWidth: CGFloat = 30/);
+  assert.match(s, /static let textHeight: CGFloat = 26/);
+  assert.match(s, /static let countSize: CGFloat = 15/);
+  assert.match(s, /static let captionSize: CGFloat = 8/);
+  assert.match(s, /\.font\(\.system\(size: Self\.countSize, weight: \.semibold\)\)\s*\.lineLimit\(1\)\.minimumScaleFactor\(Self\.minScale\)/);
+  assert.match(s, /\.font\(\.system\(size: Self\.captionSize, weight: \.medium\)\)\.foregroundColor\(Night\.soft\)\s*\.lineLimit\(1\)\.minimumScaleFactor\(Self\.minScale\)/);
+  assert.match(s, /\.frame\(width: Self\.textWidth, height: Self\.textHeight\)/);
+  assert.match(s, /min\(1, Double\(done \?\? 0\) \/ Double\(goal\)\)/, 'over the goal the ring stays full');
+});
+
+test('pill: always one line; the word never wraps or truncates, the date shrinks first', () => {
+  const s = swift();
+  assert.match(s, /Text\(pill\.word\)\.font\(\.system\(size: 14, weight: \.semibold\)\)\s*\.lineLimit\(1\)\.fixedSize\(horizontal: true, vertical: false\)\.layoutPriority\(2\)/);
+  assert.match(s, /Text\("· " \+ pill\.rest\)\.font\(\.system\(size: 14\)\)\.foregroundColor\(Night\.soft\)\s*\.lineLimit\(1\)\.minimumScaleFactor\(0\.7\)\.layoutPriority\(1\)/);
+});
+
+test('to-dos (M15, design B): five rows, Doing first, a pill on each, counts in the heading, All N in My calendar', () => {
+  const s = swift();
+  assert.match(s, /static let rows = 5/, 'the box never grows past five');
+  assert.doesNotMatch(s, /TodoFold|todosExpanded|showMore|showLess|listCeiling|ScrollView\(\.vertical\) \{ todoRows/, 'no fold, no expand, no inner scroll');
+  assert.match(s, /let open = todos\.filter \{ \$0\.state != "done" \}/, 'done rows leave the list');
+  assert.match(s, /case "todo": return "doing"\s*case "doing": return "done"\s*default: return "todo"/, 'To do → Doing → Done → To do');
+  assert.match(s, /case "doing": return lang == \.zh \? "进行中" : "Doing"\s*case "done": return lang == \.zh \? "已完成" : "Done"\s*default: return lang == \.zh \? "待做" : "To do"/, 'the catalog\'s statuses');
+  assert.match(s, /Text\(w\.todoCounts\(p\.openTodos, p\.doneToday \?\? 0\)\)/, '"N open · M done" in the heading');
+  assert.match(s, /textButton\(w\.addTodo, id: "add"\)[^]*?Spacer\(minLength: 0\)[^]*?textButton\(w\.allInCalendar\(p\.openTodos\), id: "all", colour: Night\.gold\) \{ actions\.open\(store\.link\("\/study\/calendar"\)\) \}/, 'Add left, All N right, one line');
+  assert.match(s, /Button\(action: \{ store\.cycle\(t\) \}\)/, 'the pill cycles');
+  assert.match(s, /Tickbox\(on: t\.state == "done", doing: t\.state == "doing"\)/, 'Doing: the blue ring');
+  assert.match(s, /static let doing = Color\(hex: 0x7AA7FF\)/);
+  assert.match(s, /handleWrite\(r, revert: before\)/, 'a refused write rolls back');
+  assert.match(s, /case \.ok\(_, let itemId\):[^]*?if let itemId \{ showAdded\(id: itemId, title: title\) \}/, 'an added to-do shows at once, with the id the server gave it (owner ruling)');
+  assert.match(s, /static let slide: Double = 0\.15/);
+  assert.match(s, /withAnimation\(\.easeInOut\(duration: TodoList\.slide\)\) \{ panel = p \}/, 'a row leaving slides');
+});
+
+test('eyes: the site\'s blink + gaze, only while the popover shows, never with Reduce Motion', () => {
+  const s = swift();
+  assert.match(s, /static let blinkPeriod: TimeInterval = 6\.5/);
+  assert.match(s, /static let gazePeriod: TimeInterval = 11/);
+  assert.match(s, /\(0\.34, 0\.1\)/);
+  assert.match(s, /\(0\.22, CGPoint\(x: 3\.2, y: -1\)\)/);
+  assert.match(s, /TimelineView\(\.animation\(minimumInterval: 1\.0 \/ 30, paused: !animating\)\)/, 'no timeline while not animating');
+  assert.match(s, /var eyesAnimating: Bool \{ panelVisible && !reduceMotion \}/);
+  assert.match(s, /HeddyEyes\(mood: store\.mood, animating: store\.eyesAnimating,/);
+  assert.match(s, /func popoverWillShow[^]*?store\.reduceMotion = NSWorkspace\.shared\.accessibilityDisplayShouldReduceMotion[^]*?store\.panelVisible = true/);
+  assert.match(s, /func popoverDidClose\(_ notification: Notification\) \{\s*store\.panelVisible = false/);
+  assert.match(s, /popover\.delegate = self/);
+  assert.match(s, /lookUp: eyesHover && !store\.reduceMotion/);
+});
+
+test('new to-do box: Esc and ✕ cancel, clicking away only closes an empty box, a failure shows in red', () => {
+  const s = swift();
+  assert.match(s, /\.onExitCommand \{ onExit\?\(\) \}/);
+  assert.match(s, /focus: \$addFocused, onExit: store\.cancelAdd\)/);
+  assert.match(s, /Button\(action: store\.cancelAdd\) \{\s*Icons\.close/);
+  assert.match(s, /\.onChange\(of: addFocused\) \{ _, focused in if !focused \{ store\.blurAdd\(\) \} \}/);
+  assert.match(s, /if let e = store\.addError \{\s*Text\(e\)\.font\(\.system\(size: 12\)\)\.foregroundColor\(Night\.test\)/);
+});
+
+test('the bottom-right button wears heddy.app\'s mascot (heddy-focus.svg on the SiteChrome tile); its menu is unchanged', () => {
+  const s = swift();
+  const bar = s.slice(s.indexOf('var shortcuts: some View'), s.indexOf('// MARK: - The welcome sheet'));
+  assert.match(bar, /Button\(action: actions\.gear\) \{\s*HeddyMascot\(size: Self\.mascotSize\)/);
+  assert.doesNotMatch(bar, /Icons\.gear/);
+  assert.match(bar, /\.buttonStyle\(NightButton\(shape: RoundedRectangle\(cornerRadius: 8\), hoverID: "gear"\)\)\s*\.help\(w\.heddyMenu\)\s*\.accessibilityLabel\(w\.heddyMenu\)/);
+  assert.match(s, /var heddyMenu: String \{ lang == \.zh \? "Heddy 菜单" : "Heddy menu" \}/);
+  // the tile, as SiteChrome.tsx draws it
+  assert.match(s, /RoundedRectangle\(cornerRadius: 10 \* k\)/);
+  assert.match(s, /Color\(hex: 0x1C3763\), location: 0\), \.init\(color: Color\(hex: 0x0B1120\), location: 0\.78\)/);
+  assert.match(s, /center: UnitPoint\(x: 0\.26, y: 0\.14\)/);
+  assert.match(s, /\.frame\(width: 31 \* k, height: 31 \* k\)\s*\.offset\(x: 2 \* k, y: \(34 - 31 \+ 2\) \* k\)/, 'owl 31 at left 2, bottom -2');
+  assert.match(s, /Circle\(\)\.fill\(Self\.amber\)\s*\.frame\(width: 6 \* k, height: 6 \* k\)/);
+  assert.match(s, /\.offset\(x: \(34 - 4 - 6\) \* k, y: 4 \* k\)/, 'the dot at top 4 / right 4');
+  assert.match(s, /\.clipShape\(RoundedRectangle\(cornerRadius: 10 \* k\)\)/);
+  // the owl, path for path (heddy-focus.svg)
+  for (const piece of [
+    /body\.move\(to: pt\(60, 18\)\); body\.addCurve\(to: pt\(96, 62\), control1: pt\(82, 18\), control2: pt\(96, 36\)\)/,
+    /wl\.move\(to: pt\(33, 54\)\); wl\.addCurve\(to: pt\(33, 99\), control1: pt\(21, 64\), control2: pt\(21, 88\)\)/,
+    /tuft\.move\(to: pt\(55\.5, 18\)\); tuft\.addQuadCurve\(to: pt\(64\.5, 18\), control: pt\(60, 8\.5\)\)/,
+    /face\.move\(to: pt\(60, 38\)\); face\.addQuadCurve\(to: pt\(37, 62\), control: pt\(39, 41\)\)/,
+    /beak\.move\(to: pt\(60, 67\)\); beak\.addLine\(to: pt\(54\.5, 72\)\)/,
+    /\(46\.0, 13\.5, 6\.7, 49\.5, 53\.2, 2\.4\), \(74, 11, 5\.6, 76\.8, 53\.8, 2\)/,
+    /static let star = Color\(hex: 0x238744\)/,
+    /static let wing = Color\(hex: 0xECEBE5\)/,
+  ]) assert.match(s, piece);
+  assert.doesNotMatch(s, /heddy-wing|heddy-pupil|heddy-body/, 'the SVG\'s animation classes are not carried over');
+});
+
+test('Mentor\'s composer: today before 21:00 in place of Tonight\'s line, flipping at 21:00 while open; Enter opens the room', () => {
+  const s = swift();
+  assert.match(s, /static let lineOpensHour = 21/);
+  assert.equal(s.match(/lineOpensHour = /g).length, 1, 'the hour is written in one place');
+  assert.match(s, /!isToday \|\| calendar\.component\(\.hour, from: now\) >= lineOpensHour/);
+  assert.match(s, /let opens = calendar\.date\(byAdding: \.hour, value: lineOpensHour, to: start\)!/);
+  assert.doesNotMatch(s, /18:00/, 'no stale 18:00 left in the comments');
+  assert.match(s, /TimelineView\(\.explicit\(MentorComposer\.flips\(after: Date\(\)\)\)\) \{ _ in\s*if MentorComposer\.showsLine\(isToday: p\.day == p\.today, now: previewNow \?\? Date\(\)\) \{\s*lineRow\(p\)\s*\} else \{\s*mentorRow\(p\)/);
+  assert.match(s, /eveningRow\(p\)\.padding\(\.top, 10\)/);
+  assert.doesNotMatch(s, /\n\s+lineRow\(p\)\.padding/, 'the line row is only reached through the switch');
+  assert.match(s, /var askMentorPlaceholder: String \{ lang == \.zh \? "问 Mentor，或加到日历" : "Ask Mentor, or add to your calendar" \}/);
+  // Enter: the link, then clear; empty does nothing
+  assert.match(s, /guard let url = MentorComposer\.askURL\(store\.askText, day: p\.today, base: store\.link\("\/study\/calendar"\)\) else \{ return \}\s*store\.askText = ""\s*actions\.open\(url\)/);
+  assert.match(s, /URLQueryItem\(name: "day", value: day\), URLQueryItem\(name: "ask", value: String\(t\.prefix\(askMax\)\)\)/);
+  assert.match(s, /replacingOccurrences\(of: "\+", with: "%2B"\)/);
+  // the row matches the line row: 44×40 crest box + 40-high box, the same fills and borders
+  assert.match(s, /MentorCrest\(\)\s*\.frame\(width: 26, height: 26\)\s*\.frame\(width: 44, height: 40\)\s*\.background\(RoundedRectangle\(cornerRadius: 10\)\.fill\(Night\.field\)\)/);
+  assert.match(s, /\.modifier\(FieldHover\(enabled: true, focused: askFocused, hoverID: "ask"\)\)/);
+  // the crest is the calendar's MentorMark
+  assert.match(s, /static let ring = Color\(hex: 0x2F8A53\)/);
+  assert.match(s, /for \(x, o\) in \[\(33\.0, 1\.0\), \(50, 0\.5\), \(67, 0\.25\)\]/);
+  assert.match(s, /ctx\.stroke\(disc, with: \.color\(Self\.ring\), lineWidth: 3\)/);
+});
+
+// M14 (owner, 11-16): the Dock window is "D1 · Hero only" — the learner home's hero, not the converter's
+// "Heddy's extension is currently on…" page. The words come from the feed (aitutors lib/learner/quest-hero.ts, the
+// builder /study renders); these pin what the window must keep doing.
+test('Dock window (M14): the hero in SwiftUI replaces the converter window; closing it still drops the Dock icon (M12)', () => {
+  const s = swift();
+  assert.doesNotMatch(s, /NSStoryboard\(name: "Main"/, 'the storyboard window is never made again');
+  assert.match(s, /for w in NSApp\.windows where w\.contentViewController is ViewController \{\s*w\.orderOut\(nil\)\s*w\.close\(\)\s*\}[^]*?addObserver\(self, selector: #selector\(anyWindowWillClose/, 'put away BEFORE the close observer exists');
+  assert.match(s, /NSHostingController\(rootView: DockView\(store: store, model: dock, actions: dockActions\(\)\)\)/);
+  assert.match(s, /win\.title = "Heddy"/);
+  assert.match(s, /win\.styleMask = \[\.titled, \.closable, \.miniaturizable, \.fullSizeContentView\]/, 'titled, so M12\'s close handler counts it');
+  assert.match(s, /if !others \{ NSApp\.setActivationPolicy\(\.accessory\) \}/);
+  assert.match(s, /static let dockWidth: CGFloat = 540/, 'the artifact\'s window, 542 less its border');
+});
+
+test('Dock window (M14): same client and token as the menu bar, hero=1 only from the window', () => {
+  const s = swift();
+  assert.match(s, /if hero \{ q\.append\(URLQueryItem\(name: "hero", value: "1"\)\) \}/);
+  assert.match(s, /await api\.panel\(token: t\.token, day: nil, lang: lang, hero: true\)/, 'the window: today, with the hero');
+  assert.match(s, /switch await api\.panel\(token: t\.token, day: viewDay, lang: lang\) \{/, 'the menu bar: no hero');
+  assert.equal(s.split('URLSession(configuration:').length - 1, 1, 'one client');
+  assert.match(s, /if self\.dockVisible \{ await self\.store\.refreshHero\(\) \} else \{ await self\.store\.refresh\(\) \}/, 'one request per tick');
+});
+
+test('Dock window (M14): every word of the hero is the feed\'s; links open their place in Safari, same-site only', () => {
+  const s = swift();
+  const view = s.slice(s.indexOf('struct DockView: View'), s.indexOf('// MARK: - The app'));
+  for (const field of ['h.dayLine', 'h.greeting.lead', 'h.sub', 'h.tiles', 'h.more', 'h.mentor.label', 'h.mentor.href', 'h.mentorAsk']) assert.ok(view.includes(field), field);
+  assert.doesNotMatch(view, /"(Quest|Prize|Start|more for tonight|Three things|Hi )/, 'no hero word is typed in the app');
+  assert.match(s, /urlForApplication\(withBundleIdentifier: "com\.apple\.Safari"\)/);
+  assert.match(s, /guard href\.hasPrefix\("\/"\), !href\.hasPrefix\("\/\/"\)/);
+  assert.match(view, /model\.moreOpen \{ moreList\(more\) \}/, '"N more for tonight" opens in the window');
+});
+
+test('Dock window (M14): the foot is the extension\'s one line; Safari Settings still works and Heddy stays running', () => {
+  const s = swift();
+  assert.match(s, /SFSafariExtensionManager\.getStateOfSafariExtension\(withIdentifier: extensionBundleIdentifier\)/);
+  assert.match(s, /SFSafariApplication\.showPreferencesForExtension\(withIdentifier: extensionBundleIdentifier\) \{ error in\s*if let error \{ NSLog/);
+  const foot = s.slice(s.indexOf('private var foot: some View'), s.indexOf('// MARK: - The app'));
+  assert.match(foot, /case \.off:[^]*?w\.turnOnInSafari/, 'off: the old "Turn on Heddy in Safari" button');
+  assert.match(foot, /w\.heddyOnInSafari/);
+  assert.match(foot, /w\.safariSettings/);
+  assert.doesNotMatch(foot, /terminate/, 'never quits like the converter did');
+});
+
+// Owner, 11-17 (the real window on their Mac): ONE bar, "Pi is in" with the professor's crest, the Prize's chest as
+// on /study. /study (aitutors QuestHome.tsx + app/study/quest-home.css) is the reference for the tiles and icons.
+test('Dock window polish: the bar is drawn INTO the title bar, not below it', () => {
+  const s = swift();
+  const view = s.slice(s.indexOf('struct DockView: View'), s.indexOf('// MARK: - The app'));
+  assert.match(view, /\.onGeometryChange\(for: CGFloat\.self, of: \{ \$0\.safeAreaInsets\.top \}\) \{ titleBarHeight = \$0 \}/, 'the bar is as tall as the real title bar');
+  assert.match(view, /if titleBarHeight > 0 \{ titleBar\(height: titleBarHeight\) \}[^]*?\.ignoresSafeArea\(\)/, 'drawn in the title bar\'s own space');
+  assert.doesNotMatch(view, /VStack\(spacing: 0\) \{\s*titleBar\b/, 'never a second bar stacked under the title bar');
+  assert.match(s, /DockWindow\.dress\(win, model: dock\)/);
+  assert.match(s, /win\.titlebarAppearsTransparent = true\s*win\.titleVisibility = \.hidden/);
+});
+
+test('Dock window polish: "Pi is in" carries the professor\'s crest, for every tutor the hero can name', () => {
+  const s = swift();
+  for (const [id, glyph, ini] of [['mentor', 'mentor', 'M'], ['pi', 'pi', 'π'], ['quill', 'quill', 'Q'], ['darwin', 'leaf', 'D'], ['curie', 'atom', 'C'], ['newton', 'apple', 'N'], ['harari', 'hourglass', 'H'], ['mercator', 'compass', 'Mr']]) {
+    assert.ok(s.includes(`"${id}": ("${glyph}", "${ini}")`), `${id} → ${glyph}/${ini} (lib/tutor/faculty.ts)`);
+    assert.ok(s.includes(`case "${glyph}":`), `the ${glyph} glyph is drawn`);
+  }
+  assert.match(s, /if let id = crestId \{ TutorCrest\(tutorId: id\)\.frame\(width: 34, height: 34\) \}/, '34 px inside a tile (.qh-q .qh-crest)');
+  assert.doesNotMatch(s, /Text\("● " \+ i\)/, 'no plain dot in place of the crest');
+});
+
+test('Dock window polish: the Prize\'s chest is /study\'s .qh-chest', () => {
+  const s = swift();
+  const chest = s.slice(s.indexOf('struct DockChest: View'), s.indexOf('struct TutorCrest: View'));
+  assert.match(chest, /UnevenRoundedRectangle\(topLeadingRadius: 8, bottomLeadingRadius: 6, bottomTrailingRadius: 6, topTrailingRadius: 8\)/);
+  assert.match(chest, /\.frame\(width: 44, height: 36\)/);
+  assert.match(chest, /Self\.lid, location: 0\.42\),\s*\.init\(color: Self\.band, location: 0\.42\), \.init\(color: Self\.band, location: 0\.5\)/, 'the band across the lid, 42–50 %');
+  assert.match(chest, /static let lid = Study\.gold/);
+  assert.match(s, /static let gold = Color\(hex: 0xD3A84C\)/, '--q-gold');
+  assert.match(chest, /RoundedRectangle\(cornerRadius: 3\)\.fill\(Self\.keyhole\)\.frame\(width: 9, height: 11\)\.offset\(y: 36 \* 0\.36\)/);
+  assert.match(chest, /static let glow = Color\(hex: 0xE9C46A/);
 });
