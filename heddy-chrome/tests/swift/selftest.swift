@@ -257,6 +257,36 @@ struct SelfTest {
         let long = MentorComposer.askURL(String(repeating: "x", count: 900), day: "2026-11-16", base: base)!
         check(long.absoluteString.components(separatedBy: "ask=")[1].count == MentorComposer.askMax, "capped at 500, like the page")
 
+
+        // ── M14: the Dock window's hero, from the SAME client and token, asked for with hero=1
+        let heroJSON = #"{"state":"day","dayLine":"Monday · week 47","greeting":{"lead":"Hi Maya.","text":"Three things tonight."},"sub":"Short and light this week.","tiles":[{"slot":1,"tone":"on","kind":"cards","label":"Quest 1","count":"50","unit":"cards","kick":null,"title":null,"meta":"due tonight · about 38 min","verb":"Start →","inLine":null,"tutorId":null,"icon":null,"iconWord":null,"href":"/study/cards/review"},{"slot":2,"tone":"plain","kind":"topic","label":"Quest 2","count":null,"unit":null,"kick":null,"title":"A topic with Professor Pi","meta":"Fractions of amounts","verb":null,"inLine":"Pi is in","tutorId":"pi","icon":null,"iconWord":null,"href":"/study/tutor?room=pi&atlas=a"}],"more":{"count":1,"pre":"","post":"more for tonight","label":"1 more thing for tonight","rows":[{"kind":"Clip","title":"Fractions","sub":"3:10 · on your goal","verb":"Watch →","href":"/study/clips/a"}]},"mentor":{"label":"Start a session with Mentor →","href":"/study/tutor?room=mentor"},"mentorAsk":"Not sure?","allowance":null,"askMore":null}"#
+        let withHero = panelJSON(today: "2026-11-15", day: "2026-11-15").replacingOccurrences(of: #""line":{"state":"open","mood":null}}"#, with: #""line":{"state":"open","mood":null},"hero":\#(heroJSON)}"#)
+        check(panel(panelJSON(today: "2026-11-15", day: "2026-11-15")).hero == nil, "a panel without hero (the menu bar's) still decodes, hero nil")
+        let hp = panel(withHero)
+        check(hp.hero?.tiles.count == 2 && hp.hero?.tiles[1].inLine == "Pi is in" && hp.hero?.more?.rows.first?.verb == "Watch →", "the hero decodes as lib/heddy-mac/panel-view.ts MacHero")
+        let hs = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15")), heroRead: .loading)
+        hs.api = api
+        respond(200, #"{"type":"ok","panel":\#(withHero)}"#)
+        await hs.refreshHero()
+        check(Stub.last?.url.contains("/api/heddy/mac/panel?") == true && Stub.last?.url.contains("hero=1") == true, "the window asks the panel route with hero=1: \(Stub.last?.url ?? "-")")
+        check(Stub.last?.headers["Authorization"] == "Bearer fixture", "with the menu bar's own token")
+        check(hs.hero?.greeting.text == "Three things tonight." && hs.heroRead == .ok, "the hero lands in the store")
+        respond(200, #"{"type":"ok","panel":\#(panelJSON(today: "2026-11-15", day: "2026-11-15"))}"#)
+        await hs.refresh()
+        check(Stub.last?.url.contains("hero=") == false, "the menu bar's refresh never asks for the hero")
+        check(hs.hero?.greeting.text == "Three things tonight.", "and does not wipe the window's hero")
+        respond(200, #"{"type":"ok","panel":\#(panelJSON(today: "2026-11-15", day: "2026-11-15").replacingOccurrences(of: #""line":{"state":"open","mood":null}}"#, with: #""line":{"state":"open","mood":null},"hero":null}"#))}"#)
+        await hs.refreshHero()
+        check(hs.heroRead == .unreadable && hs.hero != nil, "hero null (unreadable): keep what is shown, say why")
+        respond(503, #"{"type":"read-failed"}"#)
+        await hs.refreshHero()
+        check(hs.heroRead == .offline && hs.hero != nil, "503: offline, last hero kept")
+        respond(401, #"{"type":"unauthenticated"}"#)
+        await hs.refreshHero()
+        check(hs.hero == nil && !hs.connected, "401: signed out, the hero goes with the token")
+        check(api.site("/zh/study/tutor?room=pi&atlas=a")?.absoluteString == "https://aitutors.me/zh/study/tutor?room=pi&atlas=a", "a hero link keeps its query string")
+        check(api.site("https://evil.example/x") == nil && api.site("//evil.example/x") == nil && api.site("study") == nil, "only same-site paths open")
+
         print(failures == 0 ? "SELFTEST OK" : "SELFTEST FAILED \(failures)")
         exit(failures == 0 ? 0 : 1)
     }

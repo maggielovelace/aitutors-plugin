@@ -318,3 +318,47 @@ test('Mentor\'s composer: today before 21:00 in place of Tonight\'s line, flippi
   assert.match(s, /for \(x, o\) in \[\(33\.0, 1\.0\), \(50, 0\.5\), \(67, 0\.25\)\]/);
   assert.match(s, /ctx\.stroke\(disc, with: \.color\(Self\.ring\), lineWidth: 3\)/);
 });
+
+// M14 (owner, 11-16): the Dock window is "D1 · Hero only" — the learner home's hero, not the converter's
+// "Heddy's extension is currently on…" page. The words come from the feed (aitutors lib/learner/quest-hero.ts, the
+// builder /study renders); these pin what the window must keep doing.
+test('Dock window (M14): the hero in SwiftUI replaces the converter window; closing it still drops the Dock icon (M12)', () => {
+  const s = swift();
+  assert.doesNotMatch(s, /NSStoryboard\(name: "Main"/, 'the storyboard window is never made again');
+  assert.match(s, /for w in NSApp\.windows where w\.contentViewController is ViewController \{\s*w\.orderOut\(nil\)\s*w\.close\(\)\s*\}[^]*?addObserver\(self, selector: #selector\(anyWindowWillClose/, 'put away BEFORE the close observer exists');
+  assert.match(s, /NSHostingController\(rootView: DockView\(store: store, model: dock, actions: dockActions\(\)\)\)/);
+  assert.match(s, /win\.title = "Heddy"/);
+  assert.match(s, /win\.styleMask = \[\.titled, \.closable, \.miniaturizable, \.fullSizeContentView\]/, 'titled, so M12\'s close handler counts it');
+  assert.match(s, /if !others \{ NSApp\.setActivationPolicy\(\.accessory\) \}/);
+  assert.match(s, /static let dockWidth: CGFloat = 540/, 'the artifact\'s window, 542 less its border');
+});
+
+test('Dock window (M14): same client and token as the menu bar, hero=1 only from the window', () => {
+  const s = swift();
+  assert.match(s, /if hero \{ q\.append\(URLQueryItem\(name: "hero", value: "1"\)\) \}/);
+  assert.match(s, /await api\.panel\(token: t\.token, day: nil, lang: lang, hero: true\)/, 'the window: today, with the hero');
+  assert.match(s, /switch await api\.panel\(token: t\.token, day: viewDay, lang: lang\) \{/, 'the menu bar: no hero');
+  assert.equal(s.split('URLSession(configuration:').length - 1, 1, 'one client');
+  assert.match(s, /if self\.dockVisible \{ await self\.store\.refreshHero\(\) \} else \{ await self\.store\.refresh\(\) \}/, 'one request per tick');
+});
+
+test('Dock window (M14): every word of the hero is the feed\'s; links open their place in Safari, same-site only', () => {
+  const s = swift();
+  const view = s.slice(s.indexOf('struct DockView: View'), s.indexOf('// MARK: - The app'));
+  for (const field of ['h.dayLine', 'h.greeting.lead', 'h.sub', 'h.tiles', 'h.more', 'h.mentor.label', 'h.mentor.href', 'h.mentorAsk']) assert.ok(view.includes(field), field);
+  assert.doesNotMatch(view, /"(Quest|Prize|Start|more for tonight|Three things|Hi )/, 'no hero word is typed in the app');
+  assert.match(s, /urlForApplication\(withBundleIdentifier: "com\.apple\.Safari"\)/);
+  assert.match(s, /guard href\.hasPrefix\("\/"\), !href\.hasPrefix\("\/\/"\)/);
+  assert.match(view, /model\.moreOpen \{ moreList\(more\) \}/, '"N more for tonight" opens in the window');
+});
+
+test('Dock window (M14): the foot is the extension\'s one line; Safari Settings still works and Heddy stays running', () => {
+  const s = swift();
+  assert.match(s, /SFSafariExtensionManager\.getStateOfSafariExtension\(withIdentifier: extensionBundleIdentifier\)/);
+  assert.match(s, /SFSafariApplication\.showPreferencesForExtension\(withIdentifier: extensionBundleIdentifier\) \{ error in\s*if let error \{ NSLog/);
+  const foot = s.slice(s.indexOf('private var foot: some View'), s.indexOf('// MARK: - The app'));
+  assert.match(foot, /case \.off:[^]*?w\.turnOnInSafari/, 'off: the old "Turn on Heddy in Safari" button');
+  assert.match(foot, /w\.heddyOnInSafari/);
+  assert.match(foot, /w\.safariSettings/);
+  assert.doesNotMatch(foot, /terminate/, 'never quits like the converter did');
+});

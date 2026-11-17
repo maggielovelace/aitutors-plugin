@@ -2,8 +2,8 @@
 //  AppDelegate.swift — Heddy for Safari, macOS app 1.1: Heddy in the Mac menu bar (aitutors.me PRD-v0.145.0, S2).
 //
 //  scripts/package-safari-app.sh copies this file over the converter's "macOS (App)/AppDelegate.swift", so it is the
-//  ONE checked-in source of the Mac app's own behaviour (no Xcode project edits). The converter's window ("Turn on
-//  Heddy in Safari", Shared (App)/ViewController.swift) is kept as it is.
+//  ONE checked-in source of the Mac app's own behaviour (no Xcode project edits). The converter's Shared (App)/
+//  ViewController.swift is still compiled, but its storyboard window is put away at launch: M14's Dock window replaces it.
 //
 //  What it does (owner rulings M1–M12):
 //    * M1   an owl in the menu bar (NSStatusItem); the number beside it is her open to-dos.
@@ -13,6 +13,9 @@
 //    * M11  first launch: a welcome sheet with "Open Heddy when I log in" ticked (SMAppService.mainApp) and Start.
 //    * M12  Dock icon and menu bar both; closing the last window drops the Dock icon (activation policy .accessory)
 //           and the menu bar keeps running; opening a window from the gear brings the Dock icon back (.regular).
+//    * M14  "D1 · Hero only": the Dock window is the learner home's hero — tonight, as the child sees it on /study
+//           (the feed's `hero`, asked for with hero=1), with "Heddy is on in Safari · Safari Settings…" at its foot.
+//           It replaces the converter's "Heddy's extension is currently on…" window.
 //
 //  Signing in: ASWebAuthenticationSession opens aitutors.me/heddy-chrome/mac-connect with a random `state` and a PKCE
 //  challenge (RFC 7636 S256). The site hands a two-minute code back on heddy-mac://connected, and the app swaps
@@ -40,6 +43,11 @@ enum HeddyMac {
     static let keychainAccount = "mac-token"
     static let welcomeShownKey = "heddyMac.welcomeShown.v1"
     static let lastPanelKey = "heddyMac.lastPanel.v1"
+    /// The Dock window's last hero (M14): shown again only on the UK day it was built for.
+    static let lastHeroKey = "heddyMac.lastHero.v1"
+    /// The Dock window's content width: the D1 artifact's window as drawn (its 1.25fr column inside the 1040 page),
+    /// 542 px less its 1 px border on each side.
+    static let dockWidth: CGFloat = 540
 }
 
 // MARK: - The panel feed (GET /api/heddy/mac/panel, lib/heddy-mac/panel-view.ts `MacPanel`, v1)
@@ -85,6 +93,63 @@ struct MacPanel: Codable, Equatable {
         /// sleepy | wobbly | calm | bright
         var mood: String?
     }
+    /// The Dock window's hero (M14; lib/heddy-mac/panel-view.ts `MacHero`): the /study hero's own words, built by the
+    /// site's one hero builder. Every href is a locale-prefixed path on aitutors.me.
+    struct Hero: Codable, Equatable {
+        struct Greeting: Codable, Equatable {
+            let lead: String?
+            let text: String
+        }
+        struct Tile: Codable, Equatable {
+            /// 1 and 2 are the quests, 3 the Prize.
+            let slot: Int
+            /// on (the light tile with the filled button) | plain | done (ticked)
+            let tone: String
+            let kind: String?
+            let label: String
+            let count: String?
+            let unit: String?
+            let kick: String?
+            let title: String?
+            let meta: String?
+            let verb: String?
+            let inLine: String?
+            let tutorId: String?
+            /// flashcards | exams | jotters | clip | nbk | chest
+            let icon: String?
+            let iconWord: String?
+            let href: String?
+        }
+        struct Row: Codable, Equatable {
+            let kind: String
+            let title: String
+            let sub: String
+            let verb: String
+            let href: String
+        }
+        struct More: Codable, Equatable {
+            let count: Int
+            let pre: String
+            let post: String
+            let label: String
+            let rows: [Row]
+        }
+        struct Link: Codable, Equatable {
+            let label: String
+            let href: String
+        }
+        /// first | day | done | new
+        let state: String
+        let dayLine: String?
+        let greeting: Greeting
+        let sub: String?
+        let tiles: [Tile]
+        let more: More?
+        let mentor: Link
+        let mentorAsk: String
+        let allowance: String?
+        let askMore: Link?
+    }
 
     let v: Int
     let builtAt: String
@@ -102,6 +167,8 @@ struct MacPanel: Codable, Equatable {
     /// nil when unread: no badge, never a false 0.
     let cardsDue: Int?
     var line: Line
+    /// Only when asked for (hero=1, the Dock window); nil from the menu bar's own refresh, and when unreadable.
+    var hero: Hero?
 }
 
 private struct PanelEnvelope: Decodable {
@@ -282,6 +349,13 @@ struct Words {
     }
     var start: String { lang == .zh ? "开始" : "Start" }
     var dayLetters: [String] { lang == .zh ? ["一", "二", "三", "四", "五", "六", "日"] : ["M", "T", "W", "T", "F", "S", "S"] }
+    // the Dock window (M14). Its hero's words come from the feed; these are only the window's own.
+    var heddyOnInSafari: String { lang == .zh ? "Heddy 已在 Safari 中开启" : "Heddy is on in Safari" }
+    var heddyForSafari: String { lang == .zh ? "Safari 版 Heddy" : "Heddy for Safari" }
+    var safariSettings: String { lang == .zh ? "Safari 设置…" : "Safari Settings…" }
+    var heroUnavailable: String { lang == .zh ? "现在打不开今晚的安排，Heddy 稍后会再试。" : "Can't open tonight just now. Heddy will try again." }
+    var openHome: String { lang == .zh ? "打开我的主页 →" : "Open my home →" }
+    var loading: String { lang == .zh ? "正在打开今晚……" : "Opening tonight…" }
 }
 
 extension Lang {
@@ -372,6 +446,14 @@ struct HeddyAPI {
         return URLSession(configuration: c)
     }()
 
+    /// A path the feed handed over (the hero's links, already /zh-prefixed, with their query strings), on aitutors.me.
+    /// Anything that is not a same-site path ("https://…", "//host") is refused: nil.
+    func site(_ href: String) -> URL? {
+        guard href.hasPrefix("/"), !href.hasPrefix("//"), let u = URL(string: href, relativeTo: origin)?.absoluteURL,
+              u.host == origin.host, u.scheme == origin.scheme else { return nil }
+        return u
+    }
+
     func url(_ path: String, _ query: [URLQueryItem] = []) -> URL {
         var c = URLComponents(url: origin.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty { c.queryItems = query }
@@ -390,9 +472,11 @@ struct HeddyAPI {
         return r
     }
 
-    func panel(token: String, day: String?, lang: Lang) async -> Fetch<MacPanel> {
+    func panel(token: String, day: String?, lang: Lang, hero: Bool = false) async -> Fetch<MacPanel> {
         var q = [URLQueryItem(name: "lang", value: lang.rawValue)]
         if let day { q.append(URLQueryItem(name: "day", value: day)) }
+        // M14: the Dock window also wants the learner home's hero. The menu bar's refresh never asks (it is cheaper).
+        if hero { q.append(URLQueryItem(name: "hero", value: "1")) }
         guard let (data, res) = try? await session.data(for: request(url("/api/heddy/mac/panel", q), token: token)),
               let http = res as? HTTPURLResponse else { return .unavailable }
         if http.statusCode == 401 { return .signedOut }
@@ -445,6 +529,12 @@ struct HeddyAPI {
 
 // MARK: - The panel's state
 
+/// How the Dock window's last hero read went. loading = none has finished yet.
+enum HeroRead: Equatable { case loading, ok, unreadable, offline }
+
+/// The hero kept between launches, with the UK day it was built for.
+struct SavedHero: Codable { let day: String; let hero: MacPanel.Hero }
+
 @MainActor
 final class PanelStore: ObservableObject {
     @Published private(set) var panel: MacPanel?
@@ -473,11 +563,15 @@ final class PanelStore: ObservableObject {
     @Published private(set) var blinkAt: Date?
     /// The visible screen's height (the to-do list no longer expands, M15; kept for the popover).
     @Published var screenHeight: CGFloat = NSScreen.main?.visibleFrame.height ?? 800
+    /// The Dock window's hero (M14), from the same feed with hero=1, and how its last read went.
+    @Published private(set) var hero: MacPanel.Hero?
+    @Published private(set) var heroRead: HeroRead = .loading
 
     private(set) var lang = Lang.system
     var words: Words { Words(lang: lang) }
     var api = HeddyAPI()
     private var refreshing = false
+    private var heroRefreshing = false
 
     var connected: Bool { token?.isLive == true }
     var openTodos: Int { connected ? (panel?.openTodos ?? 0) : 0 }
@@ -491,16 +585,23 @@ final class PanelStore: ObservableObject {
                 panel = saved
                 mood = saved.line.mood
             }
+            // Tonight's hero from earlier today, until the window's first read lands (never yesterday's "tonight").
+            if let data = UserDefaults.standard.data(forKey: HeddyMac.lastHeroKey),
+               let saved = try? JSONDecoder().decode(SavedHero.self, from: data), saved.day == UKDay.string(Date()) {
+                hero = saved.hero
+            }
         } else if TokenStore.load() != nil {
             TokenStore.clear()
         }
     }
 
     /// For previews and the render check: a panel without the network.
-    init(fixture: MacPanel, connected: Bool = true) {
+    init(fixture: MacPanel, connected: Bool = true, heroRead: HeroRead = .ok) {
         lang = Lang(rawValue: fixture.lang) ?? .system
         panel = fixture
         mood = fixture.line.mood
+        hero = fixture.hero
+        self.heroRead = heroRead
         if connected { token = MacToken(token: "fixture", expiresAt: Date().addingTimeInterval(86_400)) }
     }
 
@@ -529,6 +630,42 @@ final class PanelStore: ObservableObject {
             signOut()
         case .unavailable:
             reachable = false
+        }
+    }
+
+    // MARK: the Dock window's hero (M14)
+
+    /// The same client, the same token and the same feed as the menu bar, asked for today with hero=1. Today's panel
+    /// rides along, so the menu bar is refreshed too when it is showing today.
+    func refreshHero() async {
+        guard let t = token else { return }
+        guard t.isLive else { signOut(); return }
+        if heroRefreshing { return }
+        heroRefreshing = true
+        defer { heroRefreshing = false }
+        switch await api.panel(token: t.token, day: nil, lang: lang, hero: true) {
+        case .ok(let p):
+            reachable = true
+            if let h = p.hero {
+                hero = h
+                heroRead = .ok
+                if let data = try? JSONEncoder().encode(SavedHero(day: p.today, hero: h)) {
+                    UserDefaults.standard.set(data, forKey: HeddyMac.lastHeroKey)
+                }
+            } else {
+                // The site could not read the learner home this time: keep what is shown, and say so if nothing is.
+                heroRead = .unreadable
+            }
+            if viewDay == nil {
+                let lineChanged = panel?.line != p.line || panel?.day != p.day
+                panel = p
+                if lineChanged || mood == nil { mood = p.line.mood }
+            }
+        case .signedOut:
+            signOut()
+        case .unavailable:
+            reachable = false
+            heroRead = .offline
         }
     }
 
@@ -748,8 +885,11 @@ final class PanelStore: ObservableObject {
     func signOut() {
         TokenStore.clear()
         UserDefaults.standard.removeObject(forKey: HeddyMac.lastPanelKey)
+        UserDefaults.standard.removeObject(forKey: HeddyMac.lastHeroKey)
         token = nil
         panel = nil
+        hero = nil
+        heroRead = .loading
         viewDay = nil
         mood = nil
         notice = nil
@@ -2019,6 +2159,421 @@ struct WelcomeView: View {
     }
 }
 
+// MARK: - The Dock window (M14, "D1 · Hero only": tonight, as on the learner home)
+//
+// The learner home's hero, drawn natively: the day line, the greeting, the subline, Quest 1, Quest 2 and the Prize,
+// "N more for tonight" (opening its list in the window), Mentor's pill, and the extension's one line at the foot.
+// Every word arrives in the feed (`MacPanel.Hero`), built on the site by the SAME builder /study renders, so the
+// window cannot say anything the child's home does not. Sizes and colours are the D1 artifact's, literally.
+
+enum Dock {
+    // The artifact's colours (.hw, .qq, .qq.w, .go, .pill, .foot).
+    static let top = Color(hex: 0x071634)
+    static let bottom = Color(hex: 0x1A2A6C)
+    static let bar = Color(hex: 0x0B1A3A)
+    static let cream = Color(hex: 0xF2EAD8)
+    static let soft = Color(hex: 0xB9C3D8)
+    static let gold = Color(hex: 0xD9B862)
+    static let paper = Color(hex: 0xFDFCF8)
+    static let paperSoft = Color(hex: 0x4B5B73)
+    static let ink = Color(hex: 0x0B1A3A)
+    static let go = Color(hex: 0x3D8A47)
+    static let chest = Color(hex: 0xC9A24A)
+    static let keyhole = Color(hex: 0x1E1E1E)
+    static let on = Color(hex: 0x30D158)
+    static let link = Color(hex: 0x7AA7FF)
+    static let hair = cream.opacity(0.12)
+}
+
+/// The artifact's serif is Source Serif 4. The app has no fonts of its own, but its Safari extension ships the very
+/// file (fonts/source-serif-4-latin.woff2); it is registered for this process once. Without it: the system serif.
+enum DockFonts {
+    private(set) static var serifReady = false
+    static func registerBundled() {
+        guard !serifReady else { return }
+        let plugins = (try? FileManager.default.contentsOfDirectory(at: Bundle.main.builtInPlugInsURL ?? Bundle.main.bundleURL, includingPropertiesForKeys: nil)) ?? []
+        for appex in plugins where appex.pathExtension == "appex" {
+            let url = appex.appendingPathComponent("Contents/Resources/fonts/source-serif-4-latin.woff2")
+            if FileManager.default.fileExists(atPath: url.path) { register(url); return }
+        }
+    }
+    static func register(_ url: URL) {
+        var err: Unmanaged<CFError>?
+        _ = CTFontManagerRegisterFontsForURL(url as CFURL, .process, &err) // "already registered" is fine
+        serifReady = (CTFontManagerCopyAvailableFontFamilyNames() as? [String] ?? []).contains("Source Serif 4")
+    }
+    /// The artifact's 600. The file is a variable font (wght 200–900) that SwiftUI's .weight() leaves at 400, so the
+    /// axis is set on the descriptor itself.
+    static func serif(_ size: CGFloat) -> Font {
+        guard serifReady, let base = NSFont(name: "SourceSerif4-Regular", size: size) else {
+            return .system(size: size, weight: .semibold, design: .serif)
+        }
+        let wght = NSNumber(value: 0x7767_6874) // 'wght'
+        let desc = base.fontDescriptor.addingAttributes([NSFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String): [wght: 600]])
+        return Font(NSFont(descriptor: desc, size: size) ?? base)
+    }
+    /// The artifact's Geist Mono labels (letter-spaced 0.16em, capitals).
+    static func mono(_ size: CGFloat) -> Font { .system(size: size, weight: .medium, design: .monospaced) }
+}
+
+/// Whether Heddy's Safari extension is on (SFSafariExtensionManager). unknown = not read, or the read failed.
+enum SafariState: Equatable { case unknown, on, off }
+
+@MainActor
+final class DockModel: ObservableObject {
+    @Published var safari: SafariState = .unknown
+    /// "N more for tonight" opened in the window.
+    @Published var moreOpen = false
+    init(safari: SafariState = .unknown, moreOpen: Bool = false) {
+        self.safari = safari
+        self.moreOpen = moreOpen
+    }
+}
+
+struct DockActions {
+    /// A hero link (a path on aitutors.me): opened in Safari.
+    var open: (String) -> Void = { _ in }
+    var connect: () -> Void = {}
+    var safariSettings: () -> Void = {}
+}
+
+/// The artifact's owl mark (the `#owl` symbol, 48 units): a navy tile, cream ears, eyes and beak.
+struct DockOwl: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let s = size.width / 48
+            ctx.scaleBy(x: s, y: s)
+            ctx.fill(Path(roundedRect: CGRect(x: 0, y: 0, width: 48, height: 48), cornerRadius: 11), with: .color(Dock.ink))
+            var ears = Path()
+            Icons.poly(&ears, [(10, 13), (15, 8), (18, 13)])
+            Icons.poly(&ears, [(38, 13), (33, 8), (30, 13)])
+            ctx.stroke(ears, with: .color(Dock.cream), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
+            for (x, y, r, pupil) in [(17.0, 23.0, 8.6, 3.8), (32, 23.5, 7.2, 3.2)] {
+                ctx.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r)), with: .color(Dock.cream))
+                ctx.fill(Path(ellipseIn: CGRect(x: x - pupil, y: y - pupil, width: 2 * pupil, height: 2 * pupil)), with: .color(Dock.ink))
+            }
+            var beak = Path()
+            Icons.poly(&beak, [(24.5, 31), (21.2, 34.4), (24.5, 38), (27.8, 34.4)], close: true)
+            ctx.fill(beak, with: .color(Dock.cream))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// The Prize's chest: 44 × 30, radius 7, with its keyhole.
+struct DockChest: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 7).fill(Dock.chest)
+            .frame(width: 44, height: 30)
+            .overlay(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 2).fill(Dock.keyhole).frame(width: 8, height: 10).offset(x: 18, y: 10)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+struct DockTile: View {
+    let tile: MacPanel.Hero.Tile
+    let lang: Lang
+    var open: (String) -> Void = { _ in }
+    private var light: Bool { tile.tone == "on" }
+    private var done: Bool { tile.tone == "done" }
+    private var inkColor: Color { light ? Dock.ink : .white }
+    private var softColor: Color { light ? Dock.paperSoft : Dock.soft }
+
+    var body: some View {
+        if let href = tile.href {
+            Button(action: { open(href) }) { card }
+                .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 14), amount: light ? 0.0 : Lift.hover, hoverID: "tile:\(tile.slot)"))
+                .help(tile.title ?? tile.label)
+        } else {
+            card
+        }
+    }
+
+    private var card: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(caps(tile.label)).font(DockFonts.mono(10)).tracking(1.6).foregroundColor(softColor)
+            // .n: 34 px at line-height 1, so the number sits close on "cards".
+            if let n = tile.count { Text(n).font(DockFonts.serif(34)).foregroundColor(inkColor).lineLimit(1).minimumScaleFactor(0.6).frame(height: 34) }
+            if let u = tile.unit { Text(u).font(DockFonts.serif(16)).foregroundColor(inkColor) }
+            if let k = tile.kick { Text(k).font(.system(size: 12)).foregroundColor(softColor) }
+            if let t = tile.title {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if done {
+                        Text("✓").font(.system(size: 11, weight: .bold)).foregroundColor(.white)
+                            .frame(width: 18, height: 18).background(Circle().fill(Dock.go))
+                    }
+                    Text(t).font(DockFonts.serif(16)).foregroundColor(inkColor).lineSpacing(1).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if let m = tile.meta { Text(m).font(.system(size: 12)).foregroundColor(softColor).fixedSize(horizontal: false, vertical: true) }
+            Spacer(minLength: 0)
+            foot
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(light ? Dock.paper : done ? Color.white.opacity(0.12) : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(light ? Color.clear : Dock.cream.opacity(0.2), lineWidth: 1))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    @ViewBuilder private var foot: some View {
+        if light, let v = tile.verb {
+            // .go: the filled green button, margin-top auto.
+            Text(v).font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
+                .frame(maxWidth: .infinity).padding(7)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Dock.go))
+        } else if let i = tile.inLine {
+            Text("● " + i).font(.system(size: 12, weight: .semibold)).foregroundColor(light ? Dock.ink : .white)
+        } else if tile.icon == "chest" {
+            DockChest()
+        } else if let icon = tile.icon, let shape = Self.icon(icon) {
+            HStack(spacing: 6) {
+                shape.line(1.8, size: 16).frame(width: 16, height: 16)
+                if let w = tile.iconWord, !w.isEmpty { Text(w).font(.system(size: 12)) }
+            }
+            .foregroundColor(softColor)
+        } else if let w = tile.iconWord, !w.isEmpty {
+            Text(w).font(.system(size: 12)).foregroundColor(softColor)
+        }
+    }
+
+    static func icon(_ name: String) -> Icon24? {
+        switch name {
+        case "flashcards": return Icons.cards
+        case "exams": return Icons.exams
+        case "jotters", "nbk": return Icons.jotters
+        case "clip": return Icons.clips
+        default: return nil
+        }
+    }
+
+    private func caps(_ s: String) -> String { lang == .zh ? s : s.uppercased(with: Locale(identifier: "en_GB")) }
+}
+
+struct DockView: View {
+    @ObservedObject var store: PanelStore
+    @ObservedObject var model: DockModel
+    var actions = DockActions()
+    private var w: Words { store.words }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            titleBar
+            VStack(alignment: .leading, spacing: 18) {
+                if !store.connected {
+                    signedOut
+                } else if let h = store.hero {
+                    hero(h)
+                    if store.heroRead == .offline { note(w.offline) }
+                } else if store.heroRead == .loading {
+                    loading
+                } else {
+                    unavailable
+                }
+            }
+            .padding(22)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            foot
+        }
+        .frame(width: HeddyMac.dockWidth)
+        .background(LinearGradient(colors: [Dock.top, Dock.bottom], startPoint: .topLeading, endPoint: .bottomTrailing))
+        .foregroundColor(Dock.cream)
+        .environment(\.colorScheme, .dark)
+        .animation(.easeInOut(duration: 0.2), value: model.moreOpen)
+    }
+
+    /// The artifact's bar: navy, "Heddy" beside the window's own three buttons (drawn by macOS, not here).
+    private var titleBar: some View {
+        HStack {
+            Text("Heddy").font(.system(size: 13, weight: .semibold)).foregroundColor(Dock.soft).padding(.leading, 84)
+            Spacer()
+        }
+        .frame(height: 28)
+        .background(Dock.bar)
+        .overlay(alignment: .bottom) { Rectangle().fill(Dock.hair).frame(height: 1) }
+        .accessibilityHidden(true)
+    }
+
+    // ── the hero
+    @ViewBuilder private func hero(_ h: MacPanel.Hero) -> some View {
+        HStack(alignment: .center, spacing: 18) {
+            DockOwl().frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 4) {
+                if let d = h.dayLine {
+                    Text(store.lang == .zh ? d : d.uppercased(with: Locale(identifier: "en_GB")))
+                        .font(DockFonts.mono(11)).tracking(1.76).foregroundColor(Dock.gold)
+                }
+                greeting([h.greeting.lead, h.greeting.text].compactMap { $0 }.joined(separator: " "))
+                if let s = h.sub { Text(s).font(.system(size: 13)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true) }
+            }
+        }
+        HStack(alignment: .top, spacing: 10) {
+            ForEach(Array(h.tiles.enumerated()), id: \.offset) { _, t in
+                DockTile(tile: t, lang: store.lang, open: actions.open)
+            }
+            // Fewer than three tiles keep their thirds.
+            ForEach(0..<max(0, 3 - h.tiles.count), id: \.self) { _ in Color.clear.frame(maxWidth: .infinity) }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        if let more = h.more, model.moreOpen { moreList(more) }
+        pills(h)
+    }
+
+    /// The greeting at the artifact's 30 on one line. The app's Source Serif 4 has no optical-size axis, so at 30 it
+    /// sets a few points wider than the artifact's (which Chromium draws at opsz 30); it steps down to 27 at most to
+    /// stay on one line as drawn, and wraps at 30 only when even 27 cannot (a long name, say).
+    private func greeting(_ s: String) -> some View {
+        ViewThatFits(in: .horizontal) {
+            ForEach([30, 29, 28, 27] as [CGFloat], id: \.self) { size in
+                Text(s).font(DockFonts.serif(size)).lineLimit(1).fixedSize()
+            }
+            Text(s).font(DockFonts.serif(30)).fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundColor(.white)
+    }
+
+    private func moreList(_ more: MacPanel.Hero.More) -> some View {
+        VStack(spacing: 8) {
+            ForEach(Array(more.rows.enumerated()), id: \.offset) { i, r in
+                Button(action: { actions.open(r.href) }) {
+                    HStack(spacing: 12) {
+                        Text(store.lang == .zh ? r.kind : r.kind.uppercased(with: Locale(identifier: "en_GB")))
+                            .font(store.lang == .zh ? .system(size: 10.5, weight: .semibold) : .system(size: 10.5, weight: .semibold, design: .monospaced))
+                            .tracking(store.lang == .zh ? 0 : 1.05).foregroundColor(Dock.gold).frame(width: 86, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(r.title).font(.system(size: 13.5)).foregroundColor(.white)
+                            if !r.sub.isEmpty { Text(r.sub).font(.system(size: 12)).foregroundColor(.white.opacity(0.7)) }
+                        }
+                        Spacer(minLength: 4)
+                        Text(r.verb).font(.system(size: 13, weight: .bold)).foregroundColor(.white)
+                    }
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.06)))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.14), lineWidth: 1))
+                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 12), hoverID: "more:\(i)"))
+            }
+        }
+        .transition(.opacity)
+    }
+
+    private func pills(_ h: MacPanel.Hero) -> some View {
+        HStack(spacing: 10) {
+            if let a = h.allowance { Text(a).font(.system(size: 12)).foregroundColor(Dock.soft) }
+            if let ask = h.askMore {
+                Button(action: { actions.open(ask.href) }) { pill { Text(ask.label) } }
+                    .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 12), hoverID: "ask-more"))
+            }
+            if let more = h.more {
+                Button(action: { model.moreOpen.toggle() }) {
+                    pill {
+                        if !more.pre.isEmpty { Text(more.pre) }
+                        Text(String(more.count)).font(.system(size: 11, weight: .semibold)).foregroundColor(Dock.keyhole)
+                            .frame(width: 20, height: 20).background(Circle().fill(Dock.gold))
+                        if !more.post.isEmpty { Text(more.post) }
+                        Text(model.moreOpen ? "⌃" : "⌄")
+                    }
+                }
+                .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 12), hoverID: "more"))
+                .accessibilityLabel(more.label)
+            } else {
+                // No "more": the web's help sentence stands where the pill was.
+                Text(h.mentorAsk).font(.system(size: 12)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true)
+            }
+            Button(action: { actions.open(h.mentor.href) }) { pill { Text("Ⓜ " + h.mentor.label) } }
+                .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 12), hoverID: "mentor"))
+        }
+    }
+
+    private func pill<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        HStack(spacing: 8) { content() }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(Dock.cream)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Dock.cream.opacity(0.25), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // ── the states the artifact does not draw
+    /// Not connected: the menu bar panel's own Connect box, in the window.
+    private var signedOut: some View {
+        HStack(alignment: .center, spacing: 18) {
+            DockOwl().frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 12) {
+                Text(w.connectBlurb).font(.system(size: 13)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true)
+                Button(action: actions.connect) {
+                    Text(store.connecting ? w.connecting : w.connect)
+                        .font(.system(size: 14, weight: .semibold)).foregroundColor(Dock.ink)
+                        .padding(.horizontal, 16).frame(height: 36)
+                        .background(Capsule().fill(Dock.gold))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(NightButton(shape: Capsule(), amount: 0.16, hoverID: "connect"))
+                .disabled(store.connecting)
+                if let e = store.connectError { Text(e).font(.system(size: 12)).foregroundColor(Night.test) }
+            }
+        }
+    }
+
+    /// The first read is in flight and nothing from earlier today is kept.
+    private var loading: some View {
+        HStack(alignment: .center, spacing: 18) {
+            DockOwl().frame(width: 56, height: 56)
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text(w.loading).font(.system(size: 13)).foregroundColor(Dock.soft)
+            }
+        }
+    }
+
+    /// Offline (the menu bar's own words), or the site could not read tonight: never an empty "nothing tonight".
+    private var unavailable: some View {
+        HStack(alignment: .center, spacing: 18) {
+            DockOwl().frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(store.heroRead == .offline ? w.offline : w.heroUnavailable)
+                    .font(.system(size: 13)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true)
+                Button(action: { actions.open((store.lang == .zh ? "/zh" : "") + "/study") }) { pill { Text(w.openHome) } }
+                    .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 12), hoverID: "open-home"))
+            }
+        }
+    }
+
+    private func note(_ s: String) -> some View {
+        Text(s).font(.system(size: 12)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true)
+    }
+
+    // ── the extension's one line (the converter's whole window, before M14)
+    private var foot: some View {
+        HStack(spacing: 8) {
+            switch model.safari {
+            case .off:
+                // Off: the line becomes the old "Turn on Heddy in Safari" button.
+                Button(action: actions.safariSettings) {
+                    Text(w.turnOnInSafari).font(.system(size: 12, weight: .semibold)).foregroundColor(Dock.ink)
+                        .padding(.horizontal, 12).frame(height: 26)
+                        .background(Capsule().fill(Dock.gold)).contentShape(Capsule())
+                }
+                .buttonStyle(NightButton(shape: Capsule(), amount: 0.16, hoverID: "turn-on"))
+                Spacer()
+            case .on, .unknown:
+                Circle().fill(model.safari == .on ? Dock.on : Dock.soft.opacity(0.5)).frame(width: 8, height: 8)
+                Text(model.safari == .on ? w.heddyOnInSafari : w.heddyForSafari)
+                Spacer()
+                Button(action: actions.safariSettings) { Text(w.safariSettings).foregroundColor(Dock.link) }
+                    .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 4), amount: 0, hoverID: "safari-settings"))
+            }
+        }
+        .font(.system(size: 12))
+        .foregroundColor(Dock.soft)
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .overlay(alignment: .top) { Rectangle().fill(Dock.hair).frame(height: 1) }
+    }
+}
+
 // MARK: - The app
 
 @main
@@ -2030,8 +2585,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
     private var timer: Timer?
     private var bag = Set<AnyCancellable>()
     private var authSession: ASWebAuthenticationSession?
-    /// The converter's "Turn on Heddy in Safari" window, kept so the gear can bring it back.
+    /// The Dock window (M14: tonight, as on the learner home), kept so the Dock icon and the gear can bring it back.
     private var mainWindowController: NSWindowController?
+    private let dock = DockModel()
     private var welcomeWindow: NSWindow?
     /// Set only by Quit (gear or ⌘Q): every other terminate keeps Heddy in the menu bar (M12).
     private var quitRequested = false
@@ -2061,29 +2617,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
         host.sizingOptions = .preferredContentSize
         popover.contentViewController = host
 
-        // The converter's window: keep it, and know when it closes (M12).
-        if let w = NSApp.windows.first(where: { $0.contentViewController is ViewController }) {
-            w.isReleasedWhenClosed = false
-            mainWindowController = w.windowController
+        // M14: the converter's storyboard window ("Heddy's extension is currently on…") gives way to the Dock window.
+        // It is put away before the close observer exists, so it never counts as "the last window closed".
+        for w in NSApp.windows where w.contentViewController is ViewController {
+            w.orderOut(nil)
+            w.close()
         }
+        DockFonts.registerBundled()
+        mainWindowController = makeDockWindow()
         NotificationCenter.default.addObserver(self, selector: #selector(anyWindowWillClose(_:)), name: NSWindow.willCloseNotification, object: nil)
         rewireQuitMenuItem()
 
         timer = Timer.scheduledTimer(withTimeInterval: HeddyMac.refreshEvery, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.store.refresh() }
+            Task { @MainActor in
+                guard let self else { return }
+                // While the Dock window is open its read (hero=1) carries today's panel too: one request, not two.
+                if self.dockVisible { await self.store.refreshHero() } else { await self.store.refresh() }
+            }
         }
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didWake(_:)), name: NSWorkspace.didWakeNotification, object: nil)
         Task { await store.refresh() }
 
         if !UserDefaults.standard.bool(forKey: HeddyMac.welcomeShownKey) {
-            NSApp.setActivationPolicy(.regular)
+            showMainWindow()
             showWelcome()
         } else if atLogin {
             // Opened at login: just the owl, no window and no Dock icon.
-            mainWindowController?.window?.orderOut(nil)
             NSApp.setActivationPolicy(.accessory)
         } else {
-            NSApp.setActivationPolicy(.regular)
+            showMainWindow()
         }
     }
 
@@ -2144,7 +2706,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
     }
 
     @objc private func didWake(_ note: Notification) {
-        Task { await store.refresh() }
+        Task {
+            await store.refresh()
+            if dockVisible { await store.refreshHero() }
+        }
     }
 
     private func panelActions() -> PanelActions {
@@ -2221,15 +2786,80 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
 
     private func showMainWindow() {
         NSApp.setActivationPolicy(.regular)
-        if mainWindowController == nil,
-           let wc = NSStoryboard(name: "Main", bundle: nil).instantiateInitialController() as? NSWindowController {
-            wc.window?.isReleasedWhenClosed = false
-            mainWindowController = wc
-        }
-        (mainWindowController?.contentViewController as? ViewController)?.webView?.reload()
+        if mainWindowController == nil { mainWindowController = makeDockWindow() }
         mainWindowController?.showWindow(nil)
         mainWindowController?.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        refreshDock()
+    }
+
+    /// The Dock window (M14): the hero in SwiftUI, in a dark window titled "Heddy". Closing it is M12's close.
+    private func makeDockWindow() -> NSWindowController {
+        let host = NSHostingController(rootView: DockView(store: store, model: dock, actions: dockActions()))
+        host.sizingOptions = .preferredContentSize
+        let win = NSWindow(contentViewController: host)
+        win.title = "Heddy"
+        win.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        // The artifact's navy bar, drawn by the view under macOS's own three buttons.
+        win.titlebarAppearsTransparent = true
+        win.titleVisibility = .hidden
+        win.isMovableByWindowBackground = true
+        win.appearance = NSAppearance(named: .darkAqua)
+        win.backgroundColor = NSColor(srgbRed: 0x0B / 255, green: 0x1A / 255, blue: 0x3A / 255, alpha: 1)
+        win.isReleasedWhenClosed = false
+        win.center()
+        win.setFrameAutosaveName("HeddyDockWindow")
+        NotificationCenter.default.addObserver(self, selector: #selector(dockDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: win)
+        return NSWindowController(window: win)
+    }
+
+    private var dockVisible: Bool { mainWindowController?.window?.isVisible == true }
+
+    /// Coming back to the window (from Safari Settings, say): the extension's state and tonight, read again.
+    @objc private func dockDidBecomeKey(_ note: Notification) { refreshDock() }
+
+    private func refreshDock() {
+        readSafariState()
+        Task { await store.refreshHero() }
+    }
+
+    private func readSafariState() {
+        SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionBundleIdentifier) { [weak self] state, error in
+            let s: SafariState = (error == nil && state != nil) ? (state!.isEnabled ? .on : .off) : .unknown
+            DispatchQueue.main.async { self?.dock.safari = s }
+        }
+    }
+
+    private func dockActions() -> DockActions {
+        DockActions(
+            open: { [weak self] href in
+                guard let url = self?.store.api.site(href) else { return }
+                Self.openInSafari(url)
+            },
+            connect: { [weak self] in self?.connect() },
+            safariSettings: { [weak self] in self?.openSafariSettings() }
+        )
+    }
+
+    /// The window's links open in Safari (it is Heddy FOR Safari), or the default browser if Safari cannot.
+    static func openInSafari(_ url: URL) {
+        guard let safari = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Safari") else {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        NSWorkspace.shared.open([url], withApplicationAt: safari, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            if let error {
+                NSLog("Heddy: open in Safari failed: %@", error.localizedDescription)
+                DispatchQueue.main.async { NSWorkspace.shared.open(url) }
+            }
+        }
+    }
+
+    /// Safari's Extensions settings, at Heddy. Unlike the converter's button, Heddy stays running (M12).
+    private func openSafariSettings() {
+        SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionBundleIdentifier) { error in
+            if let error { NSLog("Heddy: Safari settings failed: %@", error.localizedDescription) }
+        }
     }
 
     @objc private func anyWindowWillClose(_ note: Notification) {
@@ -2315,6 +2945,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
         Task {
             if let token = await store.api.swap(code: code, verifier: verifier) {
                 store.connected(token)
+                if dockVisible { await store.refreshHero() }
             } else {
                 store.connectFailed()
             }
