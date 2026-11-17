@@ -362,3 +362,37 @@ test('Dock window (M14): the foot is the extension\'s one line; Safari Settings 
   assert.match(foot, /w\.safariSettings/);
   assert.doesNotMatch(foot, /terminate/, 'never quits like the converter did');
 });
+
+// Owner, 11-17 (the real window on their Mac): ONE bar, "Pi is in" with the professor's crest, the Prize's chest as
+// on /study. /study (aitutors QuestHome.tsx + app/study/quest-home.css) is the reference for the tiles and icons.
+test('Dock window polish: the bar is drawn INTO the title bar, not below it', () => {
+  const s = swift();
+  const view = s.slice(s.indexOf('struct DockView: View'), s.indexOf('// MARK: - The app'));
+  assert.match(view, /\.onGeometryChange\(for: CGFloat\.self, of: \{ \$0\.safeAreaInsets\.top \}\) \{ titleBarHeight = \$0 \}/, 'the bar is as tall as the real title bar');
+  assert.match(view, /if titleBarHeight > 0 \{ titleBar\(height: titleBarHeight\) \}[^]*?\.ignoresSafeArea\(\)/, 'drawn in the title bar\'s own space');
+  assert.doesNotMatch(view, /VStack\(spacing: 0\) \{\s*titleBar\b/, 'never a second bar stacked under the title bar');
+  assert.match(s, /DockWindow\.dress\(win, model: dock\)/);
+  assert.match(s, /win\.titlebarAppearsTransparent = true\s*win\.titleVisibility = \.hidden/);
+});
+
+test('Dock window polish: "Pi is in" carries the professor\'s crest, for every tutor the hero can name', () => {
+  const s = swift();
+  for (const [id, glyph, ini] of [['mentor', 'mentor', 'M'], ['pi', 'pi', 'π'], ['quill', 'quill', 'Q'], ['darwin', 'leaf', 'D'], ['curie', 'atom', 'C'], ['newton', 'apple', 'N'], ['harari', 'hourglass', 'H'], ['mercator', 'compass', 'Mr']]) {
+    assert.ok(s.includes(`"${id}": ("${glyph}", "${ini}")`), `${id} → ${glyph}/${ini} (lib/tutor/faculty.ts)`);
+    assert.ok(s.includes(`case "${glyph}":`), `the ${glyph} glyph is drawn`);
+  }
+  assert.match(s, /if let id = crestId \{ TutorCrest\(tutorId: id\)\.frame\(width: 34, height: 34\) \}/, '34 px inside a tile (.qh-q .qh-crest)');
+  assert.doesNotMatch(s, /Text\("● " \+ i\)/, 'no plain dot in place of the crest');
+});
+
+test('Dock window polish: the Prize\'s chest is /study\'s .qh-chest', () => {
+  const s = swift();
+  const chest = s.slice(s.indexOf('struct DockChest: View'), s.indexOf('struct TutorCrest: View'));
+  assert.match(chest, /UnevenRoundedRectangle\(topLeadingRadius: 8, bottomLeadingRadius: 6, bottomTrailingRadius: 6, topTrailingRadius: 8\)/);
+  assert.match(chest, /\.frame\(width: 44, height: 36\)/);
+  assert.match(chest, /Self\.lid, location: 0\.42\),\s*\.init\(color: Self\.band, location: 0\.42\), \.init\(color: Self\.band, location: 0\.5\)/, 'the band across the lid, 42–50 %');
+  assert.match(chest, /static let lid = Study\.gold/);
+  assert.match(s, /static let gold = Color\(hex: 0xD3A84C\)/, '--q-gold');
+  assert.match(chest, /RoundedRectangle\(cornerRadius: 3\)\.fill\(Self\.keyhole\)\.frame\(width: 9, height: 11\)\.offset\(y: 36 \* 0\.36\)/);
+  assert.match(chest, /static let glow = Color\(hex: 0xE9C46A/);
+});

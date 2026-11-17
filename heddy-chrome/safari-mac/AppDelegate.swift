@@ -2185,6 +2185,21 @@ enum Dock {
     static let hair = cream.opacity(0.12)
 }
 
+/// The learner home's own colours, for the three tiles, the crest and the chest: /study is the reference for those
+/// (owner, 11-17: "Pi is in" and the Prize must look as they do on the learner home). aitutors app/study/learner-rail.css
+/// `.lshell` --q-* (the hex set that file gives for engines without oklch) and app/study/quest-home.css.
+enum Study {
+    static let card = Color(hex: 0xFDFCF8)        // --q-card: the light tile, the crest's disc
+    static let inkDeep = Color(hex: 0x002147)     // --q-ink-deep: the light tile's ink, the crest's glyph
+    static let inkSoft = Color(hex: 0x46546A)     // --q-ink-soft: .qh-q__m--ink
+    static let accent = Color(hex: 0x2F8A53)      // --q-accent: .qh-btn, the crest's ring, the done tick
+    static let accentDeep = Color(hex: 0x0D6435)  // --q-accent-deep: .qh-btn's 3 px edge, the crest's initial
+    static let accentTint = Color(hex: 0xD5ECD9)  // --q-accent-tint: a light tile's .qh-src-ic
+    static let gold = Color(hex: 0xD3A84C)        // --q-gold: the chest's lid
+    static let examPaper = Color(hex: 0xFFF4DF)   // .qh-q--on.qh-q--exam
+    static let examKick = Color(hex: 0xA7680F)    // .qh-q--on .qh-q__kick
+}
+
 /// The artifact's serif is Source Serif 4. The app has no fonts of its own, but its Safari extension ships the very
 /// file (fonts/source-serif-4-latin.woff2); it is registered for this process once. Without it: the system serif.
 enum DockFonts {
@@ -2202,14 +2217,14 @@ enum DockFonts {
         _ = CTFontManagerRegisterFontsForURL(url as CFURL, .process, &err) // "already registered" is fine
         serifReady = (CTFontManagerCopyAvailableFontFamilyNames() as? [String] ?? []).contains("Source Serif 4")
     }
-    /// The artifact's 600. The file is a variable font (wght 200–900) that SwiftUI's .weight() leaves at 400, so the
-    /// axis is set on the descriptor itself.
-    static func serif(_ size: CGFloat) -> Font {
+    /// The artifact's 600 (or /study's 700 for a tile's count). The file is a variable font (wght 200–900) that
+    /// SwiftUI's .weight() leaves at 400, so the axis is set on the descriptor itself.
+    static func serif(_ size: CGFloat, weight: Int = 600) -> Font {
         guard serifReady, let base = NSFont(name: "SourceSerif4-Regular", size: size) else {
-            return .system(size: size, weight: .semibold, design: .serif)
+            return .system(size: size, weight: weight >= 700 ? .bold : .semibold, design: .serif)
         }
         let wght = NSNumber(value: 0x7767_6874) // 'wght'
-        let desc = base.fontDescriptor.addingAttributes([NSFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String): [wght: 600]])
+        let desc = base.fontDescriptor.addingAttributes([NSFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String): [wght: weight]])
         return Font(NSFont(descriptor: desc, size: size) ?? base)
     }
     /// The artifact's Geist Mono labels (letter-spaced 0.16em, capitals).
@@ -2224,9 +2239,41 @@ final class DockModel: ObservableObject {
     @Published var safari: SafariState = .unknown
     /// "N more for tonight" opened in the window.
     @Published var moreOpen = false
-    init(safari: SafariState = .unknown, moreOpen: Bool = false) {
+    /// Where "Heddy" starts in the bar, measured on the real window (DockWindow.dress).
+    @Published var titleBar = DockTitleBar()
+    init(safari: SafariState = .unknown, moreOpen: Bool = false, titleBar: DockTitleBar = DockTitleBar()) {
         self.safari = safari
         self.moreOpen = moreOpen
+        self.titleBar = titleBar
+    }
+}
+
+/// ONE bar, as the D1 artifact draws it (`.tb`): macOS's three buttons, then "Heddy" on the same row, one hairline
+/// under it. "Heddy" starts 18 px after the window's last button (the artifact's 8 px gap + its 10 px margin),
+/// measured on the real window; the bar's height is the title bar's own (DockView reads it from the safe area).
+struct DockTitleBar: Equatable {
+    var titleX: CGFloat = 84
+    @MainActor static func measure(_ win: NSWindow) -> DockTitleBar {
+        let ends = [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton]
+            .compactMap { win.standardWindowButton($0) }
+            .filter { !$0.isHidden }
+            .map { $0.convert($0.bounds, to: nil).maxX }
+        return DockTitleBar(titleX: ends.max().map { $0 + 18 } ?? 84)
+    }
+}
+
+/// The Dock window's chrome (M14): titled (so M12's close counts it), its content under a transparent title bar.
+enum DockWindow {
+    @MainActor static func dress(_ win: NSWindow, model: DockModel) {
+        win.title = "Heddy"
+        win.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        // The artifact's navy bar, drawn by the view under macOS's own three buttons (DockTitleBar).
+        win.titlebarAppearsTransparent = true
+        win.titleVisibility = .hidden
+        win.isMovableByWindowBackground = true
+        win.appearance = NSAppearance(named: .darkAqua)
+        win.backgroundColor = NSColor(srgbRed: 0x0B / 255, green: 0x1A / 255, blue: 0x3A / 255, alpha: 1)
+        model.titleBar = DockTitleBar.measure(win)
     }
 }
 
@@ -2260,31 +2307,157 @@ struct DockOwl: View {
     }
 }
 
-/// The Prize's chest: 44 × 30, radius 7, with its keyhole.
+/// The Prize's chest, as /study draws it (aitutors app/study/quest-home.css `.qh-chest`): 44 × 36, radius 8 8 6 6, the
+/// gold lid down to 42 %, a dark band to 50 %, the body below; a 9 × 11 keyhole (radius 3) centred, its top at 36 %;
+/// a 22 px gold glow. The collected Prize (`prize-done`) draws the very same chest.
 struct DockChest: View {
+    static let lid = Study.gold
+    static let band = Color(hex: 0x8E6C25)
+    static let base = Color(hex: 0xC39A41)
+    static let keyhole = Color(hex: 0x0B1120)
+    static let glow = Color(hex: 0xE9C46A, opacity: Double(0x88) / 255)
     var body: some View {
-        RoundedRectangle(cornerRadius: 7).fill(Dock.chest)
-            .frame(width: 44, height: 30)
-            .overlay(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 2).fill(Dock.keyhole).frame(width: 8, height: 10).offset(x: 18, y: 10)
+        UnevenRoundedRectangle(topLeadingRadius: 8, bottomLeadingRadius: 6, bottomTrailingRadius: 6, topTrailingRadius: 8)
+            .fill(LinearGradient(stops: [
+                .init(color: Self.lid, location: 0), .init(color: Self.lid, location: 0.42),
+                .init(color: Self.band, location: 0.42), .init(color: Self.band, location: 0.5),
+                .init(color: Self.base, location: 0.5), .init(color: Self.base, location: 1),
+            ], startPoint: .top, endPoint: .bottom))
+            .frame(width: 44, height: 36)
+            // box-shadow 0 0 22px: a CSS blur of 22 is a SwiftUI radius of about half that.
+            .shadow(color: Self.glow, radius: 11)
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: 3).fill(Self.keyhole).frame(width: 9, height: 11).offset(y: 36 * 0.36)
             }
             .accessibilityHidden(true)
     }
 }
 
+/// A professor's crest, as /study draws it in the hero (aitutors components/learner/QuestHome.tsx `Crest`:
+/// components/landing/faculty-avatar.tsx `FacultyAvatar`, live, inside `.qh-crest`, a --q-card disc). Path for path
+/// in its 100-unit viewBox: the ring, the mono initial, the subject glyph in ink, the three dots.
+struct TutorCrest: View {
+    let tutorId: String
+    /// aitutors lib/tutor/faculty.ts FACULTY: id → glyph and initial. Every tutor the hero can name.
+    static let faculty: [String: (glyph: String, initial: String)] = [
+        "mentor": ("mentor", "M"), "pi": ("pi", "π"), "quill": ("quill", "Q"), "darwin": ("leaf", "D"),
+        "curie": ("atom", "C"), "newton": ("apple", "N"), "harari": ("hourglass", "H"), "mercator": ("compass", "Mr"),
+    ]
+    static func knows(_ id: String?) -> Bool { id.flatMap { faculty[$0] } != nil }
+
+    var body: some View {
+        Canvas { ctx, size in
+            guard let f = Self.faculty[tutorId] else { return }
+            let s = size.width / 100
+            ctx.scaleBy(x: s, y: s)
+            ctx.fill(Path(ellipseIn: CGRect(x: 0, y: 0, width: 100, height: 100)), with: .color(Study.card))
+            ctx.stroke(Self.circle(50, 50, 46), with: .color(Study.accent.opacity(0.5)), lineWidth: 1.2)
+            // The initial: mono 11, 600, letter-spacing 1.2, capitals, accent-deep, its baseline at y 24, centred.
+            let ini = ctx.resolve(Text(f.initial.uppercased()).font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .tracking(1.2).foregroundColor(Study.accentDeep))
+            let box = ini.measure(in: CGSize(width: 100, height: 100))
+            let baseline = ini.firstBaseline(in: box)
+            ctx.draw(ini, in: CGRect(x: 50 - box.width / 2, y: 24 - baseline, width: box.width, height: box.height))
+            Self.glyph(f.glyph, &ctx, Study.inkDeep)
+            for x in [46.0, 50, 54] { ctx.fill(Self.circle(x, 85, 1.3), with: .color(Study.accent.opacity(0.65))) }
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+
+    static func circle(_ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat) -> Path {
+        Path(ellipseIn: CGRect(x: cx - r, y: cy - r, width: 2 * r, height: 2 * r))
+    }
+    private static func seg(_ x1: CGFloat, _ y1: CGFloat, _ x2: CGFloat, _ y2: CGFloat) -> Path {
+        var p = Path(); p.move(to: CGPoint(x: x1, y: y1)); p.addLine(to: CGPoint(x: x2, y: y2)); return p
+    }
+    /// faculty-avatar.tsx `Glyph`, for the eight faculty glyphs.
+    static func glyph(_ kind: String, _ ctx: inout GraphicsContext, _ ink: Color) {
+        let round = { (w: CGFloat) in StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round) }
+        let joinRound = { (w: CGFloat) in StrokeStyle(lineWidth: w, lineJoin: .round) }
+        switch kind {
+        case "mentor":
+            for (x, o) in [(33.0, 1.0), (50, 0.5), (67, 0.25)] { ctx.fill(circle(x, 50, 4), with: .color(ink.opacity(o))) }
+        case "pi":
+            for (y, w, o) in [(36.0, 42.0, 1.0), (46, 32, 0.7), (56, 22, 0.45), (66, 12, 0.25)] {
+                ctx.fill(Path(roundedRect: CGRect(x: 29, y: y, width: w, height: 5), cornerRadius: 2.5), with: .color(ink.opacity(o)))
+            }
+        case "quill":
+            ctx.stroke(seg(33, 65, 67, 35), with: .color(ink), style: round(3))
+            var nib = Path()
+            nib.move(to: CGPoint(x: 40, y: 65))
+            nib.addQuadCurve(to: CGPoint(x: 41, y: 48), control: CGPoint(x: 34, y: 55))
+            nib.addQuadCurve(to: CGPoint(x: 60, y: 32), control: CGPoint(x: 52, y: 41))
+            nib.addQuadCurve(to: CGPoint(x: 40, y: 65), control: CGPoint(x: 53, y: 56))
+            nib.closeSubpath()
+            ctx.fill(nib, with: .color(ink.opacity(0.18)))
+            ctx.stroke(nib, with: .color(ink), style: joinRound(2.4))
+            ctx.stroke(seg(44, 60, 51, 53), with: .color(ink), style: round(2.2))
+            ctx.stroke(seg(47, 56, 54, 49), with: .color(ink), style: round(2.2))
+        case "leaf":
+            var leaf = Path()
+            leaf.move(to: CGPoint(x: 37, y: 70))
+            leaf.addQuadCurve(to: CGPoint(x: 50, y: 30), control: CGPoint(x: 33, y: 38))
+            leaf.addQuadCurve(to: CGPoint(x: 63, y: 70), control: CGPoint(x: 67, y: 38))
+            leaf.addQuadCurve(to: CGPoint(x: 37, y: 70), control: CGPoint(x: 50, y: 62))
+            leaf.closeSubpath()
+            ctx.fill(leaf, with: .color(ink.opacity(0.18)))
+            ctx.stroke(leaf, with: .color(ink), style: joinRound(2.4))
+            var vein = Path()
+            vein.move(to: CGPoint(x: 37, y: 70))
+            vein.addQuadCurve(to: CGPoint(x: 63, y: 32), control: CGPoint(x: 50, y: 50))
+            ctx.stroke(vein, with: .color(ink), style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+        case "apple":
+            var stalk = Path()
+            stalk.move(to: CGPoint(x: 48, y: 30))
+            stalk.addQuadCurve(to: CGPoint(x: 60, y: 28), control: CGPoint(x: 53, y: 26))
+            ctx.stroke(stalk, with: .color(ink), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+            ctx.fill(circle(50, 55, 14), with: .color(ink.opacity(0.16)))
+            ctx.stroke(circle(50, 55, 14), with: .color(ink), lineWidth: 2.4)
+            ctx.stroke(seg(50, 33, 50, 42), with: .color(ink), style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+        case "atom":
+            for deg in [0.0, 60, -60] {
+                let orbit = Path(ellipseIn: CGRect(x: 30, y: 42.5, width: 40, height: 15))
+                    .applying(CGAffineTransform(translationX: 50, y: 50).rotated(by: deg * .pi / 180).translatedBy(x: -50, y: -50))
+                ctx.stroke(orbit, with: .color(ink), lineWidth: 2.2)
+            }
+            ctx.fill(circle(50, 50, 3), with: .color(ink))
+        case "compass":
+            ctx.stroke(circle(50, 50, 20), with: .color(ink), lineWidth: 2.2)
+            var ns = Path(), ew = Path()
+            Icons.poly(&ns, [(50, 32), (53.5, 50), (50, 68), (46.5, 50)], close: true)
+            Icons.poly(&ew, [(32, 50), (50, 46.5), (68, 50), (50, 53.5)], close: true)
+            ctx.fill(ns, with: .color(ink.opacity(0.55)))
+            ctx.fill(ew, with: .color(ink.opacity(0.55)))
+        case "hourglass":
+            var glass = Path()
+            Icons.poly(&glass, [(34, 32), (66, 32), (50, 50), (34, 68), (66, 68), (50, 50)], close: true)
+            ctx.stroke(glass, with: .color(ink), style: joinRound(2.4))
+        default:
+            break
+        }
+    }
+}
+
+/// One hero tile, as /study draws it (aitutors app/study/quest-home.css `.qh-q`, and QuestHome.tsx `heroTile`): the
+/// learner home is the reference for the tiles (owner, 11-17), so where the D1 artifact's `.qq` differs, /study wins.
 struct DockTile: View {
     let tile: MacPanel.Hero.Tile
     let lang: Lang
     var open: (String) -> Void = { _ in }
     private var light: Bool { tile.tone == "on" }
     private var done: Bool { tile.tone == "done" }
-    private var inkColor: Color { light ? Dock.ink : .white }
-    private var softColor: Color { light ? Dock.paperSoft : Dock.soft }
+    /// .qh-q--on.qh-q--exam: an exam within 7 days leads, on #fff4df with the ink-deep button.
+    private var exam: Bool { light && tile.kind == "exam" }
+    private var inkColor: Color { light ? Study.inkDeep : .white }
+    /// .qh-q__m: the tile's colour at 78 %; on the light tile .qh-q__m--ink, --q-ink-soft at full strength.
+    private var metaColor: Color { light ? Study.inkSoft : Color.white.opacity(0.78) }
+    private var crestId: String? { TutorCrest.knows(tile.tutorId) ? tile.tutorId : nil }
 
     var body: some View {
         if let href = tile.href {
             Button(action: { open(href) }) { card }
-                .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 14), amount: light ? 0.0 : Lift.hover, hoverID: "tile:\(tile.slot)"))
+                .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 16), amount: light ? 0.0 : Lift.hover, hoverID: "tile:\(tile.slot)"))
                 .help(tile.title ?? tile.label)
         } else {
             card
@@ -2293,50 +2466,96 @@ struct DockTile: View {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(caps(tile.label)).font(DockFonts.mono(10)).tracking(1.6).foregroundColor(softColor)
-            // .n: 34 px at line-height 1, so the number sits close on "cards".
-            if let n = tile.count { Text(n).font(DockFonts.serif(34)).foregroundColor(inkColor).lineLimit(1).minimumScaleFactor(0.6).frame(height: 34) }
-            if let u = tile.unit { Text(u).font(DockFonts.serif(16)).foregroundColor(inkColor) }
-            if let k = tile.kick { Text(k).font(.system(size: 12)).foregroundColor(softColor) }
-            if let t = tile.title {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    if done {
-                        Text("✓").font(.system(size: 11, weight: .bold)).foregroundColor(.white)
-                            .frame(width: 18, height: 18).background(Circle().fill(Dock.go))
+            // .qh-q__n: mono 11, letter-spacing 0.1em, capitals, the tile's colour at 70 %.
+            Text(caps(tile.label)).font(DockFonts.mono(11)).tracking(1.1).foregroundColor(inkColor.opacity(0.7))
+            if let n = tile.count {
+                // .qh-q__count: the number (serif 700, 46 on the light tile, 40 on a dark one, line-height 0.9) with
+                // the unit UNDER it (serif 600 16), 3 apart.
+                let big: CGFloat = light ? 46 : 40
+                VStack(alignment: .leading, spacing: 3) {
+                    // fixedSize, never scaled down: the line box is 0.9 of the size and the glyphs overflow it, as on the web.
+                    Text(n).font(DockFonts.serif(big, weight: 700)).lineLimit(1).fixedSize().frame(height: big * 0.9)
+                    if let u = tile.unit { Text(u).font(DockFonts.serif(16)).lineLimit(1) }
+                }
+                .foregroundColor(inkColor)
+            }
+            if let k = tile.kick {
+                if light {
+                    // .qh-q__kick on the light tile: the exams mark (15) and the words, 700, #a7680f.
+                    HStack(spacing: 6) {
+                        Icons.exams.line(1.7, size: 15).frame(width: 15, height: 15)
+                        Text(k).font(.system(size: 12.5, weight: .bold))
                     }
-                    Text(t).font(DockFonts.serif(16)).foregroundColor(inkColor).lineSpacing(1).fixedSize(horizontal: false, vertical: true)
+                    .foregroundColor(Study.examKick)
+                } else {
+                    Text(k).font(.system(size: 12.5)).foregroundColor(metaColor)
                 }
             }
-            if let m = tile.meta { Text(m).font(.system(size: 12)).foregroundColor(softColor).fixedSize(horizontal: false, vertical: true) }
+            if let t = tile.title {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    if done {
+                        // .qh-q--done .qh-q__t::before: a 24 px accent disc with its tick, 8 before the title.
+                        Text("✓").font(.system(size: 14)).foregroundColor(.white)
+                            .frame(width: 24, height: 24).background(Circle().fill(Study.accent))
+                    }
+                    // .qh-q__t: serif 600 18, line-height 1.15.
+                    Text(t).font(DockFonts.serif(18)).foregroundColor(inkColor).lineSpacing(0.5).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if let m = tile.meta { Text(m).font(.system(size: 12.5)).foregroundColor(metaColor).fixedSize(horizontal: false, vertical: true) }
             Spacer(minLength: 0)
-            foot
+            ico
+            if light, let v = tile.verb { button(v) }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: 14).fill(light ? Dock.paper : done ? Color.white.opacity(0.12) : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(light ? Color.clear : Dock.cream.opacity(0.2), lineWidth: 1))
-        .contentShape(RoundedRectangle(cornerRadius: 14))
+        // min-height 152 is a CONTENT height on /study (its .qh-q is content-box); a ticked tile has none.
+        .frame(maxWidth: .infinity, minHeight: done ? nil : 152, maxHeight: .infinity, alignment: .topLeading)
+        .padding(15) // padding 14 + the 1 px border
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(light ? (exam ? Study.examPaper : Study.card) : Color.white.opacity(Double(done ? 0x1F : 0x14) / 255))
+                // .qh-q--on: box-shadow 0 14px 30px -14px #000a (SwiftUI has no spread: a tighter, lighter shadow).
+                .shadow(color: .black.opacity(light ? 0.45 : 0), radius: 10, y: 12)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(light ? Color.clear : Color.white.opacity(Double(0x2B) / 255), lineWidth: 1))
+        .contentShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    @ViewBuilder private var foot: some View {
-        if light, let v = tile.verb {
-            // .go: the filled green button, margin-top auto.
-            Text(v).font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                .frame(maxWidth: .infinity).padding(7)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Dock.go))
-        } else if let i = tile.inLine {
-            Text("● " + i).font(.system(size: 12, weight: .semibold)).foregroundColor(light ? Dock.ink : .white)
+    /// .qh-q__ico (margin-top auto, gap 8, 12.5 semibold): the professor's crest (34 px) and "Pi is in", the Prize's
+    /// chest, or a ranked tile's source mark.
+    @ViewBuilder private var ico: some View {
+        if crestId != nil || tile.inLine != nil {
+            HStack(spacing: 8) {
+                if let id = crestId { TutorCrest(tutorId: id).frame(width: 34, height: 34) }
+                if let i = tile.inLine { Text(i) }
+            }
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundColor(inkColor)
         } else if tile.icon == "chest" {
             DockChest()
         } else if let icon = tile.icon, let shape = Self.icon(icon) {
-            HStack(spacing: 6) {
-                shape.line(1.8, size: 16).frame(width: 16, height: 16)
-                if let w = tile.iconWord, !w.isEmpty { Text(w).font(.system(size: 12)) }
+            HStack(spacing: 8) {
+                // .qh-src-ic: a 34 px mark, radius 10, white at 12 % (the accent tint on a light tile), its glyph 18 at 1.7.
+                shape.line(1.7, size: 18).frame(width: 18, height: 18)
+                    .foregroundColor(light ? Study.accentDeep : .white)
+                    .frame(width: 34, height: 34)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(light ? Study.accentTint : Color.white.opacity(Double(0x1F) / 255)))
+                if let w = tile.iconWord, !w.isEmpty { Text(w) }
             }
-            .foregroundColor(softColor)
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundColor(inkColor)
         } else if let w = tile.iconWord, !w.isEmpty {
-            Text(w).font(.system(size: 12)).foregroundColor(softColor)
+            Text(w).font(.system(size: 12.5, weight: .semibold)).foregroundColor(inkColor)
         }
+    }
+
+    /// .qh-btn: 14.5 bold white on the accent, radius 12, padding 11 × 18, a hard 3 px accent-deep edge; full width.
+    private func button(_ v: String) -> some View {
+        Text(v).font(.system(size: 14.5, weight: .bold)).foregroundColor(.white).lineLimit(1)
+            .frame(maxWidth: .infinity, minHeight: 20)
+            .padding(.vertical, 11).padding(.horizontal, 18)
+            .background(RoundedRectangle(cornerRadius: 12).fill(exam ? Study.inkDeep : Study.accent))
+            .background(RoundedRectangle(cornerRadius: 12).fill(exam ? Color.black : Study.accentDeep).offset(y: 3))
+            .padding(.bottom, 3)
     }
 
     static func icon(_ name: String) -> Icon24? {
@@ -2356,11 +2575,12 @@ struct DockView: View {
     @ObservedObject var store: PanelStore
     @ObservedObject var model: DockModel
     var actions = DockActions()
+    /// The window's title bar, as SwiftUI's top safe area (0 where there is none, an off-screen render say).
+    @State private var titleBarHeight: CGFloat = 0
     private var w: Words { store.words }
 
     var body: some View {
         VStack(spacing: 0) {
-            titleBar
             VStack(alignment: .leading, spacing: 18) {
                 if !store.connected {
                     signedOut
@@ -2378,19 +2598,30 @@ struct DockView: View {
             foot
         }
         .frame(width: HeddyMac.dockWidth)
-        .background(LinearGradient(colors: [Dock.top, Dock.bottom], startPoint: .topLeading, endPoint: .bottomTrailing))
+        .background {
+            // The bar IS the window's title bar (owner, 11-17: the first build drew it BELOW the title bar, an empty
+            // band above it). The content keeps out of the title bar (SwiftUI's safe area, so the window is sized
+            // right); the bar is drawn INTO that space, exactly as tall, under macOS's own three buttons.
+            VStack(spacing: 0) {
+                if titleBarHeight > 0 { titleBar(height: titleBarHeight) }
+                LinearGradient(colors: [Dock.top, Dock.bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+            }
+            .ignoresSafeArea()
+        }
+        .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.top }) { titleBarHeight = $0 }
         .foregroundColor(Dock.cream)
         .environment(\.colorScheme, .dark)
         .animation(.easeInOut(duration: 0.2), value: model.moreOpen)
     }
 
-    /// The artifact's bar: navy, "Heddy" beside the window's own three buttons (drawn by macOS, not here).
-    private var titleBar: some View {
+    /// The artifact's bar (`.tb`): navy, "Heddy" on the same row as the window's own three buttons (drawn by macOS,
+    /// not here), one hairline under it.
+    private func titleBar(height: CGFloat) -> some View {
         HStack {
-            Text("Heddy").font(.system(size: 13, weight: .semibold)).foregroundColor(Dock.soft).padding(.leading, 84)
+            Text("Heddy").font(.system(size: 13, weight: .semibold)).foregroundColor(Dock.soft).padding(.leading, model.titleBar.titleX)
             Spacer()
         }
-        .frame(height: 28)
+        .frame(height: height)
         .background(Dock.bar)
         .overlay(alignment: .bottom) { Rectangle().fill(Dock.hair).frame(height: 1) }
         .accessibilityHidden(true)
@@ -2409,7 +2640,8 @@ struct DockView: View {
                 if let s = h.sub { Text(s).font(.system(size: 13)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true) }
             }
         }
-        HStack(alignment: .top, spacing: 10) {
+        // .qh-qs: three equal columns, 12 apart.
+        HStack(alignment: .top, spacing: 12) {
             ForEach(Array(h.tiles.enumerated()), id: \.offset) { _, t in
                 DockTile(tile: t, lang: store.lang, open: actions.open)
             }
@@ -2798,14 +3030,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
         let host = NSHostingController(rootView: DockView(store: store, model: dock, actions: dockActions()))
         host.sizingOptions = .preferredContentSize
         let win = NSWindow(contentViewController: host)
-        win.title = "Heddy"
-        win.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
-        // The artifact's navy bar, drawn by the view under macOS's own three buttons.
-        win.titlebarAppearsTransparent = true
-        win.titleVisibility = .hidden
-        win.isMovableByWindowBackground = true
-        win.appearance = NSAppearance(named: .darkAqua)
-        win.backgroundColor = NSColor(srgbRed: 0x0B / 255, green: 0x1A / 255, blue: 0x3A / 255, alpha: 1)
+        DockWindow.dress(win, model: dock)
         win.isReleasedWhenClosed = false
         win.center()
         win.setFrameAutosaveName("HeddyDockWindow")
