@@ -1,6 +1,6 @@
 // Compiles safari-mac/AppDelegate.swift with tests/swift/selftest.swift and runs it: the to-do add request and its
-// answers (200/201/400/401/503/safeguarding), the add/cancel paths, Return and Esc in a real text field, the folded
-// to-do box, the pill, the ring and the eyes' motion. macOS with Xcode only; skipped elsewhere.
+// answers (200/201/400/401/503/safeguarding), the add/cancel paths, Return and Esc in a real text field, the to-do box (five rows, Doing first, the pill and its rollback),
+// the day pill, the ring and the eyes' motion. macOS with Xcode only; skipped elsewhere.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';

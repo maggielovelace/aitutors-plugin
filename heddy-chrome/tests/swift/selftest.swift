@@ -7,6 +7,8 @@ final class Stub: URLProtocol {
     static var status = 200
     static var body = Data()
     static var last: (method: String, url: String, headers: [String: String], body: Data)?
+    /// Every POST body, in order (a write is followed by its refresh GET, which replaces `last`).
+    static var posts: [Data] = []
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
@@ -18,6 +20,7 @@ final class Stub: URLProtocol {
             stream.close()
         }
         Stub.last = (request.httpMethod ?? "", request.url?.absoluteString ?? "", request.allHTTPHeaderFields ?? [:], data)
+        if request.httpMethod == "POST" { Stub.posts.append(data) }
         let res = HTTPURLResponse(url: request.url!, statusCode: Stub.status, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
         client?.urlProtocol(self, didReceive: res, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Stub.body)
@@ -75,7 +78,6 @@ struct SelfTest {
         if case .safeguarding(let m) = await api.write("/api/heddy/mac/todo", token: "tok", body: [:]) { check(m == "Childline", "safeguarding message passes through") } else { check(false, "safeguarding") }
 
         // ── the store's add flow: failure keeps the text and says so; success closes and says Added
-        UserDefaults.standard.removeObject(forKey: HeddyMac.todosExpandedKey)
         let store = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15")))
         store.api = api
         store.addingTodo = true
@@ -121,27 +123,54 @@ struct SelfTest {
             check(box.exited == 1, "Esc in the field cancels (got \(box.exited))")
         } else { check(false, "found the text field") }
 
-        // ── the to-do box folded to three
-        let open6 = panel(panelJSON(today: "2026-11-15", day: "2026-11-15")).todos
-        let rows = TodoFold.rows(checkIn: false, todos: open6)
-        let folded = TodoFold.shown(rows, expanded: false)
-        check(rows.count == 7 && folded.rows.count == 3 && folded.hidden == 4, "6 open + check-in: three show, 4 more")
-        check(folded.rows.first == .checkIn(done: false), "the unticked check-in leads")
-        check(TodoFold.shown(rows, expanded: true).rows.count == 7 && TodoFold.shown(rows, expanded: true).hidden == 0, "expanded shows all")
-        var mixed = Array(open6.prefix(4)); mixed[0].done = true; mixed[1].done = true
-        let mrows = TodoFold.rows(checkIn: true, todos: mixed)
-        let mshown = TodoFold.shown(mrows, expanded: false)
-        check(mshown.rows.allSatisfy { !$0.done } && mshown.rows.count == 2 && mshown.hidden == 3, "done rows never take a folded slot")
-        check(mrows.map(\.done) == [false, false, true, true, true], "open first, then done")
-        let few = TodoFold.rows(checkIn: nil, todos: Array(mixed.prefix(3)))
-        check(TodoFold.shown(few, expanded: false).hidden == 0 && TodoFold.shown(few, expanded: false).rows.count == 3, "three or fewer: all show, no button")
-        // expanded state lasts the day
-        let s2 = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15")))
-        s2.toggleTodosExpanded()
-        check(s2.todosExpanded, "expand")
-        check(PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15"))).todosExpanded, "expanded survives while it is the same day")
-        check(!PanelStore(fixture: panel(panelJSON(today: "2026-11-16", day: "2026-11-16"))).todosExpanded, "a new day starts folded")
-        UserDefaults.standard.removeObject(forKey: HeddyMac.todosExpandedKey)
+        // ── the to-do box (M15, design B): five rows, Doing first, a status pill on each
+        func todo(_ n: Int, _ status: String?) -> String {
+            let st = status.map { #","status":"\#($0)""# } ?? ""
+            return #"{"id":"0000000\#(n)-0000-4000-8000-000000000000","title":"Todo \#(n)","priority":"none","done":false\#(st)}"#
+        }
+        let legacy = panel(panelJSON(today: "2026-11-15", day: "2026-11-15"))
+        check(legacy.todos.allSatisfy { $0.status == nil && $0.state == "todo" } && legacy.doneToday == nil, "a feed from before M15 still decodes (state from done)")
+        var legacyDone = legacy.todos[0]; legacyDone.done = true
+        check(legacyDone.state == "done", "a legacy done row reads as done")
+        let mixedJSON = [todo(1, "todo"), todo(2, "todo"), todo(3, "doing"), todo(4, "todo"), todo(5, "doing"), todo(6, "todo")].joined(separator: ",")
+        let mixedTodos = panel(panelJSON(today: "2026-11-15", day: "2026-11-15", todos: mixedJSON)).todos
+        let ids = { (rows: [TodoRow]) in rows.map { $0.id.hasPrefix("0000000") ? String($0.id.dropFirst(7).prefix(1)) : $0.id } }
+        check(ids(TodoList.rows(checkIn: false, todos: mixedTodos)) == ["3", "5", "checkin", "1", "2"], "Doing first, the check-in heads To do, five at most (got \(ids(TodoList.rows(checkIn: false, todos: mixedTodos))))")
+        check(ids(TodoList.rows(checkIn: nil, todos: mixedTodos)) == ["3", "5", "1", "2", "4"], "no check-in row: five board rows")
+        check(ids(TodoList.rows(checkIn: true, todos: mixedTodos)).count == 5 && !ids(TodoList.rows(checkIn: true, todos: mixedTodos)).contains("checkin"), "a checked-in day: the row leaves")
+        var withDone = mixedTodos; withDone[2].status = "done"; withDone[2].done = true
+        check(!ids(TodoList.rows(checkIn: nil, todos: withDone)).contains("3"), "a done row leaves the list")
+        check(TodoList.rows(checkIn: false, todos: Array(mixedTodos.prefix(2))).count == 3, "fewer than five: all of them")
+        check(TodoList.next("todo") == "doing" && TodoList.next("doing") == "done" && TodoList.next("done") == "todo", "the pill cycles To do → Doing → Done → To do")
+        for (w, words) in [(Words(lang: .en), ["To do", "Doing", "Done"]), (Words(lang: .zh), ["待做", "进行中", "已完成"])] {
+            check(["todo", "doing", "done"].map(w.status) == words, "\(w.lang) statuses are the catalog's words")
+        }
+        let wen = Words(lang: .en), wzh = Words(lang: .zh)
+        check(wen.todoCounts(12, 3) == "12 open · 3 done" && wen.allInCalendar(12) == "All 12 in My calendar ↗", "en header and footer")
+        check(wzh.todoCounts(12, 3) == "12 未完成 · 3 已完成" && wzh.allInCalendar(12) == "在我的日历看全部 12 项 ↗", "zh header and footer")
+
+        // the pill and the box write through /api/heddy/mac/todo, at once, and roll back on a refusal
+        let pills = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15", todos: mixedJSON)))
+        pills.api = api
+        let first = pills.panel!.todos[0]
+        respond(503, #"{"type":"write-failed"}"#)
+        let failing = pills.cycle(first)
+        check(pills.panel?.todos[0].state == "doing", "the pill shows Doing at once")
+        await failing?.value
+        check(pills.panel?.todos[0].state == "todo" && pills.notice == pills.words.writeFailed, "a refused Doing rolls back and says so")
+        respond(200, #"{"type":"ok"}"#)
+        await pills.cycle(first)?.value
+        let sentStatus = Stub.posts.last.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: String] }
+        check(sentStatus == ["op": "status", "id": first.id, "status": "doing"], "the pill sends status doing (got \(String(describing: sentStatus)))")
+        check(pills.panel?.todos[0].state == "doing" && pills.panel?.openTodos == 17, "Doing stays open: the owl keeps its count")
+        let nowDoing = pills.panel!.todos[0]
+        await pills.cycle(nowDoing)?.value
+        check(pills.panel?.todos[0].state == "done" && pills.panel?.openTodos == 16 && pills.panel?.doneToday == 1, "Done: one fewer open, one more done")
+        check(!pills.todoRows.contains { $0.id == first.id }, "and it leaves the list")
+        let tick = pills.panel!.todos[1]
+        respond(500, "{}")
+        await pills.toggle(tick)?.value
+        check(pills.panel?.todos[1].state == "todo" && pills.panel?.openTodos == 16 && pills.panel?.doneToday == 1, "a failed tick rolls back the counts too")
 
         // ── the pill: one weekday, never two
         let en = Words(lang: .en), zh = Words(lang: .zh)

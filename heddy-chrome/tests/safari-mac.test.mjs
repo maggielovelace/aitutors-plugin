@@ -115,7 +115,8 @@ test('the panel speaks the S1 contract: bearer GET panel every 5 minutes, to-do 
   assert.match(s, /"Bearer \\\(token\)", forHTTPHeaderField: "Authorization"/);
   assert.match(s, /url\("\/api\/heddy\/mac\/panel", q\)/);
   assert.match(s, /\["op": "status", "id": todo\.id, "status": status\]/);
-  assert.match(s, /let status = p\.todos\[i\]\.done \? "done" : "todo"/, 'the route takes done | todo');
+  assert.match(s, /func toggle\(_ todo: MacPanel\.Todo\) -> Task<Void, Never>\? \{ setStatus\(todo, todo\.state == "done" \? "todo" : "done"\) \}/, 'the box: done | todo');
+  assert.match(s, /func cycle\(_ todo: MacPanel\.Todo\) -> Task<Void, Never>\? \{ setStatus\(todo, TodoList\.next\(todo\.state\)\) \}/, 'the pill: todo | doing | done (M15)');
   assert.match(s, /\["op": "add", "title": title\]/);
   assert.match(s, /api\.write\("\/api\/heddy\/mac\/line"/);
   assert.doesNotMatch(s, /"lens"/, 'M9: no lens in the menu bar');
@@ -144,8 +145,8 @@ test('"Check in today · +5 pts": derived from today\'s stamp (S1 sends no such 
   assert.match(s, /static let checkInPoints = 5/, 'lib/calendar/points.ts DAILY_CHECK_IN_POINTS');
   assert.match(s, /Button\(action: \{ if !done \{ lineFocused = true \} \}\)/);
   assert.match(s, /focus: \$lineFocused/);
-  assert.match(s, /if let c = checkIn \{ if c \{ done\.append\(\.checkIn\(done: true\)\) \} else \{ open\.append\(\.checkIn\(done: false\)\) \} \}[^]*?return open \+ done/, 'first row of the to-do box while unticked');
-  assert.match(s, /var todoRows: \[TodoRow\] \{ TodoFold\.rows\(checkIn: checkInRow, todos: panel\?\.todos \?\? \[\]\) \}/);
+  assert.match(s, /return Array\(\(doing \+ \(checkIn == false \? \[\.checkIn\(done: false\)\] : \[\]\) \+ todo\)\.prefix\(rows\)\)/, 'heads the To do rows while unticked, leaves once checked in (M15)');
+  assert.match(s, /var todoRows: \[TodoRow\] \{ TodoList\.rows\(checkIn: checkInRow, todos: panel\?\.todos \?\? \[\]\) \}/);
 });
 
 // Owner 2026-11-15: "when the pointer hovers on it, please give reactions — currently looks like freezing."
@@ -178,7 +179,8 @@ test('hover: every control in the panel uses it (no plain buttons left)', () => 
     'to-do rows': /hoverID: "todo:\\\(t\.id\)"/,
     'check-in row': /hoverID: "checkin"/,
     '+ Add a to-do': /textButton\(w\.addTodo, id: "add"\)/,
-    'Show more': /id: "more"\)/,
+    'All N in My calendar': /id: "all", colour: Night\.gold\)/,
+    'status pill': /hoverID: "pill:\\\(t\.id\)"/,
     'cancel ✕': /hoverID: "cancel-add"/,
     'Heddy\'s eyes': /hoverID: "eyes"/,
     'shortcuts incl. Cards badge': /hoverID: "shortcut:\\\(title\)"/,
@@ -222,18 +224,21 @@ test('pill: always one line; the word never wraps or truncates, the date shrinks
   assert.match(s, /Text\("· " \+ pill\.rest\)\.font\(\.system\(size: 14\)\)\.foregroundColor\(Night\.soft\)\s*\.lineLimit\(1\)\.minimumScaleFactor\(0\.7\)\.layoutPriority\(1\)/);
 });
 
-test('to-dos: folded to three with "Show N more" beside "+ Add a to-do", hover too, scrolling under 85% of the screen', () => {
+test('to-dos (M15, design B): five rows, Doing first, a pill on each, counts in the heading, All N in My calendar', () => {
   const s = swift();
-  assert.match(s, /static let folded = 3/);
-  assert.match(s, /let fold = TodoFold\.shown\(all, expanded: store\.todosExpanded\)/);
-  assert.match(s, /textButton\(w\.addTodo, id: "add"\)[^]*?Spacer\(minLength: 0\)[^]*?textButton\(store\.todosExpanded \? w\.showLess : w\.showMore\(fold\.hidden\), id: "more"\)/, 'Add left, Show more right, one line');
-  assert.match(s, /if foldable \{/);
-  assert.match(s, /\.buttonStyle\(NightButton\(shape: RoundedRectangle\(cornerRadius: 6\), amount: Lift\.row, hoverID: id\)\)/, 'text buttons hover');
-  assert.match(s, /static let screenShare: CGFloat = 0\.85/);
-  assert.match(s, /ViewThatFits\(in: \.vertical\) \{\s*todoRows\(fold\.rows\)\s*ScrollView\(\.vertical\) \{ todoRows\(fold\.rows\) \}\s*\}\s*\.frame\(maxHeight: listCeiling\)/);
+  assert.match(s, /static let rows = 5/, 'the box never grows past five');
+  assert.doesNotMatch(s, /TodoFold|todosExpanded|showMore|showLess|listCeiling|ScrollView\(\.vertical\) \{ todoRows/, 'no fold, no expand, no inner scroll');
+  assert.match(s, /let open = todos\.filter \{ \$0\.state != "done" \}/, 'done rows leave the list');
+  assert.match(s, /case "todo": return "doing"\s*case "doing": return "done"\s*default: return "todo"/, 'To do → Doing → Done → To do');
+  assert.match(s, /case "doing": return lang == \.zh \? "进行中" : "Doing"\s*case "done": return lang == \.zh \? "已完成" : "Done"\s*default: return lang == \.zh \? "待做" : "To do"/, 'the catalog\'s statuses');
+  assert.match(s, /Text\(w\.todoCounts\(p\.openTodos, p\.doneToday \?\? 0\)\)/, '"N open · M done" in the heading');
+  assert.match(s, /textButton\(w\.addTodo, id: "add"\)[^]*?Spacer\(minLength: 0\)[^]*?textButton\(w\.allInCalendar\(p\.openTodos\), id: "all", colour: Night\.gold\) \{ actions\.open\(store\.link\("\/study\/calendar"\)\) \}/, 'Add left, All N right, one line');
+  assert.match(s, /Button\(action: \{ store\.cycle\(t\) \}\)/, 'the pill cycles');
+  assert.match(s, /Tickbox\(on: t\.state == "done", doing: t\.state == "doing"\)/, 'Doing: the blue ring');
+  assert.match(s, /static let doing = Color\(hex: 0x7AA7FF\)/);
+  assert.match(s, /handleWrite\(r, revert: before\)/, 'a refused write rolls back');
   assert.match(s, /static let slide: Double = 0\.15/);
-  assert.match(s, /withAnimation\(\.easeInOut\(duration: TodoFold\.slide\)\) \{ panel = p \}/, 'a ticked row slides');
-  assert.match(s, /var todosExpanded: Bool \{ panel\.map \{ expandedDay == \$0\.today \} \?\? false \}/, 'folded again on a new day');
+  assert.match(s, /withAnimation\(\.easeInOut\(duration: TodoList\.slide\)\) \{ panel = p \}/, 'a row leaving slides');
 });
 
 test('eyes: the site\'s blink + gaze, only while the popover shows, never with Reduce Motion', () => {

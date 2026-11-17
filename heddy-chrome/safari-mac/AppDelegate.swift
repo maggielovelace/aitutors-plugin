@@ -40,8 +40,6 @@ enum HeddyMac {
     static let keychainAccount = "mac-token"
     static let welcomeShownKey = "heddyMac.welcomeShown.v1"
     static let lastPanelKey = "heddyMac.lastPanel.v1"
-    /// The UK day the to-do list was expanded on: expanded only while it is still that day.
-    static let todosExpandedKey = "heddyMac.todosExpandedDay.v1"
 }
 
 // MARK: - The panel feed (GET /api/heddy/mac/panel, lib/heddy-mac/panel-view.ts `MacPanel`, v1)
@@ -77,6 +75,9 @@ struct MacPanel: Codable, Equatable {
         let title: String
         let priority: String
         var done: Bool
+        /// todo | doing | done: the row's pill (M15). Absent from a feed before M15 (and a saved panel): read from `done`.
+        var status: String?
+        var state: String { status ?? (done ? "done" : "todo") }
     }
     struct Line: Codable, Equatable {
         /// open | written | unknown
@@ -93,8 +94,11 @@ struct MacPanel: Codable, Equatable {
     let week: Week
     let items: [Item]
     let nextTest: NextTest?
+    /// At most five OPEN to-dos (M15): Doing first, then To do, in the board's order.
     var todos: [Todo]
     var openTodos: Int
+    /// To-dos ticked today: the header's "M done". nil from a feed before M15.
+    var doneToday: Int?
     /// nil when unread: no badge, never a false 0.
     let cardsDue: Int?
     var line: Line
@@ -217,8 +221,18 @@ struct Words {
     var addFailed: String { lang == .zh ? "没有添加成功，再试一次。" : "Couldn't add that. Try again." }
     var added: String { lang == .zh ? "已添加到你的待办。" : "Added to your to-dos." }
     var cancelAdd: String { lang == .zh ? "取消" : "Cancel" }
-    var showMore: (Int) -> String { lang == .zh ? { "再显示 \($0) 项 ▾" } : { "Show \($0) more ▾" } }
-    var showLess: String { lang == .zh ? "收起 ▴" : "Show less ▴" }
+    /// The board's three statuses, the catalog's own words (aitutors messages/*/myCalendar.json `statuses`).
+    func status(_ s: String) -> String {
+        switch s {
+        case "doing": return lang == .zh ? "进行中" : "Doing"
+        case "done": return lang == .zh ? "已完成" : "Done"
+        default: return lang == .zh ? "待做" : "To do"
+        }
+    }
+    var todoCounts: (Int, Int) -> String { lang == .zh ? { "\($0) 未完成 · \($1) 已完成" } : { "\($0) open · \($1) done" } }
+    var allInCalendar: (Int) -> String { lang == .zh ? { "在我的日历看全部 \($0) 项 ↗" } : { "All \($0) in My calendar ↗" } }
+    var pillHelp: String { lang == .zh ? "点一下切换" : "Click to change" }
+    var pillLabel: (String, String) -> String { lang == .zh ? { "\($0)：\($1)。点一下切换" } : { "\($0): \($1). Click to change" } }
     var linePlaceholder: String { lang == .zh ? "今晚一句……今天的一件事" : "Tonight's line … one thing from today" }
     var lineKept: String { lang == .zh ? "今晚一句已保存，写新的会替换它" : "Kept tonight. Write again to change it" }
     var lineNotToday: String { lang == .zh ? "今晚一句只写在今天" : "Tonight's line is for today" }
@@ -448,15 +462,13 @@ final class PanelStore: ObservableObject {
     @Published private(set) var addInFlight = false
     @Published var addError: String?
     @Published private(set) var addedNote = false
-    /// The UK day the to-do list was expanded on (UserDefaults): folded again on a new day.
-    @Published private var expandedDay: String? = UserDefaults.standard.string(forKey: HeddyMac.todosExpandedKey)
     /// The popover is on screen: the eyes' loops run only then (battery).
     @Published var panelVisible = false
     /// System Settings › Accessibility › Reduce motion: no loops at all.
     @Published var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     /// A tap on the eyes: one quick blink from this moment, then the new mood.
     @Published private(set) var blinkAt: Date?
-    /// The visible screen's height, for the expanded to-do list's ceiling.
+    /// The visible screen's height (the to-do list no longer expands, M15; kept for the popover).
     @Published var screenHeight: CGFloat = NSScreen.main?.visibleFrame.height ?? 800
 
     private(set) var lang = Lang.system
@@ -548,15 +560,30 @@ final class PanelStore: ObservableObject {
 
     // MARK: writing
 
-    func toggle(_ todo: MacPanel.Todo) {
-        guard let t = token, var p = panel, let i = p.todos.firstIndex(where: { $0.id == todo.id }) else { return }
+    /// The row's box: done, or (a done row) back to To do.
+    @discardableResult
+    func toggle(_ todo: MacPanel.Todo) -> Task<Void, Never>? { setStatus(todo, todo.state == "done" ? "todo" : "done") }
+
+    /// The row's pill: To do → Doing → Done → To do (M15).
+    @discardableResult
+    func cycle(_ todo: MacPanel.Todo) -> Task<Void, Never>? { setStatus(todo, TodoList.next(todo.state)) }
+
+    /// Shown at once, sent through /api/heddy/mac/todo, and put back as it was if the server refuses (a 503 for
+    /// Doing before the board's 0243 is applied, a network failure): "That didn't save" says so.
+    @discardableResult
+    func setStatus(_ todo: MacPanel.Todo, _ status: String) -> Task<Void, Never>? {
+        guard let t = token, var p = panel, let i = p.todos.firstIndex(where: { $0.id == todo.id }) else { return nil }
         let before = p
-        p.todos[i].done.toggle()
-        p.openTodos = max(0, p.openTodos + (p.todos[i].done ? -1 : 1))
-        // It moves to done and the next open one slides up.
-        withAnimation(.easeInOut(duration: TodoFold.slide)) { panel = p }
-        let status = p.todos[i].done ? "done" : "todo"
-        Task {
+        let wasOpen = p.todos[i].state != "done", nowOpen = status != "done"
+        p.todos[i].status = status
+        p.todos[i].done = !nowOpen
+        if wasOpen != nowOpen {
+            p.openTodos = max(0, p.openTodos + (nowOpen ? 1 : -1))
+            p.doneToday = max(0, (p.doneToday ?? 0) + (nowOpen ? -1 : 1))
+        }
+        // A done row leaves the list and the next one slides up; a Doing row moves to the top.
+        withAnimation(.easeInOut(duration: TodoList.slide)) { panel = p }
+        return Task {
             let r = await api.write("/api/heddy/mac/todo", token: t.token, body: ["op": "status", "id": todo.id, "status": status])
             handleWrite(r, revert: before)
             await refresh()
@@ -618,15 +645,9 @@ final class PanelStore: ObservableObject {
         }
     }
 
-    // MARK: the to-do box, folded to three (owner 2026-11-15)
+    // MARK: the to-do box: five rows, a status pill on each (owner M15, 2026-11-17)
 
-    var todosExpanded: Bool { panel.map { expandedDay == $0.today } ?? false }
-    func toggleTodosExpanded() {
-        guard let today = panel?.today else { return }
-        expandedDay = todosExpanded ? nil : today
-        UserDefaults.standard.set(expandedDay, forKey: HeddyMac.todosExpandedKey)
-    }
-    var todoRows: [TodoRow] { TodoFold.rows(checkIn: checkInRow, todos: panel?.todos ?? []) }
+    var todoRows: [TodoRow] { TodoList.rows(checkIn: checkInRow, todos: panel?.todos ?? []) }
 
     // MARK: Heddy's eyes
 
@@ -752,6 +773,8 @@ enum Night {
     static let bar = Color(hex: 0x0B1836)
     static let amber = Color(hex: 0xE8A23A)
     static let pupil = Color(hex: 0x0B1B3A)
+    /// The to-do pill and box in Doing (the spec's --doing).
+    static let doing = Color(hex: 0x7AA7FF)
 }
 
 // MARK: - Icons, drawn from the artifact's own 24-unit SVG paths
@@ -1013,7 +1036,7 @@ struct MentorCrest: View {
     }
 }
 
-// MARK: - The to-do box's rows, folded to three (owner 2026-11-15: "only list the top 3 to-do items, and can expand")
+// MARK: - The to-do box's rows: five, a status pill on each (owner M15, 2026-11-17, design B)
 
 enum TodoRow: Identifiable, Equatable {
     /// The "Check in today · +5 pts" row (derived, see PanelStore.checkInRow).
@@ -1025,35 +1048,30 @@ enum TodoRow: Identifiable, Equatable {
         case .todo(let t): return t.id
         }
     }
-    var done: Bool {
-        switch self {
-        case .checkIn(let done): return done
-        case .todo(let t): return t.done
-        }
-    }
 }
 
-enum TodoFold {
-    /// Folded, at most this many rows show.
-    static let folded = 3
-    /// A ticked row moves down and the next slides up.
+enum TodoList {
+    /// The box never lists more than this; "All N in My calendar ↗" opens the rest on the web.
+    static let rows = 5
+    /// A row leaving (done) or moving up (Doing) slides.
     static let slide: Double = 0.15
 
-    /// Open rows first (the unticked check-in leads, then S1's order), then the done ones.
-    static func rows(checkIn: Bool?, todos: [MacPanel.Todo]) -> [TodoRow] {
-        var open: [TodoRow] = []
-        var done: [TodoRow] = []
-        if let c = checkIn { if c { done.append(.checkIn(done: true)) } else { open.append(.checkIn(done: false)) } }
-        for t in todos { if t.done { done.append(.todo(t)) } else { open.append(.todo(t)) } }
-        return open + done
+    /// The pill's cycle: To do → Doing → Done → To do.
+    static func next(_ s: String) -> String {
+        switch s {
+        case "todo": return "doing"
+        case "doing": return "done"
+        default: return "todo"
+        }
     }
 
-    /// What shows, and how many are folded away. Three rows or fewer: all of them, no button. Folded: up to three
-    /// OPEN rows; a done row never takes one of the three.
-    static func shown(_ rows: [TodoRow], expanded: Bool) -> (rows: [TodoRow], hidden: Int) {
-        if expanded || rows.count <= folded { return (rows, 0) }
-        let open = Array(rows.filter { !$0.done }.prefix(folded))
-        return (open, rows.count - open.count)
+    /// Doing first, then To do (the unticked check-in leads it, as the artboard's first To do), each in S1's order.
+    /// Done rows leave the list; the header keeps their count. Never more than five.
+    static func rows(checkIn: Bool?, todos: [MacPanel.Todo]) -> [TodoRow] {
+        let open = todos.filter { $0.state != "done" }
+        let doing = open.filter { $0.state == "doing" }.map(TodoRow.todo)
+        let todo = open.filter { $0.state != "doing" }.map(TodoRow.todo)
+        return Array((doing + (checkIn == false ? [.checkIn(done: false)] : []) + todo).prefix(rows))
     }
 }
 
@@ -1454,8 +1472,19 @@ struct Box<Content: View>: View {
 
 struct Tickbox: View {
     let on: Bool
+    /// Doing: a blue ring with a dot, not a box (M15).
+    var doing = false
     @Environment(\.nightHover) private var hover
     var body: some View {
+        if doing {
+            Circle().strokeBorder(Night.doing, lineWidth: 2)
+                .overlay(Circle().fill(Night.doing).frame(width: 6, height: 6))
+                .frame(width: 14, height: 14)
+        } else {
+            box
+        }
+    }
+    private var box: some View {
         // As the artifact draws them: a white box, ticked in the system accent (blue by default).
         RoundedRectangle(cornerRadius: 3)
             .fill(on ? Color.accentColor : Color.white)
@@ -1667,29 +1696,19 @@ struct PanelView: View {
         .padding(.horizontal, 10).padding(.vertical, 8)
     }
 
-    // ── TO-DO: the top three open rows (folded), "Show N more ▾" beside "+ Add a to-do"; done ones struck through
-    /// The rest of the panel around an expanded list, for its ceiling (measured from the T1 render).
-    static let chromeHeight: CGFloat = 480
-    /// The popover never grows past this share of the visible screen; the list scrolls inside instead.
-    static let screenShare: CGFloat = 0.85
-    var listCeiling: CGFloat { max(140, store.screenHeight * Self.screenShare - Self.chromeHeight) }
-
+    // ── TO-DO (M15, design B): five rows, Doing first; each row's pill cycles To do → Doing → Done. "N open · M done"
+    // in the heading; "+ Add a to-do" and "All N in My calendar ↗" on the last line. The box never grows past five.
     func todoBox(_ p: MacPanel) -> some View {
-        let all = store.todoRows
-        let fold = TodoFold.shown(all, expanded: store.todosExpanded)
-        let foldable = all.count > TodoFold.folded
+        let rows = store.todoRows
         return Box {
             BoxHeading(text: w.todoBox)
-            if store.todosExpanded && foldable {
-                ViewThatFits(in: .vertical) {
-                    todoRows(fold.rows)
-                    ScrollView(.vertical) { todoRows(fold.rows) }
+                .overlay(alignment: .trailing) {
+                    Text(w.todoCounts(p.openTodos, p.doneToday ?? 0))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundColor(Night.soft)
+                        .lineLimit(1).padding(.trailing, 10).padding(.top, 4)
                 }
-                .frame(maxHeight: listCeiling)
-            } else {
-                todoRows(fold.rows)
-            }
-            if all.isEmpty && !store.addingTodo {
+            todoRows(rows)
+            if rows.isEmpty && !store.addingTodo {
                 Text(w.noTodos).font(.system(size: 13)).foregroundColor(Night.faint)
                     .padding(.horizontal, 10).padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -1699,11 +1718,7 @@ struct PanelView: View {
                     textButton(w.addTodo, id: "add") { store.addingTodo = true }
                 }
                 Spacer(minLength: 0)
-                if foldable {
-                    textButton(store.todosExpanded ? w.showLess : w.showMore(fold.hidden), id: "more") {
-                        withAnimation(.easeInOut(duration: TodoFold.slide)) { store.toggleTodosExpanded() }
-                    }
-                }
+                textButton(w.allInCalendar(p.openTodos), id: "all", colour: Night.gold) { actions.open(store.link("/study/calendar")) }
             }
             if store.addedNote {
                 Text(w.added).font(.system(size: 12)).foregroundColor(Night.mint)
@@ -1721,7 +1736,7 @@ struct PanelView: View {
                 }
             }
         }
-        .animation(.easeInOut(duration: TodoFold.slide), value: rows.map(\.id))
+        .animation(.easeInOut(duration: TodoList.slide), value: rows.map(\.id))
     }
 
     private func checkInRow(_ done: Bool) -> some View {
@@ -1743,24 +1758,45 @@ struct PanelView: View {
     }
 
     private func todoRow(_ t: MacPanel.Todo) -> some View {
-        Button(action: { store.toggle(t) }) {
-            HStack(spacing: 10) {
-                Tickbox(on: t.done)
-                Text(t.title).font(.system(size: 14)).strikethrough(t.done).lineLimit(1)
-                    .foregroundColor(t.done ? Night.faint : .white)
-                Spacer(minLength: 0)
+        HStack(spacing: 6) {
+            // The box (and the title beside it) ticks it done.
+            Button(action: { store.toggle(t) }) {
+                HStack(spacing: 10) {
+                    Tickbox(on: t.state == "done", doing: t.state == "doing")
+                    Text(t.title).font(.system(size: 14)).lineLimit(1).truncationMode(.tail)
+                        .foregroundColor(.white)
+                    Spacer(minLength: 0)
+                }
+                .padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 8)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 10).padding(.vertical, 8)
-            .contentShape(Rectangle())
+            .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 6), amount: Lift.row, hoverID: "todo:\(t.id)"))
+            statusPill(t)
         }
-        .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 6), amount: Lift.row, hoverID: "todo:\(t.id)"))
-        .accessibilityAddTraits(t.done ? .isSelected : [])
+        .padding(.trailing, 10)
     }
 
-    /// The small mint text buttons on the box's last line ("+ Add a to-do", "Show 4 more ▾").
-    private func textButton(_ title: String, id: String, action: @escaping () -> Void) -> some View {
+    /// The row's pill: its status in the board's words; one click moves it on (To do → Doing → Done).
+    private func statusPill(_ t: MacPanel.Todo) -> some View {
+        let s = t.state
+        let tint = s == "doing" ? Night.doing : s == "done" ? Night.mint : Night.soft
+        return Button(action: { store.cycle(t) }) {
+            Text(w.status(s))
+                .font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundColor(tint)
+                .lineLimit(1).fixedSize()
+                .padding(.horizontal, 8).padding(.vertical, 1)
+                .overlay(Capsule().strokeBorder(s == "todo" ? Night.line : tint, lineWidth: 1))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(NightButton(shape: Capsule(), amount: Lift.row, hoverID: "pill:\(t.id)"))
+        .help(w.pillHelp)
+        .accessibilityLabel(w.pillLabel(t.title, w.status(s)))
+    }
+
+    /// The small text buttons on the box's last line ("+ Add a to-do" in mint, "All N in My calendar ↗" in gold).
+    private func textButton(_ title: String, id: String, colour: Color = Night.mint, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(.system(size: 13, weight: .semibold)).foregroundColor(Night.mint)
+            Text(title).font(.system(size: 13, weight: .semibold)).foregroundColor(colour).lineLimit(1)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .contentShape(Rectangle())
         }
