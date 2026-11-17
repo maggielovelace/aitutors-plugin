@@ -237,6 +237,7 @@ test('to-dos (M15, design B): five rows, Doing first, a pill on each, counts in 
   assert.match(s, /Tickbox\(on: t\.state == "done", doing: t\.state == "doing"\)/, 'Doing: the blue ring');
   assert.match(s, /static let doing = Color\(hex: 0x7AA7FF\)/);
   assert.match(s, /handleWrite\(r, revert: before\)/, 'a refused write rolls back');
+  assert.match(s, /case \.ok\(_, let itemId\):[^]*?if let itemId \{ showAdded\(id: itemId, title: title\) \}/, 'an added to-do shows at once, with the id the server gave it (owner ruling)');
   assert.match(s, /static let slide: Double = 0\.15/);
   assert.match(s, /withAnimation\(\.easeInOut\(duration: TodoList\.slide\)\) \{ panel = p \}/, 'a row leaving slides');
 });

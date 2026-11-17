@@ -149,6 +149,24 @@ struct SelfTest {
         check(wen.todoCounts(12, 3) == "12 open · 3 done" && wen.allInCalendar(12) == "All 12 in My calendar ↗", "en header and footer")
         check(wzh.todoCounts(12, 3) == "12 未完成 · 3 已完成" && wzh.allInCalendar(12) == "在我的日历看全部 12 项 ↗", "zh header and footer")
 
+        // a to-do added from the Mac heads the To do rows at once (owner ruling), and the box still shows five
+        let adds = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15", todos: mixedJSON)))
+        adds.api = api
+        adds.addingTodo = true; adds.newTodo = "Pack bag"
+        respond(200, #"{"type":"ok","item":{"id":"aaaaaaaa-0000-4000-8000-000000000000","title":"Pack bag"}}"#)
+        await adds.addTodo()?.value
+        let addedRows = adds.todoRows.map(\.id)
+        check(addedRows.count == 5, "still five rows after an add (got \(addedRows.count))")
+        check(Array(addedRows.prefix(4)) == ["00000003-0000-4000-8000-000000000000", "00000005-0000-4000-8000-000000000000", "checkin", "aaaaaaaa-0000-4000-8000-000000000000"], "the new to-do heads the To do rows, after Doing and the check-in (got \(addedRows))")
+        check(adds.panel?.openTodos == 18, "and the owl counts it")
+        check(adds.panel?.todos.first(where: { $0.id.hasPrefix("aaaaaaaa") })?.title == "Pack bag", "with her words")
+        let adds2 = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15", todos: mixedJSON)))
+        adds2.api = api
+        adds2.addingTodo = true; adds2.newTodo = "No id"
+        respond(200, #"{"type":"ok"}"#)
+        await adds2.addTodo()?.value
+        check(adds2.panel?.todos.count == 6 && adds2.panel?.openTodos == 17, "no item id in the answer: nothing made up, the refresh brings it")
+
         // the pill and the box write through /api/heddy/mac/todo, at once, and roll back on a refusal
         let pills = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15", todos: mixedJSON)))
         pills.api = api

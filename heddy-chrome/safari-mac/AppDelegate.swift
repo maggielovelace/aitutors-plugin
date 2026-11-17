@@ -354,7 +354,8 @@ enum Fetch<T> {
 }
 
 enum WriteOutcome {
-    case ok(points: Int)
+    /// `itemId`: the board item the write made or changed (the envelope's `item.id`), when it says.
+    case ok(points: Int, itemId: String? = nil)
     case safeguarding(String)
     case closed
     case signedOut
@@ -421,10 +422,12 @@ struct HeddyAPI {
         guard let http = res as? HTTPURLResponse else { return .failed("no HTTP response") }
         if http.statusCode == 401 { return .signedOut }
         let env = try? JSONDecoder().decode(TypeEnvelope.self, from: data)
-        let points = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["points"] as? Int ?? 0
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let points = json?["points"] as? Int ?? 0
+        let itemId = (json?["item"] as? [String: Any])?["id"] as? String
         let ok2xx = (200..<300).contains(http.statusCode)
         switch env?.type {
-        case "ok" where ok2xx: return .ok(points: points)
+        case "ok" where ok2xx: return .ok(points: points, itemId: itemId)
         case "safeguarding" where ok2xx: return .safeguarding(env?.message ?? "If you're struggling, please talk to a parent or call Childline 0800 1111")
         case "window-closed": return .closed
         default: return .failed("HTTP \(http.statusCode) \(env?.type ?? "-") \(env?.reason ?? "")")
@@ -603,9 +606,10 @@ final class PanelStore: ObservableObject {
             let r = await api.write("/api/heddy/mac/todo", token: t.token, body: ["op": "add", "title": title])
             addInFlight = false
             switch r {
-            case .ok:
+            case .ok(_, let itemId):
                 newTodo = ""
                 addingTodo = false
+                if let itemId { showAdded(id: itemId, title: title) }
                 flashAdded()
                 await refresh()
             case .safeguarding(let message):
@@ -623,6 +627,16 @@ final class PanelStore: ObservableObject {
                 NSLog("Heddy: add to-do failed: %@", why)
             }
         }
+    }
+
+    /// Owner M15 ruling: a to-do added today heads the To do rows (after Doing and the check-in), at once, before the
+    /// refresh brings the server's own order (lib/heddy-mac/panel-view.ts, the same rule). The box still shows five.
+    func showAdded(id: String, title: String) {
+        guard var p = panel, !p.todos.contains(where: { $0.id == id }) else { return }
+        let at = p.todos.firstIndex(where: { $0.state != "doing" }) ?? p.todos.count
+        p.todos.insert(MacPanel.Todo(id: id, title: title, priority: "none", done: false, status: "todo"), at: at)
+        p.openTodos += 1
+        withAnimation(.easeInOut(duration: TodoList.slide)) { panel = p }
     }
 
     /// Esc, or the ✕: close the box and drop what was typed.
