@@ -396,3 +396,13 @@ test('Dock window polish: the Prize\'s chest is /study\'s .qh-chest', () => {
   assert.match(chest, /RoundedRectangle\(cornerRadius: 3\)\.fill\(Self\.keyhole\)\.frame\(width: 9, height: 11\)\.offset\(y: 36 \* 0\.36\)/);
   assert.match(chest, /static let glow = Color\(hex: 0xE9C46A/);
 });
+
+test('the owl opens over a full-screen app: show and key the panel BEFORE activating Heddy', () => {
+  const s = swift();
+  const body = s.slice(s.indexOf('private func showPanel()'), s.indexOf('func popoverWillShow'));
+  const show = body.indexOf('popover.show(');
+  const key = body.indexOf('makeKeyAndOrderFront');
+  const activate = body.indexOf('NSApp.activate');
+  assert.ok(show > 0 && key > show && activate > key, 'show, then make key, then activate — activating first jumps to the Dock window\'s Space');
+  assert.match(body, /collectionBehavior\.insert\(\[[^\]]*\.fullScreenAuxiliary/, 'the panel window may sit on a full-screen Space');
+});

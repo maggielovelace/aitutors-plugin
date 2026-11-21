@@ -2920,9 +2920,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
 
     private func showPanel() {
         guard let button = statusItem.button else { return }
-        NSApp.activate(ignoringOtherApps: true)
+        // Over a full-screen app the panel must open on THAT Space. Activating Heddy first made macOS jump to the
+        // Space holding the Dock window, and the transient popover closed as the Space slid away: the owl seemed dead.
+        // So: show the panel where the click was, let its window live on full-screen Spaces, make it key, and only
+        // then activate. Heddy's key window is now on this Space, so there is no other Space to switch to.
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+        if let win = popover.contentViewController?.view.window {
+            win.collectionBehavior.insert([.fullScreenAuxiliary, .moveToActiveSpace])
+            win.makeKeyAndOrderFront(nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
         Task { await store.refresh() }
     }
 
