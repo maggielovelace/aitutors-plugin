@@ -113,7 +113,7 @@ test('a GET (who is signed in, the Jotters list) needs no listener in the tab: o
   };
   context.globalThis = context;
   const content = read('content/safari-site.js');
-  const worker = { URL, ReadableStream, Response, Uint8Array, Headers };
+  const worker = { URL, ReadableStream, Response, Uint8Array, Headers, setTimeout, clearTimeout };
   runInNewContext(read('lib/safari-site.js'), worker);
   const relay = worker.HeddySafariFetch.createSafariFetch({
     tabs: {
@@ -176,4 +176,67 @@ test('Ask: a stream the tab refuses before receiving it goes once by the one-pie
   sent.length = 0;
   await assert.rejects(relayWith((port) => { void port.onMessage.emit({ type: 'got' }).then(() => port.onDisconnect.emit()); })('https://aitutors.me/api/learn/heddy/ask', { method: 'POST', body: '{}' }));
   assert.deepEqual(sent, [], 'not sent again');
+});
+
+// 2026-11-21, the owner's iPad: four aitutors.me tabs open, Heddy asked the first one in the list, which
+// iPadOS had put to sleep, heard nothing and said "Sign in" over a signed-in page.
+function multiTab(tabsList, answers) {
+  const content = read('content/safari-site.js');
+  const asked = [];
+  const worker = { URL, ReadableStream, Response, Uint8Array, Headers, setTimeout, clearTimeout };
+  runInNewContext(read('lib/safari-site.js'), worker);
+  const relay = worker.HeddySafariFetch.createSafariFetch({
+    tabs: { query: async () => tabsList },
+    scripting: {
+      async executeScript({ target, files, func, args }) {
+        if (answers[target.tabId] === 'asleep') return new Promise(() => {});
+        if (files) return [];
+        asked.push(target.tabId);
+        const context = { URL, Headers, AbortController, location: { origin }, chrome: { runtime: { id, onConnect: event() } },
+          fetch: async () => new Response(JSON.stringify({ tab: target.tabId }), { headers: { 'Content-Type': 'application/json' } }) };
+        runInNewContext(content, context);
+        return [{ result: await context.__heddySiteRequest(...args) }];
+      },
+    },
+  });
+  return { relay, asked, TAB_ANSWER_MS: worker.HeddySafariFetch.TAB_ANSWER_MS };
+}
+
+test('the tab in front answers first, then the most recently used', async () => {
+  const { relay, asked } = multiTab([
+    { id: 1, status: 'complete', lastAccessed: 10 },
+    { id: 2, status: 'complete', lastAccessed: 30 },
+    { id: 3, status: 'complete', active: true, lastAccessed: 20 },
+  ], {});
+  const reply = await relay(origin + '/api/learn/heddy/me', { method: 'GET', headers: {} });
+  assert.deepEqual(await reply.json(), { tab: 3 });
+  assert.deepEqual(asked, [3]);
+
+  const later = multiTab([{ id: 1, status: 'complete', lastAccessed: 10 }, { id: 2, status: 'complete', lastAccessed: 30 }], {});
+  assert.deepEqual(await (await later.relay(origin + '/api/learn/heddy/me', { method: 'GET', headers: {} })).json(), { tab: 2 });
+});
+
+test('a sleeping tab hands /me to the next one within the popup\'s 5 s', async () => {
+  const { relay, asked, TAB_ANSWER_MS } = multiTab([
+    { id: 1, status: 'complete', active: true },
+    { id: 2, status: 'complete' },
+  ], { 1: 'asleep' });
+  assert.ok(TAB_ANSWER_MS * 3 < 5000, 'three tabs must fit inside lib/who.js TIMEOUT_MS');
+  const started = Date.now();
+  const reply = await relay(origin + '/api/learn/heddy/me', { method: 'GET', headers: {} });
+  assert.deepEqual(await reply.json(), { tab: 2 });
+  assert.deepEqual(asked, [2]);
+  assert.ok(Date.now() - started < TAB_ANSWER_MS + 1000);
+});
+
+test('a POST is never sent to a second tab, and is not cut short', async () => {
+  const { relay } = multiTab([
+    { id: 1, status: 'complete', active: true },
+    { id: 2, status: 'complete' },
+  ], { 1: 'asleep' });
+  const outcome = await Promise.race([
+    relay(origin + '/api/learn/heddy/save', { method: 'POST', headers: {}, body: '{}' }).then(() => 'answered', () => 'failed'),
+    new Promise((resolve) => setTimeout(() => resolve('still waiting'), 2500)),
+  ]);
+  assert.equal(outcome, 'still waiting');
 });
