@@ -1,5 +1,9 @@
 // A top-level aitutors.me tab supplies Safari's first-party session cookies.
 (function (root) {
+  // A tab that has not answered by now is asleep: long enough for a slow page, short enough that /me can
+  // still try two more tabs inside the popup's 5 s (lib/who.js TIMEOUT_MS).
+  const TAB_ANSWER_MS = 1500;
+
   function createSafariFetch(chrome) {
     const opening = new Map();
 
@@ -30,10 +34,18 @@
       });
     }
 
-    async function siteTab(origin) {
+    // Which aitutors.me tab answers. The one in front first: iPadOS puts background tabs to sleep, and a
+    // script sent into a sleeping tab never comes back, so with four aitutors.me tabs open Heddy asked the
+    // first one in the list, heard nothing for 5 s and said "Sign in" over a signed-in page (2026-11-21,
+    // owner's iPad; closing the other three tabs made it work). Then the most recently used, then the rest.
+    function byPreference(a, b) {
+      return (b.active === true) - (a.active === true) || (b.lastAccessed || 0) - (a.lastAccessed || 0);
+    }
+
+    async function siteTabs(origin) {
       const tabs = await chrome.tabs.query({ url: origin + '/*' });
-      const ready = tabs.find((tab) => tab.id != null && tab.status === 'complete');
-      if (ready) return ready.id;
+      const ready = tabs.filter((tab) => tab.id != null && tab.status === 'complete').sort(byPreference);
+      if (ready.length) return ready.map((tab) => tab.id);
       if (!opening.has(origin)) {
         const pending = (async () => {
           const loading = tabs.find((tab) => tab.id != null);
@@ -45,10 +57,19 @@
       }
       const pending = opening.get(origin);
       try {
-        return await pending;
+        return [await pending];
       } finally {
         if (opening.get(origin) === pending) opening.delete(origin);
       }
+    }
+
+    // `work` within `ms`, or an error: a sleeping tab never answers executeScript at all.
+    function within(ms, work) {
+      let timer;
+      return Promise.race([
+        work.finally(() => clearTimeout(timer)),
+        new Promise((resolve, reject) => { timer = setTimeout(() => reject(new Error('Heddy site tab did not answer')), ms); }),
+      ]);
     }
 
     // One request, answered whole by content/safari-site.js's __heddySiteRequest (the page's own first-party
@@ -73,12 +94,31 @@
       if (!['https://aitutors.me', 'http://localhost:3000'].includes(url.origin)) {
         throw new Error('Heddy site origin is not allowed');
       }
-      const tabId = await siteTab(url.origin);
-      await chrome.scripting.executeScript({ target: { tabId }, files: ['content/safari-site.js'] });
+      const tabIds = await siteTabs(url.origin);
       init = init || {};
       if (init.signal && init.signal.aborted) throw new Error('Heddy request cancelled');
       // Everything but the Ask view's stream goes in one piece (a string body or none is all Heddy sends).
-      if (!/\/ask$/.test(url.pathname) && (init.body == null || typeof init.body === 'string')) return oneShot(tabId, href, init);
+      if (!/\/ask$/.test(url.pathname) && (init.body == null || typeof init.body === 'string')) {
+        const send = async (tabId) => {
+          await chrome.scripting.executeScript({ target: { tabId }, files: ['content/safari-site.js'] });
+          return oneShot(tabId, href, init);
+        };
+        // A POST goes to the front tab only and takes as long as it takes (keypoints and quizzes are slow; a
+        // tab that answered late may still have saved it). A GET may go on to the next tab when one stays
+        // silent: asking twice changes nothing.
+        if ((init.method || 'GET') !== 'GET') return send(tabIds[0]);
+        let failed;
+        for (const tabId of tabIds) {
+          try {
+            return await within(TAB_ANSWER_MS, send(tabId));
+          } catch (error) {
+            failed = error;
+          }
+        }
+        throw failed;
+      }
+      const tabId = tabIds[0];
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['content/safari-site.js'] });
       const signal = init.signal;
       if (signal && signal.aborted) throw new Error('Heddy request cancelled');
       const port = chrome.tabs.connect(tabId, { name: 'heddy-safari-request', frameId: 0 });
@@ -142,5 +182,5 @@
     };
   }
 
-  root.HeddySafariFetch = { createSafariFetch };
+  root.HeddySafariFetch = { createSafariFetch, TAB_ANSWER_MS };
 })(globalThis);
