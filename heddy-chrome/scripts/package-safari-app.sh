@@ -49,6 +49,8 @@ cmp -s safari-mac/AppDelegate.swift "$mac_delegate"
 # The macOS targets at 1.1, and the Mac app allowed to reach aitutors.me
 # (com.apple.security.network.client). See scripts/safari-mac-app.mjs.
 node scripts/safari-mac-app.mjs "$project_dir/Heddy/Heddy.xcodeproj/project.pbxproj"
+# heddy-mac:// is the app's own URL type: the connect page answers in the default browser (2026-11-22).
+node scripts/safari-mac-app.mjs --plist "$project_dir/Heddy/macOS (App)/Info.plist"
 
 # Manual App Store signing for Release, and the two Info.plist keys App Store
 # Connect checks at upload. See scripts/safari-signing.mjs.

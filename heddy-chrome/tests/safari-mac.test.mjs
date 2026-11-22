@@ -38,13 +38,13 @@ test('packaging copies safari-mac/AppDelegate.swift over the converter\'s Mac Ap
   assert.ok(at(/node scripts\/safari-mac-app\.mjs/) < at(/node scripts\/safari-signing\.mjs/));
 });
 
-test('the Mac app and its extension become 1.1; iOS keeps its own version', async () => {
+test('the Mac app and its extension become 1.1.2; iOS keeps its own version', async () => {
   const { macAppProject, MAC_APP_VERSION } = await import('../scripts/safari-mac-app.mjs');
-  assert.equal(MAC_APP_VERSION, '1.1');
+  assert.equal(MAC_APP_VERSION, '1.1.2');
   const out = blocks(macAppProject(project()));
   for (const b of out) {
     const sdk = b.match(/SDKROOT = (\w+);/)[1];
-    assert.match(b, new RegExp(`MARKETING_VERSION = ${sdk === 'macosx' ? '1\\.1' : '1\\.0'};`), `${sdk} version`);
+    assert.match(b, new RegExp(`MARKETING_VERSION = ${sdk === 'macosx' ? '1\\.1\\.2' : '1\\.0'};`), `${sdk} version`);
   }
 });
 
@@ -93,18 +93,43 @@ test('menu bar app: owl status item + popover, open-at-login pre-ticked, Dock go
   assert.match(s, /func applicationShouldTerminate[\s\S]*?return \.terminateCancel/, 'the converter\'s quit-after-settings keeps the menu bar');
 });
 
-test('connect: ASWebAuthenticationSession on heddy-mac://, PKCE S256, the token only in the Keychain', () => {
+test('connect: the DEFAULT browser + heddy-mac:// as the app\'s own URL type, PKCE S256, the token only in the Keychain', () => {
   const s = swift();
   assert.match(s, /static let callbackScheme = "heddy-mac"/);
-  assert.match(s, /ASWebAuthenticationSession\(url: url, callback: \.customScheme\(HeddyMac\.callbackScheme\)\)/);
-  assert.match(s, /prefersEphemeralWebBrowserSession = false/);
-  assert.match(s, /store\.link\("\/heddy-chrome\/mac-connect"\)/);
+  // 2026-11-22: no sign-in window. It dropped heddy-mac://connected on macOS 26 Safari and named a "(null)" app with Chrome.
+  assert.doesNotMatch(s, /ASWebAuthenticationSession\(|import AuthenticationServices|presentationAnchor/);
+  assert.match(s, /func application\(_ application: NSApplication, open urls: \[URL\]\)/, 'the answer arrives as a URL the app opens');
+  assert.match(s, /guard let p = pending else \{ continue \}/, 'a heddy-mac:// link is ignored unless a Connect is waiting');
+  assert.match(s, /items\.first\(where: \{ \$0\.name == "state" \}\)\?\.value == state/, 'the answer must match our own state');
+  assert.match(s, /if !NSWorkspace\.shared\.open\(url\)/, 'the page opens in the default browser');
   assert.match(s, /URLQueryItem\(name: "state", value: state\), URLQueryItem\(name: "challenge", value: PKCE\.challenge\(verifier\)\)/);
   assert.match(s, /SHA256\.hash\(data: Data\(verifier\.utf8\)\)/);
-  assert.match(s, /items\.first\(where: \{ \$0\.name == "state" \}\)\?\.value == state/, 'the answer must match our own state');
   assert.match(s, /"\/api\/heddy\/mac\/token"\), method: "POST", body: \["code": code, "verifier": verifier\]/);
   assert.match(s, /kSecClass as String: kSecClassGenericPassword/);
   assert.doesNotMatch(s, /UserDefaults[^\n]*token/i, 'the token is never in UserDefaults');
+});
+
+test('connect never strands her: the button stays live while waiting, Cancel ends it, and the wait expires', () => {
+  const s = swift();
+  assert.doesNotMatch(s, /\.disabled\(store\.connecting\)/, '"Finish in …" must stay pressable');
+  assert.equal((s.match(/Button\(action: actions\.cancelConnect\)/g) || []).length, 2, 'Cancel in the menu bar panel and the Dock window');
+  assert.match(s, /if let p = pending, p\.isLive\(\) \{\s*openConnectPage\(p\)\s*return/, 'pressing again reopens the same page');
+  assert.match(s, /static let lifetime: TimeInterval = 300/);
+  assert.match(s, /DispatchQueue\.main\.asyncAfter\(deadline: \.now\(\) \+ PendingConnect\.lifetime\) \{ \[weak self\] in self\?\.connectExpired\(p\) \}/);
+  assert.match(s, /private func connectExpired\(_ p: PendingConnect\) \{\s*guard pending == p else \{ return \}/, 'an old timer never ends a newer Connect');
+  assert.match(s, /w\.connecting\(in: store\.connectBrowser\)/, 'the button names the browser');
+});
+
+test('package: heddy-mac:// becomes the macOS app\'s URL type, once', async () => {
+  const { macAppInfoPlist, MAC_URL_SCHEME } = await import('../scripts/safari-mac-app.mjs');
+  const plist = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n\t<key>SFSafariWebExtensionConverterVersion</key>\n\t<string>27.1</string>\n</dict>\n</plist>\n';
+  const once = macAppInfoPlist(plist);
+  assert.equal(MAC_URL_SCHEME, 'heddy-mac');
+  assert.match(once, /<key>CFBundleURLTypes<\/key>\s*<array>\s*<dict>[\s\S]*<key>CFBundleURLSchemes<\/key>\s*<array>\s*<string>heddy-mac<\/string>/);
+  assert.match(once, /<key>SFSafariWebExtensionConverterVersion<\/key>/, 'keeps what the converter wrote');
+  assert.equal(macAppInfoPlist(once), once, 'running it twice adds nothing');
+  assert.throws(() => macAppInfoPlist('<plist><array/></plist>'), /top-level <dict>/);
+  assert.match(read('scripts/package-safari-app.sh'), /node scripts\/safari-mac-app\.mjs --plist "\$project_dir\/Heddy\/macOS \(App\)\/Info\.plist"/);
 });
 
 test('the panel speaks the S1 contract: bearer GET panel every 5 minutes, to-do ops, Tonight\'s line with no lens', () => {
