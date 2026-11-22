@@ -1,7 +1,7 @@
 // The Mac app's own settings for the Xcode project that package-safari-app.sh generates (aitutors.me
 // PRD-v0.145.0, Heddy in the Mac menu bar, S2). Run after safari-mac/AppDelegate.swift is copied in.
 //
-//   * The macOS app and its extension become version MAC_APP_VERSION (1.1). iOS is left at the converter's
+//   * The macOS app and its extension become version MAC_APP_VERSION (1.1.2). iOS is left at the converter's
 //     version: the menu bar is Mac only, and an iOS build carries its own number.
 //   * The macOS APP (not the extension) gets ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES, which Xcode signs in as the
 //     com.apple.security.network.client entitlement: the menu bar fetches its panel from aitutors.me under the
@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-export const MAC_APP_VERSION = '1.1';
+export const MAC_APP_VERSION = '1.1.2';
 export const MAC_APP_ID = 'me.aitutors.heddy.safari';
 export const NETWORK_CLIENT = 'ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;';
 
@@ -39,7 +39,22 @@ export function macAppProject(text, version = MAC_APP_VERSION) {
   return out;
 }
 
+/** heddy-mac:// as the macOS app's own URL type (2026-11-22): the connect page answers heddy-mac://connected in the
+ *  DEFAULT browser, and macOS hands it to Heddy's application(_:open:). Before, a sign-in window had to catch it, and
+ *  on macOS 26 Safari and with Chrome as the default browser it did not. Added once; throws on a plist it cannot read. */
+export const MAC_URL_SCHEME = 'heddy-mac';
+export function macAppInfoPlist(text) {
+  if (!/<plist[^>]*>\s*<dict>/.test(text) || !/<\/dict>\s*<\/plist>\s*$/.test(text)) throw new Error('macOS (App)/Info.plist: expected one top-level <dict>');
+  if (text.includes('<key>CFBundleURLTypes</key>')) {
+    if (!text.includes(`<string>${MAC_URL_SCHEME}</string>`)) throw new Error('macOS (App)/Info.plist: CFBundleURLTypes without heddy-mac');
+    return text;
+  }
+  const types = `\t<key>CFBundleURLTypes</key>\n\t<array>\n\t\t<dict>\n\t\t\t<key>CFBundleURLName</key>\n\t\t\t<string>${MAC_APP_ID}.connect</string>\n\t\t\t<key>CFBundleURLSchemes</key>\n\t\t\t<array>\n\t\t\t\t<string>${MAC_URL_SCHEME}</string>\n\t\t\t</array>\n\t\t</dict>\n\t</array>\n`;
+  return text.replace(/<\/dict>\s*<\/plist>\s*$/, `${types}</dict>\n</plist>\n`);
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const file = process.argv[2];
-  writeFileSync(file, macAppProject(readFileSync(file, 'utf8')));
+  const [flag, file] = process.argv[2] === '--plist' ? ['plist', process.argv[3]] : ['project', process.argv[2]];
+  const text = readFileSync(file, 'utf8');
+  writeFileSync(file, flag === 'plist' ? macAppInfoPlist(text) : macAppProject(text));
 }

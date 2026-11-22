@@ -17,7 +17,7 @@
 //           (the feed's `hero`, asked for with hero=1), with "Heddy is on in Safari · Safari Settings…" at its foot.
 //           It replaces the converter's "Heddy's extension is currently on…" window.
 //
-//  Signing in: ASWebAuthenticationSession opens aitutors.me/heddy-chrome/mac-connect with a random `state` and a PKCE
+//  Signing in: the app opens aitutors.me/heddy-chrome/mac-connect IN THE DEFAULT BROWSER with a random `state` and a PKCE
 //  challenge (RFC 7636 S256). The site hands a two-minute code back on heddy-mac://connected, and the app swaps
 //  code + verifier at POST /api/heddy/mac/token for a 30-day token, kept in the Keychain. The token never sits in a
 //  URL. Every call after that is `Authorization: Bearer`. Public repo: client code only.
@@ -26,7 +26,6 @@
 import Cocoa
 import Combine
 import SwiftUI
-import AuthenticationServices
 import ServiceManagement
 import CryptoKit
 import Security
@@ -334,7 +333,12 @@ struct Words {
         lang == .zh ? "连接 aitutors.me，就能在这里看到你的一周、待办和今晚一句。" : "Connect to aitutors.me to see your week, your to-dos and tonight's line here."
     }
     var connect: String { lang == .zh ? "连接 aitutors.me" : "Connect to aitutors.me" }
-    var connecting: String { lang == .zh ? "请在浏览器里完成连接……" : "Finish in your browser…" }
+    /// The button while a Connect is open: says WHERE to finish, and pressing it opens that page again.
+    func connecting(in browser: String?) -> String {
+        if let browser { return lang == .zh ? "在 \(browser) 里完成连接……" : "Finish in \(browser)…" }
+        return lang == .zh ? "请在浏览器里完成连接……" : "Finish in your browser…"
+    }
+    var cancel: String { lang == .zh ? "取消" : "Cancel" }
     var connectFailed: String { lang == .zh ? "没有连接成功，再试一次。" : "That didn't connect. Try again." }
     var offline: String { lang == .zh ? "现在连不上 aitutors.me，稍后会再试。" : "Can't reach aitutors.me just now. Heddy will try again." }
     // gear menu
@@ -415,6 +419,55 @@ enum PKCE {
     /// 32 random bytes → 43 characters.
     static func state() -> String { random(32) }
     static func challenge(_ verifier: String) -> String { base64url(Data(SHA256.hash(data: Data(verifier.utf8)))) }
+}
+
+// MARK: - Connect, without a sign-in window (2026-11-22)
+//
+// Until 1.1.1 the app waited for heddy-mac://connected inside an ASWebAuthenticationSession. On a Mac mini (macOS 26,
+// Safari) the site answered 303 heddy-mac://… and the sign-in window dropped it (the page simply loaded again: no
+// /api/heddy/mac/token ever came); on a MacBook whose default browser is Chrome macOS asked about a "(null)" app. And
+// "Finish in your browser…" was a disabled button, so nothing could end the wait but quitting. Now the page opens in
+// the default browser like any link, heddy-mac:// is the app's own URL type (Info.plist, scripts/safari-mac-app.mjs),
+// and the answer arrives at application(_:open:). It is still PKCE: a heddy-mac:// link is only accepted while this
+// app is waiting, only with the `state` it made, and the code is worth nothing without the verifier it never sent.
+
+/// One Connect in flight: the `state` and verifier the app made, and when. The page can be reopened with the SAME
+/// state and challenge (pressing again must not strand a page already open), and the wait ends by itself.
+struct PendingConnect: Equatable {
+    let state: String
+    let verifier: String
+    let started: Date
+    static let lifetime: TimeInterval = 300
+
+    static func start(now: Date = Date()) -> PendingConnect { PendingConnect(state: PKCE.state(), verifier: PKCE.verifier(), started: now) }
+
+    func isLive(at now: Date = Date()) -> Bool { now.timeIntervalSince(started) < Self.lifetime && now >= started }
+
+    /// The connect page for this request on `site` (https://aitutors.me), with state and challenge.
+    func pageURL(site: URL) -> URL? {
+        var c = URLComponents(url: site.appendingPathComponent("heddy-chrome/mac-connect"), resolvingAgainstBaseURL: false)
+        c?.queryItems = [URLQueryItem(name: "state", value: state), URLQueryItem(name: "challenge", value: PKCE.challenge(verifier))]
+        return c?.url
+    }
+
+    /// The code in heddy-mac://connected?code=…&state=… when the link answers THIS request and it is still live; else nil.
+    func code(from url: URL, now: Date = Date()) -> String? {
+        guard isLive(at: now), url.scheme?.lowercased() == HeddyMac.callbackScheme, url.host?.lowercased() == "connected",
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              items.first(where: { $0.name == "state" })?.value == state,
+              let code = items.first(where: { $0.name == "code" })?.value, !code.isEmpty else { return nil }
+        return code
+    }
+}
+
+/// The default browser's name ("Safari", "Google Chrome"), for "Finish in Safari…". nil when macOS names none.
+enum DefaultBrowser {
+    static func name(workspace: NSWorkspace = .shared) -> String? {
+        guard let app = workspace.urlForApplication(toOpen: URL(string: "https://aitutors.me")!) else { return nil }
+        let name = FileManager.default.displayName(atPath: app.path)
+        let bare = name.hasSuffix(".app") ? String(name.dropLast(4)) : name
+        return bare.isEmpty ? nil : bare
+    }
 }
 
 // MARK: - aitutors.me
@@ -541,6 +594,8 @@ final class PanelStore: ObservableObject {
     @Published private(set) var token: MacToken?
     @Published private(set) var reachable = true
     @Published private(set) var connecting = false
+    /// The browser the connect page opened in ("Safari"), named on the button. nil when unknown.
+    @Published private(set) var connectBrowser: String?
     @Published var connectError: String?
     @Published var notice: String?
     @Published var mood: String?
@@ -876,11 +931,12 @@ final class PanelStore: ObservableObject {
         TokenStore.save(t)
         token = t
         connecting = false
+        connectBrowser = nil
         connectError = nil
         Task { await refresh() }
     }
-    func setConnecting(_ on: Bool) { connecting = on; if on { connectError = nil } }
-    func connectFailed() { connecting = false; connectError = words.connectFailed }
+    func setConnecting(_ on: Bool, browser: String? = nil) { connecting = on; connectBrowser = on ? browser : nil; if on { connectError = nil } }
+    func connectFailed() { connecting = false; connectBrowser = nil; connectError = words.connectFailed }
 
     func signOut() {
         TokenStore.clear()
@@ -1499,6 +1555,7 @@ struct HeddyMascot: View {
 struct PanelActions {
     var open: (URL) -> Void = { _ in }
     var connect: () -> Void = {}
+    var cancelConnect: () -> Void = {}
     var gear: () -> Void = {}
 }
 
@@ -2078,16 +2135,25 @@ struct PanelView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(w.connectBlurb).font(.system(size: 13)).foregroundColor(Night.soft)
                     .fixedSize(horizontal: false, vertical: true)
-                Button(action: actions.connect) {
-                    Text(store.connecting ? w.connecting : w.connect)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Night.panel)
-                        .padding(.horizontal, 16).frame(height: 36)
-                        .background(Capsule().fill(Night.gold))
-                        .contentShape(Capsule())
+                HStack(spacing: 12) {
+                    // Never disabled: while a Connect is open, pressing it opens that page again.
+                    Button(action: actions.connect) {
+                        Text(store.connecting ? w.connecting(in: store.connectBrowser) : w.connect)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Night.panel)
+                            .padding(.horizontal, 16).frame(height: 36)
+                            .background(Capsule().fill(Night.gold))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(NightButton(shape: Capsule(), amount: 0.16, hoverID: "connect"))
+                    if store.connecting {
+                        Button(action: actions.cancelConnect) {
+                            Text(w.cancel).font(.system(size: 13)).foregroundColor(Night.soft)
+                                .padding(.horizontal, 10).frame(height: 30).contentShape(Capsule())
+                        }
+                        .buttonStyle(NightButton(shape: Capsule(), hoverID: "cancel-connect"))
+                    }
                 }
-                .buttonStyle(NightButton(shape: Capsule(), amount: 0.16, hoverID: "connect"))
-                .disabled(store.connecting)
                 if let e = store.connectError {
                     Text(e).font(.system(size: 12)).foregroundColor(Night.test)
                 }
@@ -2281,6 +2347,7 @@ struct DockActions {
     /// A hero link (a path on aitutors.me): opened in Safari.
     var open: (String) -> Void = { _ in }
     var connect: () -> Void = {}
+    var cancelConnect: () -> Void = {}
     var safariSettings: () -> Void = {}
 }
 
@@ -2736,15 +2803,23 @@ struct DockView: View {
             DockOwl().frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 12) {
                 Text(w.connectBlurb).font(.system(size: 13)).foregroundColor(Dock.soft).fixedSize(horizontal: false, vertical: true)
-                Button(action: actions.connect) {
-                    Text(store.connecting ? w.connecting : w.connect)
-                        .font(.system(size: 14, weight: .semibold)).foregroundColor(Dock.ink)
-                        .padding(.horizontal, 16).frame(height: 36)
-                        .background(Capsule().fill(Dock.gold))
-                        .contentShape(Capsule())
+                HStack(spacing: 12) {
+                    Button(action: actions.connect) {
+                        Text(store.connecting ? w.connecting(in: store.connectBrowser) : w.connect)
+                            .font(.system(size: 14, weight: .semibold)).foregroundColor(Dock.ink)
+                            .padding(.horizontal, 16).frame(height: 36)
+                            .background(Capsule().fill(Dock.gold))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(NightButton(shape: Capsule(), amount: 0.16, hoverID: "connect"))
+                    if store.connecting {
+                        Button(action: actions.cancelConnect) {
+                            Text(w.cancel).font(.system(size: 13)).foregroundColor(Dock.soft)
+                                .padding(.horizontal, 10).frame(height: 30).contentShape(Capsule())
+                        }
+                        .buttonStyle(NightButton(shape: Capsule(), hoverID: "cancel-connect"))
+                    }
                 }
-                .buttonStyle(NightButton(shape: Capsule(), amount: 0.16, hoverID: "connect"))
-                .disabled(store.connecting)
                 if let e = store.connectError { Text(e).font(.system(size: 12)).foregroundColor(Night.test) }
             }
         }
@@ -2809,14 +2884,17 @@ struct DockView: View {
 // MARK: - The app
 
 @main
-class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuthenticationPresentationContextProviding {
+// @MainActor said out loud: it used to come implicitly from ASWebAuthenticationPresentationContextProviding (removed 2026-11-22).
+@MainActor
+class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
     private let store = PanelStore()
     private var timer: Timer?
     private var bag = Set<AnyCancellable>()
-    private var authSession: ASWebAuthenticationSession?
+    /// The Connect in flight (its state + verifier).
+    private var pending: PendingConnect?
     /// The Dock window (M14: tonight, as on the learner home), kept so the Dock icon and the gear can bring it back.
     private var mainWindowController: NSWindowController?
     private let dock = DockModel()
@@ -2958,6 +3036,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
                 NSWorkspace.shared.open(url)
             },
             connect: { [weak self] in self?.connect() },
+            cancelConnect: { [weak self] in self?.cancelConnect() },
             gear: { [weak self] in self?.showGearMenu() }
         )
     }
@@ -3069,6 +3148,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
                 Self.openInSafari(url)
             },
             connect: { [weak self] in self?.connect() },
+            cancelConnect: { [weak self] in self?.cancelConnect() },
             safariSettings: { [weak self] in self?.openSafariSettings() }
         )
     }
@@ -3136,56 +3216,59 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, ASWebAuth
         return ev.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
     }
 
-    // MARK: connect (ASWebAuthenticationSession + PKCE → POST /api/heddy/mac/token)
+    // MARK: connect (the default browser + PKCE → heddy-mac://connected → POST /api/heddy/mac/token)
 
     private func connect() {
-        guard authSession == nil else { return }
-        let verifier = PKCE.verifier()
-        let state = PKCE.state()
-        var c = URLComponents(url: store.link("/heddy-chrome/mac-connect"), resolvingAgainstBaseURL: false)!
-        c.queryItems = [URLQueryItem(name: "state", value: state), URLQueryItem(name: "challenge", value: PKCE.challenge(verifier))]
-        guard let url = c.url else { return }
-        store.setConnecting(true)
-        let session = ASWebAuthenticationSession(url: url, callback: .customScheme(HeddyMac.callbackScheme)) { [weak self] callback, error in
-            Task { @MainActor in self?.finishConnect(callback: callback, error: error, state: state, verifier: verifier) }
+        // A Connect already open: show its page again (same state, same challenge), never a second request.
+        if let p = pending, p.isLive() {
+            openConnectPage(p)
+            return
         }
-        session.presentationContextProvider = self
-        // Reuse the browser's aitutors.me sign-in: a child already signed in sees one button.
-        session.prefersEphemeralWebBrowserSession = false
-        authSession = session
+        let p = PendingConnect.start()
+        pending = p
+        // Ends the wait by itself; a newer Connect or a Cancel makes this a no-op (connectExpired compares).
+        DispatchQueue.main.asyncAfter(deadline: .now() + PendingConnect.lifetime) { [weak self] in self?.connectExpired(p) }
+        store.setConnecting(true, browser: DefaultBrowser.name())
+        openConnectPage(p)
+    }
+
+    private func openConnectPage(_ p: PendingConnect) {
+        guard let url = p.pageURL(site: store.link("/")) else { store.connectFailed(); return }
         popover.performClose(nil)
-        if !session.start() {
-            authSession = nil
-            store.connectFailed()
-        }
+        if !NSWorkspace.shared.open(url) { cancelConnect(); store.connectFailed() }
     }
 
-    private func finishConnect(callback: URL?, error: Error?, state: String, verifier: String) {
-        authSession = nil
-        if let e = error as? ASWebAuthenticationSessionError, e.code == .canceledLogin {
-            store.setConnecting(false)
-            return
-        }
-        guard let callback, callback.scheme == HeddyMac.callbackScheme,
-              let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems,
-              items.first(where: { $0.name == "state" })?.value == state,
-              let code = items.first(where: { $0.name == "code" })?.value else {
-            store.connectFailed()
-            showPanel()
-            return
-        }
-        Task {
-            if let token = await store.api.swap(code: code, verifier: verifier) {
-                store.connected(token)
-                if dockVisible { await store.refreshHero() }
-            } else {
+    private func cancelConnect() {
+        pending = nil
+        store.setConnecting(false)
+    }
+
+    private func connectExpired(_ p: PendingConnect) {
+        guard pending == p else { return }
+        cancelConnect()
+    }
+
+    /// heddy-mac:// links, from the browser (the app's URL type). Only a live Connect's own answer is taken.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls where url.scheme?.lowercased() == HeddyMac.callbackScheme {
+            guard let p = pending else { continue }
+            guard let code = p.code(from: url) else {
+                cancelConnect()
                 store.connectFailed()
+                showPanel()
+                return
             }
-            showPanel()
+            pending = nil
+            Task {
+                if let token = await store.api.swap(code: code, verifier: p.verifier) {
+                    store.connected(token)
+                    if dockVisible { await store.refreshHero() }
+                } else {
+                    store.connectFailed()
+                }
+                showPanel()
+            }
+            return
         }
-    }
-
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        NSApp.keyWindow ?? mainWindowController?.window ?? NSApp.windows.first ?? ASPresentationAnchor()
     }
 }
