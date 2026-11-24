@@ -14,6 +14,12 @@
 // desk never covers what the child is selecting. Elsewhere (the first-time
 // state, YouTube's Add to My Clips) it floats top right as before.
 //
+// On a phone (2026-11-24, owner, after Obsidian Web Clipper on iPhone) it is a BOTTOM SHEET instead: full width
+// inside a 10 px margin, rounded, sitting on the bottom edge, growing with its content up to most of the screen,
+// the page dimmed behind it. A 360 px box pinned top right hung off the left of a 375 px iPhone. The dimming is
+// paint only (pointer-events: none): the child still selects words on the page, and they still become cards.
+// iPad and desktop are untouched.
+//
 // Box mode (content/box-mode.js) runs beside it: it draws itself just under
 // this frame and hides the frame (away) only while a screenshot is taken.
 // Box mode is the panel's Picture mode; without it the panel is in Text mode
@@ -43,6 +49,9 @@
   // The docked desk's column (artifact .web .dock: 410 px, 12 px around the card).
   var DOCK = 410;
   var SELECTION_MS = 250;
+  // The phone: a narrow screen held in the hand (the same test the desk's own phone rule has always used).
+  var PHONE = '(max-width: 700px) and (pointer: coarse)';
+  var SHEET_GAP = 10;
   var URL_MS = 700;
 
   var host = null;
@@ -54,6 +63,11 @@
   var autoTimer = null;
   var lastAuto = null; // {id, at}: the card auto-added most recently
   var docked = null; // while docked: the page's own margin-right, to give back
+  var sheet = false; // a phone: the panel is a bottom sheet (fixed at open)
+
+  function isPhone() {
+    try { return !!(root.matchMedia && root.matchMedia(PHONE).matches); } catch (e) { return false; }
+  }
 
   var CSS = [
     ':host { all: initial; }',
@@ -68,6 +82,13 @@
     // A frame is a replaced element: top + bottom alone leave it 150 px tall.
     '  height: calc(100vh - ' + 2 * INSET + 'px) !important; max-height: none; border-radius: 16px; box-shadow: none; background: transparent; }',
     '@media (max-width: 700px) and (pointer: coarse) { .f.dock { top: auto; width: calc(100vw - 24px) !important; height: min(70dvh, 560px) !important; } }',
+    // The phone's bottom sheet (Obsidian Web Clipper's shape): the frame fills the host, which the script pins to the
+    // bottom edge; the page behind is dimmed by paint alone.
+    '.s { position: fixed; inset: 0; background: rgba(0, 21, 50, .22); pointer-events: none; }',
+    '.f.sheet { position: relative; width: 100% !important; max-width: none; max-height: min(86dvh, 760px); border-radius: 24px;',
+    '  box-shadow: 0 -10px 40px rgba(0, 20, 50, .22), 0 0 0 1px rgba(0, 33, 71, .10); }',
+    '.f.sheet.dock { position: relative; top: auto; right: auto; bottom: auto; width: 100% !important; height: min(78dvh, 680px) !important;',
+    '  max-height: none; border-radius: 16px; box-shadow: 0 -10px 40px rgba(0, 20, 50, .22); }',
   ].join('\n');
 
   function tell(message) {
@@ -85,9 +106,11 @@
       frame.style.height = Math.ceil(Math.min(m.h, 2000)) + 'px';
       // 400 on a YouTube video (Add to My Clips, artifact P2), 380 for the
       // Can't read / aitutors.me / first-time screens (PRD-v0.146.0 B8), else 360.
-      var w = (m.w === 400 || m.w === 380 ? m.w : WIDTH) + 'px';
-      frame.style.width = w;
-      host.style.setProperty('width', w, 'important');
+      if (!sheet) {
+        var w = (m.w === 400 || m.w === 380 ? m.w : WIDTH) + 'px';
+        frame.style.width = w;
+        host.style.setProperty('width', w, 'important');
+      }
       frame.classList.add('on');
     } else if (m.heddyPanel === 'close') {
       close();
@@ -100,6 +123,12 @@
     if (!host || !frame || on === !!docked) return;
     var html = document.documentElement;
     frame.classList.toggle('dock', on);
+    if (sheet) {
+      // The sheet stays where it is; only its height changes (the CSS). The page is never narrowed on a phone.
+      docked = on ? { value: null, priority: '' } : null;
+      try { root.dispatchEvent(new Event('resize')); } catch (e) { /* no matter */ }
+      return;
+    }
     if (on) {
       docked = { value: html.style.getPropertyValue('margin-right'), priority: html.style.getPropertyPriority('margin-right') };
       var touch = root.matchMedia && root.matchMedia('(pointer: coarse)').matches;
@@ -122,6 +151,7 @@
 
   function undock() {
     if (!docked) return;
+    if (docked.value === null) { docked = null; return; }
     var html = document.documentElement;
     if (docked.value) html.style.setProperty('margin-right', docked.value, docked.priority);
     else html.style.removeProperty('margin-right');
@@ -225,16 +255,19 @@
   function open(tabId) {
     if (host) return;
     host = document.createElement('heddy-panel');
-    host.setAttribute('style', [
-      'all: initial', 'position: fixed', 'top: ' + INSET + 'px', 'right: ' + INSET + 'px', 'left: auto', 'bottom: auto',
-      'z-index: 2147483647', 'display: block', 'width: ' + WIDTH + 'px', 'max-width: 100vw', 'margin: 0', 'padding: 0',
+    sheet = isPhone();
+    var place = sheet
+      ? ['top: auto', 'left: ' + SHEET_GAP + 'px', 'right: ' + SHEET_GAP + 'px', 'bottom: calc(' + SHEET_GAP + 'px + env(safe-area-inset-bottom, 0px))', 'width: auto', 'max-width: none']
+      : ['top: ' + INSET + 'px', 'right: ' + INSET + 'px', 'left: auto', 'bottom: auto', 'width: ' + WIDTH + 'px', 'max-width: 100vw'];
+    host.setAttribute('style', ['all: initial', 'position: fixed'].concat(place, [
+      'z-index: 2147483647', 'display: block', 'margin: 0', 'padding: 0',
       'transform: none', 'filter: none', 'opacity: 1', 'pointer-events: auto',
-    ].map(function (d) { return d + ' !important'; }).join('; '));
+    ]).map(function (d) { return d + ' !important'; }).join('; '));
     var shadow = host.attachShadow({ mode: 'closed' });
     var style = document.createElement('style');
     style.textContent = CSS;
     frame = document.createElement('iframe');
-    frame.className = 'f';
+    frame.className = sheet ? 'f sheet' : 'f';
     frame.title = 'Heddy';
     // Copy on the YouTube state copies the video's link (D76).
     frame.allow = 'clipboard-write';
@@ -246,6 +279,11 @@
     var o = /^[a-z-]+:\/\/[^/]+/.exec(src);
     frameOrigin = o ? o[0] : '*';
     shadow.appendChild(style);
+    if (sheet) {
+      var scrim = document.createElement('div');
+      scrim.className = 's';
+      shadow.appendChild(scrim);
+    }
     shadow.appendChild(frame);
     // On <html>, last: box mode puts itself just before it, so the panel
     // stays above box mode and usable beside it (R5b).
@@ -274,6 +312,7 @@
     undock();
     host.remove();
     host = null;
+    sheet = false;
     frame = null;
     lastAuto = null;
     // Text mode's small bar says words are added; with the panel gone they
