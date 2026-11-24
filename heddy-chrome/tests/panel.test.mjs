@@ -208,6 +208,7 @@ function page(opts = {}) {
       },
     },
   };
+  if (opts.phone !== undefined) ctx.matchMedia = (q) => ({ matches: opts.phone && q === '(max-width: 700px) and (pointer: coarse)' });
   ctx.globalThis = ctx;
   if (opts.version) ctx.chrome.runtime.getManifest = () => ({ version: opts.version });
   if (opts.stale) ctx.__heddyPanel = opts.stale;
@@ -426,4 +427,58 @@ test('inPage false, where the popup cannot be opened for us: nothing is injected
 test('Safari draws the panel in the page like Chrome: background.js passes no inPage, and no build gives the button a popup', () => {
   assert.match(read('background.js'), /createPanel\(\{ chrome: chrome \}\)/);
   assert.doesNotMatch(read('scripts/package.mjs'), /default_popup\s*=/);
+});
+
+// 2026-11-24 (owner, after Obsidian Web Clipper on iPhone): on a phone the panel is a bottom sheet. Before, a 360 px box
+// pinned 12 px from the right hung off the left of a 375 px iPhone.
+test('a phone gets a bottom sheet: full width in a 10 px margin, on the bottom edge, the page dimmed by paint only', async () => {
+  const p = page({ phone: true });
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  const css = p.host().attrs.style;
+  assert.match(css, /left: 10px !important; right: 10px !important; bottom: calc\(10px \+ env\(safe-area-inset-bottom, 0px\)\) !important/);
+  assert.match(css, /top: auto !important/);
+  assert.match(css, /width: auto !important/);
+  assert.doesNotMatch(css, /width: 360px|top: 12px/, 'no floating box on a phone');
+  assert.ok(p.frame().className.split(' ').includes('sheet'));
+  const kids = p.host().shadow.children;
+  assert.ok(kids.findIndex((c) => c.className === 's') < kids.findIndex((c) => c.tag === 'iframe'), 'the dim sits behind the sheet');
+  const sheetCss = kids.find((c) => c.tag === 'style').textContent;
+  assert.match(sheetCss, /\.s \{ position: fixed; inset: 0; background: rgba\(0, 21, 50, \.22\); pointer-events: none; \}/, 'words on the page can still be selected');
+  assert.match(sheetCss, /\.f\.sheet \{ position: relative; width: 100% !important; max-width: none; max-height: min\(86dvh, 760px\); border-radius: 24px;/);
+});
+
+test('a phone sheet sizes by height only: the frame never sets a width that would push it off the screen', async () => {
+  const p = page({ phone: true });
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'size', h: 520, w: 380 } });
+  assert.equal(p.frame().style.height, '520px');
+  assert.equal(p.frame().style.width, undefined);
+  assert.equal(p.host().style.width, undefined);
+});
+
+test('the desk on a phone stays a sheet: the page is not narrowed and the sheet does not move; closing leaves the page as it was', async () => {
+  const p = page({ phone: true });
+  const html = p.ctx.document.documentElement.style;
+  html.setProperty('margin-right', '20px', '');
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'size', dock: true } });
+  assert.ok(p.frame().classList.contains('dock'));
+  assert.deepEqual(html.props['margin-right'], { v: '20px', prio: '' });
+  assert.equal(p.host().style.width, undefined);
+  assert.equal(p.host().style.top, undefined);
+  const css = p.host().shadow.children.find((c) => c.tag === 'style').textContent;
+  assert.match(css, /\.f\.sheet\.dock \{ position: relative; top: auto; right: auto; bottom: auto; width: 100% !important; height: min\(78dvh, 680px\) !important;/);
+  p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'size', h: 300 } });
+  assert.ok(!p.frame().classList.contains('dock'));
+  p.fire('win', 'message', { source: p.frameWindow, data: { heddyPanel: 'close' } });
+  assert.deepEqual(html.props['margin-right'], { v: '20px', prio: '' });
+  assert.equal(p.appended.length, 0);
+});
+
+test('an iPad or a desktop is not a phone: the panel floats top right as before, with no dim', async () => {
+  const p = page({ phone: false });
+  await p.send({ type: 'heddy-panel:toggle', tabId: 9 });
+  assert.match(p.host().attrs.style, /top: 12px !important; right: 12px !important; left: auto !important; bottom: auto !important; width: 360px !important/);
+  assert.equal(p.frame().className, 'f');
+  assert.ok(!p.host().shadow.children.some((c) => c.className === 's'));
 });
