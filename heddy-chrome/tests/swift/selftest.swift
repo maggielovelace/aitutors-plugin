@@ -316,6 +316,12 @@ struct SelfTest {
         check(!cs.connecting && cs.connectBrowser == nil, "cancelled: back to Connect, the name gone")
         check(DefaultBrowser.name() != nil, "this Mac names a default browser: \(DefaultBrowser.name() ?? "-")")
 
+        // ── TODAY box and ⤢ (owner, 2026-11-25): the box opens My calendar on its day; ⤢ the FULL-SCREEN week.
+        let ls = PanelStore(fixture: panel(panelJSON(today: "2026-11-15", day: "2026-11-15")))
+        check(ls.dayLink("2026-11-24").absoluteString == "https://aitutors.me/study/calendar?day=2026-11-24", "TODAY opens that day: \(ls.dayLink("2026-11-24").absoluteString)")
+        check(ls.fullWeekLink("2026-11-24").absoluteString == "https://aitutors.me/study/calendar?view=week&full=1&date=2026-11-24", "⤢ opens the full-screen week: \(ls.fullWeekLink("2026-11-24").absoluteString)")
+        check(ls.fullWeekLink(nil).absoluteString == "https://aitutors.me/study/calendar", "no day yet: the calendar page")
+
         print(failures == 0 ? "SELFTEST OK" : "SELFTEST FAILED \(failures)")
         exit(failures == 0 ? 0 : 1)
     }

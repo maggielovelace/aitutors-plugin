@@ -1,7 +1,7 @@
 // The Mac app's own settings for the Xcode project that package-safari-app.sh generates (aitutors.me
 // PRD-v0.145.0, Heddy in the Mac menu bar, S2). Run after safari-mac/AppDelegate.swift is copied in.
 //
-//   * The macOS app and its extension become version MAC_APP_VERSION (1.1.2). iOS is left at the converter's
+//   * The macOS app and its extension become version MAC_APP_VERSION (1.1.3). iOS is left at the converter's
 //     version: the menu bar is Mac only, and an iOS build carries its own number.
 //   * The macOS APP (not the extension) gets ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES, which Xcode signs in as the
 //     com.apple.security.network.client entitlement: the menu bar fetches its panel from aitutors.me under the
@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-export const MAC_APP_VERSION = '1.1.2';
+export const MAC_APP_VERSION = '1.1.3';
 export const MAC_APP_ID = 'me.aitutors.heddy.safari';
 export const NETWORK_CLIENT = 'ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;';
 
