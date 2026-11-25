@@ -38,13 +38,13 @@ test('packaging copies safari-mac/AppDelegate.swift over the converter\'s Mac Ap
   assert.ok(at(/node scripts\/safari-mac-app\.mjs/) < at(/node scripts\/safari-signing\.mjs/));
 });
 
-test('the Mac app and its extension become 1.1.2; iOS keeps its own version', async () => {
+test('the Mac app and its extension become 1.1.3; iOS keeps its own version', async () => {
   const { macAppProject, MAC_APP_VERSION } = await import('../scripts/safari-mac-app.mjs');
-  assert.equal(MAC_APP_VERSION, '1.1.2');
+  assert.equal(MAC_APP_VERSION, '1.1.3');
   const out = blocks(macAppProject(project()));
   for (const b of out) {
     const sdk = b.match(/SDKROOT = (\w+);/)[1];
-    assert.match(b, new RegExp(`MARKETING_VERSION = ${sdk === 'macosx' ? '1\\.1\\.2' : '1\\.0'};`), `${sdk} version`);
+    assert.match(b, new RegExp(`MARKETING_VERSION = ${sdk === 'macosx' ? '1\\.1\\.3' : '1\\.0'};`), `${sdk} version`);
   }
 });
 
@@ -155,7 +155,8 @@ test('shortcuts in the ruled order, each to its aitutors.me page (M10)', () => {
   const order = bar.split('Shortcut(title: ').slice(1).map((chunk) => `${chunk.match(/^w\.(\w+)/)[1]} ${chunk.match(/store\.link\("([^"]+)"\)/)[1]}`);
   assert.deepEqual(order, ['home /study', 'jotters /study/jotters', 'cards /study/cards', 'clips /study/clips', 'exams /study/exam', 'tutors /study/tutor']);
   assert.ok(bar.indexOf('Shortcut(title: w.tutors') < bar.indexOf('actions.gear'), 'the gear is last, on the right');
-  assert.match(s, /RoundButton\(label: w\.openCalendar, action: \{ actions\.open\(store\.link\("\/study\/calendar"\)\) \}\)/);
+  // ⤢ opens the FULL-SCREEN week on the shown day since 2026-11-25 (pinned in the test of that date below).
+  assert.match(s, /RoundButton\(label: w\.openCalendar, action: \{ actions\.open\(store\.fullWeekLink\(store\.panel\?\.day\)\) \}\)/);
   assert.match(s, /func link\(_ path: String\) -> URL \{ api\.url\(\(lang == \.zh \? "\/zh" : ""\) \+ path\) \}/);
 });
 
@@ -430,4 +431,15 @@ test('the owl opens over a full-screen app: show and key the panel BEFORE activa
   const activate = body.indexOf('NSApp.activate');
   assert.ok(show > 0 && key > show && activate > key, 'show, then make key, then activate — activating first jumps to the Dock window\'s Space');
   assert.match(body, /collectionBehavior\.insert\(\[[^\]]*\.fullScreenAuxiliary/, 'the panel window may sit on a full-screen Space');
+});
+
+test('panel (owner, 2026-11-25): a checked-in day is a ✓, TODAY opens the calendar, ⤢ the full-screen week, times fit', () => {
+  const s = swift();
+  assert.match(s, /if day\.checkedIn \{\s*Image\(systemName: "checkmark"\)/, 'a check-in is a tick, not a filled number that reads as today');
+  assert.match(s, /if day\.isToday \{\s*Circle\(\)\.strokeBorder\(Night\.gold, style: StrokeStyle\(lineWidth: 2, dash: \[4, 3\]\)\)/, 'today alone keeps the dashed gold ring');
+  assert.match(s, /Button\(action: \{ actions\.open\(store\.dayLink\(p\.day\)\) \}\) \{ todayBoxBody\(p\)/);
+  assert.match(s, /hoverID: "today"/);
+  assert.match(s, /RoundButton\(label: w\.openCalendar, action: \{ actions\.open\(store\.fullWeekLink\(store\.panel\?\.day\)\) \}\)/);
+  assert.match(s, /URLQueryItem\(name: "view", value: "week"\), URLQueryItem\(name: "full", value: "1"\), URLQueryItem\(name: "date", value: day\)/);
+  assert.match(s, /Text\(time\)[^\n]*\.lineLimit\(1\)\.fixedSize\(\)\.frame\(minWidth: 40/, '"3:30pm–5:00pm" is never cut to "3:3…"');
 });

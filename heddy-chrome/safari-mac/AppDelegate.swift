@@ -663,6 +663,14 @@ final class PanelStore: ObservableObject {
     // MARK: links
 
     func link(_ path: String) -> URL { api.url((lang == .zh ? "/zh" : "") + path) }
+    /// My calendar on one day (the TODAY box, owner 2026-11-25): /study/calendar?day=YYYY-MM-DD.
+    func dayLink(_ day: String) -> URL { api.url((lang == .zh ? "/zh" : "") + "/study/calendar", [URLQueryItem(name: "day", value: day)]) }
+    /// ⤢: My calendar's FULL-SCREEN WEEK on the shown day (aitutors lib/calendar/full-week.ts parseFullLink), not the page.
+    func fullWeekLink(_ day: String?) -> URL {
+        guard let day else { return link("/study/calendar") }
+        return api.url((lang == .zh ? "/zh" : "") + "/study/calendar",
+                       [URLQueryItem(name: "view", value: "week"), URLQueryItem(name: "full", value: "1"), URLQueryItem(name: "date", value: day)])
+    }
 
     // MARK: reading
 
@@ -1640,7 +1648,13 @@ struct DayStamp: View {
     var body: some View {
         let n = UKDay.dayOfMonth(day.day)
         HStack(spacing: 1) {
-            Text(n)
+            // A checked-in day wears a ✓, never its number on green: a filled number read as "today" (owner,
+            // 2026-11-25). Today alone keeps the dashed gold ring; checked in, it is a ✓ inside that ring.
+            if day.checkedIn {
+                Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).accessibilityLabel(n)
+            } else {
+                Text(n)
+            }
             if day.test { Text("◆").font(.system(size: 6)).foregroundColor(Night.test) }
         }
         .font(.system(size: 11, weight: day.checkedIn || day.isToday ? .semibold : .regular))
@@ -1847,7 +1861,7 @@ struct PanelView: View {
             RoundButton(label: w.nextDay, enabled: store.canMove(1), action: { store.move(1) }) {
                 Icons.forward.line(2.2, size: 14).frame(width: 14, height: 14)
             }
-            RoundButton(label: w.openCalendar, action: { actions.open(store.link("/study/calendar")) }) {
+            RoundButton(label: w.openCalendar, action: { actions.open(store.fullWeekLink(store.panel?.day)) }) {
                 Icons.expand.line(2.2, size: 14).frame(width: 14, height: 14)
             }
         }
@@ -1878,8 +1892,15 @@ struct PanelView: View {
 
     // ── TODAY: the day's items with time and colour dot, then the next test (◆)
     private func todayBox(_ p: MacPanel) -> some View {
+        // The whole box opens My calendar on this day (owner, 2026-11-25), as the to-do box's "All N ↗" does.
+        Button(action: { actions.open(store.dayLink(p.day)) }) { todayBoxBody(p).contentShape(Rectangle()) }
+            .buttonStyle(NightButton(shape: RoundedRectangle(cornerRadius: 10), hoverID: "today"))
+            .help(w.openCalendar)
+    }
+
+    private func todayBoxBody(_ p: MacPanel) -> some View {
         Box {
-            BoxHeading(text: p.day == p.today ? w.todayBox : UKDay.short(p.day, store.lang).uppercased())
+            BoxHeading(text: (p.day == p.today ? w.todayBox : UKDay.short(p.day, store.lang).uppercased()) + "  ↗")
             ForEach(p.items) { item in
                 row(time: item.time ?? w.allDay) {
                     Circle().fill(Color(css: item.colour) ?? Night.dot).frame(width: 8, height: 8)
@@ -1899,7 +1920,7 @@ struct PanelView: View {
 
     private func row<Mark: View>(time: String, @ViewBuilder mark: () -> Mark, @ViewBuilder title: () -> Text) -> some View {
         HStack(spacing: 10) {
-            Text(time).font(.system(size: 12)).foregroundColor(Night.soft).frame(width: 40, alignment: .leading).lineLimit(1)
+            Text(time).font(.system(size: 12)).foregroundColor(Night.soft).lineLimit(1).fixedSize().frame(minWidth: 40, alignment: .leading)
             mark()
             title().font(.system(size: 14)).lineLimit(1)
             Spacer(minLength: 0)
